@@ -2730,6 +2730,20 @@
             window.CommunityAuth.ready = true;
             window.CommunityAuth.isAuthorized = true;
 
+            // --- KATILIM TARİHİ BACKFILL ---
+            // Bazı hesaplar (ana site/SSO tarafında) `createdAt` alanı
+            // olmadan oluşturulmuş olabilir; profil sayfası bu durumda
+            // "—" gösteriyordu. Eksikse BİR KEZ şimdiki zamanı yazıyoruz
+            // ki bundan sonra her zaman bir katılım tarihi görünsün.
+            // NOT: bu, hesabın GERÇEK ilk oluşturulma tarihini geri
+            // getiremez (o bilgi hiç kaydedilmediyse kalıcı olarak
+            // kaybolmuştur) — sadece boş kalmasını önler.
+            if (!profile.createdAt) {
+                database.ref('users/' + firebaseUser.uid).update({
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                }).catch((e) => console.warn("[CommunityHub] createdAt backfill başarısız:", e));
+            }
+
             document.dispatchEvent(new CustomEvent("communitystudio:auth-ready", {
                 detail: { user: firebaseUser, profile: profile }
             }));
@@ -3060,6 +3074,39 @@
         //     sidebar'ı aç/kapa, dışına tıklayınca veya bir menü
         //     öğesi seçilince otomatik kapat.
         // ==============================================================
+        function initProfileAvatarEditor() {
+            const editBtn = document.getElementById("profileAvatarEditBtn");
+            if (!editBtn) return;
+
+            editBtn.addEventListener("click", async () => {
+                const currentProfile = window.CommunityAuth.profile;
+                const proposed = prompt(
+                    "Avatar için bir görsel URL'si girin (imgur, discord cdn vb.):",
+                    currentProfile.avatarUrl || ""
+                );
+                if (proposed === null) return; // vazgeçildi
+                const cleanUrl = proposed.trim();
+
+                // Boş bırakılırsa avatarı kaldırıyoruz; doluysa basit bir
+                // http(s) kontrolü yapıyoruz (URL enjeksiyonuna karşı ilk
+                // savunma hattı — <img src> zaten tarayıcı tarafından
+                // sınırlandığı için burada kritik bir güvenlik katmanı değil).
+                if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+                    alert("Lütfen http:// veya https:// ile başlayan geçerli bir görsel bağlantısı girin.");
+                    return;
+                }
+
+                try {
+                    await database.ref('users/' + window.CommunityAuth.user.uid).update({
+                        avatarUrl: cleanUrl
+                    });
+                } catch (err) {
+                    console.error("[Profile] Avatar güncellenemedi:", err);
+                    alert("Avatar güncellenemedi.");
+                }
+            });
+        }
+
         function initSidebarToggle() {
             const toggleBtn = document.getElementById("hubSidebarToggle");
             const sidebar = document.getElementById("hubSidebar");
@@ -3337,7 +3384,13 @@
                 inputEl.placeholder = "Bir mesaj yaz... (@isim ile etiketle, /w isim mesaj ile gizli mesaj gönder)";
             } catch (err) {
                 console.error("[Forum] Mesaj gönderilemedi:", err);
-                showForumComposerError("Mesaj gönderilemedi. Lütfen tekrar deneyin.");
+                // Firebase Realtime Database Rules izin vermiyorsa err.code
+                // "PERMISSION_DENIED" olur — bu EN SIK karşılaşılan sebeptir.
+                // Kullanıcıya teşhis edilebilir bir mesaj gösteriyoruz.
+                const reason = (err && err.code === "PERMISSION_DENIED")
+                    ? "Yetkiniz olmadığı için mesaj gönderilemedi (veritabanı kuralları engelledi)."
+                    : `Mesaj gönderilemedi (${(err && err.code) || 'bilinmeyen hata'}). Lütfen tekrar deneyin.`;
+                showForumComposerError(reason);
             }
         }
 
@@ -4376,6 +4429,7 @@
             initSidebarToggle();
             initProfileBioEditor();
             initProfileNameEditor();
+            initProfileAvatarEditor();
             initGateLoginForm();
             if (window.CommunityAuth && window.CommunityAuth.ready && window.CommunityAuth.isAuthorized) {
                 showHubShell(window.CommunityAuth.user, window.CommunityAuth.profile);
