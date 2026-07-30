@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Hub — Play Legends</title>
+
+<!-- ============================================================
+     COMMUNITY STUDIO / HUB — ANA İSKELET (index.html karşılığı)
+     Bu dosya, Modül 1'de kurulan auth-core.js'i yükler ve
+     kullanıcı doğrulanana kadar hiçbir gerçek içerik göstermez.
+     İlerleyen modüller (Profil/RBAC, Forum, 3D Studio, Admin Panel)
+     kendi HTML parçalarını buradaki boş <section> container'larına
+     dolduracak.
+     ============================================================ -->
+
+<style>
+    /* ==========================================================
+       TASARIM SİSTEMİ — Play Legends'ın koyu/HUD estetiğinin
+       devamı, ama "Hub" kimliğine özgü bir imza ile: dönen
+       tarama çizgisi (scan-line) + terminal tarzı monospace
+       etiketler. Ana site ile aynı dünyadan ama kendi karakteri var.
+       ========================================================== */
+    :root {
+        --bg-void: #0b0c10;
+        --bg-panel: #14171d;
+        --bg-panel-raised: #1f2833;
+        --line: rgba(102, 252, 241, 0.14);
+        --text-primary: #e4e6eb;
+        --text-dim: #8b95a1;
+        --accent: #66fcf1;
+        --accent-soft: rgba(102, 252, 241, 0.12);
+        --danger: #ff4d4d;
+        --gold: #f5c542;
+        --radius: 10px;
+        --font-display: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        --font-mono: 'Consolas', 'SFMono-Regular', Menlo, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: var(--bg-void);
+        color: var(--text-primary);
+        font-family: var(--font-display);
+        line-height: 1.6;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* ---------- AUTH GATE (yükleme / erişim reddi ekranı) ---------- */
+    #authGate {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        /* Mobil tarayıcılarda 100vh, adres çubuğu/klavye yüzünden gerçek
+           görünür alandan büyük hesaplanabilir ve içerik "tam ortada"
+           değilmiş gibi görünür. dvh (dynamic viewport height) destekleniyorsa
+           onu kullanıyoruz; desteklenmiyorsa 100vh'ye düşüyoruz (fallback). */
+        height: 100vh;
+        height: 100dvh;
+        background:
+            radial-gradient(circle at 50% 40%, rgba(102,252,241,0.06), transparent 60%),
+            var(--bg-void);
+    }
+
+    .gate-mark {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--accent);
+        opacity: 0.85;
+    }
+
+    .gate-ring {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        border: 2px solid var(--line);
+        border-top-color: var(--accent);
+        animation: gate-spin 0.9s linear infinite;
+    }
+
+    @keyframes gate-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .gate-status {
+        font-size: 0.95rem;
+        color: var(--text-dim);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .gate-ring { animation: none; border-top-color: var(--line); }
+    }
+
+    /* ---------- AUTH GATE: REDDEDİLME EKRANI ---------- */
+    #gateDenied {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        max-width: 380px;
+        text-align: center;
+        padding: 36px 32px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+    }
+
+    .gate-denied-icon {
+        font-size: 1.8rem;
+        opacity: 0.85;
+    }
+
+    .gate-denied-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .gate-denied-text {
+        font-size: 0.88rem;
+        color: var(--text-dim);
+        line-height: 1.55;
+    }
+
+    .gate-denied-btn {
+        margin-top: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 22px;
+        border-radius: 8px;
+        background: var(--accent);
+        color: var(--bg-void);
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        transition: filter 0.15s ease;
+    }
+
+    .gate-denied-btn:hover {
+        filter: brightness(1.08);
+    }
+
+    /* ---------- HUB SHELL (auth doğrulanınca görünür olur) ---------- */
+    #hubShell {
+        display: none; /* Modül 1-B, auth-ready event'inde bunu açacak */
+        min-height: 100vh;
+        grid-template-columns: 240px 1fr;
+    }
+
+    #hubShell.is-active {
+        display: grid;
+    }
+
+    /* ---------- SOL NAVİGASYON ---------- */
+    .hub-sidebar {
+        background: var(--bg-panel);
+        border-right: 1px solid var(--line);
+        padding: 24px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+    }
+
+    .hub-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .hub-brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .hub-brand-text {
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-primary);
+    }
+
+    .hub-brand-text small {
+        display: block;
+        color: var(--text-dim);
+        letter-spacing: 0.08em;
+        font-size: 0.65rem;
+        margin-top: 2px;
+    }
+
+    .hub-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .hub-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        user-select: none;
+    }
+
+    .hub-nav-item:hover {
+        background: var(--bg-panel-raised);
+        color: var(--text-primary);
+    }
+
+    .hub-nav-item.is-active {
+        background: var(--accent-soft);
+        border-color: var(--line);
+        color: var(--accent);
+    }
+
+    .hub-nav-item[data-restricted="true"] {
+        display: none; /* rol yetmiyorsa JS ile gizli kalır */
+    }
+
+    .hub-nav-spacer { flex: 1; }
+
+    /* ---------- ALT PROFİL KUTUSU (mini) ---------- */
+    .hub-mini-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+    }
+
+    .hub-mini-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+        object-fit: cover;
+    }
+
+    .hub-mini-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .hub-mini-role {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    /* ---------- ANA İÇERİK ALANI ---------- */
+    .hub-main {
+        padding: 28px 34px;
+        overflow-y: auto;
+        height: 100vh;
+    }
+
+    .hub-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 26px;
+    }
+
+    .hub-page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .hub-page-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 4px;
+    }
+
+    /* Modüllerin dolduracağı boş bölümler.
+       Her biri sadece kendi data-view'i aktifken görünür. */
+    .hub-view {
+        display: none;
+    }
+
+    .hub-view.is-active {
+        display: block;
+    }
+
+    .hub-placeholder {
+        border: 1px dashed var(--line);
+        border-radius: var(--radius);
+        padding: 40px;
+        text-align: center;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+    }
+
+    /* ---------- MAVİ TİK ROZETİ (evrensel — tüm modüller kullanacak) ---------- */
+    .verified-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .verified-badge svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ==========================================================
+       PROFİL SAYFASI — Modül 2 Bölüm B
+       ========================================================== */
+    .profile-page {
+        max-width: 640px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .profile-hero {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 24px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+    }
+
+    .profile-avatar-wrap {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .profile-avatar {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--accent-soft);
+        border: 2px solid var(--line);
+    }
+
+    .profile-avatar-edit {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--bg-panel-raised);
+        color: var(--text-primary);
+        font-size: 0.7rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-hero-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .profile-name-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .profile-username {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .profile-edit-name-btn {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.8rem;
+        opacity: 0.7;
+    }
+    .profile-edit-name-btn:hover { opacity: 1; }
+
+    .profile-original-name {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-dim);
+    }
+
+    .profile-role-chip {
+        margin-top: 6px;
+        display: inline-flex;
+        align-self: flex-start;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        color: var(--accent);
+    }
+
+    .profile-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px 22px;
+    }
+
+    .profile-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--accent);
+    }
+
+    .profile-inline-edit-btn {
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        cursor: pointer;
+        text-transform: none;
+        letter-spacing: normal;
+        font-family: var(--font-display);
+    }
+    .profile-inline-edit-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+
+    .profile-bio-text {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    .profile-bio-input {
+        width: 100%;
+        min-height: 90px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 10px 12px;
+        font-family: var(--font-display);
+        font-size: 0.88rem;
+        resize: vertical;
+    }
+
+    .profile-bio-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .profile-btn {
+        padding: 8px 16px;
+        border-radius: 7px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+
+    .profile-btn-ghost {
+        background: transparent;
+        border-color: var(--line);
+        color: var(--text-dim);
+    }
+    .profile-btn-ghost:hover { color: var(--text-primary); }
+
+    .profile-btn-primary {
+        background: var(--accent);
+        color: var(--bg-void);
+    }
+    .profile-btn-primary:hover { filter: brightness(1.08); }
+
+    .profile-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 20px;
+    }
+
+    .profile-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .profile-info-label {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .profile-owner-only-tag {
+        font-family: var(--font-mono);
+        font-size: 0.58rem;
+        color: var(--danger);
+        border: 1px solid rgba(255,77,77,0.35);
+        padding: 1px 6px;
+        border-radius: 10px;
+        text-transform: uppercase;
+    }
+
+    .profile-info-value {
+        font-size: 0.88rem;
+        color: var(--text-primary);
+    }
+
+    .profile-info-mono {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        word-break: break-all;
+    }
+
+    .profile-admin-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+    }
+
+    /* Basit toggle switch */
+    .profile-toggle {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+    }
+    .profile-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .profile-toggle-track {
+        position: absolute;
+        inset: 0;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        transition: background 0.15s ease;
+        cursor: pointer;
+    }
+    .profile-toggle-track::before {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 2px;
+        top: 2px;
+        background: var(--text-dim);
+        border-radius: 50%;
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .profile-toggle input:checked + .profile-toggle-track {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+    }
+    .profile-toggle input:checked + .profile-toggle-track::before {
+        transform: translateX(18px);
+        background: var(--accent);
+    }
+
+    /* ==========================================================
+       @MENTION — chip (mesaj içinde gösterim) + autocomplete
+       dropdown (Modül 2 - Bölüm D). Tüm modüller (Forum, Mesajlar,
+       Gruplar, 3D Pazar yorumları) bu sınıfları ortak kullanır.
+       ========================================================== */
+    .mention-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        color: var(--accent);
+        font-weight: 600;
+        background: var(--accent-soft);
+        border-radius: 5px;
+        padding: 0 4px;
+    }
+
+    .mention-chip-unknown {
+        color: var(--text-dim);
+        background: none;
+        font-weight: 400;
+        font-style: italic;
+    }
+
+    .mention-autocomplete-dropdown {
+        display: none;
+        position: absolute;
+        z-index: 500;
+        min-width: 220px;
+        max-width: 320px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+        overflow: hidden;
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .mention-suggestion {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    .mention-suggestion:hover,
+    .mention-suggestion.is-active {
+        background: var(--accent-soft);
+    }
+
+    .mention-suggestion-avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+
+    .mention-suggestion-name {
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+</head>
+<body>
+
+    <!-- ================================================================
+         AUTH GATE: Auth kararı netleşene kadar kullanıcı SADECE bunu
+         görür. Karar "reddedildi" ise artık OTOMATİK yönlendirme
+         yapılmıyor — bunun yerine kullanıcıya bilgi verilip, isterse
+         kendi tıklayarak ana siteye gitmesi sağlanıyor (bkz. #gateDenied).
+         ================================================================ -->
+    <div id="authGate">
+        <div id="gateLoading">
+            <div class="gate-mark">COMMUNITY HUB</div>
+            <div class="gate-ring" role="status" aria-label="Oturum doğrulanıyor"></div>
+            <div class="gate-status">Oturum doğrulanıyor…</div>
+        </div>
+
+        <div id="gateDenied" style="display:none;">
+            <div class="gate-mark">COMMUNITY HUB</div>
+            <div class="gate-denied-icon">🔒</div>
+            <div class="gate-denied-title" id="gateDeniedTitle">Giriş gerekli</div>
+            <div class="gate-denied-text" id="gateDeniedText">
+                Community Hub'a erişmek için Play Legends hesabınızla giriş yapmış olmanız gerekir.
+                Misafir hesaplarla erişim mümkün değildir.
+            </div>
+            <a class="gate-denied-btn" id="gateDeniedBtn" href="https://playlegends.vercel.app/" target="_top">
+                Play Legends'a git ve giriş yap
+            </a>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         HUB SHELL: Auth onaylanınca auth-core.js bu elemente
+         'is-active' class'ını ekleyecek (bkz. hub-bootstrap.js altta).
+         ================================================================ -->
+    <div id="hubShell">
+
+        <aside class="hub-sidebar">
+            <div class="hub-brand">
+                <div class="hub-brand-mark">PL</div>
+                <div class="hub-brand-text">
+                    Community
+                    <small>Play Legends Hub</small>
+                </div>
+            </div>
+
+            <nav class="hub-nav" id="hubNav">
+                <div class="hub-nav-item is-active" data-view="forum">💬 Forum</div>
+                <div class="hub-nav-item" data-view="marketplace">🧊 3D Model Pazarı</div>
+                <div class="hub-nav-item" data-view="studio">🛠️ 3D Studio Editör</div>
+                <div class="hub-nav-item" data-view="messages">✉️ Mesajlar</div>
+                <div class="hub-nav-item" data-view="groups">👥 Grup Sohbetleri</div>
+                <div class="hub-nav-item" data-view="profile">🙍 Profilim</div>
+                <div class="hub-nav-item" data-view="admin" data-restricted="true" data-min-role="helper">🛡️ Yönetim Paneli</div>
+            </nav>
+
+            <div class="hub-nav-spacer"></div>
+
+            <!-- Modül 2 (RBAC/Profil) burayı dolduracak -->
+            <div class="hub-mini-profile" id="hubMiniProfile">
+                <img class="hub-mini-avatar" id="hubMiniAvatar" src="" alt="">
+                <div>
+                    <div class="hub-mini-name" id="hubMiniName">—</div>
+                    <div class="hub-mini-role" id="hubMiniRole">—</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="hub-main">
+            <div class="hub-topbar">
+                <div>
+                    <div class="hub-page-eyebrow" id="hubPageEyebrow">Community</div>
+                    <div class="hub-page-title" id="hubPageTitle">Forum</div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 MODÜL CONTAINER'LARI — her biri ileride kendi modülünde
+                 dolduralacak. Şimdilik yer tutucu (placeholder) içeriyor.
+                 ============================================================ -->
+
+            <section class="hub-view is-active" data-view="forum">
+                <div class="hub-placeholder">FORUM MODÜLÜ — Modül 3'te doldurulacak</div>
+            </section>
+
+            <section class="hub-view" data-view="marketplace">
+                <div class="hub-placeholder">3D MODEL PAZARI — Modül 4'te doldurulacak</div>
+            </section>
+
+            <section class="hub-view" data-view="studio">
+                <div class="hub-placeholder">3D STUDIO EDİTÖR — Modül 4'te doldurulacak</div>
+            </section>
+
+            <section class="hub-view" data-view="messages">
+                <div class="hub-placeholder">ÖZEL MESAJLAR / w KOMUTU — Modül 5'te doldurulacak</div>
+            </section>
+
+            <section class="hub-view" data-view="groups">
+                <div class="hub-placeholder">GRUP SOHBETLERİ — Modül 5'te doldurulacak</div>
+            </section>
+
+            <section class="hub-view" data-view="profile">
+                <div class="profile-page" id="profilePage">
+
+                    <!-- ÜST KART: avatar, isim + mavi tik, rütbe, bio -->
+                    <div class="profile-hero">
+                        <div class="profile-avatar-wrap">
+                            <img class="profile-avatar" id="profileAvatarImg" src="" alt="Avatar">
+                            <button class="profile-avatar-edit" id="profileAvatarEditBtn" title="Avatarı değiştir">✏️</button>
+                        </div>
+
+                        <div class="profile-hero-info">
+                            <div class="profile-name-row">
+                                <span class="profile-username" id="profileUsernameText">—</span>
+                                <span id="profileVerifiedBadgeSlot"></span>
+                                <button class="profile-edit-name-btn" id="profileEditNameBtn" title="Kullanıcı adını düzenle">✏️</button>
+                            </div>
+                            <div class="profile-original-name" id="profileOriginalNameText"></div>
+                            <div class="profile-role-chip" id="profileRoleChip">—</div>
+                        </div>
+                    </div>
+
+                    <!-- BIO -->
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <span>Hakkında</span>
+                            <button class="profile-inline-edit-btn" id="profileBioEditBtn">Düzenle</button>
+                        </div>
+                        <p class="profile-bio-text" id="profileBioText">Henüz bir biyografi eklenmemiş.</p>
+                        <textarea class="profile-bio-input" id="profileBioInput" maxlength="280" style="display:none;" placeholder="Kendinden bahset... (max 280 karakter)"></textarea>
+                        <div class="profile-bio-actions" id="profileBioActions" style="display:none;">
+                            <button class="profile-btn profile-btn-ghost" id="profileBioCancelBtn">Vazgeç</button>
+                            <button class="profile-btn profile-btn-primary" id="profileBioSaveBtn">Kaydet</button>
+                        </div>
+                    </div>
+
+                    <!-- HESAP BİLGİLERİ -->
+                    <div class="profile-card">
+                        <div class="profile-card-header"><span>Hesap Bilgileri</span></div>
+                        <div class="profile-info-grid">
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Katılım Tarihi</span>
+                                <span class="profile-info-value" id="profileCreatedAtText">—</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-info-label">Kullanıcı ID</span>
+                                <span class="profile-info-value profile-info-mono" id="profileUidText">—</span>
+                            </div>
+                            <!-- Aşağıdaki hassas alanlar SADECE owner'a görünür.
+                                 Bkz. Modül 2 - Bölüm C: Hassas Veri İzolasyonu -->
+                            <div class="profile-info-item" id="profileEmailRow" style="display:none;">
+                                <span class="profile-info-label">E-posta <span class="profile-owner-only-tag">yalnızca owner</span></span>
+                                <span class="profile-info-value" id="profileEmailText">—</span>
+                            </div>
+                            <div class="profile-info-item" id="profileIpRow" style="display:none;">
+                                <span class="profile-info-label">Son IP <span class="profile-owner-only-tag">yalnızca owner</span></span>
+                                <span class="profile-info-value profile-info-mono" id="profileIpText">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- YÖNETİM: Mavi Tik ver/kaldır (sadece admin/owner + başkasının profilinde) -->
+                    <div class="profile-card" id="profileAdminActionsCard" style="display:none;">
+                        <div class="profile-card-header"><span>Yönetici İşlemleri</span></div>
+                        <div class="profile-admin-row">
+                            <span>Mavi Tik (Onaylı Hesap)</span>
+                            <label class="profile-toggle">
+                                <input type="checkbox" id="profileVerifiedToggle">
+                                <span class="profile-toggle-track"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="hub-view" data-view="admin">
+                <div class="hub-placeholder">YÖNETİM PANELİ — Modül 7'de doldurulacak</div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================================================================
+         FIREBASE SDK — index.html ile aynı compat sürümü (10.8.0)
+         ================================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <!-- ================================================================
+         MODÜL 1 - BÖLÜM B + HUB BOOTSTRAP (TEK DOSYA, INLINE)
+         Ayrı .js dosyalarına bağımlılığı kaldırmak için (path/cache/
+         bağlanmama riskini sıfırlamak için) hub.html içine gömüldü.
+         Sıra garantilidir: SDK'lar → bu blok → sayfa hazır.
+         ================================================================ -->
+    <script>
+    (function () {
+        "use strict";
+
+        // ==============================================================
+        // 🛡️ MODÜL 2 - BÖLÜM A: RBAC ÇEKİRDEĞİ + MAVİ TİK SİSTEMİ
+        // ==============================================================
+        // index.html'deki mevcut 15+ kozmetik rütbe (Player, Helper, Mod,
+        // Admin, Developer, Admin / Developer, Owner / Developer, Beta
+        // Tester, YouTube, Twitch, OG, Tiktoker, MVP, VIP, Champion,
+        // Veteran) OLDUĞU GİBİ KORUNUR ve `role` alanında saklanmaya
+        // devam eder. Hub, bu string'i ayrı bir "yetki seviyesi"
+        // (permission tier) olan user/helper/admin/owner'a ARKA PLANDA
+        // eşler. Kozmetik rütbe adı profilde görünür ama yetkiyi TEK
+        // BAŞINA değiştirmez.
+        //
+        // isVerified (Mavi Tik) TAMAMEN AYRI VE BAĞIMSIZ bir boolean
+        // alandır. Rütbeyle otomatik bağlantısı yoktur; sadece
+        // admin/owner yetkisi olan biri tarafından elle verilir/kaldırılır.
+        // ==============================================================
+
+        const PERMISSION_TIERS = { user: 0, helper: 1, admin: 2, owner: 3 };
+
+        const ROLE_TO_PERMISSION_TIER = {
+            // --- Yönetim / teknik yetkiler ---
+            "Owner / Developer": "owner",
+            "Admin / Developer": "admin",
+            "Developer": "admin",
+            "Admin": "admin",
+            // --- Moderasyon / yardım yetkileri ---
+            "Mod": "helper",
+            "Helper": "helper",
+            "Beta Tester": "helper",
+            // --- Tamamen kozmetik rütbeler (yetki = user) ---
+            "YouTube": "user",
+            "Twitch": "user",
+            "OG": "user",
+            "Tiktoker": "user",
+            "MVP": "user",
+            "VIP": "user",
+            "Champion": "user",
+            "Veteran": "user",
+            "Player": "user"
+        };
+
+        function resolvePermissionTier(roleString) {
+            if (!roleString) return "user";
+            return ROLE_TO_PERMISSION_TIER[roleString] || "user";
+        }
+
+        function hasMinimumTier(profile, minimumTier) {
+            if (!profile) return false;
+            const userTier = resolvePermissionTier(profile.role);
+            const userTierValue = PERMISSION_TIERS[userTier] ?? 0;
+            const minTierValue = PERMISSION_TIERS[minimumTier] ?? 0;
+            return userTierValue >= minTierValue;
+        }
+
+        function canManageVerification(profile) {
+            return hasMinimumTier(profile, "admin");
+        }
+
+        function isOwnerProfile(profile) {
+            return hasMinimumTier(profile, "owner");
+        }
+
+        function canModerate(profile) {
+            return hasMinimumTier(profile, "helper");
+        }
+
+        // ---------- MAVİ TİK (VERIFIED BADGE) — tek merkezi render ----------
+        function renderVerifiedBadge(isVerified, size) {
+            if (!isVerified) return "";
+            const style = size ? ` style="width:${size};height:${size};"` : "";
+            return `<span class="verified-badge" title="Onaylı Hesap"${style}>
+                <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 0l2.39 1.38 2.75-.37 1.38 2.39 2.39 1.38-.37 2.75L20 10l-1.46 2.47.37 2.75-2.39 1.38-1.38 2.39-2.75-.37L11 20l-2.39-1.38-2.75.37-1.38-2.39-2.39-1.38.37-2.75L1 10l1.46-2.47-.37-2.75L4.48 3.4l1.38-2.39 2.75.37L11 0z" fill="#66FCF1"/>
+                    <path d="M7 10.5l2.4 2.4L15 7" stroke="#0B0C10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>`;
+        }
+
+        function renderUsernameWithBadge(username, isVerified) {
+            const safeName = escapeHtml(username || "Kullanıcı");
+            return `<span class="username-with-badge" style="display:inline-flex;align-items:center;gap:4px;">
+                <span class="username-text">${safeName}</span>
+                ${renderVerifiedBadge(isVerified)}
+            </span>`;
+        }
+
+        // ---------- XSS KORUMASI ----------
+        function escapeHtml(str) {
+            if (typeof str !== "string") return "";
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Diğer tüm modüllerin (Forum, 3D Studio, Admin Panel, Mesajlaşma)
+        // erişebilmesi için global'e açıyoruz.
+        window.CommunityRBAC = {
+            resolvePermissionTier,
+            hasMinimumTier,
+            canManageVerification,
+            canModerate,
+            isOwner: isOwnerProfile,
+            renderVerifiedBadge,
+            renderUsernameWithBadge,
+            escapeHtml
+        };
+
+        // ==============================================================
+        // 🔖 MODÜL 2 - BÖLÜM D: @MENTION MOTORU (kullanıcı cache + arama +
+        //     [mention:UID] <-> görünen isim dönüşümü)
+        // ==============================================================
+        // AMAÇ: Forum, Mesajlar, Grup Sohbetleri, 3D Pazar — hepsi aynı
+        // motoru kullanacak. Böylece @mention davranışı ve mavi tik
+        // gösterimi HER YERDE birebir aynı olur, kod tekrarı olmaz.
+        //
+        // ÇALIŞMA MANTIĞI:
+        //  1) `users/` düğümü tek seferlik değil, canlı (`on('value')`)
+        //     dinlenir ve hafif bir cache'te tutulur: { uid: {username,
+        //     originalUsername, isVerified, avatarUrl, role} }.
+        //     Böylece biri adını değiştirse dropdown ve render anında
+        //     güncel kalır — ekstra sorgu gerekmez.
+        //  2) searchMentionCandidates(query) -> arama harfleriyle
+        //     BAŞLAYAN (case-insensitive) en fazla 5 kullanıcıyı, mavi
+        //     tik bilgisiyle birlikte döner.
+        //  3) Mesaj KAYDEDİLİRKEN metindeki `@KullaniciAdi` düz metin
+        //     olarak DEĞİL, `[mention:UID]` referansı olarak saklanır
+        //     (bkz. encodeMentionsForStorage). Kullanıcı adı değişse
+        //     bile geçmiş mesajlar otomatik doğru ismi gösterir.
+        //  4) Mesaj GÖSTERİLİRKEN `[mention:UID]` -> güncel
+        //     `@KullaniciAdı + mavi tik` HTML'ine çevrilir (bkz.
+        //     renderMentionsForDisplay).
+        // ==============================================================
+
+        const mentionUserCache = {}; // uid -> {uid, username, originalUsername, isVerified, avatarUrl, role}
+        let mentionCacheReady = false;
+        const mentionCacheReadyCallbacks = [];
+
+        function startMentionUserCache() {
+            database.ref('users').on('value', (snap) => {
+                const all = snap.val() || {};
+                // Cache'i temizleyip yeniden dolduruyoruz (silinen/eklenen
+                // kullanıcılar da doğru yansısın diye).
+                Object.keys(mentionUserCache).forEach((k) => delete mentionUserCache[k]);
+
+                Object.keys(all).forEach((uid) => {
+                    const u = all[uid] || {};
+                    mentionUserCache[uid] = {
+                        uid,
+                        username: u.username || u.originalUsername || "Kullanıcı",
+                        originalUsername: u.originalUsername || u.username || "",
+                        isVerified: u.isVerified === true,
+                        avatarUrl: u.avatarUrl || "",
+                        role: u.role || "user"
+                    };
+                });
+
+                if (!mentionCacheReady) {
+                    mentionCacheReady = true;
+                    mentionCacheReadyCallbacks.forEach((cb) => { try { cb(); } catch (e) { console.error(e); } });
+                    mentionCacheReadyCallbacks.length = 0;
+                }
+            });
+        }
+
+        /**
+         * @query ile başlayan (case-insensitive) kullanıcı adlarını,
+         * mavi tik bilgisiyle birlikte en fazla `limit` adet döner.
+         * Autocomplete dropdown'ı doğrudan bu diziyi render eder.
+         */
+        function searchMentionCandidates(query, limit) {
+            const max = limit || 5;
+            const q = (query || "").trim().toLowerCase();
+            if (!q) return [];
+
+            const results = [];
+            for (const uid in mentionUserCache) {
+                const candidate = mentionUserCache[uid];
+                if (candidate.username.toLowerCase().startsWith(q)) {
+                    results.push(candidate);
+                    if (results.length >= max) break;
+                }
+            }
+            return results;
+        }
+
+        function getMentionCandidateByUid(uid) {
+            return mentionUserCache[uid] || null;
+        }
+
+        function getMentionCandidateByUsername(username) {
+            const q = (username || "").toLowerCase();
+            for (const uid in mentionUserCache) {
+                if (mentionUserCache[uid].username.toLowerCase() === q) return mentionUserCache[uid];
+            }
+            return null;
+        }
+
+        /**
+         * Kullanıcının yazdığı ham metindeki `@KullaniciAdi` kalıplarını
+         * `[mention:UID]` referanslarına çevirir. Veritabanına KAYDETMEDEN
+         * ÖNCE bu fonksiyon mutlaka çağrılmalıdır (spec madde 3).
+         * Eşleşmeyen @isimler (gerçek bir kullanıcıya karşılık gelmeyen)
+         * düz metin olarak bırakılır, dönüştürülmez.
+         */
+        function encodeMentionsForStorage(rawText) {
+            if (!rawText) return "";
+            // @ + harf/rakam/alt çizgi + Türkçe karakterler (en az 1 karakter)
+            return rawText.replace(/@([A-Za-z0-9_ÇçĞğİıÖöŞşÜü]+)/g, (match, name) => {
+                const candidate = getMentionCandidateByUsername(name);
+                return candidate ? `[mention:${candidate.uid}]` : match;
+            });
+        }
+
+        /**
+         * Veritabanından okunan metindeki `[mention:UID]` referanslarını,
+         * GÖSTERİM ANINDAKİ güncel kullanıcı adı + (varsa) mavi tik
+         * rozetiyle birlikte HTML'e çevirir. Mesaj/yorum/gönderi
+         * render eden HER modül bu fonksiyonu kullanmalıdır.
+         */
+        function renderMentionsForDisplay(storedText) {
+            if (!storedText) return "";
+            const escaped = escapeHtml(storedText);
+            // escapeHtml sonrası [ ve ] değişmediği için regex hâlâ çalışır.
+            return escaped.replace(/\[mention:([A-Za-z0-9_-]+)\]/g, (match, uid) => {
+                const candidate = getMentionCandidateByUid(uid);
+                if (!candidate) {
+                    return `<span class="mention-chip mention-chip-unknown">@bilinmeyen-kullanıcı</span>`;
+                }
+                return `<span class="mention-chip" data-mention-uid="${uid}">` +
+                    `@${escapeHtml(candidate.username)}` +
+                    renderVerifiedBadge(candidate.isVerified) +
+                    `</span>`;
+            });
+        }
+
+        /**
+         * Cache henüz dolmadıysa (sayfa yeni açıldıysa) çağrılan callback'i
+         * cache hazır olur olmaz bir kez çalıştırır; doluysa hemen çalıştırır.
+         * Modüller kendi @mention UI'larını kurarken bunu kullanabilir.
+         */
+        function onMentionCacheReady(cb) {
+            if (mentionCacheReady) { cb(); return; }
+            mentionCacheReadyCallbacks.push(cb);
+        }
+
+        /**
+         * Genel amaçlı, DOM'a bağımsız @mention autocomplete davranışı.
+         * Herhangi bir <input>/<textarea> + dropdown container'ına bağlanabilir.
+         * Modül 3+ (Forum, Mesajlar, Gruplar) bunu doğrudan çağırıp kendi
+         * markup'ına gömecek — kod tekrarı yok.
+         *
+         * @param {HTMLInputElement|HTMLTextAreaElement} inputEl
+         * @param {HTMLElement} dropdownEl - boş bir <div>, popover olarak kullanılacak
+         */
+        function attachMentionAutocomplete(inputEl, dropdownEl) {
+            if (!inputEl || !dropdownEl) return;
+
+            let activeIndex = -1;
+            let currentMatches = [];
+
+            function closeDropdown() {
+                dropdownEl.style.display = "none";
+                dropdownEl.innerHTML = "";
+                currentMatches = [];
+                activeIndex = -1;
+            }
+
+            function getCaretMentionQuery() {
+                // İmlecin hemen solundaki, boşluğa kadar giden @kelimeyi bulur.
+                const caret = inputEl.selectionStart || 0;
+                const textBeforeCaret = inputEl.value.slice(0, caret);
+                const match = textBeforeCaret.match(/@([A-Za-z0-9_ÇçĞğİıÖöŞşÜü]*)$/);
+                return match ? { query: match[1], startIndex: caret - match[0].length } : null;
+            }
+
+            function renderDropdown(matches, startIndex) {
+                currentMatches = matches;
+                activeIndex = matches.length ? 0 : -1;
+
+                if (!matches.length) { closeDropdown(); return; }
+
+                dropdownEl.innerHTML = matches.map((c, i) => `
+                    <div class="mention-suggestion${i === 0 ? ' is-active' : ''}" data-index="${i}">
+                        <img class="mention-suggestion-avatar" src="${escapeHtml(c.avatarUrl || '')}" alt="">
+                        <span class="mention-suggestion-name">${escapeHtml(c.username)}</span>
+                        ${renderVerifiedBadge(c.isVerified)}
+                    </div>
+                `).join("");
+                dropdownEl.style.display = "block";
+
+                Array.from(dropdownEl.querySelectorAll(".mention-suggestion")).forEach((el) => {
+                    el.addEventListener("mousedown", (e) => {
+                        // mousedown: input'un blur olayından ÖNCE tetiklenir,
+                        // böylece dropdown seçim tıklaması kaybolmaz.
+                        e.preventDefault();
+                        const idx = parseInt(el.getAttribute("data-index"), 10);
+                        applyMention(matches[idx], startIndex);
+                    });
+                });
+            }
+
+            function applyMention(candidate, startIndex) {
+                const caret = inputEl.selectionStart || 0;
+                const before = inputEl.value.slice(0, startIndex);
+                const after = inputEl.value.slice(caret);
+                const insertion = `@${candidate.username} `;
+                inputEl.value = before + insertion + after;
+                const newCaret = (before + insertion).length;
+                inputEl.setSelectionRange(newCaret, newCaret);
+                inputEl.focus();
+                closeDropdown();
+            }
+
+            inputEl.addEventListener("input", () => {
+                const ctx = getCaretMentionQuery();
+                if (!ctx || !ctx.query) { closeDropdown(); return; }
+                renderDropdown(searchMentionCandidates(ctx.query, 5), ctx.startIndex);
+            });
+
+            inputEl.addEventListener("keydown", (e) => {
+                if (!currentMatches.length) return;
+
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    activeIndex = Math.min(activeIndex + 1, currentMatches.length - 1);
+                    updateActiveHighlight();
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    activeIndex = Math.max(activeIndex - 1, 0);
+                    updateActiveHighlight();
+                } else if (e.key === "Enter" || e.key === "Tab") {
+                    if (activeIndex >= 0) {
+                        e.preventDefault();
+                        const ctx = getCaretMentionQuery();
+                        applyMention(currentMatches[activeIndex], ctx ? ctx.startIndex : 0);
+                    }
+                } else if (e.key === "Escape") {
+                    closeDropdown();
+                }
+            });
+
+            function updateActiveHighlight() {
+                Array.from(dropdownEl.querySelectorAll(".mention-suggestion")).forEach((el, i) => {
+                    el.classList.toggle("is-active", i === activeIndex);
+                });
+            }
+
+            inputEl.addEventListener("blur", () => {
+                // mousedown zaten seçimi işledi; kısa gecikmeyle kapat.
+                setTimeout(closeDropdown, 120);
+            });
+        }
+
+        // Diğer tüm modüllerin erişebilmesi için genişletilmiş public API.
+        window.CommunityMentions = {
+            start: startMentionUserCache,
+            onReady: onMentionCacheReady,
+            search: searchMentionCandidates,
+            getByUid: getMentionCandidateByUid,
+            getByUsername: getMentionCandidateByUsername,
+            encodeForStorage: encodeMentionsForStorage,
+            renderForDisplay: renderMentionsForDisplay,
+            attachAutocomplete: attachMentionAutocomplete
+        };
+
+        // ==============================================================
+        // 🔥 MODÜL 1 - BÖLÜM B: AUTH ÇEKİRDEĞİ
+        // ==============================================================
+
+        // ------------------------------------------------------------
+        // 1) FIREBASE CONFIG — index.html (playlegends.vercel.app)
+        //    ile AYNI PROJE.
+        // ------------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyAG6FsNjMgIXIGQmmmHC6GWjWuzNVDq5KM",
+            authDomain: "play-legends.firebaseapp.com",
+            projectId: "play-legends",
+            storageBucket: "play-legends.firebasestorage.app",
+            messagingSenderId: "64273518072",
+            appId: "1:64273518072:web:5c811f3c0862596ae19a0d",
+            measurementId: "G-96SNV1RDJG",
+            databaseURL: "https://play-legends-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        // Ana oyun sitesi (index.html) — gerçek adres.
+        const MAIN_SITE_URL = "https://playlegends.vercel.app/";
+
+        // Token exchange Cloud Function adresi (Modül 1 - Bölüm C deploy
+        // edildikten sonra buraya gerçek URL yazılacak).
+        const EXCHANGE_ENDPOINT = "https://YOUR-CLOUD-FUNCTION-URL/exchangeSsoToken";
+
+        // ------------------------------------------------------------
+        // 2) GLOBAL DURUM
+        // ------------------------------------------------------------
+        window.CommunityAuth = {
+            ready: false,
+            user: null,
+            profile: null,
+            isAuthorized: false,
+        };
+
+        let auth, database;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            database = firebase.database();
+        } catch (e) {
+            console.error("[CommunityHub] Firebase başlatılamadı:", e);
+            showDeniedScreen("init_error");
+            return;
+        }
+
+        // Mention cache'i (Modül 2 - Bölüm D) auth durumundan bağımsız
+        // hemen başlatılıyor — Realtime Database Security Rules zaten
+        // sadece giriş yapmış kullanıcıların 'users' düğümünü okumasına
+        // izin vermelidir, bu yüzden guest/oturumsuz durumda bu .on()
+        // çağrısı sonuçsuz kalır (rules seviyesinde reddedilir).
+        startMentionUserCache();
+
+        // ------------------------------------------------------------
+        // 3) REDDEDİLME EKRANI — ARTIK OTOMATİK YÖNLENDİRME YOK.
+        //    Kullanıcıya "hesabınız/oturumunuz yok, şu siteden giriş
+        //    yapın" bilgisi gösterilir; yönlendirme kullanıcının kendi
+        //    tıklamasıyla gerçekleşir (link zaten MAIN_SITE_URL'e sabit).
+        // ------------------------------------------------------------
+        const DENY_MESSAGES = {
+            no_session: {
+                title: "Giriş gerekli",
+                text: "Community Hub'a erişmek için Play Legends hesabınızla giriş yapmış olmanız gerekir. Hesabınız yoksa aşağıdaki bağlantıdan kayıt olabilir, varsa giriş yapabilirsiniz."
+            },
+            guest_blocked: {
+                title: "Misafir erişimi kapalı",
+                text: "Community Hub, misafir (guest) hesaplarla kullanılamaz. Lütfen Play Legends'ta gerçek bir hesapla giriş yapın."
+            },
+            user_banned: {
+                title: "Erişim engellendi",
+                text: "Hesabınız için erişim kısıtlaması bulunuyor. Detaylar için Play Legends sitesini kontrol edin."
+            },
+            token_invalid: {
+                title: "Oturum doğrulanamadı",
+                text: "Bağlantınızın süresi dolmuş veya geçersiz olabilir. Lütfen Play Legends'a dönüp Community Hub'ı yeniden açın."
+            },
+            init_error: {
+                title: "Bağlantı hatası",
+                text: "Community Hub şu anda başlatılamadı. Lütfen daha sonra tekrar deneyin veya Play Legends üzerinden yeniden giriş yapın."
+            }
+        };
+
+        function showDeniedScreen(reasonKey) {
+            console.warn("[CommunityHub] Erişim reddedildi:", reasonKey);
+
+            window.CommunityAuth.ready = true;
+            window.CommunityAuth.isAuthorized = false;
+
+            const info = DENY_MESSAGES[reasonKey] || DENY_MESSAGES.no_session;
+
+            const loadingEl = document.getElementById("gateLoading");
+            const deniedEl = document.getElementById("gateDenied");
+            const titleEl = document.getElementById("gateDeniedTitle");
+            const textEl = document.getElementById("gateDeniedText");
+            const btnEl = document.getElementById("gateDeniedBtn");
+
+            if (loadingEl) loadingEl.style.display = "none";
+            if (deniedEl) deniedEl.style.display = "flex";
+            if (titleEl) titleEl.textContent = info.title;
+            if (textEl) textEl.textContent = info.text;
+            if (btnEl) btnEl.href = MAIN_SITE_URL;
+        }
+
+        // ------------------------------------------------------------
+        // 4) URL FRAGMENT'TAN TOKEN OKUMA
+        // ------------------------------------------------------------
+        function extractTokenFromUrl() {
+            if (!window.location.hash || window.location.hash.length < 2) return null;
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const token = params.get("authToken");
+            if (token) {
+                history.replaceState(null, "", window.location.pathname + window.location.search);
+            }
+            return token;
+        }
+
+        // ------------------------------------------------------------
+        // 5) TOKEN İLE GİRİŞ (SSO Handoff)
+        // ------------------------------------------------------------
+        async function signInWithHandoffToken(idToken) {
+            try {
+                const resp = await fetch(EXCHANGE_ENDPOINT, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ idToken })
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`Token exchange failed: HTTP ${resp.status}`);
+                }
+
+                const data = await resp.json();
+                if (!data.customToken) {
+                    throw new Error("Sunucudan customToken alınamadı.");
+                }
+
+                const cred = await auth.signInWithCustomToken(data.customToken);
+                return cred.user;
+
+            } catch (err) {
+                console.error("[CommunityHub] SSO token exchange hatası:", err);
+                return null;
+            }
+        }
+
+        // ------------------------------------------------------------
+        // 6) PROFİL ÇEKME
+        // ------------------------------------------------------------
+        async function loadUserProfile(uid) {
+            const snap = await database.ref('users/' + uid).once('value');
+            return snap.exists() ? snap.val() : null;
+        }
+
+        // ------------------------------------------------------------
+        // 7) GUEST TESPİTİ
+        // ------------------------------------------------------------
+        function isGuestProfile(profile, firebaseUser) {
+            if (firebaseUser && firebaseUser.isAnonymous) return true;
+            if (!profile) return true;
+            if (profile.isGuest === true) return true;
+            return false;
+        }
+
+        // ------------------------------------------------------------
+        // 8) NİHAİ YETKİLENDİRME KARARI
+        // ------------------------------------------------------------
+        async function finalizeAuthDecision(firebaseUser) {
+            if (!firebaseUser) {
+                showDeniedScreen("no_session");
+                return;
+            }
+
+            const profile = await loadUserProfile(firebaseUser.uid);
+
+            if (isGuestProfile(profile, firebaseUser)) {
+                showDeniedScreen("guest_blocked");
+                return;
+            }
+
+            if (profile.banned === true) {
+                showDeniedScreen("user_banned");
+                return;
+            }
+
+            // ✅ Yetkili gerçek kullanıcı.
+            window.CommunityAuth.user = firebaseUser;
+            window.CommunityAuth.profile = profile;
+            window.CommunityAuth.ready = true;
+            window.CommunityAuth.isAuthorized = true;
+
+            document.dispatchEvent(new CustomEvent("communitystudio:auth-ready", {
+                detail: { user: firebaseUser, profile: profile }
+            }));
+
+            console.log("[CommunityHub] Oturum doğrulandı:", profile.username || firebaseUser.uid);
+
+            startSecurityObserver(firebaseUser.uid);
+        }
+
+        // ------------------------------------------------------------
+        // 9) SECURITY OBSERVER (canlı izleme)
+        // ------------------------------------------------------------
+        function startSecurityObserver(uid) {
+            database.ref('users/' + uid).on('value', (snap) => {
+                const profile = snap.val();
+
+                if (!profile) {
+                    showDeniedScreen("no_session");
+                    return;
+                }
+                if (profile.banned === true) {
+                    showDeniedScreen("user_banned");
+                    return;
+                }
+                if (isGuestProfile(profile, auth.currentUser)) {
+                    showDeniedScreen("guest_blocked");
+                    return;
+                }
+
+                window.CommunityAuth.profile = profile;
+                document.dispatchEvent(new CustomEvent("communitystudio:profile-updated", {
+                    detail: { profile }
+                }));
+            });
+        }
+
+        // ------------------------------------------------------------
+        // 10) ANA AKIŞ (BOOTSTRAP)
+        // ------------------------------------------------------------
+        auth.onAuthStateChanged(async (firebaseUser) => {
+            if (firebaseUser) {
+                await finalizeAuthDecision(firebaseUser);
+                return;
+            }
+
+            const handoffToken = extractTokenFromUrl();
+
+            if (!handoffToken) {
+                finalizeAuthDecision(null);
+                return;
+            }
+
+            const signedInUser = await signInWithHandoffToken(handoffToken);
+
+            if (!signedInUser) {
+                showDeniedScreen("token_invalid");
+                return;
+            }
+            // signInWithCustomToken başarılı → onAuthStateChanged tekrar
+            // tetiklenip finalize edecek.
+        });
+
+        // ==============================================================
+        // HUB BOOTSTRAP — auth gate ↔ hub shell geçişi + view router
+        // ==============================================================
+        function showHubShell(user, profile) {
+            const gate = document.getElementById("authGate");
+            const shell = document.getElementById("hubShell");
+            if (gate) gate.style.display = "none";
+            if (shell) shell.classList.add("is-active");
+            renderMiniProfile(profile);
+        }
+
+        function renderMiniProfile(profile) {
+            const nameEl = document.getElementById("hubMiniName");
+            const roleEl = document.getElementById("hubMiniRole");
+            const avatarEl = document.getElementById("hubMiniAvatar");
+            if (!profile) return;
+
+            if (nameEl) {
+                nameEl.innerHTML = window.CommunityRBAC.renderUsernameWithBadge(
+                    profile.username,
+                    profile.isVerified === true
+                );
+            }
+            if (roleEl) roleEl.textContent = (profile.role || "Player").toUpperCase();
+            if (avatarEl) avatarEl.src = profile.avatarUrl || "";
+
+            // Admin/Yönetim menü öğesini, RBAC'a göre göster/gizle.
+            const adminNavItem = document.querySelector('.hub-nav-item[data-view="admin"]');
+            if (adminNavItem) {
+                const minRole = adminNavItem.getAttribute("data-min-role") || "helper";
+                adminNavItem.style.display = window.CommunityRBAC.hasMinimumTier(profile, minRole)
+                    ? "flex"
+                    : "none";
+            }
+
+            // Profil sekmesi açıksa canlı olarak da güncelle.
+            if (typeof window.renderProfileView === "function") {
+                window.renderProfileView(profile);
+            }
+        }
+
+        // ==============================================================
+        // 🙍 MODÜL 2 - BÖLÜM B: PROFİL SAYFASI MANTIĞI
+        // ==============================================================
+        // ŞU AN SADECE "KENDİ PROFİLİM" GÖRÜNÜMÜ VAR. Başka bir
+        // kullanıcının profilini görüntüleme (örn. forumdan bir isme
+        // tıklayınca) — bu fonksiyonun `viewedProfile`/`viewedUid`
+        // parametreleriyle genişletilmesiyle Modül 3+'ta eklenecek.
+        // Şimdilik `viewedUid` her zaman kendi uid'imiz.
+
+        const RBAC = window.CommunityRBAC;
+
+        /**
+         * Profil sekmesini, verilen profil objesiyle doldurur.
+         * @param {object} profile - görüntülenen kullanıcının profili
+         * @param {string} viewedUid - görüntülenen kullanıcının uid'i
+         * @param {boolean} isOwnProfile - bu, giriş yapmış kullanıcının kendi profili mi
+         */
+        window.renderProfileView = function (profile, viewedUid, isOwnProfile) {
+            if (!profile) return;
+
+            // Varsayılan: parametre verilmediyse kendi profilimiz.
+            const uid = viewedUid || (window.CommunityAuth.user && window.CommunityAuth.user.uid);
+            const isSelf = isOwnProfile !== undefined ? isOwnProfile : true;
+            const viewerProfile = window.CommunityAuth.profile;
+
+            // --- Üst kart ---
+            document.getElementById("profileAvatarImg").src = profile.avatarUrl || "";
+            document.getElementById("profileUsernameText").textContent = profile.username || "Kullanıcı";
+            document.getElementById("profileVerifiedBadgeSlot").innerHTML =
+                RBAC.renderVerifiedBadge(profile.isVerified === true, "18px");
+
+            const originalNameEl = document.getElementById("profileOriginalNameText");
+            if (profile.originalUsername && profile.originalUsername !== profile.username) {
+                originalNameEl.textContent = `İlk katılım ismi: ${profile.originalUsername}`;
+                originalNameEl.style.display = "block";
+            } else {
+                originalNameEl.style.display = "none";
+            }
+
+            document.getElementById("profileRoleChip").textContent = profile.role || "Player";
+
+            // --- Bio ---
+            document.getElementById("profileBioText").textContent =
+                profile.bio && profile.bio.trim() ? profile.bio : "Henüz bir biyografi eklenmemiş.";
+
+            // --- Hesap bilgileri ---
+            document.getElementById("profileUidText").textContent = uid || "—";
+            document.getElementById("profileCreatedAtText").textContent =
+                formatTimestamp(profile.createdAt);
+
+            // --- HASSAS VERİ İZOLASYONU (Modül 2 - Bölüm C) ---
+            // email/IP SADECE viewerProfile owner ise gösterilir — kimin
+            // profiline bakıldığından bağımsız olarak, izleyenin yetkisi esas alınır.
+            const viewerIsOwner = RBAC.isOwner(viewerProfile);
+            const emailRow = document.getElementById("profileEmailRow");
+            const ipRow = document.getElementById("profileIpRow");
+
+            if (viewerIsOwner) {
+                emailRow.style.display = "flex";
+                ipRow.style.display = "flex";
+                document.getElementById("profileEmailText").textContent = profile.email || "—";
+                document.getElementById("profileIpText").textContent = profile.lastKnownIp || "—";
+            } else {
+                emailRow.style.display = "none";
+                ipRow.style.display = "none";
+            }
+
+            // --- Düzenleme butonları: sadece kendi profilinde görünür ---
+            document.getElementById("profileAvatarEditBtn").style.display = isSelf ? "flex" : "none";
+            document.getElementById("profileEditNameBtn").style.display = isSelf ? "inline-block" : "none";
+            document.getElementById("profileBioEditBtn").style.display = isSelf ? "inline-block" : "none";
+
+            // --- Yönetici işlemleri kartı: sadece başkasının profilinde,
+            //     izleyen admin/owner ise görünür (kendi mavi tikini kendine
+            //     veremez, spec'e sadık kalıyoruz) ---
+            const adminCard = document.getElementById("profileAdminActionsCard");
+            const canManage = !isSelf && RBAC.canManageVerification(viewerProfile);
+            adminCard.style.display = canManage ? "block" : "none";
+
+            if (canManage) {
+                const toggle = document.getElementById("profileVerifiedToggle");
+                toggle.checked = profile.isVerified === true;
+                toggle.onchange = () => handleVerifiedToggle(uid, toggle.checked);
+            }
+        };
+
+        function formatTimestamp(ts) {
+            if (!ts) return "—";
+            try {
+                const d = new Date(ts);
+                return d.toLocaleDateString("tr-TR", { year: "numeric", month: "long", day: "numeric" });
+            } catch (e) {
+                return "—";
+            }
+        }
+
+        /**
+         * Mavi tik toggle değiştiğinde çağrılır. Sadece admin/owner
+         * çağırabilir — ama gerçek güvenlik burada değil, Firebase
+         * Realtime Database Security Rules'da sağlanmalıdır:
+         *   ".write": "root.child('users').child(auth.uid).child('role')
+         *              .val() içinde admin/owner karşılığı olan bir kontrol"
+         * Client tarafı kontrolü sadece UX içindir, tek güvenlik katmanı DEĞİLDİR.
+         */
+        async function handleVerifiedToggle(targetUid, newValue) {
+            if (!RBAC.canManageVerification(window.CommunityAuth.profile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            try {
+                await database.ref('users/' + targetUid).update({ isVerified: newValue });
+
+                // audit_logs kaydı — Modül 7'de detaylandırılacak, şimdiden
+                // temel bir kayıt bırakıyoruz.
+                await database.ref('audit_logs').push({
+                    action: newValue ? "grant_verified" : "revoke_verified",
+                    targetUid: targetUid,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: window.CommunityAuth.profile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Profile] Mavi tik güncellenemedi:", err);
+                alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+            }
+        }
+
+        // --- Bio düzenleme akışı ---
+        function initProfileBioEditor() {
+            const editBtn = document.getElementById("profileBioEditBtn");
+            const textEl = document.getElementById("profileBioText");
+            const inputEl = document.getElementById("profileBioInput");
+            const actionsEl = document.getElementById("profileBioActions");
+            const cancelBtn = document.getElementById("profileBioCancelBtn");
+            const saveBtn = document.getElementById("profileBioSaveBtn");
+
+            if (!editBtn) return;
+
+            editBtn.addEventListener("click", () => {
+                const currentProfile = window.CommunityAuth.profile;
+                inputEl.value = (currentProfile && currentProfile.bio) || "";
+                textEl.style.display = "none";
+                inputEl.style.display = "block";
+                actionsEl.style.display = "flex";
+                inputEl.focus();
+            });
+
+            cancelBtn.addEventListener("click", () => {
+                textEl.style.display = "block";
+                inputEl.style.display = "none";
+                actionsEl.style.display = "none";
+            });
+
+            saveBtn.addEventListener("click", async () => {
+                const newBio = RBAC.escapeHtml(inputEl.value.trim()).slice(0, 280);
+                try {
+                    await database.ref('users/' + window.CommunityAuth.user.uid).update({ bio: newBio });
+                    textEl.style.display = "block";
+                    inputEl.style.display = "none";
+                    actionsEl.style.display = "none";
+                    // Not: security observer profile-updated event'i fırlatacak,
+                    // renderProfileView otomatik güncellenecek.
+                } catch (err) {
+                    console.error("[Profile] Bio kaydedilemedi:", err);
+                    alert("Bio kaydedilemedi. Lütfen tekrar deneyin.");
+                }
+            });
+        }
+
+        // --- Kullanıcı adı düzenleme akışı ---
+        // NOT: originalUsername ASLA değişmez — sadece username güncellenir.
+        function initProfileNameEditor() {
+            const editBtn = document.getElementById("profileEditNameBtn");
+            if (!editBtn) return;
+
+            editBtn.addEventListener("click", async () => {
+                const currentProfile = window.CommunityAuth.profile;
+                const proposed = prompt("Yeni kullanıcı adınızı girin:", currentProfile.username || "");
+                if (!proposed || !proposed.trim()) return;
+
+                const cleanName = RBAC.escapeHtml(proposed.trim()).slice(0, 24);
+
+                try {
+                    // Basit benzersizlik kontrolü — gerçek projede bu kontrol
+                    // Cloud Function'da (race condition'a karşı) tekrarlanmalı.
+                    const snap = await database.ref('users')
+                        .orderByChild('username')
+                        .equalTo(cleanName)
+                        .once('value');
+
+                    let taken = false;
+                    snap.forEach((child) => {
+                        if (child.key !== window.CommunityAuth.user.uid) taken = true;
+                    });
+
+                    if (taken) {
+                        alert("Bu kullanıcı adı zaten kullanılıyor.");
+                        return;
+                    }
+
+                    await database.ref('users/' + window.CommunityAuth.user.uid).update({
+                        username: cleanName
+                        // originalUsername kasıtlı olarak burada YOK — hiç dokunulmuyor.
+                    });
+                } catch (err) {
+                    console.error("[Profile] Kullanıcı adı güncellenemedi:", err);
+                    alert("Kullanıcı adı güncellenemedi.");
+                }
+            });
+        }
+
+        function initRouter() {
+            document.querySelectorAll(".hub-nav-item").forEach((item) => {
+                item.addEventListener("click", () => {
+                    const view = item.getAttribute("data-view");
+                    if (view) switchView(view);
+                });
+            });
+        }
+
+        function switchView(view) {
+            document.querySelectorAll(".hub-nav-item").forEach((el) => {
+                el.classList.toggle("is-active", el.getAttribute("data-view") === view);
+            });
+            document.querySelectorAll(".hub-view").forEach((el) => {
+                el.classList.toggle("is-active", el.getAttribute("data-view") === view);
+            });
+            const titles = {
+                forum: ["Community", "Forum"],
+                marketplace: ["Community", "3D Model Pazarı"],
+                studio: ["Community", "3D Studio Editör"],
+                messages: ["Community", "Mesajlar"],
+                groups: ["Community", "Grup Sohbetleri"],
+                profile: ["Community", "Profilim"],
+                admin: ["Yönetim", "Panel"]
+            };
+            const [eyebrow, title] = titles[view] || ["Community", view];
+            const eyebrowEl = document.getElementById("hubPageEyebrow");
+            const titleEl = document.getElementById("hubPageTitle");
+            if (eyebrowEl) eyebrowEl.textContent = eyebrow;
+            if (titleEl) titleEl.textContent = title;
+        }
+
+        document.addEventListener("communitystudio:auth-ready", (e) => {
+            showHubShell(e.detail.user, e.detail.profile);
+        });
+
+        document.addEventListener("communitystudio:profile-updated", (e) => {
+            renderMiniProfile(e.detail.profile);
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initRouter();
+            initProfileBioEditor();
+            initProfileNameEditor();
+            if (window.CommunityAuth && window.CommunityAuth.ready && window.CommunityAuth.isAuthorized) {
+                showHubShell(window.CommunityAuth.user, window.CommunityAuth.profile);
+            }
+        });
+
+    })();
+    </script>
+
+</body>
+</html>
