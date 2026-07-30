@@ -250,6 +250,812 @@
         text-decoration: underline;
     }
 
+    /* ==========================================================
+       MOBİL SIDEBAR TOGGLE (hamburger) — sadece dar ekranlarda
+       görünür. Masaüstünde sidebar zaten hep açık, buton gizli.
+       ========================================================== */
+    .hub-sidebar-toggle {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel);
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-right: 14px;
+    }
+
+    .hub-sidebar-toggle span {
+        display: block;
+        width: 18px;
+        height: 2px;
+        background: var(--accent);
+        border-radius: 2px;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .hub-sidebar-toggle[aria-expanded="true"] span:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+    }
+    .hub-sidebar-toggle[aria-expanded="true"] span:nth-child(2) {
+        opacity: 0;
+    }
+    .hub-sidebar-toggle[aria-expanded="true"] span:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+    }
+
+    .hub-sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 90;
+    }
+
+    .hub-sidebar-backdrop.is-visible {
+        display: block;
+    }
+
+    /* ==========================================================
+       FORUM MODÜLÜ — Modül 3
+       ========================================================== */
+    .forum-page {
+        max-width: 720px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* ---------- Sabitlenmiş mesajlar ---------- */
+    .forum-pinned-wrap {
+        background: rgba(245, 197, 66, 0.06);
+        border: 1px solid rgba(245, 197, 66, 0.35);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .forum-pinned-header {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--gold);
+    }
+
+    .forum-pinned-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 12px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+
+    /* ---------- Mesaj listesi ---------- */
+    .forum-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .forum-message {
+        display: flex;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        position: relative;
+    }
+
+    .forum-message.is-whisper {
+        border-color: rgba(245, 197, 66, 0.4);
+        background: rgba(245, 197, 66, 0.045);
+    }
+
+    .forum-message-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+
+    .forum-message-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .forum-message-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .forum-message-username {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+    }
+
+    .forum-message-username:hover {
+        color: var(--accent);
+    }
+
+    .forum-message-time {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: var(--text-dim);
+    }
+
+    .forum-message-whisper-tag {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gold);
+        border: 1px solid rgba(245, 197, 66, 0.4);
+        border-radius: 10px;
+        padding: 1px 8px;
+    }
+
+    .forum-message-pinned-tag {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gold);
+    }
+
+    .forum-message-text {
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        line-height: 1.55;
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+
+    .forum-message-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 4px;
+    }
+
+    .forum-message-action-btn {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 0.76rem;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .forum-message-action-btn:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+
+    /* ---------- Durum satırı (mute uyarısı vb.) ---------- */
+    .forum-status-line {
+        font-size: 0.82rem;
+        color: var(--danger);
+        background: rgba(255, 77, 77, 0.08);
+        border: 1px solid rgba(255, 77, 77, 0.3);
+        border-radius: 8px;
+        padding: 9px 12px;
+    }
+
+    /* ---------- Composer (mesaj yazma) ---------- */
+    .forum-composer {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-void);
+        padding-top: 6px;
+    }
+
+    .forum-composer-input-wrap {
+        position: relative;
+        flex: 1;
+    }
+
+    .forum-composer-input {
+        width: 100%;
+        resize: vertical;
+        min-height: 44px;
+        max-height: 160px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 11px 13px;
+        font-family: var(--font-display);
+        font-size: 0.9rem;
+    }
+
+    .forum-composer-input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .forum-send-btn {
+        padding: 11px 20px;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: var(--bg-void);
+        font-weight: 700;
+        font-size: 0.86rem;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .forum-send-btn:hover { filter: brightness(1.08); }
+
+    .forum-send-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .forum-composer-hint {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        margin-top: -8px;
+    }
+
+    .forum-composer-hint code {
+        font-family: var(--font-mono);
+        background: var(--bg-panel-raised);
+        padding: 1px 5px;
+        border-radius: 4px;
+    }
+
+    /* ==========================================================
+       MODÜL 3: KATEGORİ SEKMELERİ
+       ========================================================== */
+    .forum-category-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+
+    .forum-category-tab {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel);
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        user-select: none;
+        transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+
+    .forum-category-tab:hover {
+        color: var(--text-primary);
+        border-color: var(--accent);
+    }
+
+    .forum-category-tab.is-active {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .forum-category-tab-icon {
+        font-size: 0.9rem;
+        line-height: 1;
+    }
+
+    /* ---------- Toolbar (kategori açıklaması + yeni konu butonu) ---------- */
+    .forum-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .forum-toolbar-info {
+        font-size: 0.82rem;
+        color: var(--text-dim);
+        line-height: 1.5;
+    }
+
+    .forum-btn {
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid transparent;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .forum-btn-primary {
+        background: var(--accent);
+        color: var(--bg-void);
+    }
+    .forum-btn-primary:hover { filter: brightness(1.08); }
+
+    .forum-btn-ghost {
+        background: transparent;
+        border-color: var(--line);
+        color: var(--text-dim);
+    }
+    .forum-btn-ghost:hover { color: var(--text-primary); border-color: var(--accent); }
+
+    /* ---------- Konu Listesi ---------- */
+    .forum-thread-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .forum-thread-card {
+        display: flex;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+    }
+
+    .forum-thread-card:hover {
+        border-color: var(--accent);
+    }
+
+    .forum-thread-card.is-pinned {
+        border-color: rgba(245, 197, 66, 0.4);
+        background: rgba(245, 197, 66, 0.045);
+    }
+
+    .forum-thread-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+
+    .forum-thread-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .forum-thread-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .forum-thread-title {
+        font-size: 0.96rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .forum-thread-tag {
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: 10px;
+        padding: 1px 8px;
+        flex-shrink: 0;
+    }
+
+    .forum-thread-tag-pinned {
+        color: var(--gold);
+        border: 1px solid rgba(245, 197, 66, 0.4);
+    }
+
+    .forum-thread-tag-locked {
+        color: var(--danger);
+        border: 1px solid rgba(255, 77, 77, 0.4);
+    }
+
+    .forum-thread-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        color: var(--text-dim);
+        flex-wrap: wrap;
+    }
+
+    .forum-thread-meta-sep {
+        opacity: 0.4;
+    }
+
+    .forum-thread-preview {
+        font-size: 0.82rem;
+        color: var(--text-dim);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.45;
+    }
+
+    .forum-thread-stats {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        min-width: 52px;
+        text-align: center;
+    }
+
+    .forum-thread-stats-count {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--accent);
+        font-family: var(--font-mono);
+    }
+
+    .forum-thread-stats-label {
+        font-size: 0.62rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* ---------- Konu Detayı ---------- */
+    .forum-back-btn {
+        align-self: flex-start;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 0.84rem;
+        cursor: pointer;
+        padding: 4px 0;
+        margin-bottom: 4px;
+    }
+    .forum-back-btn:hover { color: var(--accent); }
+
+    .forum-thread-detail-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .forum-thread-detail-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .forum-thread-detail-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        word-break: break-word;
+    }
+
+    .forum-thread-detail-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .forum-thread-detail-body {
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .forum-thread-detail-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 4px;
+    }
+
+    /* ---------- Zengin içerik: resim / GIF / video ---------- */
+    .forum-embed-image {
+        max-width: 100%;
+        max-height: 360px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        margin-top: 6px;
+        display: block;
+        object-fit: contain;
+    }
+
+    .forum-embed-video-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        padding: 8px 12px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--accent);
+        font-size: 0.82rem;
+        text-decoration: none;
+        width: fit-content;
+    }
+    .forum-embed-video-link:hover { border-color: var(--accent); }
+
+    /* ---------- Yorumlar / Nested Replies (Reply Tree) ---------- */
+    .forum-replies {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .forum-reply {
+        display: flex;
+        gap: 10px;
+        padding: 12px 14px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+    }
+
+    .forum-reply-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+
+    .forum-reply-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .forum-reply-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .forum-reply-username {
+        font-weight: 700;
+        font-size: 0.86rem;
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+    }
+    .forum-reply-username:hover { color: var(--accent); }
+
+    .forum-reply-time {
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        color: var(--text-dim);
+    }
+
+    .forum-reply-text {
+        font-size: 0.87rem;
+        color: var(--text-primary);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .forum-reply-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 2px;
+    }
+
+    /* Nested (yanıta yanıt) yorumlar iç içe girintili gösterilir. */
+    .forum-reply-children {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+        margin-left: 20px;
+        padding-left: 14px;
+        border-left: 2px solid var(--line);
+    }
+
+    .forum-reply-inline-composer {
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .forum-reply-inline-composer.is-open { display: flex; }
+
+    .forum-reply-inline-input {
+        width: 100%;
+        min-height: 60px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 8px 10px;
+        font-family: var(--font-display);
+        font-size: 0.85rem;
+        resize: vertical;
+    }
+
+    .forum-reply-inline-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    /* ---------- Modal: Yeni Konu Aç ---------- */
+    .forum-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .forum-modal {
+        width: 100%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow-y: auto;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .forum-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+    }
+
+    .forum-modal-close {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1rem;
+        cursor: pointer;
+        line-height: 1;
+    }
+    .forum-modal-close:hover { color: var(--text-primary); }
+
+    .forum-modal-body {
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        position: relative;
+    }
+
+    .forum-field-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        margin-top: 10px;
+    }
+    .forum-field-label:first-child { margin-top: 0; }
+
+    .forum-select,
+    .forum-text-input,
+    .forum-textarea-input {
+        width: 100%;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 10px 12px;
+        font-family: var(--font-display);
+        font-size: 0.88rem;
+    }
+
+    .forum-select:focus,
+    .forum-text-input:focus,
+    .forum-textarea-input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .forum-textarea-input {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .forum-modal-error {
+        font-size: 0.8rem;
+        color: var(--danger);
+        background: rgba(255, 77, 77, 0.08);
+        border: 1px solid rgba(255, 77, 77, 0.3);
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-top: 8px;
+    }
+
+    .forum-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 14px 20px;
+        border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 560px) {
+        .forum-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .forum-toolbar .forum-btn {
+            width: 100%;
+        }
+    }
+
     /* ---------- HUB SHELL (auth doğrulanınca görünür olur) ---------- */
     #hubShell {
         display: none; /* Modül 1-B, auth-ready event'inde bunu açacak */
@@ -272,6 +1078,45 @@
         position: sticky;
         top: 0;
         height: 100vh;
+    }
+
+    /* ---------- MOBİL: sidebar varsayılan KAPALI, drawer/overlay ----------
+       Bu blok bilinçli olarak .hub-sidebar kuralının HEMEN SONRASINA
+       konuldu. Aynı specificity'ye sahip iki kural çakıştığında CSS'te
+       kaynak sırasında SONRAKİ kazanır — bu blok daha önce dosyanın
+       başlarında (satır ~304) dururken masaüstü kuralı onu eziyordu ve
+       sidebar mobilde hep açık/sabit kalıyordu. Kalıcı çözüm için bu
+       kural her zaman .hub-sidebar temel kuralından SONRA gelmeli. */
+    @media (max-width: 860px) {
+        #hubShell.is-active {
+            display: block; /* grid yerine tek sütun: sidebar artık drawer */
+        }
+
+        .hub-sidebar-toggle {
+            display: flex;
+        }
+
+        .hub-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100dvh;
+            width: 260px;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.22s ease;
+            box-shadow: 8px 0 30px rgba(0,0,0,0.4);
+        }
+
+        .hub-sidebar.is-open {
+            transform: translateX(0);
+        }
+
+        .hub-main {
+            height: auto;
+            min-height: 100dvh;
+            padding: 20px;
+        }
     }
 
     .hub-brand {
@@ -331,6 +1176,12 @@
         user-select: none;
     }
 
+    .hub-nav-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
     .hub-nav-item:hover {
         background: var(--bg-panel-raised);
         color: var(--text-primary);
@@ -357,6 +1208,15 @@
         border-radius: 8px;
         background: var(--bg-panel-raised);
         border: 1px solid var(--line);
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .hub-mini-profile:hover,
+    .hub-mini-profile:focus-visible {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        outline: none;
     }
 
     .hub-mini-avatar {
@@ -871,7 +1731,7 @@
          ================================================================ -->
     <div id="hubShell">
 
-        <aside class="hub-sidebar">
+        <aside class="hub-sidebar" id="hubSidebar">
             <div class="hub-brand">
                 <div class="hub-brand-mark">PL</div>
                 <div class="hub-brand-text">
@@ -881,19 +1741,81 @@
             </div>
 
             <nav class="hub-nav" id="hubNav">
-                <div class="hub-nav-item is-active" data-view="forum">💬 Forum</div>
-                <div class="hub-nav-item" data-view="marketplace">🧊 3D Model Pazarı</div>
-                <div class="hub-nav-item" data-view="studio">🛠️ 3D Studio Editör</div>
-                <div class="hub-nav-item" data-view="messages">✉️ Mesajlar</div>
-                <div class="hub-nav-item" data-view="groups">👥 Grup Sohbetleri</div>
-                <div class="hub-nav-item" data-view="profile">🙍 Profilim</div>
-                <div class="hub-nav-item" data-view="admin" data-restricted="true" data-min-role="helper">🛡️ Yönetim Paneli</div>
+                <div class="hub-nav-item is-active" data-view="forum">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="2" width="14" height="9" fill="currentColor"/>
+                        <rect x="0" y="3" width="1" height="7" fill="currentColor"/>
+                        <rect x="15" y="3" width="1" height="7" fill="currentColor"/>
+                        <rect x="3" y="11" width="2" height="2" fill="currentColor"/>
+                        <rect x="2" y="13" width="2" height="2" fill="currentColor"/>
+                        <rect x="3" y="5" width="2" height="2" fill="var(--bg-panel)"/>
+                        <rect x="7" y="5" width="2" height="2" fill="var(--bg-panel)"/>
+                        <rect x="11" y="5" width="2" height="2" fill="var(--bg-panel)"/>
+                    </svg>
+                    Forum
+                </div>
+                <div class="hub-nav-item" data-view="marketplace">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
+                        <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+                        <rect x="11" y="3" width="2" height="2" fill="currentColor"/>
+                        <rect x="1" y="5" width="14" height="2" fill="currentColor"/>
+                        <rect x="2" y="7" width="4" height="7" fill="currentColor"/>
+                        <rect x="10" y="7" width="4" height="7" fill="currentColor"/>
+                        <rect x="7" y="7" width="2" height="7" fill="currentColor" opacity="0.55"/>
+                    </svg>
+                    3D Model Pazarı
+                </div>
+                <div class="hub-nav-item" data-view="studio">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="1" width="2" height="2" fill="currentColor"/>
+                        <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+                        <rect x="5" y="5" width="2" height="2" fill="currentColor"/>
+                        <rect x="7" y="7" width="2" height="2" fill="currentColor"/>
+                        <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
+                        <rect x="10" y="1" width="5" height="2" fill="currentColor"/>
+                        <rect x="10" y="1" width="2" height="5" fill="currentColor"/>
+                        <rect x="9" y="11" width="2" height="2" fill="currentColor"/>
+                        <rect x="7" y="13" width="2" height="2" fill="currentColor"/>
+                    </svg>
+                    3D Studio Editör
+                </div>
+                <div class="hub-nav-item" data-view="messages">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="3" width="14" height="10" fill="currentColor"/>
+                        <rect x="2" y="4" width="1" height="1" fill="var(--bg-panel)"/>
+                        <path d="M2 4l6 5 6-5" stroke="var(--bg-panel)" stroke-width="1.6" fill="none"/>
+                    </svg>
+                    Mesajlar
+                </div>
+                <div class="hub-nav-item" data-view="groups">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="2" width="5" height="5" fill="currentColor"/>
+                        <rect x="9" y="2" width="5" height="5" fill="currentColor" opacity="0.6"/>
+                        <rect x="1" y="9" width="7" height="5" fill="currentColor"/>
+                        <rect x="9" y="9" width="6" height="5" fill="currentColor" opacity="0.6"/>
+                    </svg>
+                    Grup Sohbetleri
+                </div>
+                <div class="hub-nav-item" data-view="admin" data-restricted="true" data-min-role="helper">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="1" width="8" height="2" fill="currentColor"/>
+                        <rect x="2" y="3" width="2" height="6" fill="currentColor"/>
+                        <rect x="12" y="3" width="2" height="6" fill="currentColor"/>
+                        <rect x="4" y="3" width="8" height="7" fill="currentColor" opacity="0.55"/>
+                        <rect x="6" y="10" width="4" height="2" fill="currentColor"/>
+                        <rect x="7" y="12" width="2" height="2" fill="currentColor"/>
+                    </svg>
+                    Yönetim Paneli
+                </div>
             </nav>
 
             <div class="hub-nav-spacer"></div>
 
-            <!-- Modül 2 (RBAC/Profil) burayı dolduracak -->
-            <div class="hub-mini-profile" id="hubMiniProfile">
+            <!-- Profile erişimi ARTIK SADECE buradan: alt köşedeki mini
+                 profil kartı tıklanınca "profile" view'ına geçer.
+                 (Nav listesindeki ayrı "Profilim" satırı kaldırıldı.) -->
+            <div class="hub-mini-profile" id="hubMiniProfile" data-view="profile" role="button" tabindex="0" title="Profilim">
                 <img class="hub-mini-avatar" id="hubMiniAvatar" src="" alt="">
                 <div>
                     <div class="hub-mini-name" id="hubMiniName">—</div>
@@ -902,8 +1824,15 @@
             </div>
         </aside>
 
+        <!-- Mobilde sidebar açıkken arkayı karartan ve tıklanınca
+             sidebar'ı kapatan katman. Masaüstünde hiç görünmez. -->
+        <div class="hub-sidebar-backdrop" id="hubSidebarBackdrop"></div>
+
         <main class="hub-main">
             <div class="hub-topbar">
+                <button class="hub-sidebar-toggle" id="hubSidebarToggle" aria-label="Menüyü aç/kapat" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
                 <div>
                     <div class="hub-page-eyebrow" id="hubPageEyebrow">Community</div>
                     <div class="hub-page-title" id="hubPageTitle">Forum</div>
@@ -916,8 +1845,137 @@
                  ============================================================ -->
 
             <section class="hub-view is-active" data-view="forum">
-                <div class="hub-placeholder">FORUM MODÜLÜ — Modül 3'te doldurulacak</div>
+                <div class="forum-page" id="forumPage">
+
+                    <!-- ============================================================
+                         MODÜL 3: KATEGORİ SEKMELERİ
+                         Her kategori data-category-id ile forum_categories/{id}
+                         düğümüne karşılık gelir. "general-chat" özel bir kategori:
+                         o sekmede eskiden beri çalışan CANLI SOHBET (whisper/mute/
+                         flood korumalı) akışı gösterilir; diğerleri gerçek
+                         konu (thread) tabanlı forumdur.
+                         ============================================================ -->
+                    <div class="forum-category-tabs" id="forumCategoryTabs"></div>
+
+                    <!-- ============================================================
+                         ALT VIEW 1: KONU LİSTESİ (bir kategori seçiliyken)
+                         ============================================================ -->
+                    <div class="forum-subview" id="forumThreadListView">
+
+                        <div class="forum-toolbar">
+                            <div class="forum-toolbar-info" id="forumCategoryDesc"></div>
+                            <button class="forum-btn forum-btn-primary" id="forumNewThreadBtn">+ Yeni Konu</button>
+                        </div>
+
+                        <div class="forum-thread-list" id="forumThreadList">
+                            <div class="hub-placeholder" id="forumThreadEmptyState">Bu kategoride henüz konu yok. İlk konuyu sen aç!</div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         ALT VIEW 2: KONU DETAYI (bir thread açıldığında)
+                         ============================================================ -->
+                    <div class="forum-subview" id="forumThreadDetailView" style="display:none;">
+                        <button class="forum-back-btn" id="forumBackToListBtn">← Konu Listesine Dön</button>
+
+                        <div class="forum-thread-detail-card" id="forumThreadDetailHeader"></div>
+
+                        <div class="forum-status-line" id="forumThreadStatusLine" style="display:none;"></div>
+
+                        <div class="forum-replies" id="forumRepliesList"></div>
+
+                        <!-- Yeni yorum kutusu (thread kilitliyse gizlenir) -->
+                        <div class="forum-composer" id="forumReplyComposerWrap">
+                            <div class="forum-composer-input-wrap">
+                                <textarea
+                                    id="forumReplyInput"
+                                    class="forum-composer-input"
+                                    placeholder="Bir yorum yaz... (@isim ile etiketle)"
+                                    rows="2"
+                                    maxlength="2000"></textarea>
+                                <div class="mention-autocomplete-dropdown" id="forumReplyMentionDropdown"></div>
+                            </div>
+                            <button class="forum-send-btn" id="forumReplySendBtn">Gönder</button>
+                        </div>
+                        <div class="forum-composer-hint">
+                            Zengin içerik: <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · emoji doğrudan yapıştırılabilir
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         ALT VIEW 3: "Genel Sohbet" — ESKİ canlı mesaj akışı
+                         (whisper /w, mute/flood koruması, sabitleme).
+                         Bu view'ın içeriği ve JS mantığı DEĞİŞMEDİ, sadece
+                         kategori sekmesi altına taşındı.
+                         ============================================================ -->
+                    <div class="forum-subview" id="forumGeneralChatView" style="display:none;">
+
+                        <!-- SABİTLENMİŞ MESAJLAR — yetkililerin öne çıkardığı
+                             duyurular. Hiç yoksa bu blok tamamen gizlenir. -->
+                        <div class="forum-pinned-wrap" id="forumPinnedWrap" style="display:none;">
+                            <div class="forum-pinned-header">📌 Sabitlenmiş Duyurular</div>
+                            <div id="forumPinnedList"></div>
+                        </div>
+
+                        <!-- MESAJ LİSTESİ -->
+                        <div class="forum-messages" id="forumMessagesList">
+                            <div class="hub-placeholder" id="forumEmptyState">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>
+                        </div>
+
+                        <!-- KOMUT İPUCU (mute durumu / /w bilgisi) -->
+                        <div class="forum-status-line" id="forumStatusLine" style="display:none;"></div>
+
+                        <!-- MESAJ YAZMA KUTUSU -->
+                        <div class="forum-composer">
+                            <div class="forum-composer-input-wrap">
+                                <textarea
+                                    id="forumComposerInput"
+                                    class="forum-composer-input"
+                                    placeholder="Bir mesaj yaz... (@isim ile etiketle, /w isim mesaj ile gizli mesaj gönder)"
+                                    rows="2"
+                                    maxlength="1000"></textarea>
+                                <div class="mention-autocomplete-dropdown" id="forumMentionDropdown"></div>
+                            </div>
+                            <button class="forum-send-btn" id="forumSendBtn">Gönder</button>
+                        </div>
+                        <div class="forum-composer-hint">
+                            Enter ile gönder, Shift+Enter ile alt satır · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj
+                        </div>
+                    </div>
+
+                </div>
             </section>
+
+            <!-- ============================================================
+                 YENİ KONU MODALI (tüm kategorilerde kullanılır, thread
+                 kategorisi dropdown'dan seçilir; kategori sekmesinden
+                 açıldığında o kategori otomatik seçili gelir)
+                 ============================================================ -->
+            <div class="forum-modal-backdrop" id="forumNewThreadModalBackdrop" style="display:none;">
+                <div class="forum-modal">
+                    <div class="forum-modal-header">
+                        <span>Yeni Konu Aç</span>
+                        <button class="forum-modal-close" id="forumNewThreadModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body">
+                        <label class="forum-field-label">Kategori</label>
+                        <select class="forum-select" id="forumNewThreadCategory"></select>
+
+                        <label class="forum-field-label">Başlık</label>
+                        <input type="text" class="forum-text-input" id="forumNewThreadTitle" maxlength="120" placeholder="Konu başlığı...">
+
+                        <label class="forum-field-label">İçerik</label>
+                        <textarea class="forum-textarea-input" id="forumNewThreadBody" maxlength="5000" rows="6" placeholder="Konu içeriği... @isim ile etiketleyebilir, [img]URL[/img] ile resim, [gif]URL[/gif] ile GIF, [video]URL[/video] ile video linki ekleyebilirsin."></textarea>
+                        <div class="mention-autocomplete-dropdown" id="forumNewThreadMentionDropdown"></div>
+
+                        <div class="forum-modal-error" id="forumNewThreadError" style="display:none;"></div>
+                    </div>
+                    <div class="forum-modal-footer">
+                        <button class="forum-btn forum-btn-ghost" id="forumNewThreadCancelBtn">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="forumNewThreadSubmitBtn">Konuyu Yayınla</button>
+                    </div>
+                </div>
+            </div>
 
             <section class="hub-view" data-view="marketplace">
                 <div class="hub-placeholder">3D MODEL PAZARI — Modül 4'te doldurulacak</div>
@@ -1749,6 +2807,11 @@
             if (gate) gate.style.display = "none";
             if (shell) shell.classList.add("is-active");
             renderMiniProfile(profile);
+
+            // Modül 3: Forum, auth onaylandıktan sonra bir kez başlatılır.
+            if (typeof window.initForumModule === "function") {
+                window.initForumModule();
+            }
         }
 
         function renderMiniProfile(profile) {
@@ -1992,6 +3055,40 @@
             });
         }
 
+        // ==============================================================
+        // 📱 MOBİL SIDEBAR TOGGLE — dar ekranlarda hamburger ile
+        //     sidebar'ı aç/kapa, dışına tıklayınca veya bir menü
+        //     öğesi seçilince otomatik kapat.
+        // ==============================================================
+        function initSidebarToggle() {
+            const toggleBtn = document.getElementById("hubSidebarToggle");
+            const sidebar = document.getElementById("hubSidebar");
+            const backdrop = document.getElementById("hubSidebarBackdrop");
+            if (!toggleBtn || !sidebar || !backdrop) return;
+
+            function openSidebar() {
+                sidebar.classList.add("is-open");
+                backdrop.classList.add("is-visible");
+                toggleBtn.setAttribute("aria-expanded", "true");
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove("is-open");
+                backdrop.classList.remove("is-visible");
+                toggleBtn.setAttribute("aria-expanded", "false");
+            }
+
+            toggleBtn.addEventListener("click", () => {
+                const isOpen = sidebar.classList.contains("is-open");
+                if (isOpen) closeSidebar(); else openSidebar();
+            });
+
+            backdrop.addEventListener("click", closeSidebar);
+
+            // switchView() tarafından çağrılabilmesi için global'e açıyoruz.
+            window.closeMobileSidebar = closeSidebar;
+        }
+
         function initRouter() {
             document.querySelectorAll(".hub-nav-item").forEach((item) => {
                 item.addEventListener("click", () => {
@@ -1999,6 +3096,1231 @@
                     if (view) switchView(view);
                 });
             });
+
+            // Alt köşedeki mini profil kartı da "Profilim" e götürür
+            // (nav listesindeki ayrı satır kaldırıldığı için tek erişim yolu bu).
+            const miniProfile = document.getElementById("hubMiniProfile");
+            if (miniProfile) {
+                miniProfile.addEventListener("click", () => switchView("profile"));
+                miniProfile.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        switchView("profile");
+                    }
+                });
+            }
+        }
+
+        // ==============================================================
+        // 💬 MODÜL 3: DETAYLI FORUM SİSTEMİ
+        // ==============================================================
+        // KAPSAM A) KATEGORİ + KONU (THREAD) + YORUM AĞACI (yeni):
+        //   forum_categories/{catId}: { name, description, icon, order }
+        //   forum_threads/{threadId}: {
+        //     categoryId, title, body, authorUid, createdAt,
+        //     isPinned, isLocked, replyCount, lastReplyAt
+        //   }
+        //   forum_replies/{threadId}/{replyId}: {
+        //     authorUid, text, createdAt, parentReplyId (null ise kök yorum,
+        //     doluysa bir yoruma yapılmış YANIT — nested reply tree)
+        //   }
+        //
+        // KAPSAM B) "Genel Sohbet" kategorisi — ESKİDEN BERİ ÇALIŞAN canlı
+        // mesaj akışı (DEĞİŞMEDİ): mesaj gönderme/listeleme, /w gizli mesaj
+        // tetikleyicisi, Yanıtla butonu, sabitleme, spam/flood koruması +
+        // kademeli mute, @mention entegrasyonu, mavi tik gösterimi.
+        //   forum_messages/{messageId}: {
+        //     authorUid, text, createdAt, pinned, pinnedBy, pinnedAt,
+        //     whisperToUid (varsa: sadece gönderen+alıcı görür),
+        //     replyToUid (varsa: "Yanıtla" akışı için)
+        //   }
+        //   mute_status/{uid}: { mutedUntil, violationCount, recentTimestamps }
+        //
+        // YETKİ: konu sabitleme/kilitleme (isPinned/isLocked) ve yorum/konu
+        // silme sadece helper+ (RBAC.hasMinimumTier(profile,"helper")) ile
+        // yazar kendisine açıktır — client kontrolü UX içindir, gerçek
+        // güvenlik Firebase Rules'da tekrarlanmalıdır.
+        // ==============================================================
+
+        let forumModuleStarted = false;
+        let forumMessagesCache = {}; // messageId -> message object (canlı senkron için)
+
+        function initForumModule() {
+            if (forumModuleStarted) return; // sadece bir kez başlat
+            forumModuleStarted = true;
+
+            const inputEl = document.getElementById("forumComposerInput");
+            const dropdownEl = document.getElementById("forumMentionDropdown");
+            const sendBtn = document.getElementById("forumSendBtn");
+
+            if (inputEl && dropdownEl && window.CommunityMentions) {
+                window.CommunityMentions.attachAutocomplete(inputEl, dropdownEl);
+            }
+
+            if (sendBtn) {
+                sendBtn.addEventListener("click", handleForumSend);
+            }
+            if (inputEl) {
+                inputEl.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleForumSend();
+                    }
+                });
+            }
+
+            listenToForumMessages();
+            listenToOwnMuteStatus();
+
+            // Yeni: kategori/thread/nested-reply forum katmanı.
+            initCategoryForumModule();
+        }
+
+        // ------------------------------------------------------------
+        // A) SPAM / ANTI-FLOODING: 3 saniyede 3'ten fazla mesaj ->
+        //    kademeli mute (1. ihlal: 10sn, 2. ihlal: 1dk, 3. ihlal: 10dk,
+        //    sonrasında her ihlalde bir önceki sürenin ~3 katı, üst
+        //    sınır makul bir değerde tutulur).
+        // ------------------------------------------------------------
+        const FLOOD_WINDOW_MS = 3000;
+        const FLOOD_MAX_MESSAGES = 3;
+        const MUTE_DURATIONS_MS = [10 * 1000, 60 * 1000, 10 * 60 * 1000, 60 * 60 * 1000];
+
+        let localSendTimestamps = []; // client-side ilk savunma hattı
+        let ownMuteInfo = null; // { mutedUntil, violationCount } - canlı dinlenir
+
+        function listenToOwnMuteStatus() {
+            const uid = window.CommunityAuth.user.uid;
+            database.ref('mute_status/' + uid).on('value', (snap) => {
+                ownMuteInfo = snap.val() || null;
+                renderMuteStatusLine();
+            });
+        }
+
+        function isCurrentlyMuted() {
+            if (!ownMuteInfo || !ownMuteInfo.mutedUntil) return false;
+            return ownMuteInfo.mutedUntil > Date.now();
+        }
+
+        function renderMuteStatusLine() {
+            const lineEl = document.getElementById("forumStatusLine");
+            if (!lineEl) return;
+
+            if (isCurrentlyMuted()) {
+                const remainingMs = ownMuteInfo.mutedUntil - Date.now();
+                lineEl.textContent = `Çok hızlı mesaj gönderdiğiniz için susturuldunuz. Kalan süre: ${formatDuration(remainingMs)}.`;
+                lineEl.style.display = "block";
+                updateComposerDisabledState();
+
+                // Süre dolunca satırı otomatik gizle.
+                clearTimeout(renderMuteStatusLine._timer);
+                renderMuteStatusLine._timer = setTimeout(renderMuteStatusLine, remainingMs + 250);
+            } else {
+                lineEl.style.display = "none";
+                updateComposerDisabledState();
+            }
+        }
+
+        function updateComposerDisabledState() {
+            const inputEl = document.getElementById("forumComposerInput");
+            const sendBtn = document.getElementById("forumSendBtn");
+            const muted = isCurrentlyMuted();
+            if (inputEl) inputEl.disabled = muted;
+            if (sendBtn) sendBtn.disabled = muted;
+        }
+
+        function formatDuration(ms) {
+            const totalSeconds = Math.ceil(ms / 1000);
+            if (totalSeconds < 60) return `${totalSeconds}sn`;
+            const totalMinutes = Math.ceil(totalSeconds / 60);
+            if (totalMinutes < 60) return `${totalMinutes}dk`;
+            const totalHours = Math.ceil(totalMinutes / 60);
+            return `${totalHours}sa`;
+        }
+
+        /**
+         * Mesaj gönderilmeden hemen önce çağrılır. Flood tespit edilirse
+         * kademeli mute'u veritabanına yazar (client-side ilk savunma
+         * hattı — GERÇEK güvenlik Firebase Rules'da tekrarlanmalıdır,
+         * çünkü client kodu manipüle edilebilir).
+         */
+        async function checkAndApplyFloodProtection() {
+            const now = Date.now();
+            localSendTimestamps = localSendTimestamps.filter((t) => now - t < FLOOD_WINDOW_MS);
+
+            if (localSendTimestamps.length >= FLOOD_MAX_MESSAGES) {
+                const uid = window.CommunityAuth.user.uid;
+                const prevViolations = (ownMuteInfo && ownMuteInfo.violationCount) || 0;
+                const newViolationCount = prevViolations + 1;
+                const durationIndex = Math.min(newViolationCount - 1, MUTE_DURATIONS_MS.length - 1);
+                const muteDuration = MUTE_DURATIONS_MS[durationIndex];
+                const mutedUntil = now + muteDuration;
+
+                await database.ref('mute_status/' + uid).set({
+                    mutedUntil,
+                    violationCount: newViolationCount,
+                    reason: "auto_flood",
+                    lastAppliedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                localSendTimestamps = [];
+                return true; // muted
+            }
+
+            localSendTimestamps.push(now);
+            return false;
+        }
+
+        // ------------------------------------------------------------
+        // B) MESAJ GÖNDERME (forum mesajı / /w gizli mesaj tetikleyicisi)
+        // ------------------------------------------------------------
+        async function handleForumSend() {
+            const inputEl = document.getElementById("forumComposerInput");
+            if (!inputEl) return;
+
+            const rawText = inputEl.value.trim();
+            if (!rawText) return;
+
+            if (isCurrentlyMuted()) return; // buton zaten disabled ama çift kontrol
+
+            const wasMuted = await checkAndApplyFloodProtection();
+            if (wasMuted) return; // az önce mute edildi, mesaj gönderilmez
+
+            const uid = window.CommunityAuth.user.uid;
+            const profile = window.CommunityAuth.profile;
+
+            // --- /w [KullanıcıAdı] [Mesaj] TESPİTİ ---
+            // Spec madde 5: "/w" ile başlayan mesaj SADECE gönderen ve
+            // alıcının DOM'unda render edilmelidir. Bunu whisperToUid
+            // alanıyla işaretliyoruz; renderForumMessage bu alana göre
+            // görünürlüğü client-side filtreler. NOT: gerçek gizlilik
+            // garantisi Firebase Rules seviyesinde de sağlanmalıdır
+            // (ör. mesaj sadece authorUid/whisperToUid'e .read izni),
+            // yoksa herkes veritabanını doğrudan okuyabilir.
+            const whisperMatch = rawText.match(/^\/w\s+(\S+)\s+([\s\S]+)$/i);
+            let whisperToUid = null;
+            let bodyText = rawText;
+
+            if (whisperMatch) {
+                const targetUsername = whisperMatch[1];
+                const targetCandidate = window.CommunityMentions.getByUsername(targetUsername);
+                if (!targetCandidate) {
+                    showForumComposerError(`"${targetUsername}" adında bir kullanıcı bulunamadı.`);
+                    return;
+                }
+                if (targetCandidate.uid === uid) {
+                    showForumComposerError("Kendinize gizli mesaj gönderemezsiniz.");
+                    return;
+                }
+                whisperToUid = targetCandidate.uid;
+                bodyText = whisperMatch[2];
+            }
+
+            const encodedText = window.CommunityMentions.encodeForStorage(bodyText);
+
+            const messageData = {
+                authorUid: uid,
+                text: encodedText,
+                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                pinned: false
+            };
+            if (whisperToUid) messageData.whisperToUid = whisperToUid;
+
+            // Yanıtla akışından geliyorsa (composer'a data-reply-to konmuşsa)
+            const replyToUid = inputEl.getAttribute("data-reply-to-uid");
+            if (replyToUid) messageData.replyToUid = replyToUid;
+
+            try {
+                await database.ref('forum_messages').push(messageData);
+                inputEl.value = "";
+                inputEl.removeAttribute("data-reply-to-uid");
+                inputEl.placeholder = "Bir mesaj yaz... (@isim ile etiketle, /w isim mesaj ile gizli mesaj gönder)";
+            } catch (err) {
+                console.error("[Forum] Mesaj gönderilemedi:", err);
+                showForumComposerError("Mesaj gönderilemedi. Lütfen tekrar deneyin.");
+            }
+        }
+
+        function showForumComposerError(message) {
+            const lineEl = document.getElementById("forumStatusLine");
+            if (!lineEl) { alert(message); return; }
+            lineEl.textContent = message;
+            lineEl.style.display = "block";
+            setTimeout(() => {
+                if (!isCurrentlyMuted()) lineEl.style.display = "none";
+            }, 3500);
+        }
+
+        // ------------------------------------------------------------
+        // C) "Yanıtla" — composer'a otomatik /w [GönderenKullanıcıAdı]
+        //    kalıbını doldurur (spec madde 5).
+        // ------------------------------------------------------------
+        function replyToWhisper(fromUid) {
+            const candidate = window.CommunityMentions.getByUid(fromUid);
+            const inputEl = document.getElementById("forumComposerInput");
+            if (!candidate || !inputEl) return;
+
+            inputEl.value = `/w ${candidate.username} `;
+            inputEl.setAttribute("data-reply-to-uid", fromUid);
+            inputEl.focus();
+            inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+        }
+        window.replyToWhisper = replyToWhisper; // inline onclick için
+
+        // ------------------------------------------------------------
+        // D) MESAJLARI CANLI DİNLEME + RENDER
+        // ------------------------------------------------------------
+        function listenToForumMessages() {
+            database.ref('forum_messages').limitToLast(200).on('value', (snap) => {
+                forumMessagesCache = snap.val() || {};
+                renderForumMessages();
+            });
+        }
+
+        function renderForumMessages() {
+            const listEl = document.getElementById("forumMessagesList");
+            const emptyEl = document.getElementById("forumEmptyState");
+            const pinnedWrap = document.getElementById("forumPinnedWrap");
+            const pinnedListEl = document.getElementById("forumPinnedList");
+            if (!listEl) return;
+
+            const myUid = window.CommunityAuth.user.uid;
+
+            const allMessages = Object.keys(forumMessagesCache).map((id) => ({
+                id,
+                ...forumMessagesCache[id]
+            }));
+
+            // --- Görünürlük filtresi: /w mesajları SADECE gönderen ve
+            //     alıcının DOM'unda render edilir (spec madde 5). ---
+            const visibleMessages = allMessages.filter((m) => {
+                if (!m.whisperToUid) return true;
+                return m.authorUid === myUid || m.whisperToUid === myUid;
+            });
+
+            visibleMessages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+            const pinnedMessages = visibleMessages.filter((m) => m.pinned === true);
+            const normalMessages = visibleMessages.filter((m) => m.pinned !== true);
+
+            // --- Sabitlenmiş mesajlar ---
+            if (pinnedMessages.length > 0 && pinnedWrap && pinnedListEl) {
+                pinnedWrap.style.display = "flex";
+                pinnedListEl.innerHTML = pinnedMessages.map(renderPinnedItem).join("");
+            } else if (pinnedWrap) {
+                pinnedWrap.style.display = "none";
+            }
+
+            // --- Normal akış ---
+            if (normalMessages.length === 0) {
+                listEl.innerHTML = "";
+                if (emptyEl) listEl.appendChild(emptyEl);
+                else listEl.innerHTML = '<div class="hub-placeholder">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>';
+            } else {
+                listEl.innerHTML = normalMessages.map(renderForumMessage).join("");
+            }
+
+            attachMessageActionHandlers(listEl);
+            if (pinnedListEl) attachMessageActionHandlers(pinnedListEl);
+
+            // Yeni mesaj gelince otomatik en alta kaydır (sadece normal akışta).
+            listEl.scrollTop = listEl.scrollHeight;
+        }
+
+        function renderPinnedItem(m) {
+            const candidate = window.CommunityMentions.getByUid(m.authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+            const isVerified = candidate ? candidate.isVerified : false;
+            return `
+                <div class="forum-pinned-item">
+                    <div class="forum-message-header">
+                        <span class="forum-message-username">
+                            ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                        </span>
+                        <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
+                    </div>
+                    <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
+                </div>
+            `;
+        }
+
+        function renderForumMessage(m) {
+            const candidate = window.CommunityMentions.getByUid(m.authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+            const avatarUrl = candidate ? candidate.avatarUrl : "";
+            const isVerified = candidate ? candidate.isVerified : false;
+            const isWhisper = !!m.whisperToUid;
+            const myUid = window.CommunityAuth.user.uid;
+            const viewerProfile = window.CommunityAuth.profile;
+
+            const canModerate = RBAC.canModerate(viewerProfile);
+            const canPin = RBAC.hasMinimumTier(viewerProfile, "helper");
+
+            let actionsHtml = "";
+            if (isWhisper && m.authorUid !== myUid) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="reply" data-from-uid="${m.authorUid}">Yanıtla</button>`;
+            }
+            if (canPin) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="pin" data-message-id="${m.id}" data-pinned="${m.pinned === true}">${m.pinned ? "Sabitlemeyi Kaldır" : "Sabitle"}</button>`;
+            }
+            if (canModerate || m.authorUid === myUid) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="delete" data-message-id="${m.id}">Sil</button>`;
+            }
+
+            return `
+                <div class="forum-message${isWhisper ? ' is-whisper' : ''}" data-message-id="${m.id}">
+                    <img class="forum-message-avatar" src="${RBAC.escapeHtml(avatarUrl || '')}" alt="">
+                    <div class="forum-message-body">
+                        <div class="forum-message-header">
+                            <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
+                                ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                            </span>
+                            <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
+                            ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
+                        </div>
+                        <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
+                        ${actionsHtml ? `<div class="forum-message-actions">${actionsHtml}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatMessageTime(ts) {
+            if (!ts) return "";
+            try {
+                const d = new Date(ts);
+                return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+            } catch (e) {
+                return "";
+            }
+        }
+
+        function attachMessageActionHandlers(containerEl) {
+            if (!containerEl) return;
+
+            containerEl.querySelectorAll('[data-action="reply"]').forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    replyToWhisper(btn.getAttribute("data-from-uid"));
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="pin"]').forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const messageId = btn.getAttribute("data-message-id");
+                    const currentlyPinned = btn.getAttribute("data-pinned") === "true";
+                    await togglePinMessage(messageId, !currentlyPinned);
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const messageId = btn.getAttribute("data-message-id");
+                    if (confirm("Bu mesajı silmek istediğinize emin misiniz?")) {
+                        await deleteForumMessage(messageId);
+                    }
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
+                el.addEventListener("click", () => {
+                    const uid = el.getAttribute("data-uid");
+                    const candidate = window.CommunityMentions.getByUid(uid);
+                    if (!candidate) return;
+                    // Modül 2'deki renderProfileView, başkasının profilini
+                    // görüntüleme parametreleriyle çağrılıyor.
+                    switchView("profile");
+                    database.ref('users/' + uid).once('value').then((snap) => {
+                        const targetProfile = snap.val();
+                        if (targetProfile) {
+                            window.renderProfileView(targetProfile, uid, uid === window.CommunityAuth.user.uid);
+                        }
+                    });
+                });
+            });
+        }
+
+        /**
+         * Mesaj sabitleme — yalnızca helper+ yetkisi olanlar çağırabilir.
+         * Client kontrolü sadece UX içindir; GERÇEK yetkilendirme
+         * Firebase Rules'da tekrarlanmalıdır (Modül 2 - Bölüm C'deki
+         * mavi tik notuyla aynı prensip).
+         */
+        async function togglePinMessage(messageId, newPinnedState) {
+            if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            try {
+                await database.ref('forum_messages/' + messageId).update({
+                    pinned: newPinnedState,
+                    pinnedBy: newPinnedState ? window.CommunityAuth.user.uid : null,
+                    pinnedAt: newPinnedState ? firebase.database.ServerValue.TIMESTAMP : null
+                });
+                await database.ref('audit_logs').push({
+                    action: newPinnedState ? "pin_message" : "unpin_message",
+                    targetMessageId: messageId,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: window.CommunityAuth.profile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Forum] Sabitleme başarısız:", err);
+                alert("İşlem başarısız oldu.");
+            }
+        }
+
+        async function deleteForumMessage(messageId) {
+            const msg = forumMessagesCache[messageId];
+            const viewerProfile = window.CommunityAuth.profile;
+            const isOwn = msg && msg.authorUid === window.CommunityAuth.user.uid;
+
+            if (!isOwn && !RBAC.canModerate(viewerProfile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+
+            try {
+                await database.ref('forum_messages/' + messageId).remove();
+                if (!isOwn) {
+                    await database.ref('audit_logs').push({
+                        action: "delete_message",
+                        targetMessageId: messageId,
+                        targetUid: msg ? msg.authorUid : null,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: window.CommunityAuth.profile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            } catch (err) {
+                console.error("[Forum] Mesaj silinemedi:", err);
+                alert("Mesaj silinemedi.");
+            }
+        }
+
+        window.initForumModule = initForumModule;
+
+        // ==============================================================
+        // 🗂️ MODÜL 3 — KATEGORİ + KONU (THREAD) + YORUM AĞACI SİSTEMİ
+        // ==============================================================
+
+        // ---------- Sabit kategori tanımları ----------
+        // "general-chat" özel: gerçek bir thread kategorisi DEĞİL, o
+        // sekmeye basınca eskiden beri çalışan canlı sohbet view'ı açılır.
+        const FORUM_CATEGORIES = [
+            { id: "announcements", name: "Duyurular & Güncellemeler", icon: "📢", description: "Resmi duyurular, güncelleme notları ve önemli bilgilendirmeler. Sadece yetkililer yeni konu açabilir.", order: 0, restrictedToStaff: true },
+            { id: "general-chat", name: "Genel Sohbet (Canlı)", icon: "💬", description: "Anlık, akan sohbet. Konu açmaya gerek yok — mesajını yaz, gönder.", order: 1, isLiveChat: true },
+            { id: "general-discussion", name: "Genel Tartışma", icon: "🗨️", description: "Her konuda konu açıp tartışabileceğin genel forum alanı.", order: 2 },
+            { id: "support", name: "Destek & Yardım", icon: "🛠️", description: "Sorun mu yaşıyorsun? Buradan konu aç, topluluk ve yetkililer yardımcı olsun.", order: 3 },
+            { id: "suggestions", name: "Suggestions / Öneriler", icon: "💡", description: "Play Legends için fikir ve önerilerini paylaş.", order: 4 }
+        ];
+
+        function getCategoryById(catId) {
+            return FORUM_CATEGORIES.find((c) => c.id === catId) || null;
+        }
+
+        // ---------- Basit view-state ----------
+        let activeCategoryId = "announcements";
+        let activeThreadId = null;
+
+        let categoryForumStarted = false;
+        let forumThreadsCache = {};           // threadId -> thread object (tüm kategoriler, canlı)
+        let forumRepliesCache = {};           // threadId -> { replyId: reply object } (aktif thread için canlı)
+        let forumRepliesListenerThreadId = null;
+
+        function initCategoryForumModule() {
+            if (categoryForumStarted) return;
+            categoryForumStarted = true;
+
+            renderCategoryTabs();
+            populateNewThreadCategorySelect();
+            listenToAllThreads();
+            initNewThreadModal();
+            initThreadDetailComposer();
+
+            const backBtn = document.getElementById("forumBackToListBtn");
+            if (backBtn) backBtn.addEventListener("click", () => showThreadListView());
+
+            const newThreadBtn = document.getElementById("forumNewThreadBtn");
+            if (newThreadBtn) newThreadBtn.addEventListener("click", () => openNewThreadModal(activeCategoryId));
+
+            switchForumCategory(activeCategoryId);
+        }
+
+        // ------------------------------------------------------------
+        // A) KATEGORİ SEKMELERİ
+        // ------------------------------------------------------------
+        function renderCategoryTabs() {
+            const tabsEl = document.getElementById("forumCategoryTabs");
+            if (!tabsEl) return;
+            const sorted = [...FORUM_CATEGORIES].sort((a, b) => a.order - b.order);
+            tabsEl.innerHTML = sorted.map((cat) => `
+                <div class="forum-category-tab${cat.id === activeCategoryId ? ' is-active' : ''}" data-category-id="${cat.id}">
+                    <span class="forum-category-tab-icon">${cat.icon}</span>
+                    <span>${RBAC.escapeHtml(cat.name)}</span>
+                </div>
+            `).join("");
+
+            tabsEl.querySelectorAll(".forum-category-tab").forEach((tab) => {
+                tab.addEventListener("click", () => {
+                    switchForumCategory(tab.getAttribute("data-category-id"));
+                });
+            });
+        }
+
+        function switchForumCategory(categoryId) {
+            activeCategoryId = categoryId;
+            activeThreadId = null;
+
+            document.querySelectorAll(".forum-category-tab").forEach((tab) => {
+                tab.classList.toggle("is-active", tab.getAttribute("data-category-id") === categoryId);
+            });
+
+            const category = getCategoryById(categoryId);
+            const threadListView = document.getElementById("forumThreadListView");
+            const threadDetailView = document.getElementById("forumThreadDetailView");
+            const generalChatView = document.getElementById("forumGeneralChatView");
+            const descEl = document.getElementById("forumCategoryDesc");
+            const newThreadBtn = document.getElementById("forumNewThreadBtn");
+
+            if (category && category.isLiveChat) {
+                // "Genel Sohbet" -> eski canlı mesaj akışı view'ını göster.
+                if (threadListView) threadListView.style.display = "none";
+                if (threadDetailView) threadDetailView.style.display = "none";
+                if (generalChatView) generalChatView.style.display = "block";
+                return;
+            }
+
+            if (generalChatView) generalChatView.style.display = "none";
+            if (descEl && category) descEl.textContent = category.description || "";
+
+            // Duyurular kategorisinde sadece yetkililer yeni konu açabilir.
+            if (newThreadBtn) {
+                const canPost = !category || !category.restrictedToStaff || RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+                newThreadBtn.style.display = canPost ? "inline-flex" : "none";
+            }
+
+            showThreadListView();
+        }
+
+        // ------------------------------------------------------------
+        // B) KONU LİSTESİ
+        // ------------------------------------------------------------
+        function listenToAllThreads() {
+            database.ref('forum_threads').on('value', (snap) => {
+                forumThreadsCache = snap.val() || {};
+                renderThreadListIfVisible();
+                // Açık bir thread varsa (detay ekranındayken başlık/pin/lock
+                // güncellenebilir) başlığı da tazele.
+                if (activeThreadId) renderThreadDetailHeader(activeThreadId);
+            });
+        }
+
+        function showThreadListView() {
+            activeThreadId = null;
+            const listView = document.getElementById("forumThreadListView");
+            const detailView = document.getElementById("forumThreadDetailView");
+            if (listView) listView.style.display = "flex";
+            if (detailView) detailView.style.display = "none";
+            renderThreadListIfVisible();
+        }
+
+        function renderThreadListIfVisible() {
+            const category = getCategoryById(activeCategoryId);
+            if (!category || category.isLiveChat) return;
+            const listView = document.getElementById("forumThreadListView");
+            if (!listView || listView.style.display === "none") return;
+            renderThreadList();
+        }
+
+        function renderThreadList() {
+            const listEl = document.getElementById("forumThreadList");
+            const emptyEl = document.getElementById("forumThreadEmptyState");
+            if (!listEl) return;
+
+            const threads = Object.keys(forumThreadsCache)
+                .map((id) => ({ id, ...forumThreadsCache[id] }))
+                .filter((t) => t.categoryId === activeCategoryId);
+
+            // Sabitlenenler en üstte, sonra son yanıt/oluşturma zamanına göre yeni->eski.
+            threads.sort((a, b) => {
+                if (!!a.isPinned !== !!b.isPinned) return a.isPinned ? -1 : 1;
+                const aTime = a.lastReplyAt || a.createdAt || 0;
+                const bTime = b.lastReplyAt || b.createdAt || 0;
+                return bTime - aTime;
+            });
+
+            if (threads.length === 0) {
+                listEl.innerHTML = "";
+                if (emptyEl) listEl.appendChild(emptyEl);
+                else listEl.innerHTML = '<div class="hub-placeholder">Bu kategoride henüz konu yok. İlk konuyu sen aç!</div>';
+                return;
+            }
+
+            listEl.innerHTML = threads.map(renderThreadCard).join("");
+            listEl.querySelectorAll(".forum-thread-card").forEach((card) => {
+                card.addEventListener("click", () => openThreadDetail(card.getAttribute("data-thread-id")));
+            });
+        }
+
+        function renderThreadCard(t) {
+            const candidate = window.CommunityMentions.getByUid(t.authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+            const avatarUrl = candidate ? candidate.avatarUrl : "";
+            const isVerified = candidate ? candidate.isVerified : false;
+
+            const tagsHtml = `
+                ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
+                ${t.isLocked ? '<span class="forum-thread-tag forum-thread-tag-locked">🔒 Kilitli</span>' : ''}
+            `;
+
+            const previewSource = stripRichContentTokens(t.body || "");
+
+            return `
+                <div class="forum-thread-card${t.isPinned ? ' is-pinned' : ''}" data-thread-id="${t.id}">
+                    <img class="forum-thread-avatar" src="${RBAC.escapeHtml(avatarUrl || '')}" alt="">
+                    <div class="forum-thread-main">
+                        <div class="forum-thread-title-row">
+                            <span class="forum-thread-title">${RBAC.escapeHtml(t.title || 'İsimsiz Konu')}</span>
+                            ${tagsHtml}
+                        </div>
+                        <div class="forum-thread-meta">
+                            <span>${RBAC.escapeHtml(username)}</span>
+                            ${isVerified ? RBAC.renderVerifiedBadge(true) : ''}
+                            <span class="forum-thread-meta-sep">·</span>
+                            <span>${formatMessageTime(t.createdAt)}</span>
+                        </div>
+                        <div class="forum-thread-preview">${RBAC.escapeHtml(previewSource)}</div>
+                    </div>
+                    <div class="forum-thread-stats">
+                        <span class="forum-thread-stats-count">${t.replyCount || 0}</span>
+                        <span class="forum-thread-stats-label">Yanıt</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ------------------------------------------------------------
+        // C) YENİ KONU MODALI
+        // ------------------------------------------------------------
+        function populateNewThreadCategorySelect() {
+            const selectEl = document.getElementById("forumNewThreadCategory");
+            if (!selectEl) return;
+            const postable = FORUM_CATEGORIES.filter((c) => !c.isLiveChat);
+            selectEl.innerHTML = postable.map((c) => `<option value="${c.id}">${c.icon} ${RBAC.escapeHtml(c.name)}</option>`).join("");
+        }
+
+        function initNewThreadModal() {
+            const backdrop = document.getElementById("forumNewThreadModalBackdrop");
+            const closeBtn = document.getElementById("forumNewThreadModalClose");
+            const cancelBtn = document.getElementById("forumNewThreadCancelBtn");
+            const submitBtn = document.getElementById("forumNewThreadSubmitBtn");
+            const bodyInput = document.getElementById("forumNewThreadBody");
+            const dropdownEl = document.getElementById("forumNewThreadMentionDropdown");
+
+            if (bodyInput && dropdownEl && window.CommunityMentions) {
+                window.CommunityMentions.attachAutocomplete(bodyInput, dropdownEl);
+            }
+
+            if (closeBtn) closeBtn.addEventListener("click", closeNewThreadModal);
+            if (cancelBtn) cancelBtn.addEventListener("click", closeNewThreadModal);
+            if (backdrop) backdrop.addEventListener("click", (e) => {
+                if (e.target === backdrop) closeNewThreadModal();
+            });
+            if (submitBtn) submitBtn.addEventListener("click", handleCreateThread);
+        }
+
+        function openNewThreadModal(preselectCategoryId) {
+            const backdrop = document.getElementById("forumNewThreadModalBackdrop");
+            const selectEl = document.getElementById("forumNewThreadCategory");
+            const titleEl = document.getElementById("forumNewThreadTitle");
+            const bodyEl = document.getElementById("forumNewThreadBody");
+            const errorEl = document.getElementById("forumNewThreadError");
+            if (!backdrop) return;
+
+            if (selectEl && preselectCategoryId && getCategoryById(preselectCategoryId) && !getCategoryById(preselectCategoryId).isLiveChat) {
+                selectEl.value = preselectCategoryId;
+            }
+            if (titleEl) titleEl.value = "";
+            if (bodyEl) bodyEl.value = "";
+            if (errorEl) errorEl.style.display = "none";
+
+            backdrop.style.display = "flex";
+            if (titleEl) titleEl.focus();
+        }
+
+        function closeNewThreadModal() {
+            const backdrop = document.getElementById("forumNewThreadModalBackdrop");
+            if (backdrop) backdrop.style.display = "none";
+        }
+
+        function showNewThreadError(message) {
+            const errorEl = document.getElementById("forumNewThreadError");
+            if (!errorEl) { alert(message); return; }
+            errorEl.textContent = message;
+            errorEl.style.display = "block";
+        }
+
+        async function handleCreateThread() {
+            const selectEl = document.getElementById("forumNewThreadCategory");
+            const titleEl = document.getElementById("forumNewThreadTitle");
+            const bodyEl = document.getElementById("forumNewThreadBody");
+            if (!selectEl || !titleEl || !bodyEl) return;
+
+            const categoryId = selectEl.value;
+            const title = titleEl.value.trim();
+            const bodyRaw = bodyEl.value.trim();
+
+            if (!title) { showNewThreadError("Lütfen bir başlık girin."); return; }
+            if (!bodyRaw) { showNewThreadError("Lütfen konu içeriği girin."); return; }
+
+            const category = getCategoryById(categoryId);
+            if (category && category.restrictedToStaff && !RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
+                showNewThreadError("Bu kategoride konu açmak için yetkiniz yok.");
+                return;
+            }
+
+            const encodedBody = window.CommunityMentions.encodeForStorage(bodyRaw);
+
+            const threadData = {
+                categoryId,
+                title,
+                body: encodedBody,
+                authorUid: window.CommunityAuth.user.uid,
+                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                isPinned: false,
+                isLocked: false,
+                replyCount: 0
+            };
+
+            try {
+                const newRef = await database.ref('forum_threads').push(threadData);
+                closeNewThreadModal();
+                switchForumCategory(categoryId);
+                openThreadDetail(newRef.key);
+            } catch (err) {
+                console.error("[Forum] Konu oluşturulamadı:", err);
+                showNewThreadError("Konu oluşturulamadı. Lütfen tekrar deneyin.");
+            }
+        }
+
+        // ------------------------------------------------------------
+        // D) KONU DETAYI + YORUM AĞACI (NESTED REPLIES)
+        // ------------------------------------------------------------
+        function openThreadDetail(threadId) {
+            activeThreadId = threadId;
+            const listView = document.getElementById("forumThreadListView");
+            const detailView = document.getElementById("forumThreadDetailView");
+            if (listView) listView.style.display = "none";
+            if (detailView) detailView.style.display = "flex";
+
+            renderThreadDetailHeader(threadId);
+            listenToThreadReplies(threadId);
+        }
+
+        function renderThreadDetailHeader(threadId) {
+            if (threadId !== activeThreadId) return;
+            const headerEl = document.getElementById("forumThreadDetailHeader");
+            const composerWrap = document.getElementById("forumReplyComposerWrap");
+            const statusLine = document.getElementById("forumThreadStatusLine");
+            if (!headerEl) return;
+
+            const t = forumThreadsCache[threadId];
+            if (!t) {
+                headerEl.innerHTML = '<div class="hub-placeholder">Bu konu bulunamadı veya silinmiş.</div>';
+                if (composerWrap) composerWrap.style.display = "none";
+                return;
+            }
+
+            const candidate = window.CommunityMentions.getByUid(t.authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+            const isVerified = candidate ? candidate.isVerified : false;
+            const viewerProfile = window.CommunityAuth.profile;
+            const myUid = window.CommunityAuth.user.uid;
+            const canModerateThread = RBAC.hasMinimumTier(viewerProfile, "helper");
+
+            let actionsHtml = "";
+            if (canModerateThread) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="toggle-pin-thread">${t.isPinned ? "Sabitlemeyi Kaldır" : "Sabitle"}</button>`;
+                actionsHtml += `<button class="forum-message-action-btn" data-action="toggle-lock-thread">${t.isLocked ? "Kilidi Aç" : "Kilitle"}</button>`;
+            }
+            if (canModerateThread || t.authorUid === myUid) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="delete-thread">Konuyu Sil</button>`;
+            }
+
+            headerEl.innerHTML = `
+                <div class="forum-thread-detail-title-row">
+                    <span class="forum-thread-detail-title">${RBAC.escapeHtml(t.title || 'İsimsiz Konu')}</span>
+                    ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
+                    ${t.isLocked ? '<span class="forum-thread-tag forum-thread-tag-locked">🔒 Kilitli</span>' : ''}
+                </div>
+                <div class="forum-thread-detail-header">
+                    <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
+                        ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                    </span>
+                    <span class="forum-message-time">${formatMessageTime(t.createdAt)}</span>
+                </div>
+                <div class="forum-thread-detail-body">${renderRichContent(t.body || "")}</div>
+                ${actionsHtml ? `<div class="forum-thread-detail-actions">${actionsHtml}</div>` : ''}
+            `;
+
+            attachMessageActionHandlers(headerEl);
+            headerEl.querySelectorAll('[data-action="toggle-pin-thread"]').forEach((btn) => {
+                btn.addEventListener("click", () => toggleThreadPin(threadId, !t.isPinned));
+            });
+            headerEl.querySelectorAll('[data-action="toggle-lock-thread"]').forEach((btn) => {
+                btn.addEventListener("click", () => toggleThreadLock(threadId, !t.isLocked));
+            });
+            headerEl.querySelectorAll('[data-action="delete-thread"]').forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    if (confirm("Bu konuyu ve tüm yorumlarını silmek istediğinize emin misiniz?")) {
+                        deleteThread(threadId);
+                    }
+                });
+            });
+
+            // Kilitli konularda yeni yorum kutusu tamamen gizlenir.
+            if (composerWrap) composerWrap.style.display = t.isLocked ? "none" : "flex";
+            if (statusLine) {
+                if (t.isLocked) {
+                    statusLine.textContent = "Bu konu yetkililer tarafından kilitlendi. Yeni yorum yapılamaz.";
+                    statusLine.style.display = "block";
+                } else {
+                    statusLine.style.display = "none";
+                }
+            }
+        }
+
+        function listenToThreadReplies(threadId) {
+            if (forumRepliesListenerThreadId && forumRepliesListenerThreadId !== threadId) {
+                database.ref('forum_replies/' + forumRepliesListenerThreadId).off('value');
+            }
+            forumRepliesListenerThreadId = threadId;
+            database.ref('forum_replies/' + threadId).on('value', (snap) => {
+                if (threadId !== activeThreadId) return; // kullanıcı başka thread'e geçmişse yoksay
+                forumRepliesCache[threadId] = snap.val() || {};
+                renderThreadReplies(threadId);
+            });
+        }
+
+        function renderThreadReplies(threadId) {
+            const listEl = document.getElementById("forumRepliesList");
+            if (!listEl) return;
+            const repliesMap = forumRepliesCache[threadId] || {};
+            const allReplies = Object.keys(repliesMap).map((id) => ({ id, ...repliesMap[id] }));
+            allReplies.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+            const rootReplies = allReplies.filter((r) => !r.parentReplyId);
+            const childrenByParent = {};
+            allReplies.forEach((r) => {
+                if (r.parentReplyId) {
+                    if (!childrenByParent[r.parentReplyId]) childrenByParent[r.parentReplyId] = [];
+                    childrenByParent[r.parentReplyId].push(r);
+                }
+            });
+
+            if (rootReplies.length === 0) {
+                listEl.innerHTML = '<div class="hub-placeholder">Henüz yorum yok. İlk yorumu sen yaz!</div>';
+                return;
+            }
+
+            listEl.innerHTML = rootReplies.map((r) => renderReplyNode(r, childrenByParent, threadId)).join("");
+            attachReplyActionHandlers(listEl, threadId);
+        }
+
+        function renderReplyNode(reply, childrenByParent, threadId) {
+            const children = childrenByParent[reply.id] || [];
+            const childrenHtml = children.length
+                ? `<div class="forum-reply-children">${children.map((c) => renderReplyNode(c, childrenByParent, threadId)).join("")}</div>`
+                : "";
+            return renderSingleReply(reply, threadId) + childrenHtml;
+        }
+
+        function renderSingleReply(r, threadId) {
+            const candidate = window.CommunityMentions.getByUid(r.authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+            const avatarUrl = candidate ? candidate.avatarUrl : "";
+            const isVerified = candidate ? candidate.isVerified : false;
+            const myUid = window.CommunityAuth.user.uid;
+            const viewerProfile = window.CommunityAuth.profile;
+            const thread = forumThreadsCache[threadId];
+            const isLocked = thread && thread.isLocked;
+
+            let actionsHtml = "";
+            if (!isLocked) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="reply-to-reply" data-reply-id="${r.id}">Yanıtla</button>`;
+            }
+            if (RBAC.canModerate(viewerProfile) || r.authorUid === myUid) {
+                actionsHtml += `<button class="forum-message-action-btn" data-action="delete-reply" data-reply-id="${r.id}">Sil</button>`;
+            }
+
+            return `
+                <div class="forum-reply" data-reply-id="${r.id}">
+                    <img class="forum-reply-avatar" src="${RBAC.escapeHtml(avatarUrl || '')}" alt="">
+                    <div class="forum-reply-body">
+                        <div class="forum-reply-header">
+                            <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
+                                ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                            </span>
+                            <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
+                        </div>
+                        <div class="forum-reply-text">${renderRichContent(r.text || "")}</div>
+                        ${actionsHtml ? `<div class="forum-reply-actions">${actionsHtml}</div>` : ''}
+
+                        <div class="forum-reply-inline-composer" id="inline-composer-${r.id}">
+                            <textarea class="forum-reply-inline-input" id="inline-input-${r.id}" rows="2" maxlength="2000" placeholder="Yanıt yaz..."></textarea>
+                            <div class="forum-reply-inline-actions">
+                                <button class="forum-btn forum-btn-ghost" data-action="cancel-inline-reply" data-reply-id="${r.id}">Vazgeç</button>
+                                <button class="forum-btn forum-btn-primary" data-action="submit-inline-reply" data-reply-id="${r.id}">Yanıtla</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachReplyActionHandlers(containerEl, threadId) {
+            containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
+                el.addEventListener("click", () => {
+                    const uid = el.getAttribute("data-uid");
+                    const candidate = window.CommunityMentions.getByUid(uid);
+                    if (!candidate) return;
+                    switchView("profile");
+                    database.ref('users/' + uid).once('value').then((snap) => {
+                        const targetProfile = snap.val();
+                        if (targetProfile) window.renderProfileView(targetProfile, uid, uid === window.CommunityAuth.user.uid);
+                    });
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="delete-reply"]').forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const replyId = btn.getAttribute("data-reply-id");
+                    if (confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
+                        deleteReply(threadId, replyId);
+                    }
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="reply-to-reply"]').forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const replyId = btn.getAttribute("data-reply-id");
+                    const box = document.getElementById("inline-composer-" + replyId);
+                    if (box) {
+                        box.classList.toggle("is-open");
+                        const input = document.getElementById("inline-input-" + replyId);
+                        if (box.classList.contains("is-open") && input) input.focus();
+                    }
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="cancel-inline-reply"]').forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const replyId = btn.getAttribute("data-reply-id");
+                    const box = document.getElementById("inline-composer-" + replyId);
+                    if (box) box.classList.remove("is-open");
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="submit-inline-reply"]').forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const replyId = btn.getAttribute("data-reply-id");
+                    const input = document.getElementById("inline-input-" + replyId);
+                    if (!input) return;
+                    const text = input.value.trim();
+                    if (!text) return;
+                    await submitThreadReply(threadId, text, replyId);
+                    input.value = "";
+                    const box = document.getElementById("inline-composer-" + replyId);
+                    if (box) box.classList.remove("is-open");
+                });
+            });
+        }
+
+        function initThreadDetailComposer() {
+            const inputEl = document.getElementById("forumReplyInput");
+            const dropdownEl = document.getElementById("forumReplyMentionDropdown");
+            const sendBtn = document.getElementById("forumReplySendBtn");
+
+            if (inputEl && dropdownEl && window.CommunityMentions) {
+                window.CommunityMentions.attachAutocomplete(inputEl, dropdownEl);
+            }
+
+            if (sendBtn) {
+                sendBtn.addEventListener("click", async () => {
+                    if (!inputEl) return;
+                    const text = inputEl.value.trim();
+                    if (!text || !activeThreadId) return;
+                    await submitThreadReply(activeThreadId, text, null);
+                    inputEl.value = "";
+                });
+            }
+            if (inputEl) {
+                inputEl.addEventListener("keydown", async (e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        const text = inputEl.value.trim();
+                        if (!text || !activeThreadId) return;
+                        await submitThreadReply(activeThreadId, text, null);
+                        inputEl.value = "";
+                    }
+                });
+            }
+        }
+
+        async function submitThreadReply(threadId, rawText, parentReplyId) {
+            const thread = forumThreadsCache[threadId];
+            if (thread && thread.isLocked) {
+                alert("Bu konu kilitli, yeni yorum yapılamaz.");
+                return;
+            }
+
+            const encodedText = window.CommunityMentions.encodeForStorage(rawText);
+            const replyData = {
+                authorUid: window.CommunityAuth.user.uid,
+                text: encodedText,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            if (parentReplyId) replyData.parentReplyId = parentReplyId;
+
+            try {
+                await database.ref('forum_replies/' + threadId).push(replyData);
+                await database.ref('forum_threads/' + threadId).update({
+                    replyCount: firebase.database.ServerValue.increment(1),
+                    lastReplyAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Forum] Yorum gönderilemedi:", err);
+                alert("Yorum gönderilemedi. Lütfen tekrar deneyin.");
+            }
+        }
+
+        async function deleteReply(threadId, replyId) {
+            try {
+                await database.ref('forum_replies/' + threadId + '/' + replyId).remove();
+                await database.ref('forum_threads/' + threadId).update({
+                    replyCount: firebase.database.ServerValue.increment(-1)
+                });
+            } catch (err) {
+                console.error("[Forum] Yorum silinemedi:", err);
+                alert("Yorum silinemedi.");
+            }
+        }
+
+        // ------------------------------------------------------------
+        // E) ADMIN FONKSİYONLARI: sabitleme, kilitleme, konu silme
+        // ------------------------------------------------------------
+        async function toggleThreadPin(threadId, newPinnedState) {
+            if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            try {
+                await database.ref('forum_threads/' + threadId).update({ isPinned: newPinnedState });
+                await database.ref('audit_logs').push({
+                    action: newPinnedState ? "pin_thread" : "unpin_thread",
+                    targetThreadId: threadId,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: window.CommunityAuth.profile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Forum] Konu sabitleme başarısız:", err);
+                alert("İşlem başarısız oldu.");
+            }
+        }
+
+        async function toggleThreadLock(threadId, newLockedState) {
+            if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            try {
+                await database.ref('forum_threads/' + threadId).update({ isLocked: newLockedState });
+                await database.ref('audit_logs').push({
+                    action: newLockedState ? "lock_thread" : "unlock_thread",
+                    targetThreadId: threadId,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: window.CommunityAuth.profile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Forum] Konu kilitleme başarısız:", err);
+                alert("İşlem başarısız oldu.");
+            }
+        }
+
+        async function deleteThread(threadId) {
+            const t = forumThreadsCache[threadId];
+            const isOwn = t && t.authorUid === window.CommunityAuth.user.uid;
+            if (!isOwn && !RBAC.canModerate(window.CommunityAuth.profile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            try {
+                await database.ref('forum_threads/' + threadId).remove();
+                await database.ref('forum_replies/' + threadId).remove();
+                if (!isOwn) {
+                    await database.ref('audit_logs').push({
+                        action: "delete_thread",
+                        targetThreadId: threadId,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: window.CommunityAuth.profile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                showThreadListView();
+            } catch (err) {
+                console.error("[Forum] Konu silinemedi:", err);
+                alert("Konu silinemedi.");
+            }
+        }
+
+        // ------------------------------------------------------------
+        // F) ZENGİN İÇERİK (Emoji / GIF / Resim / Video)
+        // ------------------------------------------------------------
+        // Emoji zaten düz metin/unicode olarak yazılıp gösterildiği için
+        // ekstra işlem gerekmez. Resim, GIF ve video linkleri basit bir
+        // BBCode benzeri işaretleme ile desteklenir:
+        //   [img]https://...[/img]   -> <img>
+        //   [gif]https://...[/gif]   -> <img> (GIF de görsel olarak aynı şekilde gösterilir)
+        //   [video]https://...[/video] -> tıklanabilir video linki (YouTube/mp4 vb.
+        //     harici embed her platformda garanti çalışmayacağı için güvenli
+        //     bir link kartı olarak gösterilir).
+        // Metin önce escapeHtml'den, SONRA mention render'dan geçer, EN SON
+        // bu token'lar HTML'e çevrilir — böylece XSS riski oluşmaz (URL'ler
+        // de escape edilmiş haliyle attribute'a yazılır).
+        function renderRichContent(storedText) {
+            if (!storedText) return "";
+            let html = window.CommunityMentions.renderForDisplay(storedText);
+
+            html = html.replace(/\[img\](.*?)\[\/img\]/gi, (match, url) => {
+                const safeUrl = RBAC.escapeHtml(url.trim());
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
+            });
+
+            html = html.replace(/\[gif\](.*?)\[\/gif\]/gi, (match, url) => {
+                const safeUrl = RBAC.escapeHtml(url.trim());
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan GIF" loading="lazy">`;
+            });
+
+            html = html.replace(/\[video\](.*?)\[\/video\]/gi, (match, url) => {
+                const safeUrl = RBAC.escapeHtml(url.trim());
+                return `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">▶️ Videoyu Aç</a>`;
+            });
+
+            return html;
+        }
+
+        // Konu listesi önizlemesinde ham [img]/[gif]/[video] token'larını
+        // ve [mention:UID] referanslarını göstermeden temiz bir metin özeti
+        // üretmek için kullanılır (escapeHtml renderThreadCard içinde
+        // ayrıca uygulanır, burada sadece token temizliği yapılır).
+        function stripRichContentTokens(rawStoredText) {
+            return rawStoredText
+                .replace(/\[img\].*?\[\/img\]/gi, "[Resim]")
+                .replace(/\[gif\].*?\[\/gif\]/gi, "[GIF]")
+                .replace(/\[video\].*?\[\/video\]/gi, "[Video]")
+                .replace(/\[mention:[A-Za-z0-9_-]+\]/g, "@kullanıcı");
         }
 
         function switchView(view) {
@@ -2022,6 +4344,23 @@
             const titleEl = document.getElementById("hubPageTitle");
             if (eyebrowEl) eyebrowEl.textContent = eyebrow;
             if (titleEl) titleEl.textContent = title;
+
+            // "Profilim" sekmesine geçildiğinde, kendi profilimizi render
+            // ediyoruz. Daha önce bu hiç tetiklenmiyordu; sekme boş
+            // görünüyordu çünkü renderProfileView sadece auth-ready /
+            // profile-updated event'lerinde çağrılıyordu, tıklamada değil.
+            if (view === "profile" && window.CommunityAuth && window.CommunityAuth.profile) {
+                window.renderProfileView(
+                    window.CommunityAuth.profile,
+                    window.CommunityAuth.user ? window.CommunityAuth.user.uid : null,
+                    true
+                );
+            }
+
+            // Mobilde bir öğeye tıklanınca sidebar'ı otomatik kapat.
+            if (typeof window.closeMobileSidebar === "function") {
+                window.closeMobileSidebar();
+            }
         }
 
         document.addEventListener("communitystudio:auth-ready", (e) => {
@@ -2034,6 +4373,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             initRouter();
+            initSidebarToggle();
             initProfileBioEditor();
             initProfileNameEditor();
             initGateLoginForm();
