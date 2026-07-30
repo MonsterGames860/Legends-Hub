@@ -150,6 +150,106 @@
         filter: brightness(1.08);
     }
 
+    /* ---------- AUTH GATE: GİRİŞ FORMU (no_session durumu) ---------- */
+    #gateLoginForm {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        max-width: 360px;
+        padding: 0 20px;
+    }
+
+    .gate-login-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-top: 4px;
+    }
+
+    .gate-login-sub {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        text-align: center;
+        margin-bottom: 14px;
+    }
+
+    .gate-login-box {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 22px;
+    }
+
+    .gate-login-input {
+        width: 100%;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 11px 13px;
+        font-size: 0.92rem;
+        font-family: var(--font-display);
+    }
+
+    .gate-login-input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .gate-login-error {
+        font-size: 0.8rem;
+        color: var(--danger);
+        background: rgba(255, 77, 77, 0.08);
+        border: 1px solid rgba(255, 77, 77, 0.3);
+        border-radius: 6px;
+        padding: 8px 10px;
+    }
+
+    .gate-login-btn {
+        margin-top: 4px;
+        width: 100%;
+        padding: 11px 22px;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: var(--bg-void);
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: filter 0.15s ease, opacity 0.15s ease;
+    }
+
+    .gate-login-btn:hover {
+        filter: brightness(1.08);
+    }
+
+    .gate-login-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .gate-login-register-row {
+        margin-top: 16px;
+        font-size: 0.85rem;
+        color: var(--text-dim);
+    }
+
+    .gate-login-register-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .gate-login-register-link:hover {
+        text-decoration: underline;
+    }
+
     /* ---------- HUB SHELL (auth doğrulanınca görünür olur) ---------- */
     #hubShell {
         display: none; /* Modül 1-B, auth-ready event'inde bunu açacak */
@@ -727,6 +827,41 @@
             <a class="gate-denied-btn" id="gateDeniedBtn" href="https://playlegends.vercel.app/" target="_top">
                 Play Legends'a git ve giriş yap
             </a>
+        </div>
+
+        <!-- ============================================================
+             GİRİŞ FORMU — SADECE "no_session" (hiç oturum yok, hiç token
+             gelmedi) durumunda gösterilir. Aynı Firebase Auth kullanıcı
+             havuzunu (playlegends.vercel.app ile ortak proje) kullanır.
+             MİSAFİR/GUEST SEÇENEĞİ KASITLI OLARAK YOK. Kayıt işlemi bu
+             formda YAPILMAZ — "Kaydol" linki ana siteye yönlendirir.
+             ============================================================ -->
+        <div id="gateLoginForm" style="display:none;">
+            <div class="gate-mark">COMMUNITY HUB</div>
+            <div class="gate-login-title">Hesabınla giriş yap</div>
+            <div class="gate-login-sub">
+                Community Hub, Play Legends hesabınla aynı girişi kullanır.
+            </div>
+
+            <form id="gateLoginFormEl" class="gate-login-box" autocomplete="on">
+                <input type="email" id="gateLoginEmail" class="gate-login-input"
+                       placeholder="E-posta adresi" autocomplete="username" required>
+                <input type="password" id="gateLoginPass" class="gate-login-input"
+                       placeholder="Şifre" autocomplete="current-password" required>
+
+                <div class="gate-login-error" id="gateLoginError" style="display:none;"></div>
+
+                <button type="submit" class="gate-login-btn" id="gateLoginSubmitBtn">
+                    Giriş Yap
+                </button>
+            </form>
+
+            <p class="gate-login-register-row">
+                Hesabın yok mu?
+                <a href="https://playlegends.vercel.app/" target="_top" class="gate-login-register-link">
+                    Play Legends'ta kaydol
+                </a>
+            </p>
         </div>
     </div>
 
@@ -1357,19 +1492,97 @@
             window.CommunityAuth.ready = true;
             window.CommunityAuth.isAuthorized = false;
 
-            const info = DENY_MESSAGES[reasonKey] || DENY_MESSAGES.no_session;
-
             const loadingEl = document.getElementById("gateLoading");
             const deniedEl = document.getElementById("gateDenied");
+            const loginFormEl = document.getElementById("gateLoginForm");
+
+            if (loadingEl) loadingEl.style.display = "none";
+
+            // "no_session": hiç oturum yok VE hiç handoff token'ı gelmedi.
+            // Bu durumda kullanıcıyı dışarı atmak yerine, hub'ın kendi
+            // giriş formunu gösteriyoruz (aynı Firebase Auth havuzu).
+            // Diğer tüm red sebepleri (guest_blocked, user_banned,
+            // token_invalid, init_error) için eski bilgi ekranı kalır —
+            // bunlarda "giriş yap" değil, "bu hesapla erişemezsin" mesajı
+            // doğru olan, o yüzden formu değil #gateDenied'i gösteriyoruz.
+            if (reasonKey === "no_session") {
+                if (deniedEl) deniedEl.style.display = "none";
+                if (loginFormEl) loginFormEl.style.display = "flex";
+                return;
+            }
+
+            const info = DENY_MESSAGES[reasonKey] || DENY_MESSAGES.no_session;
             const titleEl = document.getElementById("gateDeniedTitle");
             const textEl = document.getElementById("gateDeniedText");
             const btnEl = document.getElementById("gateDeniedBtn");
 
-            if (loadingEl) loadingEl.style.display = "none";
+            if (loginFormEl) loginFormEl.style.display = "none";
             if (deniedEl) deniedEl.style.display = "flex";
             if (titleEl) titleEl.textContent = info.title;
             if (textEl) textEl.textContent = info.text;
             if (btnEl) btnEl.href = MAIN_SITE_URL;
+        }
+
+        // ------------------------------------------------------------
+        // 3-B) HUB'IN KENDİ GİRİŞ FORMU — aynı Firebase Auth havuzunu
+        //      kullanır (playlegends.vercel.app ile ortak proje).
+        //      MİSAFİR SEÇENEĞİ YOK. Kayıt burada yapılmaz, "kaydol"
+        //      linki ana siteye yönlendirir (yukarıdaki HTML'de zaten
+        //      target="_top" ile tanımlı).
+        // ------------------------------------------------------------
+        function initGateLoginForm() {
+            const formEl = document.getElementById("gateLoginFormEl");
+            const emailEl = document.getElementById("gateLoginEmail");
+            const passEl = document.getElementById("gateLoginPass");
+            const errorEl = document.getElementById("gateLoginError");
+            const submitBtn = document.getElementById("gateLoginSubmitBtn");
+            if (!formEl) return;
+
+            const ERROR_MESSAGES = {
+                "auth/invalid-email": "Geçersiz e-posta adresi.",
+                "auth/user-disabled": "Bu hesap devre dışı bırakılmış.",
+                "auth/user-not-found": "Bu e-posta ile kayıtlı bir hesap bulunamadı.",
+                "auth/wrong-password": "E-posta veya şifre hatalı.",
+                "auth/invalid-credential": "E-posta veya şifre hatalı.",
+                "auth/too-many-requests": "Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar deneyin.",
+                "auth/network-request-failed": "Bağlantı hatası. İnternet bağlantınızı kontrol edin."
+            };
+
+            formEl.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const email = (emailEl.value || "").trim();
+                const pass = passEl.value || "";
+
+                if (errorEl) errorEl.style.display = "none";
+
+                if (!email || !pass) {
+                    if (errorEl) {
+                        errorEl.textContent = "E-posta ve şifre zorunludur.";
+                        errorEl.style.display = "block";
+                    }
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Giriş yapılıyor…";
+
+                try {
+                    // signInWithEmailAndPassword başarılı olursa
+                    // auth.onAuthStateChanged tetiklenir ve
+                    // finalizeAuthDecision akışı devreye girer —
+                    // burada ekstra bir yönlendirme yapmamıza gerek yok.
+                    await auth.signInWithEmailAndPassword(email, pass);
+                } catch (err) {
+                    console.error("[CommunityHub] Giriş hatası:", err);
+                    if (errorEl) {
+                        errorEl.textContent = ERROR_MESSAGES[err.code] || "Giriş yapılamadı. Lütfen tekrar deneyin.";
+                        errorEl.style.display = "block";
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Giriş Yap";
+                }
+            });
         }
 
         // ------------------------------------------------------------
@@ -1514,7 +1727,13 @@
             const signedInUser = await signInWithHandoffToken(handoffToken);
 
             if (!signedInUser) {
-                showDeniedScreen("token_invalid");
+                // Cloud Function (exchangeSsoToken) henüz deploy
+                // edilmemiş ya da geçici bir hata olmuş olabilir.
+                // Kullanıcıyı çıkmaz bir bilgi ekranında bırakmak yerine,
+                // hub'ın kendi giriş formuna düşürüyoruz — böylece
+                // SSO handoff çalışmasa bile kullanıcı e-posta/şifre ile
+                // giriş yapabilir.
+                showDeniedScreen("no_session");
                 return;
             }
             // signInWithCustomToken başarılı → onAuthStateChanged tekrar
@@ -1817,6 +2036,7 @@
             initRouter();
             initProfileBioEditor();
             initProfileNameEditor();
+            initGateLoginForm();
             if (window.CommunityAuth && window.CommunityAuth.ready && window.CommunityAuth.isAuthorized) {
                 showHubShell(window.CommunityAuth.user, window.CommunityAuth.profile);
             }
