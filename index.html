@@ -523,16 +523,26 @@
     .forum-composer-input {
         width: 100%;
         resize: vertical;
-        min-height: 68px;
-        max-height: 200px;
+        min-height: 52px;
+        max-height: 160px;
         background: var(--bg-panel);
         border: 1px solid var(--line);
         border-radius: 8px;
         color: var(--text-primary);
-        padding: 13px 15px;
+        padding: 12px 14px;
         font-family: var(--font-display);
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         line-height: 1.5;
+    }
+
+    /* Masaüstünde daha ferah bir yazma alanı. */
+    @media (min-width: 861px) {
+        .forum-composer-input {
+            min-height: 76px;
+            max-height: 240px;
+            font-size: 0.98rem;
+            padding: 15px 17px;
+        }
     }
 
     .forum-composer-input:focus {
@@ -1646,6 +1656,11 @@
         background: var(--accent-soft);
         border-radius: 5px;
         padding: 0 4px;
+        cursor: pointer;
+    }
+
+    .mention-chip:hover {
+        text-decoration: underline;
     }
 
     .mention-chip-unknown {
@@ -3761,21 +3776,11 @@
             });
 
             containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
-                el.addEventListener("click", () => {
-                    const uid = el.getAttribute("data-uid");
-                    const candidate = window.CommunityMentions.getByUid(uid);
-                    if (!candidate) return;
-                    // Modül 2'deki renderProfileView, başkasının profilini
-                    // görüntüleme parametreleriyle çağrılıyor.
-                    switchView("profile");
-                    database.ref('users/' + uid).once('value').then((snap) => {
-                        const targetProfile = snap.val();
-                        if (targetProfile) {
-                            window.renderProfileView(targetProfile, uid, uid === window.CommunityAuth.user.uid);
-                        }
-                    });
-                });
+                el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
             });
+
+            // @mention etiketlerine tıklayınca o kullanıcının profili açılsın.
+            attachMentionClickHandlers(containerEl);
         }
 
         /**
@@ -4319,17 +4324,11 @@
 
         function attachReplyActionHandlers(containerEl, threadId) {
             containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
-                el.addEventListener("click", () => {
-                    const uid = el.getAttribute("data-uid");
-                    const candidate = window.CommunityMentions.getByUid(uid);
-                    if (!candidate) return;
-                    switchView("profile");
-                    database.ref('users/' + uid).once('value').then((snap) => {
-                        const targetProfile = snap.val();
-                        if (targetProfile) window.renderProfileView(targetProfile, uid, uid === window.CommunityAuth.user.uid);
-                    });
-                });
+                el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
             });
+
+            // @mention etiketlerine tıklayınca o kullanıcının profili açılsın.
+            attachMentionClickHandlers(containerEl);
 
             containerEl.querySelectorAll('[data-action="delete-reply"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
@@ -4560,6 +4559,40 @@
                 .replace(/\[gif\].*?\[\/gif\]/gi, "[GIF]")
                 .replace(/\[video\].*?\[\/video\]/gi, "[Video]")
                 .replace(/\[mention:[A-Za-z0-9_-]+\]/g, "@kullanıcı");
+        }
+
+        /**
+         * Herhangi bir yerden (forum mesajı, thread, yorum, @mention chip)
+         * bir kullanıcının profilini açmak için ortak fonksiyon. UID
+         * geçerli değilse veya kullanıcı silinmişse sessizce hiçbir şey
+         * yapmaz.
+         */
+        function openUserProfile(uid) {
+            if (!uid) return;
+            switchView("profile");
+            database.ref('users/' + uid).once('value').then((snap) => {
+                const targetProfile = snap.val();
+                if (targetProfile) {
+                    window.renderProfileView(targetProfile, uid, uid === window.CommunityAuth.user.uid);
+                }
+            });
+        }
+
+        /**
+         * Bir konteynerin İÇİNDEKİ tüm @mention chip'lerine tıklama
+         * dinleyicisi ekler — mesaj metni, thread body'si, yorum metni
+         * gibi renderRichContent/renderForDisplay çıktısı gösteren HER
+         * yer bunu çağırmalıdır ki "@isim" etiketine basılınca o
+         * kişinin profili açılsın.
+         */
+        function attachMentionClickHandlers(containerEl) {
+            if (!containerEl) return;
+            containerEl.querySelectorAll('.mention-chip[data-mention-uid]').forEach((chip) => {
+                chip.addEventListener("click", (e) => {
+                    e.stopPropagation(); // dış mesaj kartının kendi click'ini tetiklemesin
+                    openUserProfile(chip.getAttribute("data-mention-uid"));
+                });
+            });
         }
 
         function switchView(view) {
