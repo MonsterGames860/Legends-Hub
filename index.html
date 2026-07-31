@@ -509,10 +509,6 @@
         display: flex;
         gap: 10px;
         align-items: flex-end;
-        position: sticky;
-        bottom: 0;
-        background: var(--bg-void);
-        padding-top: 6px;
     }
 
     /* Mobilde textarea + buton yan yana sıkışıp taşmasın diye
@@ -1144,45 +1140,6 @@
         height: 100vh;
     }
 
-    /* ---------- MOBİL: sidebar varsayılan KAPALI, drawer/overlay ----------
-       Bu blok bilinçli olarak .hub-sidebar kuralının HEMEN SONRASINA
-       konuldu. Aynı specificity'ye sahip iki kural çakıştığında CSS'te
-       kaynak sırasında SONRAKİ kazanır — bu blok daha önce dosyanın
-       başlarında (satır ~304) dururken masaüstü kuralı onu eziyordu ve
-       sidebar mobilde hep açık/sabit kalıyordu. Kalıcı çözüm için bu
-       kural her zaman .hub-sidebar temel kuralından SONRA gelmeli. */
-    @media (max-width: 860px) {
-        #hubShell.is-active {
-            display: block; /* grid yerine tek sütun: sidebar artık drawer */
-        }
-
-        .hub-sidebar-toggle {
-            display: flex;
-        }
-
-        .hub-sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100dvh;
-            width: 260px;
-            z-index: 100;
-            transform: translateX(-100%);
-            transition: transform 0.22s ease;
-            box-shadow: 8px 0 30px rgba(0,0,0,0.4);
-        }
-
-        .hub-sidebar.is-open {
-            transform: translateX(0);
-        }
-
-        .hub-main {
-            height: auto;
-            min-height: 100dvh;
-            padding: 20px;
-        }
-    }
-
     .hub-brand {
         display: flex;
         align-items: center;
@@ -1318,6 +1275,51 @@
         padding: 28px 34px;
         overflow-y: auto;
         height: 100vh;
+    }
+
+    /* ---------- MOBİL: sidebar varsayılan KAPALI, drawer/overlay ----------
+       Bu blok bilinçli olarak dosyadaki TÜM masaüstü .hub-sidebar VE
+       .hub-main kurallarından SONRAYA konuldu. Aynı specificity'ye sahip
+       iki kural çakıştığında CSS'te kaynak sırasında SONRAKİ kazanır —
+       bu blok daha önce masaüstü kurallarından ÖNCE dururken onlar
+       tarafından eziliyordu: sidebar mobilde hep açık/sabit kalıyor,
+       .hub-main da masaüstü padding/height (100vh + 28px/34px) miras
+       alıp yatay taşmaya (sağda/solda siyah şerit) sebep oluyordu.
+       Kalıcı çözüm: bu kural HER ZAMAN ilgili masaüstü kurallarından
+       SONRA gelmeli. */
+    @media (max-width: 860px) {
+        #hubShell.is-active {
+            display: block; /* grid yerine tek sütun: sidebar artık drawer */
+        }
+
+        .hub-sidebar-toggle {
+            display: flex;
+        }
+
+        .hub-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100dvh;
+            width: 260px;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.22s ease;
+            box-shadow: 8px 0 30px rgba(0,0,0,0.4);
+        }
+
+        .hub-sidebar.is-open {
+            transform: translateX(0);
+        }
+
+        .hub-main {
+            width: 100%;
+            max-width: 100vw;
+            height: auto;
+            min-height: 100dvh;
+            padding: 16px;
+            overflow-x: hidden;
+        }
     }
 
     .hub-topbar {
@@ -2014,7 +2016,7 @@
                             <button class="forum-send-btn" id="forumSendBtn">Gönder</button>
                         </div>
                         <div class="forum-composer-hint">
-                            Enter ile gönder, Shift+Enter ile alt satır · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj
+                            Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj
                         </div>
                     </div>
 
@@ -3390,14 +3392,9 @@
             if (sendBtn) {
                 sendBtn.addEventListener("click", handleForumSend);
             }
-            if (inputEl) {
-                inputEl.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleForumSend();
-                    }
-                });
-            }
+            // NOT: Enter tuşu artık mesaj GÖNDERMİYOR — textarea'nın
+            // varsayılan davranışına (alt satıra geçme) bırakıldı.
+            // Mesaj SADECE "Gönder" butonuna basılınca yollanır.
 
             const pinnedToggleBtn = document.getElementById("forumPinnedToggleBtn");
             if (pinnedToggleBtn) {
@@ -4403,17 +4400,8 @@
                     inputEl.value = "";
                 });
             }
-            if (inputEl) {
-                inputEl.addEventListener("keydown", async (e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        const text = inputEl.value.trim();
-                        if (!text || !activeThreadId) return;
-                        await submitThreadReply(activeThreadId, text, null);
-                        inputEl.value = "";
-                    }
-                });
-            }
+            // NOT: Enter tuşu artık göndermiyor — alt satıra geçer.
+            // Yorum SADECE "Gönder" butonuna basılınca yollanır.
         }
 
         async function submitThreadReply(threadId, rawText, parentReplyId) {
