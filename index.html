@@ -515,6 +515,19 @@
         padding-top: 6px;
     }
 
+    /* Mobilde textarea + buton yan yana sıkışıp taşmasın diye
+       composer'ı dikeyleştiriyoruz: input üstte, gönder butonu altta
+       (tam genişlik). */
+    @media (max-width: 560px) {
+        .forum-composer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .forum-send-btn {
+            width: 100%;
+        }
+    }
+
     .forum-composer-input-wrap {
         position: relative;
         flex: 1;
@@ -1947,7 +1960,6 @@
                                     id="forumReplyInput"
                                     class="forum-composer-input"
                                     placeholder="Bir yorum yaz... (@isim ile etiketle)"
-                                    rows="2"
                                     maxlength="2000"></textarea>
                                 <div class="mention-autocomplete-dropdown" id="forumReplyMentionDropdown"></div>
                             </div>
@@ -1995,8 +2007,7 @@
                                 <textarea
                                     id="forumComposerInput"
                                     class="forum-composer-input"
-                                    placeholder="Bir mesaj yaz... (@isim ile etiketle, /w isim mesaj ile gizli mesaj gönder)"
-                                    rows="2"
+                                    placeholder="Bir mesaj yaz... (@isim, /w isim mesaj)"
                                     maxlength="1000"></textarea>
                                 <div class="mention-autocomplete-dropdown" id="forumMentionDropdown"></div>
                             </div>
@@ -3035,11 +3046,11 @@
             document.getElementById("profileEditNameBtn").style.display = isSelf ? "inline-block" : "none";
             document.getElementById("profileBioEditBtn").style.display = isSelf ? "inline-block" : "none";
 
-            // --- Yönetici işlemleri kartı: sadece başkasının profilinde,
-            //     izleyen admin/owner ise görünür (kendi mavi tikini kendine
-            //     veremez, spec'e sadık kalıyoruz) ---
+            // --- Yönetici işlemleri kartı: admin/owner yetkisi olan
+            //     kişi, KENDİ profili dahil her profilde mavi tik
+            //     durumunu değiştirebilir (kullanıcının açık tercihi). ---
             const adminCard = document.getElementById("profileAdminActionsCard");
-            const canManage = !isSelf && RBAC.canManageVerification(viewerProfile);
+            const canManage = RBAC.canManageVerification(viewerProfile);
             adminCard.style.display = canManage ? "block" : "none";
 
             if (canManage) {
