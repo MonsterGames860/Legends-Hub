@@ -1363,6 +1363,27 @@
         font-size: 0.85rem;
     }
 
+    /* ---------- RÜTBE (RANK) ETİKETİ — index-29-1 (oyun sitesi) ile
+       birebir aynı Shiny/Sweep animasyonu. OG ve üzeri tüm rütbeler
+       bu ışıltı geçişini kullanır. ---------- */
+    @keyframes rankSweep {
+        0%   { background-position: 200% 0; }
+        30%  { background-position: -30% 0; }
+        30.001% { background-position: 200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    .rank-sweep-text {
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-image: linear-gradient(105deg, var(--rtc,#fff) 0%, var(--rtc,#fff) 36%, #fff 44%, #fff 52%, var(--rtc,#fff) 60%, var(--rtc,#fff) 100%);
+        background-size: 280% 100%;
+        background-position: 200% 0;
+        animation: rankSweep 5s linear infinite;
+        filter: drop-shadow(0 0 5px var(--rtc,#fff));
+        font-weight: bold;
+    }
+
     /* ---------- MAVİ TİK ROZETİ (evrensel — tüm modüller kullanacak) ---------- */
     .verified-badge {
         display: inline-flex;
@@ -2239,6 +2260,73 @@
             return hasMinimumTier(profile, "helper");
         }
 
+        // ---------- RÜTBE (RANK) RENK + ETİKET SİSTEMİ ----------
+        // index-29-1.html (oyun sitesi) içindeki getRankColor /
+        // RANK_ABBREVIATIONS / formatRankTagHtml ile BİREBİR AYNI kaynak.
+        // Renkler ve kısaltmalar tek bir yerden (burada) yönetilir ki
+        // oyun sitesiyle Hub arasında görsel tutarsızlık oluşmasın.
+        function getRankColor(role) {
+            const map = {
+                'Owner / Developer': '#ff4d4d',
+                'Admin / Developer': '#ff4d4d',
+                'Developer': '#660000',
+                'Admin': '#0049ff',
+                'Mod': '#ffeb3b',
+                'Helper': '#66fcf1',
+                'YouTube': '#e91e63',
+                'Twitch': '#6441a5',
+                'OG': '#00ffc8',
+                'Tiktoker': '#00f2fe',
+                'TikToker': '#00f2fe',
+                'MVP': '#9c27b0',
+                'VIP': '#ff9800',
+                'Champion': '#ffd700',
+                'Veteran': '#4caf50',
+                'Beta Tester': '#9e9e9e'
+            };
+            return map[role] || '#ffffff';
+        }
+
+        // Oyun içindeki rütbe kısaltmaları ile birebir aynı.
+        const RANK_ABBREVIATIONS = {
+            'Owner / Developer': 'OWNER',
+            'Admin / Developer': 'ADMIN/DEV',
+            'Developer': 'DEV'
+        };
+
+        // OG ve ÜZERİ tüm rütbeler (oyun sitesindeki SWEEP_RANKS ile
+        // birebir aynı liste) parlama/sweep efekti kullanır.
+        const SWEEP_RANKS = ['Owner / Developer', 'Admin / Developer', 'Developer', 'Admin', 'Mod', 'Helper', 'Beta Tester', 'YouTube', 'Twitch', 'OG'];
+
+        /**
+         * Rütbeyi "[TAG] " formatında, ismin BAŞINA gelecek HTML
+         * parçası olarak üretir. Player/Guest/rütbesiz durumlarda
+         * hiçbir şey döndürmez (oyun içiyle birebir aynı davranış).
+         * ŞART: kullanıcı isimlerinden önce koşulsuz ve birebir bu
+         * formatta gösterilir — @mention'larda KULLANILMAZ.
+         */
+        function formatRankTagHtml(role) {
+            if (!role || typeof role !== "string") return "";
+            const trimmed = role.trim();
+            if (!trimmed || trimmed.toLowerCase() === "guest" || trimmed.toLowerCase() === "player") return "";
+            const abbr = RANK_ABBREVIATIONS[trimmed] || trimmed.toUpperCase();
+            const color = getRankColor(trimmed);
+            if (SWEEP_RANKS.includes(trimmed)) {
+                return `<span class="rank-sweep-text" style="--rtc:${color}; font-size:inherit; margin-right:5px;">[${abbr}]</span>`;
+            }
+            return `<span style="color:${color}; font-weight:bold; text-shadow:0 0 5px ${color}88; margin-right:5px;">[${abbr}]</span>`;
+        }
+
+        /**
+         * Rütbe etiketi + kullanıcı adı + (varsa) mavi tik — sohbet ve
+         * profil kartlarında kullanıcı isimlerinin gösterileceği TEK
+         * merkezi fonksiyon. Format: "[RÜTBE] KullanıcıAdı ✓"
+         */
+        function renderNameWithRank(username, role, isVerified) {
+            const safeName = escapeHtml(username || "Kullanıcı");
+            return `${formatRankTagHtml(role)}${safeName}${renderVerifiedBadge(isVerified)}`;
+        }
+
         // ---------- MAVİ TİK (VERIFIED BADGE) — tek merkezi render ----------
         function renderVerifiedBadge(isVerified, size) {
             if (!isVerified) return "";
@@ -2317,7 +2405,10 @@
             renderUsernameWithBadge,
             renderAvatarAttrs,
             applyAvatarToImg,
-            escapeHtml
+            escapeHtml,
+            getRankColor,
+            formatRankTagHtml,
+            renderNameWithRank
         };
 
         // ==============================================================
@@ -2953,8 +3044,9 @@
             if (!profile) return;
 
             if (nameEl) {
-                nameEl.innerHTML = window.CommunityRBAC.renderUsernameWithBadge(
+                nameEl.innerHTML = window.CommunityRBAC.renderNameWithRank(
                     profile.username,
+                    profile.role,
                     profile.isVerified === true
                 );
             }
@@ -3003,7 +3095,8 @@
 
             // --- Üst kart ---
             window.CommunityRBAC.applyAvatarToImg(document.getElementById("profileAvatarImg"), profile.avatarUrl);
-            document.getElementById("profileUsernameText").textContent = profile.username || "Kullanıcı";
+            document.getElementById("profileUsernameText").innerHTML =
+                RBAC.formatRankTagHtml(profile.role) + RBAC.escapeHtml(profile.username || "Kullanıcı");
             document.getElementById("profileVerifiedBadgeSlot").innerHTML =
                 RBAC.renderVerifiedBadge(profile.isVerified === true, "18px");
 
@@ -3690,12 +3783,13 @@
             const candidate = window.CommunityMentions.getByUid(m.authorUid);
             const username = candidate ? candidate.username : "Kullanıcı";
             const isVerified = candidate ? candidate.isVerified : false;
+            const role = candidate ? candidate.role : "";
             const canPin = RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
             return `
                 <div class="forum-pinned-item">
                     <div class="forum-message-header">
                         <span class="forum-message-username">
-                            ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                            ${RBAC.renderNameWithRank(username, role, isVerified)}
                         </span>
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
@@ -3710,6 +3804,7 @@
             const username = candidate ? candidate.username : "Kullanıcı";
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
+            const role = candidate ? candidate.role : "";
             const isWhisper = !!m.whisperToUid;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
@@ -3734,7 +3829,7 @@
                     <div class="forum-message-body">
                         <div class="forum-message-header">
                             <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
-                                ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                                ${RBAC.renderNameWithRank(username, role, isVerified)}
                             </span>
                             <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
                             ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
@@ -4019,6 +4114,7 @@
             const username = candidate ? candidate.username : "Kullanıcı";
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
+            const role = candidate ? candidate.role : "";
 
             const tagsHtml = `
                 ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
@@ -4036,8 +4132,7 @@
                             ${tagsHtml}
                         </div>
                         <div class="forum-thread-meta">
-                            <span>${RBAC.escapeHtml(username)}</span>
-                            ${isVerified ? RBAC.renderVerifiedBadge(true) : ''}
+                            <span>${RBAC.renderNameWithRank(username, role, isVerified)}</span>
                             <span class="forum-thread-meta-sep">·</span>
                             <span>${formatMessageTime(t.createdAt)}</span>
                         </div>
@@ -4186,6 +4281,7 @@
             const candidate = window.CommunityMentions.getByUid(t.authorUid);
             const username = candidate ? candidate.username : "Kullanıcı";
             const isVerified = candidate ? candidate.isVerified : false;
+            const role = candidate ? candidate.role : "";
             const viewerProfile = window.CommunityAuth.profile;
             const myUid = window.CommunityAuth.user.uid;
             const canModerateThread = RBAC.hasMinimumTier(viewerProfile, "helper");
@@ -4207,7 +4303,7 @@
                 </div>
                 <div class="forum-thread-detail-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
-                        ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(t.createdAt)}</span>
                 </div>
@@ -4292,6 +4388,7 @@
             const username = candidate ? candidate.username : "Kullanıcı";
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
+            const role = candidate ? candidate.role : "";
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
             const thread = forumThreadsCache[threadId];
@@ -4311,7 +4408,7 @@
                     <div class="forum-reply-body">
                         <div class="forum-reply-header">
                             <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
-                                ${RBAC.escapeHtml(username)}${RBAC.renderVerifiedBadge(isVerified)}
+                                ${RBAC.renderNameWithRank(username, role, isVerified)}
                             </span>
                             <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
                         </div>
