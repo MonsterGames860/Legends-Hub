@@ -311,6 +311,46 @@
         gap: 16px;
     }
 
+    /* ---------- Sabitlenmiş mesajlar: aç/kapa buton + panel ---------- */
+    .forum-pinned-toggle-row {
+        display: flex;
+    }
+
+    .forum-pinned-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(245, 197, 66, 0.35);
+        background: rgba(245, 197, 66, 0.06);
+        color: var(--gold);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .forum-pinned-toggle-btn:hover:not(:disabled) {
+        background: rgba(245, 197, 66, 0.12);
+    }
+
+    .forum-pinned-toggle-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .forum-pinned-toggle-btn.is-open {
+        background: rgba(245, 197, 66, 0.16);
+    }
+
+    .forum-pinned-count {
+        font-family: var(--font-mono);
+        background: rgba(245, 197, 66, 0.2);
+        border-radius: 10px;
+        padding: 1px 7px;
+        font-size: 0.72rem;
+    }
+
     /* ---------- Sabitlenmiş mesajlar ---------- */
     .forum-pinned-wrap {
         background: rgba(245, 197, 66, 0.06);
@@ -367,7 +407,7 @@
         height: 38px;
         border-radius: 50%;
         object-fit: cover;
-        background: var(--accent-soft);
+        background: #000;
         border: 1px solid var(--line);
         flex-shrink: 0;
     }
@@ -483,15 +523,16 @@
     .forum-composer-input {
         width: 100%;
         resize: vertical;
-        min-height: 44px;
-        max-height: 160px;
+        min-height: 68px;
+        max-height: 200px;
         background: var(--bg-panel);
         border: 1px solid var(--line);
         border-radius: 8px;
         color: var(--text-primary);
-        padding: 11px 13px;
+        padding: 13px 15px;
         font-family: var(--font-display);
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
     }
 
     .forum-composer-input:focus {
@@ -646,7 +687,7 @@
         height: 38px;
         border-radius: 50%;
         object-fit: cover;
-        background: var(--accent-soft);
+        background: #000;
         border: 1px solid var(--line);
         flex-shrink: 0;
     }
@@ -851,7 +892,7 @@
         height: 32px;
         border-radius: 50%;
         object-fit: cover;
-        background: var(--accent-soft);
+        background: #000;
         border: 1px solid var(--line);
         flex-shrink: 0;
     }
@@ -1223,7 +1264,7 @@
         width: 34px;
         height: 34px;
         border-radius: 50%;
-        background: var(--accent-soft);
+        background: #000;
         border: 1px solid var(--line);
         flex-shrink: 0;
         object-fit: cover;
@@ -1290,7 +1331,7 @@
     .hub-placeholder {
         border: 1px dashed var(--line);
         border-radius: var(--radius);
-        padding: 40px;
+        padding: 20px;
         text-align: center;
         color: var(--text-dim);
         font-family: var(--font-mono);
@@ -1342,7 +1383,7 @@
         height: 84px;
         border-radius: 50%;
         object-fit: cover;
-        background: var(--accent-soft);
+        background: #000;
         border: 2px solid var(--line);
     }
 
@@ -1910,10 +1951,18 @@
                          ============================================================ -->
                     <div class="forum-subview" id="forumGeneralChatView" style="display:none;">
 
-                        <!-- SABİTLENMİŞ MESAJLAR — yetkililerin öne çıkardığı
-                             duyurular. Hiç yoksa bu blok tamamen gizlenir. -->
+                        <!-- SABİTLENMİŞ MESAJLAR — artık sürekli ekranda
+                             durmuyor. Sadece bir 📌 buton var; kişi ona
+                             basınca tüm sabitlenmiş mesajları içeren
+                             panel açılıp kapanıyor. Hiç sabit mesaj
+                             yoksa buton disabled olur. -->
+                        <div class="forum-pinned-toggle-row">
+                            <button class="forum-pinned-toggle-btn" id="forumPinnedToggleBtn" disabled>
+                                📌 Sabitlenmiş Mesajlar <span class="forum-pinned-count" id="forumPinnedCount">0</span>
+                            </button>
+                        </div>
                         <div class="forum-pinned-wrap" id="forumPinnedWrap" style="display:none;">
-                            <div class="forum-pinned-header">📌 Sabitlenmiş Duyurular</div>
+                            <div class="forum-pinned-header">📌 Sabitlenmiş Mesajlar</div>
                             <div id="forumPinnedList"></div>
                         </div>
 
@@ -2001,6 +2050,10 @@
                         <div class="profile-avatar-wrap">
                             <img class="profile-avatar" id="profileAvatarImg" src="" alt="Avatar">
                             <button class="profile-avatar-edit" id="profileAvatarEditBtn" title="Avatarı değiştir">✏️</button>
+                            <!-- accept="image/*" -> mobil tarayıcılarda dosya
+                                 seçici yerine native "Kamera / Galeri /
+                                 Dosyalar" seçim menüsünü açar. -->
+                            <input type="file" id="profileAvatarFileInput" accept="image/*" style="display:none;">
                         </div>
 
                         <div class="profile-hero-info">
@@ -2189,6 +2242,41 @@
                 .replace(/'/g, "&#039;");
         }
 
+        // ---------- AVATAR: yoksa/bozuksa düz siyah göster ----------
+        // Tüm avatar <img> elemanlarının CSS'i zaten background:#000
+        // olarak ayarlı. Bu fonksiyon, src boşsa veya yükleme başarısız
+        // olursa img'i tamamen görünmez yapıp altındaki siyah zemini
+        // ortaya çıkarır — böylece kırık resim ikonu YERİNE düz siyah
+        // avatar görünür. Her avatar render eden yer (forum mesajları,
+        // konu kartları, yorumlar, mini profil, profil sayfası) bu
+        // fonksiyonu kullanmalıdır.
+        function renderAvatarAttrs(avatarUrl) {
+            const safeUrl = escapeHtml(avatarUrl || "");
+            if (!safeUrl) {
+                // src hiç yok -> doğrudan gizli başlat, siyah zemin görünür.
+                return `src="" style="visibility:hidden;" onerror="this.style.visibility='hidden';"`;
+            }
+            return `src="${safeUrl}" onerror="this.style.visibility='hidden';" onload="this.style.visibility='visible';"`;
+        }
+
+        /**
+         * renderAvatarAttrs'ın DOM elemanına doğrudan uygulanan hâli —
+         * template string'e değil, zaten var olan bir <img> elemanına
+         * (ör. document.getElementById(...)) atama yapılan yerlerde
+         * kullanılır (Profil sayfası, mini profil kartı gibi).
+         */
+        function applyAvatarToImg(imgEl, avatarUrl) {
+            if (!imgEl) return;
+            if (!avatarUrl) {
+                imgEl.src = "";
+                imgEl.style.visibility = "hidden";
+                return;
+            }
+            imgEl.onerror = () => { imgEl.style.visibility = "hidden"; };
+            imgEl.onload = () => { imgEl.style.visibility = "visible"; };
+            imgEl.src = avatarUrl;
+        }
+
         // Diğer tüm modüllerin (Forum, 3D Studio, Admin Panel, Mesajlaşma)
         // erişebilmesi için global'e açıyoruz.
         window.CommunityRBAC = {
@@ -2199,6 +2287,8 @@
             isOwner: isOwnerProfile,
             renderVerifiedBadge,
             renderUsernameWithBadge,
+            renderAvatarAttrs,
+            applyAvatarToImg,
             escapeHtml
         };
 
@@ -2841,7 +2931,7 @@
                 );
             }
             if (roleEl) roleEl.textContent = (profile.role || "Player").toUpperCase();
-            if (avatarEl) avatarEl.src = profile.avatarUrl || "";
+            if (avatarEl) window.CommunityRBAC.applyAvatarToImg(avatarEl, profile.avatarUrl);
 
             // Admin/Yönetim menü öğesini, RBAC'a göre göster/gizle.
             const adminNavItem = document.querySelector('.hub-nav-item[data-view="admin"]');
@@ -2884,7 +2974,7 @@
             const viewerProfile = window.CommunityAuth.profile;
 
             // --- Üst kart ---
-            document.getElementById("profileAvatarImg").src = profile.avatarUrl || "";
+            window.CommunityRBAC.applyAvatarToImg(document.getElementById("profileAvatarImg"), profile.avatarUrl);
             document.getElementById("profileUsernameText").textContent = profile.username || "Kullanıcı";
             document.getElementById("profileVerifiedBadgeSlot").innerHTML =
                 RBAC.renderVerifiedBadge(profile.isVerified === true, "18px");
@@ -3074,35 +3164,102 @@
         //     sidebar'ı aç/kapa, dışına tıklayınca veya bir menü
         //     öğesi seçilince otomatik kapat.
         // ==============================================================
+        // ==============================================================
+        // 🖼️ AVATAR YÜKLEME — Firebase Storage KULLANILMIYOR (Blaze plan
+        // gerektirdiği için). Bunun yerine: seçilen görsel tarayıcıda
+        // <canvas> ile küçültülüp (256x256) JPEG olarak sıkıştırılıyor,
+        // sonuç base64 data URL string'i olarak DOĞRUDAN Realtime
+        // Database'e (users/{uid}/avatarUrl) yazılıyor. Bu yüzden ekstra
+        // bir Firebase Storage kuralına/bağlantısına gerek yoktur — aynı
+        // RTDB kuralları (users/$uid write) zaten yeterlidir.
+        // ==============================================================
+        const AVATAR_MAX_DIMENSION = 256;   // px — kare avatar hedef boyutu
+        const AVATAR_JPEG_QUALITY = 0.8;    // 0-1 arası sıkıştırma kalitesi
+        const AVATAR_MAX_BASE64_BYTES = 300 * 1024; // ~300KB üst sınır (RTDB node başına makul)
+
+        function compressImageFileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const objectUrl = URL.createObjectURL(file);
+
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+
+                    // Görseli merkezden kare olarak kırpıp AVATAR_MAX_DIMENSION'a küçült.
+                    const side = Math.min(img.width, img.height);
+                    const sx = (img.width - side) / 2;
+                    const sy = (img.height - side) / 2;
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = AVATAR_MAX_DIMENSION;
+                    canvas.height = AVATAR_MAX_DIMENSION;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_MAX_DIMENSION, AVATAR_MAX_DIMENSION);
+
+                    const dataUrl = canvas.toDataURL("image/jpeg", AVATAR_JPEG_QUALITY);
+                    resolve(dataUrl);
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error("Görsel okunamadı."));
+                };
+                img.src = objectUrl;
+            });
+        }
+
         function initProfileAvatarEditor() {
             const editBtn = document.getElementById("profileAvatarEditBtn");
-            if (!editBtn) return;
+            const fileInput = document.getElementById("profileAvatarFileInput");
+            if (!editBtn || !fileInput) return;
 
-            editBtn.addEventListener("click", async () => {
-                const currentProfile = window.CommunityAuth.profile;
-                const proposed = prompt(
-                    "Avatar için bir görsel URL'si girin (imgur, discord cdn vb.):",
-                    currentProfile.avatarUrl || ""
-                );
-                if (proposed === null) return; // vazgeçildi
-                const cleanUrl = proposed.trim();
+            // Kalem butonuna basınca gizli file input'u tetikliyoruz.
+            // accept="image/*" sayesinde mobil tarayıcılar bunu native
+            // "Kamera ile çek / Galeriden seç / Dosyalar" seçim menüsü
+            // olarak açar — URL yazmaya gerek kalmaz.
+            editBtn.addEventListener("click", () => fileInput.click());
 
-                // Boş bırakılırsa avatarı kaldırıyoruz; doluysa basit bir
-                // http(s) kontrolü yapıyoruz (URL enjeksiyonuna karşı ilk
-                // savunma hattı — <img src> zaten tarayıcı tarafından
-                // sınırlandığı için burada kritik bir güvenlik katmanı değil).
-                if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
-                    alert("Lütfen http:// veya https:// ile başlayan geçerli bir görsel bağlantısı girin.");
+            fileInput.addEventListener("change", async () => {
+                const file = fileInput.files && fileInput.files[0];
+                fileInput.value = ""; // aynı dosya tekrar seçilebilsin diye sıfırla
+                if (!file) return;
+
+                if (!file.type.startsWith("image/")) {
+                    alert("Lütfen bir görsel dosyası seçin.");
+                    return;
+                }
+                // Ham dosya için üst sınır (sıkıştırma öncesi makul bir kapı).
+                const MAX_RAW_BYTES = 15 * 1024 * 1024;
+                if (file.size > MAX_RAW_BYTES) {
+                    alert("Görsel çok büyük. Lütfen 15MB'tan küçük bir dosya seçin.");
                     return;
                 }
 
+                const uid = window.CommunityAuth.user.uid;
+                editBtn.textContent = "⏳";
+                editBtn.disabled = true;
+
                 try {
-                    await database.ref('users/' + window.CommunityAuth.user.uid).update({
-                        avatarUrl: cleanUrl
-                    });
+                    const dataUrl = await compressImageFileToDataUrl(file);
+
+                    // Sıkıştırılmış hâli hâlâ çok büyükse (nadir — çok
+                    // detaylı/gürültülü görsellerde olabilir) kullanıcıyı
+                    // bilgilendirip RTDB'yi şişirmemek için reddediyoruz.
+                    const approxBytes = Math.ceil((dataUrl.length * 3) / 4);
+                    if (approxBytes > AVATAR_MAX_BASE64_BYTES) {
+                        alert("Görsel sıkıştırıldıktan sonra bile çok büyük kaldı. Lütfen daha basit/düşük çözünürlüklü bir görsel deneyin.");
+                        return;
+                    }
+
+                    await database.ref('users/' + uid).update({ avatarUrl: dataUrl });
                 } catch (err) {
-                    console.error("[Profile] Avatar güncellenemedi:", err);
-                    alert("Avatar güncellenemedi.");
+                    console.error("[Profile] Avatar yüklenemedi:", err);
+                    const reason = (err && err.code === "PERMISSION_DENIED")
+                        ? "Yetkiniz olmadığı için avatar kaydedilemedi (veritabanı kuralları engelledi)."
+                        : "Avatar yüklenemedi. Lütfen tekrar deneyin.";
+                    alert(reason);
+                } finally {
+                    editBtn.textContent = "✏️";
+                    editBtn.disabled = false;
                 }
             });
         }
@@ -3213,6 +3370,14 @@
                         e.preventDefault();
                         handleForumSend();
                     }
+                });
+            }
+
+            const pinnedToggleBtn = document.getElementById("forumPinnedToggleBtn");
+            if (pinnedToggleBtn) {
+                pinnedToggleBtn.addEventListener("click", () => {
+                    forumPinnedPanelOpen = !forumPinnedPanelOpen;
+                    renderForumMessages();
                 });
             }
 
@@ -3430,11 +3595,17 @@
             });
         }
 
+        // Sabitlenmiş mesajlar paneli varsayılan KAPALI — sadece 📌
+        // butonuna basılınca açılır/kapanır (kullanıcı isteği).
+        let forumPinnedPanelOpen = false;
+
         function renderForumMessages() {
             const listEl = document.getElementById("forumMessagesList");
             const emptyEl = document.getElementById("forumEmptyState");
             const pinnedWrap = document.getElementById("forumPinnedWrap");
             const pinnedListEl = document.getElementById("forumPinnedList");
+            const pinnedToggleBtn = document.getElementById("forumPinnedToggleBtn");
+            const pinnedCountEl = document.getElementById("forumPinnedCount");
             if (!listEl) return;
 
             const myUid = window.CommunityAuth.user.uid;
@@ -3456,21 +3627,33 @@
             const pinnedMessages = visibleMessages.filter((m) => m.pinned === true);
             const normalMessages = visibleMessages.filter((m) => m.pinned !== true);
 
-            // --- Sabitlenmiş mesajlar ---
-            if (pinnedMessages.length > 0 && pinnedWrap && pinnedListEl) {
-                pinnedWrap.style.display = "flex";
-                pinnedListEl.innerHTML = pinnedMessages.map(renderPinnedItem).join("");
-            } else if (pinnedWrap) {
-                pinnedWrap.style.display = "none";
+            // --- Sabitlenmiş mesajlar: buton sayaç/aktiflik + panel içeriği ---
+            if (pinnedToggleBtn && pinnedCountEl) {
+                pinnedCountEl.textContent = pinnedMessages.length;
+                pinnedToggleBtn.disabled = pinnedMessages.length === 0;
+                if (pinnedMessages.length === 0) forumPinnedPanelOpen = false;
+            }
+            if (pinnedListEl) {
+                pinnedListEl.innerHTML = pinnedMessages.length
+                    ? pinnedMessages.map(renderPinnedItem).join("")
+                    : '<div class="hub-placeholder">Şu anda sabitlenmiş mesaj yok.</div>';
+            }
+            if (pinnedWrap) {
+                pinnedWrap.style.display = (forumPinnedPanelOpen && pinnedMessages.length > 0) ? "flex" : "none";
+            }
+            if (pinnedToggleBtn) {
+                pinnedToggleBtn.classList.toggle("is-open", forumPinnedPanelOpen && pinnedMessages.length > 0);
             }
 
-            // --- Normal akış ---
-            if (normalMessages.length === 0) {
+            // --- Normal akış: TÜM görünür mesajları gösterir (sabitli
+            //     olanlar da burada kalır, sadece 📌 rozeti eklenir —
+            //     böylece Genel Sohbet akışı bölünmez). ---
+            if (normalMessages.length === 0 && visibleMessages.length === pinnedMessages.length && visibleMessages.length === 0) {
                 listEl.innerHTML = "";
                 if (emptyEl) listEl.appendChild(emptyEl);
                 else listEl.innerHTML = '<div class="hub-placeholder">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>';
             } else {
-                listEl.innerHTML = normalMessages.map(renderForumMessage).join("");
+                listEl.innerHTML = visibleMessages.map(renderForumMessage).join("");
             }
 
             attachMessageActionHandlers(listEl);
@@ -3484,6 +3667,7 @@
             const candidate = window.CommunityMentions.getByUid(m.authorUid);
             const username = candidate ? candidate.username : "Kullanıcı";
             const isVerified = candidate ? candidate.isVerified : false;
+            const canPin = RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
             return `
                 <div class="forum-pinned-item">
                     <div class="forum-message-header">
@@ -3493,6 +3677,7 @@
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
                     <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
+                    ${canPin ? `<div class="forum-message-actions"><button class="forum-message-action-btn" data-action="pin" data-message-id="${m.id}" data-pinned="true">Sabitlemeyi Kaldır</button></div>` : ''}
                 </div>
             `;
         }
@@ -3522,7 +3707,7 @@
 
             return `
                 <div class="forum-message${isWhisper ? ' is-whisper' : ''}" data-message-id="${m.id}">
-                    <img class="forum-message-avatar" src="${RBAC.escapeHtml(avatarUrl || '')}" alt="">
+                    <img class="forum-message-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     <div class="forum-message-body">
                         <div class="forum-message-header">
                             <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
@@ -3530,6 +3715,7 @@
                             </span>
                             <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
                             ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
+                            ${m.pinned === true ? '<span class="forum-message-pinned-tag">📌</span>' : ''}
                         </div>
                         <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
                         ${actionsHtml ? `<div class="forum-message-actions">${actionsHtml}</div>` : ''}
@@ -3830,7 +4016,7 @@
 
             return `
                 <div class="forum-thread-card${t.isPinned ? ' is-pinned' : ''}" data-thread-id="${t.id}">
-                    <img class="forum-thread-avatar" src="${RBAC.escapeHtml(avatarUrl || '')}" alt="">
+                    <img class="forum-thread-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     <div class="forum-thread-main">
                         <div class="forum-thread-title-row">
                             <span class="forum-thread-title">${RBAC.escapeHtml(t.title || 'İsimsiz Konu')}</span>
@@ -4108,7 +4294,7 @@
 
             return `
                 <div class="forum-reply" data-reply-id="${r.id}">
-                    <img class="forum-reply-avatar" src="${RBAC.escapeHtml(avatarUrl || '')}" alt="">
+                    <img class="forum-reply-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     <div class="forum-reply-body">
                         <div class="forum-reply-header">
                             <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
