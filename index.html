@@ -311,6 +311,17 @@
         gap: 16px;
     }
 
+    /* ---------- Forum alt-view container'ları (konu listesi / konu
+       detayı / genel sohbet). JS bunları göstermek için
+       style.display = "flex" atıyor; flex-direction burada column
+       olarak sabitlenmezse tarayıcı varsayılanı olan "row" kullanılır
+       ve içerik yan yana sıkışır. ---------- */
+    .forum-subview {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
     /* ---------- Sabitlenmiş mesajlar: aç/kapa buton + panel ---------- */
     .forum-pinned-toggle-row {
         display: flex;
@@ -1322,16 +1333,18 @@
         }
     }
 
-    /* PC'de "Genel Sohbet" mesaj listesi — yeterli yükseklik + kaydırma */
+    /* PC'de "Genel Sohbet" mesaj listesi — yeterli yükseklik + kaydırma.
+       min-height artık çok az mesaj varken de büyük boşluk bırakmasın diye
+       düşürüldü; max-height ile üst sınır korunuyor (çok mesaj varsa scroll). */
     #forumMessagesList {
-        min-height: 260px;
+        min-height: 0;
         max-height: calc(100vh - 440px);
         overflow-y: auto;
         scrollbar-width: thin;
     }
     @media (min-width: 861px) {
         #forumMessagesList {
-            min-height: 420px;
+            min-height: 0;
             max-height: calc(100vh - 380px);
         }
     }
