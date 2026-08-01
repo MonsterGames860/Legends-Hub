@@ -1800,6 +1800,14 @@
         opacity: 0.8;
     }
 
+    /* Kaydedildikten sonra kilitlenen (readOnly) manuel kullanıcı adı kutusu */
+    .social-link-input[readonly] {
+        opacity: 0.65;
+        cursor: not-allowed;
+        background: var(--bg-panel);
+        border-style: dashed;
+    }
+
     .social-links-hint {
         font-size: 0.72rem;
         color: var(--text-dim);
@@ -4506,6 +4514,13 @@
                 placeholder: "Microsoft kullanıcı adı / Gamertag",
                 buildUrl: function(u) { return "https://account.xbox.com/en-us/profile?gamertag=" + encodeURIComponent(u); },
                 icon: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h11.377v11.372H0zm12.623 0H24v11.372H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z"/></svg>'
+            },
+            {
+                id: "roblox",
+                name: "Roblox",
+                placeholder: "Kullanıcı adı (örn: kullaniciadi)",
+                buildUrl: function(u) { return "https://www.roblox.com/users/profile?username=" + encodeURIComponent(u); },
+                icon: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18.926 23.998 0 19.393 5.075.002 24 4.605Zm-8.32-15.34-1.98 7.395 7.395 1.98 1.98-7.396Z"/></svg>'
             }
         ];
 
@@ -4673,9 +4688,12 @@
         }
 
         /**
-         * YouTube kanalı bağlama.
-         * Google OAuth (Firebase secondary app) ile giriş yapılır;
-         * ardından YouTube Data API v3 ile kanal bilgisi çekilir.
+         * YouTube hesabı bağlama (SADELEŞTİRİLMİŞ).
+         * "Google bu uygulamayı doğrulamadı" uyarısına yol açan hassas
+         * YouTube API scope'u ve YouTube Data API v3 çağrısı KALDIRILDI.
+         * Artık yalnızca temel Google OAuth (OpenID + email/profil) ile
+         * doğrulama yapılır — Google'ın hassas-scope güvenlik incelemesi
+         * gerektirmez, bu yüzden "doğrulanmadı" uyarısı çıkmaz.
          */
         async function connectYouTubeOAuth() {
             var appName = "social-oauth-yt-" + (++_oauthAppCounter);
@@ -4688,46 +4706,25 @@
                 } else { throw e; }
             }
             var secondaryAuth = secondaryApp.auth();
+            // Sadece temel profil scope'u (openid/email/profile) — ek YouTube
+            // scope'u eklenmiyor, bu yüzden Google doğrulama gerektirmiyor.
             var provider = new firebase.auth.GoogleAuthProvider();
-            provider.addScope("https://www.googleapis.com/auth/youtube.readonly");
             provider.setCustomParameters({ prompt: "select_account" });
             var result = await secondaryAuth.signInWithPopup(provider);
-            var credential = result.credential;
-            var googleAccessToken = credential && credential.accessToken;
             var googleEmail = result.user.email;
+            var googleDisplayName = result.user.displayName || googleEmail;
             try { await secondaryAuth.signOut(); } catch(_e) {}
 
-            // YouTube Data API v3 ile kanal bilgisini çek
-            var channelData = { channelId: null, channelHandle: null, displayName: googleEmail, channelUrl: null };
-            if (googleAccessToken) {
-                try {
-                    var ytResp = await fetch(
-                        "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
-                        { headers: { "Authorization": "Bearer " + googleAccessToken } }
-                    );
-                    if (ytResp.ok) {
-                        var ytJson = await ytResp.json();
-                        var ch = ytJson.items && ytJson.items[0];
-                        if (ch) {
-                            channelData.channelId = ch.id;
-                            var customUrl = ch.snippet && ch.snippet.customUrl;
-                            channelData.channelHandle = customUrl || ch.snippet.title;
-                            channelData.displayName = ch.snippet.title || googleEmail;
-                            channelData.channelUrl = customUrl
-                                ? "https://youtube.com/" + customUrl
-                                : "https://youtube.com/channel/" + ch.id;
-                        }
-                    }
-                } catch(_ytErr) {
-                    // YouTube API erişimi yoksa Google hesabı adını kullan
-                }
-            }
+            // Kullanıcı, kanal adını/handle'ını kendisi girer (YouTube API
+            // çağrısı yapılmadığı için otomatik çekilemez); Google hesabı
+            // doğrulanmış olarak işaretlenir.
+            var handle = (googleDisplayName || googleEmail).trim();
             return {
                 type: "oauth-youtube",
-                channelId: channelData.channelId,
-                channelHandle: channelData.channelHandle,
-                channelUrl: channelData.channelUrl,
-                displayName: channelData.displayName,
+                channelId: null,
+                channelHandle: handle,
+                channelUrl: null,
+                displayName: googleDisplayName,
                 googleEmail: googleEmail,
                 verified: true
             };
@@ -4925,13 +4922,21 @@
                 '</div>';
             }
 
-            /** Manuel giriş platformu için bölüm HTML'i döndürür */
+            /**
+             * Manuel giriş platformu için bölüm HTML'i döndürür.
+             * Platform başına birden fazla hesap eklenebilir ("+ Başka hesap ekle").
+             * Daha önce KAYDEDİLMİŞ olan satırlar readOnly açılır ve kilitlenir;
+             * sadece o satırdaki ✖ (sil) butonuna basılırsa kilit kalkar ve
+             * kutu sıfırlanır. Henüz kaydedilmemiş yeni/boş satırlar serbesttir.
+             */
             function buildManualSection(p, values) {
                 var inputsHtml = (values.length ? values : [""]).map(function(val) {
+                    var isLocked = !!val; // yalnızca daha önce kaydedilmiş (dolu) satırlar kilitli başlar
                     return '<div class="social-link-input-row" data-platform="' + p.id + '">' +
                         '<input type="text" class="social-link-input" ' +
                             'placeholder="' + RBAC.escapeHtml(p.placeholder) + '" ' +
                             'value="' + RBAC.escapeHtml(val) + '" ' +
+                            (isLocked ? 'readOnly ' : '') +
                             'maxlength="80" autocomplete="off" spellcheck="false">' +
                         '<button type="button" class="social-link-remove-btn" title="Kaldır" tabindex="-1">×</button>' +
                     '</div>';
@@ -4983,9 +4988,17 @@
                     var row = target.closest(".social-link-input-row");
                     var section = target.closest(".social-link-platform-section");
                     if (!row || !section) return;
+                    var inputEl = row.querySelector(".social-link-input");
+                    // Satır kilitliyse (readOnly = daha önce kaydedilmiş): kilidi aç ve sıfırla
+                    if (inputEl && inputEl.readOnly) {
+                        inputEl.readOnly = false;
+                        inputEl.value = "";
+                        inputEl.focus();
+                        return;
+                    }
                     var rows = section.querySelectorAll(".social-link-input-row");
                     if (rows.length <= 1) {
-                        row.querySelector(".social-link-input").value = "";
+                        inputEl.value = "";
                     } else {
                         row.remove();
                     }
@@ -5114,6 +5127,16 @@
                     if (window.CommunityAuth.profile) {
                         window.CommunityAuth.profile.socialLinks = newLinks;
                     }
+                    // Manuel platformlarda dolu satırları kaydet sonrası kilitle (readOnly).
+                    // Sadece ✖ (sil) butonuna basılırsa kilit kalkar.
+                    SOCIAL_PLATFORMS.forEach(function(p) {
+                        if (p.oauthType) return;
+                        var section = formRowsEl.querySelector('[data-section-platform="' + p.id + '"]');
+                        if (!section) return;
+                        section.querySelectorAll(".social-link-input").forEach(function(inp) {
+                            if (inp.value && inp.value.trim()) inp.readOnly = true;
+                        });
+                    });
                     var socialIconsEl = document.getElementById("profileSocialLinksIcons");
                     renderSocialLinksDisplay(newLinks, socialIconsEl);
                     var heroSocialEl = document.getElementById("profileHeroSocialIcons");
