@@ -602,6 +602,76 @@
         border-radius: 4px;
     }
 
+    /* ---------- "Yanıtla" akışı: composer üstü banner (Discord tarzı) ----------
+       "/w" (gizli mesaj) ile KARIŞTIRILMAMALI: bu banner açık/herkese görünür
+       bir yanıtı gösterir; gönderilen mesaj normal, herkese açık bir mesaj
+       olarak gider, sadece hangi mesaja cevap olduğu görsel olarak işaretlenir. */
+    .forum-reply-preview-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.82rem;
+    }
+
+    .forum-reply-preview-text {
+        color: var(--text-dim);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .forum-reply-preview-text strong {
+        color: var(--accent);
+        font-weight: 700;
+    }
+
+    .forum-reply-preview-cancel {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.9rem;
+        line-height: 1;
+        padding: 2px 6px;
+        flex-shrink: 0;
+    }
+    .forum-reply-preview-cancel:hover { color: var(--danger); }
+
+    /* ---------- Mesaj/yorum üstünde küçük alıntı önizlemesi ---------- */
+    .forum-quote-ref {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+        padding-left: 10px;
+        border-left: 2px solid var(--line);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .forum-quote-ref:hover { color: var(--accent); border-left-color: var(--accent); }
+
+    .forum-quote-ref-username {
+        color: var(--accent-2, var(--accent));
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .forum-quote-ref-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     /* ==========================================================
        MODÜL 3: KATEGORİ SEKMELERİ
        ========================================================== */
@@ -971,44 +1041,6 @@
         display: flex;
         gap: 12px;
         margin-top: 2px;
-    }
-
-    /* Nested (yanıta yanıt) yorumlar iç içe girintili gösterilir. */
-    .forum-reply-children {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 8px;
-        margin-left: 20px;
-        padding-left: 14px;
-        border-left: 2px solid var(--line);
-    }
-
-    .forum-reply-inline-composer {
-        display: none;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 8px;
-    }
-    .forum-reply-inline-composer.is-open { display: flex; }
-
-    .forum-reply-inline-input {
-        width: 100%;
-        min-height: 60px;
-        background: var(--bg-panel-raised);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        color: var(--text-primary);
-        padding: 8px 10px;
-        font-family: var(--font-display);
-        font-size: 0.85rem;
-        resize: vertical;
-    }
-
-    .forum-reply-inline-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
     }
 
     /* ---------- Modal: Yeni Konu Aç ---------- */
@@ -2845,6 +2877,12 @@
 
                         <div class="forum-replies" id="forumRepliesList"></div>
 
+                        <!-- DISCORD TARZI: "X kişisinin '...' mesajına yanıt veriyorsun" banner'ı -->
+                        <div class="forum-reply-preview-bar" id="forumThreadReplyPreviewBar" style="display:none;">
+                            <span class="forum-reply-preview-text" id="forumThreadReplyPreviewText"></span>
+                            <button type="button" class="forum-reply-preview-cancel" id="forumThreadReplyPreviewCancel" title="Yanıtlamaktan vazgeç">✕</button>
+                        </div>
+
                         <!-- Yeni yorum kutusu (thread kilitliyse gizlenir) -->
                         <div class="forum-composer" id="forumReplyComposerWrap">
                             <div class="forum-composer-input-wrap">
@@ -2892,6 +2930,12 @@
 
                         <!-- KOMUT İPUCU (mute durumu / /w bilgisi) -->
                         <div class="forum-status-line" id="forumStatusLine" style="display:none;"></div>
+
+                        <!-- DISCORD TARZI: "X kişisinin '...' mesajına yanıt veriyorsun" banner'ı -->
+                        <div class="forum-reply-preview-bar" id="forumReplyPreviewBar" style="display:none;">
+                            <span class="forum-reply-preview-text" id="forumReplyPreviewText"></span>
+                            <button type="button" class="forum-reply-preview-cancel" id="forumReplyPreviewCancel" title="Yanıtlamaktan vazgeç">✕</button>
+                        </div>
 
                         <!-- MESAJ YAZMA KUTUSU -->
                         <div class="forum-composer">
@@ -5428,14 +5472,17 @@
         //     isPinned, isLocked, replyCount, lastReplyAt
         //   }
         //   forum_replies/{threadId}/{replyId}: {
-        //     authorUid, text, createdAt, parentReplyId (null ise kök yorum,
-        //     doluysa bir yoruma yapılmış YANIT — nested reply tree)
+        //     authorUid, text, createdAt,
+        //     replyToReplyId/replyToAuthorUid/replyToSnippet (varsa: DISCORD
+        //     TARZI açık yanıt — düz liste + görsel alıntı referansı;
+        //     nested/iç içe ağaç YOK, tüm yorumlar zaman sırasıyla listelenir)
         //   }
         //
         // KAPSAM B) "Genel Sohbet" kategorisi — ESKİDEN BERİ ÇALIŞAN canlı
-        // mesaj akışı (DEĞİŞMEDİ): mesaj gönderme/listeleme, /w gizli mesaj
-        // tetikleyicisi, Yanıtla butonu, sabitleme, spam/flood koruması +
-        // kademeli mute, @mention entegrasyonu, mavi tik gösterimi.
+        // mesaj akışı: mesaj gönderme/listeleme, /w gizli mesaj (whisper)
+        // tetikleyicisi, HERKESE AÇIK "Yanıtla" (Discord tarzı alıntı —
+        // /w'den tamamen ayrı bir mekanizma), sabitleme, spam/flood koruması
+        // + kademeli mute, @mention entegrasyonu, mavi tik gösterimi.
         //   forum_messages/{messageId}: {
         //     authorUid, text, createdAt, pinned, pinnedBy, pinnedAt,
         //     whisperToUid (varsa: sadece gönderen+alıcı görür),
@@ -5470,6 +5517,11 @@
             // NOT: Enter tuşu artık mesaj GÖNDERMİYOR — textarea'nın
             // varsayılan davranışına (alt satıra geçme) bırakıldı.
             // Mesaj SADECE "Gönder" butonuna basılınca yollanır.
+
+            const replyPreviewCancelBtn = document.getElementById("forumReplyPreviewCancel");
+            if (replyPreviewCancelBtn) {
+                replyPreviewCancelBtn.addEventListener("click", hideForumReplyPreview);
+            }
 
             const pinnedToggleBtn = document.getElementById("forumPinnedToggleBtn");
             if (pinnedToggleBtn) {
@@ -5649,14 +5701,28 @@
             };
             if (whisperToUid) messageData.whisperToUid = whisperToUid;
 
-            // Yanıtla akışından geliyorsa (composer'a data-reply-to konmuşsa)
-            const replyToUid = inputEl.getAttribute("data-reply-to-uid");
-            if (replyToUid) messageData.replyToUid = replyToUid;
+            // ── "Yanıtla" akışı (HERKESE AÇIK yanıt — "/w" gizli mesajdan
+            // tamamen farklı bir mekanizma). Composer'a data-reply-to-*
+            // öznitelikleri konulmuşsa, gönderilen mesaj normal/herkese
+            // açık şekilde gider ama hangi mesaja cevap olduğu ayrıca
+            // saklanır; renderForumMessage bunu küçük bir alıntı olarak
+            // gösterir.
+            const replyToMessageId = inputEl.getAttribute("data-reply-to-message-id");
+            const replyToAuthorUid = inputEl.getAttribute("data-reply-to-author-uid");
+            const replyToSnippet   = inputEl.getAttribute("data-reply-to-snippet");
+            if (replyToMessageId) {
+                messageData.replyToMessageId = replyToMessageId;
+                messageData.replyToAuthorUid = replyToAuthorUid || null;
+                messageData.replyToSnippet   = replyToSnippet || "";
+            }
 
             try {
                 const _msgRef = await database.ref('forum_messages').push(messageData);
                 inputEl.value = "";
-                inputEl.removeAttribute("data-reply-to-uid");
+                inputEl.removeAttribute("data-reply-to-message-id");
+                inputEl.removeAttribute("data-reply-to-author-uid");
+                inputEl.removeAttribute("data-reply-to-snippet");
+                hideForumReplyPreview();
                 inputEl.placeholder = "Bir mesaj yaz... (@isim ile etiketle, /w isim mesaj ile gizli mesaj gönder)";
 
                 // ── Bildirimler ──────────────────────────────────────
@@ -5667,8 +5733,8 @@
                 extractMentionedUids(encodedText).forEach((tUid) => {
                     writeNotification(tUid, { type: "mention", context: "message", actorUsername: _senderName, actorUid: _senderUid, messageId: _msgNotifId, textSnippet: _msgSnippet });
                 });
-                if (replyToUid && replyToUid !== _senderUid) {
-                    writeNotification(replyToUid, { type: "reply", context: "message", actorUsername: _senderName, actorUid: _senderUid, messageId: _msgNotifId, textSnippet: _msgSnippet });
+                if (replyToAuthorUid && replyToAuthorUid !== _senderUid) {
+                    writeNotification(replyToAuthorUid, { type: "reply", context: "message", actorUsername: _senderName, actorUid: _senderUid, messageId: _msgNotifId, textSnippet: _msgSnippet });
                 }
             } catch (err) {
                 console.error("[Forum] Mesaj gönderilemedi:", err);
@@ -5693,20 +5759,42 @@
         }
 
         // ------------------------------------------------------------
-        // C) "Yanıtla" — composer'a otomatik /w [GönderenKullanıcıAdı]
-        //    kalıbını doldurur (spec madde 5).
+        // C) "Yanıtla" — HERKESE AÇIK yanıt (Discord tarzı).
+        //    "/w" (gizli mesaj) ile KARIŞTIRILMAMALI: bu, composer'ın
+        //    üstünde "X kişisinin '...' mesajına yanıt veriyorsun" banner'ı
+        //    gösterir; composer'a hiçbir metin otomatik yazılmaz. Gönderilen
+        //    mesaj herkese açık gider, sadece hangi mesaja cevap olduğu
+        //    görsel olarak (küçük alıntı) işaretlenir.
         // ------------------------------------------------------------
-        function replyToWhisper(fromUid) {
-            const candidate = window.CommunityMentions.getByUid(fromUid);
+        function startForumReply(messageId, authorUid, snippetText) {
             const inputEl = document.getElementById("forumComposerInput");
-            if (!candidate || !inputEl) return;
+            const barEl   = document.getElementById("forumReplyPreviewBar");
+            const textEl  = document.getElementById("forumReplyPreviewText");
+            if (!inputEl || !barEl || !textEl) return;
 
-            inputEl.value = `/w ${candidate.username} `;
-            inputEl.setAttribute("data-reply-to-uid", fromUid);
+            const candidate = window.CommunityMentions.getByUid(authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+
+            inputEl.setAttribute("data-reply-to-message-id", messageId);
+            inputEl.setAttribute("data-reply-to-author-uid", authorUid || "");
+            inputEl.setAttribute("data-reply-to-snippet", snippetText || "");
+
+            textEl.innerHTML = `<strong>${RBAC.escapeHtml(username)}</strong> kişisinin “${RBAC.escapeHtml((snippetText || "").slice(0, 80))}” mesajına yanıt veriyorsunuz`;
+            barEl.style.display = "flex";
             inputEl.focus();
-            inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
         }
-        window.replyToWhisper = replyToWhisper; // inline onclick için
+        window.startForumReply = startForumReply; // inline onclick için
+
+        function hideForumReplyPreview() {
+            const inputEl = document.getElementById("forumComposerInput");
+            const barEl   = document.getElementById("forumReplyPreviewBar");
+            if (inputEl) {
+                inputEl.removeAttribute("data-reply-to-message-id");
+                inputEl.removeAttribute("data-reply-to-author-uid");
+                inputEl.removeAttribute("data-reply-to-snippet");
+            }
+            if (barEl) barEl.style.display = "none";
+        }
 
         // ── Bildirim yardımcıları ──────────────────────────────────────
         /**
@@ -5865,15 +5953,31 @@
             const canModerate = RBAC.canModerate(viewerProfile);
             const canPin = RBAC.hasMinimumTier(viewerProfile, "helper");
 
+            // "Yanıtla" (herkese açık) — whisper mesajı olsun olmasın, kendi
+            // mesajımız hariç her mesaja eklenir. "/w" gizli mesajdan farklı
+            // bir mekanizmadır: sadece görsel bir alıntı referansı bırakır.
             let actionsHtml = "";
-            if (isWhisper && m.authorUid !== myUid) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="reply" data-from-uid="${m.authorUid}">Yanıtla</button>`;
+            if (m.authorUid !== myUid) {
+                const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(m.text || "").slice(0, 160));
+                actionsHtml += `<button class="forum-message-action-btn" data-action="public-reply" data-message-id="${m.id}" data-from-uid="${m.authorUid}" data-snippet="${snippetAttr}">Yanıtla</button>`;
             }
             if (canPin) {
                 actionsHtml += `<button class="forum-message-action-btn" data-action="pin" data-message-id="${m.id}" data-pinned="${m.pinned === true}">${m.pinned ? "Sabitlemeyi Kaldır" : "Sabitle"}</button>`;
             }
             if (canModerate || m.authorUid === myUid) {
                 actionsHtml += `<button class="forum-message-action-btn" data-action="delete" data-message-id="${m.id}">Sil</button>`;
+            }
+
+            // Bu mesaj başka bir mesaja açık yanıt olarak gönderilmişse,
+            // üstünde küçük bir alıntı referansı gösterilir (Discord tarzı).
+            let quoteHtml = "";
+            if (m.replyToMessageId) {
+                const replyCandidate = window.CommunityMentions.getByUid(m.replyToAuthorUid);
+                const replyUsername = replyCandidate ? replyCandidate.username : "Kullanıcı";
+                quoteHtml = `<div class="forum-quote-ref" data-action="jump-to-message" data-message-id="${m.replyToMessageId}">
+                    <span class="forum-quote-ref-username">↩ ${RBAC.escapeHtml(replyUsername)}</span>
+                    <span class="forum-quote-ref-text">${RBAC.escapeHtml(m.replyToSnippet || "")}</span>
+                </div>`;
             }
 
             return `
@@ -5888,6 +5992,7 @@
                             ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
                             ${m.pinned === true ? '<span class="forum-message-pinned-tag">📌</span>' : ''}
                         </div>
+                        ${quoteHtml}
                         <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
                         ${actionsHtml ? `<div class="forum-message-actions">${actionsHtml}</div>` : ''}
                     </div>
@@ -5905,12 +6010,38 @@
             }
         }
 
+        /**
+         * Bir mesaj/yorum elementine kaydırıp kısa süreliğine vurgular.
+         * (notifModule içinde aynı isimde özel bir kopyası daha var —
+         * o kapsam dışından erişilemediği için burada tekrar tanımlandı.)
+         */
+        function scrollAndHighlight(selector, containerSel) {
+            const el = document.querySelector(selector);
+            if (!el) return;
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.remove("msg-highlight");
+            void el.offsetWidth;
+            el.classList.add("msg-highlight");
+            setTimeout(() => el.classList.remove("msg-highlight"), 2600);
+        }
+
         function attachMessageActionHandlers(containerEl) {
             if (!containerEl) return;
 
-            containerEl.querySelectorAll('[data-action="reply"]').forEach((btn) => {
+            containerEl.querySelectorAll('[data-action="public-reply"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
-                    replyToWhisper(btn.getAttribute("data-from-uid"));
+                    startForumReply(
+                        btn.getAttribute("data-message-id"),
+                        btn.getAttribute("data-from-uid"),
+                        btn.getAttribute("data-snippet")
+                    );
+                });
+            });
+
+            containerEl.querySelectorAll('[data-action="jump-to-message"]').forEach((el) => {
+                el.addEventListener("click", () => {
+                    const messageId = el.getAttribute("data-message-id");
+                    scrollAndHighlight('[data-message-id="' + messageId + '"]', "#forumMessagesList");
                 });
             });
 
@@ -6070,6 +6201,8 @@
         function switchForumCategory(categoryId) {
             activeCategoryId = categoryId;
             activeThreadId = null;
+            hideForumReplyPreview();
+            hideThreadReplyPreview();
 
             document.querySelectorAll(".forum-category-tab").forEach((tab) => {
                 tab.classList.toggle("is-active", tab.getAttribute("data-category-id") === categoryId);
@@ -6321,6 +6454,7 @@
             if (listView) listView.style.display = "none";
             if (detailView) detailView.style.display = "flex";
 
+            hideThreadReplyPreview(); // farklı bir konuya geçince eski yanıt referansı temizlensin
             renderThreadDetailHeader(threadId);
             listenToThreadReplies(threadId);
         }
@@ -6418,30 +6552,16 @@
             const allReplies = Object.keys(repliesMap).map((id) => ({ id, ...repliesMap[id] }));
             allReplies.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-            const rootReplies = allReplies.filter((r) => !r.parentReplyId);
-            const childrenByParent = {};
-            allReplies.forEach((r) => {
-                if (r.parentReplyId) {
-                    if (!childrenByParent[r.parentReplyId]) childrenByParent[r.parentReplyId] = [];
-                    childrenByParent[r.parentReplyId].push(r);
-                }
-            });
-
-            if (rootReplies.length === 0) {
+            if (allReplies.length === 0) {
                 listEl.innerHTML = '<div class="hub-placeholder">Henüz yorum yok. İlk yorumu sen yaz!</div>';
                 return;
             }
 
-            listEl.innerHTML = rootReplies.map((r) => renderReplyNode(r, childrenByParent, threadId)).join("");
+            // DÜZ LİSTE (Discord tarzı): iç içe ağaç yapısı yerine tüm
+            // yorumlar zaman sırasına göre alt alta dizilir; bir yoruma
+            // yanıt verildiyse üstünde küçük bir alıntı referansı gösterilir.
+            listEl.innerHTML = allReplies.map((r) => renderSingleReply(r, threadId)).join("");
             attachReplyActionHandlers(listEl, threadId);
-        }
-
-        function renderReplyNode(reply, childrenByParent, threadId) {
-            const children = childrenByParent[reply.id] || [];
-            const childrenHtml = children.length
-                ? `<div class="forum-reply-children">${children.map((c) => renderReplyNode(c, childrenByParent, threadId)).join("")}</div>`
-                : "";
-            return renderSingleReply(reply, threadId) + childrenHtml;
         }
 
         function renderSingleReply(r, threadId) {
@@ -6456,11 +6576,24 @@
             const isLocked = thread && thread.isLocked;
 
             let actionsHtml = "";
-            if (!isLocked) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="reply-to-reply" data-reply-id="${r.id}">Yanıtla</button>`;
+            if (!isLocked && r.authorUid !== myUid) {
+                const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(r.text || "").slice(0, 160));
+                actionsHtml += `<button class="forum-message-action-btn" data-action="reply-to-reply" data-reply-id="${r.id}" data-from-uid="${r.authorUid}" data-snippet="${snippetAttr}">Yanıtla</button>`;
             }
             if (RBAC.canModerate(viewerProfile) || r.authorUid === myUid) {
                 actionsHtml += `<button class="forum-message-action-btn" data-action="delete-reply" data-reply-id="${r.id}">Sil</button>`;
+            }
+
+            // Bu yorum başka bir yoruma açık yanıt olarak gönderilmişse,
+            // üstünde küçük bir alıntı referansı gösterilir (Discord tarzı).
+            let quoteHtml = "";
+            if (r.replyToReplyId) {
+                const replyCandidate = window.CommunityMentions.getByUid(r.replyToAuthorUid);
+                const replyUsername = replyCandidate ? replyCandidate.username : "Kullanıcı";
+                quoteHtml = `<div class="forum-quote-ref" data-action="jump-to-reply" data-reply-id="${r.replyToReplyId}">
+                    <span class="forum-quote-ref-username">↩ ${RBAC.escapeHtml(replyUsername)}</span>
+                    <span class="forum-quote-ref-text">${RBAC.escapeHtml(r.replyToSnippet || "")}</span>
+                </div>`;
             }
 
             return `
@@ -6473,16 +6606,9 @@
                             </span>
                             <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
                         </div>
+                        ${quoteHtml}
                         <div class="forum-reply-text">${renderRichContent(r.text || "")}</div>
                         ${actionsHtml ? `<div class="forum-reply-actions">${actionsHtml}</div>` : ''}
-
-                        <div class="forum-reply-inline-composer" id="inline-composer-${r.id}">
-                            <textarea class="forum-reply-inline-input" id="inline-input-${r.id}" rows="2" maxlength="2000" placeholder="Yanıt yaz..."></textarea>
-                            <div class="forum-reply-inline-actions">
-                                <button class="forum-btn forum-btn-ghost" data-action="cancel-inline-reply" data-reply-id="${r.id}">Vazgeç</button>
-                                <button class="forum-btn forum-btn-primary" data-action="submit-inline-reply" data-reply-id="${r.id}">Yanıtla</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -6505,48 +6631,71 @@
                 });
             });
 
+            containerEl.querySelectorAll('[data-action="jump-to-reply"]').forEach((el) => {
+                el.addEventListener("click", () => {
+                    const replyId = el.getAttribute("data-reply-id");
+                    scrollAndHighlight('[data-reply-id="' + replyId + '"]', "#forumRepliesList");
+                });
+            });
+
+            // Discord tarzı "Yanıtla": composer üstünde banner açar,
+            // eskideki gibi ayrı bir inline kutu AÇMAZ.
             containerEl.querySelectorAll('[data-action="reply-to-reply"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
-                    const replyId = btn.getAttribute("data-reply-id");
-                    const box = document.getElementById("inline-composer-" + replyId);
-                    if (box) {
-                        box.classList.toggle("is-open");
-                        const input = document.getElementById("inline-input-" + replyId);
-                        if (box.classList.contains("is-open") && input) input.focus();
-                    }
+                    startThreadReply(
+                        btn.getAttribute("data-reply-id"),
+                        btn.getAttribute("data-from-uid"),
+                        btn.getAttribute("data-snippet")
+                    );
                 });
             });
+        }
 
-            containerEl.querySelectorAll('[data-action="cancel-inline-reply"]').forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const replyId = btn.getAttribute("data-reply-id");
-                    const box = document.getElementById("inline-composer-" + replyId);
-                    if (box) box.classList.remove("is-open");
-                });
-            });
+        /**
+         * Thread yorumlarında "Yanıtla" — composer üstünde banner gösterir.
+         * (Genel Sohbet'teki startForumReply ile aynı UX, ayrı state/DOM id'leri.)
+         */
+        function startThreadReply(replyId, authorUid, snippetText) {
+            const inputEl = document.getElementById("forumReplyInput");
+            const barEl   = document.getElementById("forumThreadReplyPreviewBar");
+            const textEl  = document.getElementById("forumThreadReplyPreviewText");
+            if (!inputEl || !barEl || !textEl) return;
 
-            containerEl.querySelectorAll('[data-action="submit-inline-reply"]').forEach((btn) => {
-                btn.addEventListener("click", async () => {
-                    const replyId = btn.getAttribute("data-reply-id");
-                    const input = document.getElementById("inline-input-" + replyId);
-                    if (!input) return;
-                    const text = input.value.trim();
-                    if (!text) return;
-                    await submitThreadReply(threadId, text, replyId);
-                    input.value = "";
-                    const box = document.getElementById("inline-composer-" + replyId);
-                    if (box) box.classList.remove("is-open");
-                });
-            });
+            const candidate = window.CommunityMentions.getByUid(authorUid);
+            const username = candidate ? candidate.username : "Kullanıcı";
+
+            inputEl.setAttribute("data-reply-to-reply-id", replyId);
+            inputEl.setAttribute("data-reply-to-author-uid", authorUid || "");
+            inputEl.setAttribute("data-reply-to-snippet", snippetText || "");
+
+            textEl.innerHTML = `<strong>${RBAC.escapeHtml(username)}</strong> kişisinin “${RBAC.escapeHtml((snippetText || "").slice(0, 80))}” yorumuna yanıt veriyorsunuz`;
+            barEl.style.display = "flex";
+            inputEl.focus();
+        }
+
+        function hideThreadReplyPreview() {
+            const inputEl = document.getElementById("forumReplyInput");
+            const barEl   = document.getElementById("forumThreadReplyPreviewBar");
+            if (inputEl) {
+                inputEl.removeAttribute("data-reply-to-reply-id");
+                inputEl.removeAttribute("data-reply-to-author-uid");
+                inputEl.removeAttribute("data-reply-to-snippet");
+            }
+            if (barEl) barEl.style.display = "none";
         }
 
         function initThreadDetailComposer() {
             const inputEl = document.getElementById("forumReplyInput");
             const dropdownEl = document.getElementById("forumReplyMentionDropdown");
             const sendBtn = document.getElementById("forumReplySendBtn");
+            const cancelBtn = document.getElementById("forumThreadReplyPreviewCancel");
 
             if (inputEl && dropdownEl && window.CommunityMentions) {
                 window.CommunityMentions.attachAutocomplete(inputEl, dropdownEl);
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener("click", hideThreadReplyPreview);
             }
 
             if (sendBtn) {
@@ -6554,15 +6703,25 @@
                     if (!inputEl) return;
                     const text = inputEl.value.trim();
                     if (!text || !activeThreadId) return;
-                    await submitThreadReply(activeThreadId, text, null);
+
+                    const replyToReplyId  = inputEl.getAttribute("data-reply-to-reply-id");
+                    const replyToAuthorUid = inputEl.getAttribute("data-reply-to-author-uid");
+                    const replyToSnippet   = inputEl.getAttribute("data-reply-to-snippet");
+
+                    await submitThreadReply(activeThreadId, text, {
+                        replyToReplyId: replyToReplyId || null,
+                        replyToAuthorUid: replyToAuthorUid || null,
+                        replyToSnippet: replyToSnippet || ""
+                    });
                     inputEl.value = "";
+                    hideThreadReplyPreview();
                 });
             }
             // NOT: Enter tuşu artık göndermiyor — alt satıra geçer.
             // Yorum SADECE "Gönder" butonuna basılınca yollanır.
         }
 
-        async function submitThreadReply(threadId, rawText, parentReplyId) {
+        async function submitThreadReply(threadId, rawText, replyToInfo) {
             const thread = forumThreadsCache[threadId];
             if (thread && thread.isLocked) {
                 alert("Bu konu kilitli, yeni yorum yapılamaz.");
@@ -6575,7 +6734,11 @@
                 text: encodedText,
                 createdAt: firebase.database.ServerValue.TIMESTAMP
             };
-            if (parentReplyId) replyData.parentReplyId = parentReplyId;
+            if (replyToInfo && replyToInfo.replyToReplyId) {
+                replyData.replyToReplyId   = replyToInfo.replyToReplyId;
+                replyData.replyToAuthorUid = replyToInfo.replyToAuthorUid || null;
+                replyData.replyToSnippet   = replyToInfo.replyToSnippet || "";
+            }
 
             try {
                 const _replyRef = await database.ref('forum_replies/' + threadId).push(replyData);
@@ -6592,11 +6755,8 @@
                 extractMentionedUids(encodedText).forEach((tUid) => {
                     writeNotification(tUid, { type: "mention", context: "reply", actorUsername: _replySenderName, actorUid: _replySenderUid, threadId, replyId: _replyNotifId, textSnippet: _replySnippet });
                 });
-                if (parentReplyId) {
-                    const _parentReply = (forumRepliesCache[threadId] || {})[parentReplyId];
-                    if (_parentReply && _parentReply.authorUid && _parentReply.authorUid !== _replySenderUid) {
-                        writeNotification(_parentReply.authorUid, { type: "reply", context: "reply", actorUsername: _replySenderName, actorUid: _replySenderUid, threadId, replyId: _replyNotifId, textSnippet: _replySnippet });
-                    }
+                if (replyToInfo && replyToInfo.replyToAuthorUid && replyToInfo.replyToAuthorUid !== _replySenderUid) {
+                    writeNotification(replyToInfo.replyToAuthorUid, { type: "reply", context: "reply", actorUsername: _replySenderName, actorUid: _replySenderUid, threadId, replyId: _replyNotifId, textSnippet: _replySnippet });
                 }
             } catch (err) {
                 console.error("[Forum] Yorum gönderilemedi:", err);
