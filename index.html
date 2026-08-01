@@ -5477,7 +5477,14 @@
 
             if (localSendTimestamps.length >= FLOOD_MAX_MESSAGES) {
                 const uid = window.CommunityAuth.user.uid;
-                const prevViolations = (ownMuteInfo && ownMuteInfo.violationCount) || 0;
+                // Önceki mute süresi zaten dolmuşsa (mutedUntil geçmişte
+                // kaldıysa) ihlal sayacını sıfırdan başlat. Aksi halde
+                // mute süresi bittikten sonra atılan İLK mesaj bile
+                // "prevViolations" değerini miras alıp anında yeni ve
+                // daha uzun bir mute tetikliyordu — kullanıcı süresiz
+                // susturulmuş gibi görünüyordu.
+                const muteExpired = !ownMuteInfo || !ownMuteInfo.mutedUntil || ownMuteInfo.mutedUntil <= now;
+                const prevViolations = muteExpired ? 0 : ((ownMuteInfo && ownMuteInfo.violationCount) || 0);
                 const newViolationCount = prevViolations + 1;
                 const durationIndex = Math.min(newViolationCount - 1, MUTE_DURATIONS_MS.length - 1);
                 const muteDuration = MUTE_DURATIONS_MS[durationIndex];
