@@ -953,6 +953,7 @@
         margin-top: 6px;
         display: block;
         object-fit: contain;
+        cursor: pointer;
     }
 
     .forum-embed-video-link {
@@ -970,6 +971,161 @@
         width: fit-content;
     }
     .forum-embed-video-link:hover { border-color: var(--accent); }
+
+    /* Otomatik gömülü native <video> oynatıcı (yüklenen/linklenen mp4/webm vb.) */
+    .forum-embed-video {
+        max-width: 100%;
+        max-height: 360px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        margin-top: 6px;
+        display: block;
+        background: #000;
+    }
+
+    /* Tenor/Giphy embed kartı — küçük başlık + oynatılabilir GIF/video */
+    .forum-embed-media-card {
+        margin-top: 6px;
+        display: inline-block;
+        max-width: 100%;
+    }
+    .forum-embed-media-source {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+    }
+
+    /* ---------- Dosya ekleme (📎) butonu ---------- */
+    .forum-attach-btn {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel-raised);
+        color: var(--text-primary);
+        font-size: 1.15rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: flex-end;
+    }
+    .forum-attach-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .forum-attach-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .forum-composer-upload-status {
+        font-size: 0.78rem;
+        color: var(--accent);
+        margin-top: -8px;
+        font-family: var(--font-mono);
+    }
+    .forum-composer-upload-status.is-error { color: var(--danger); }
+
+    /* ---------- GIF butonu (Giphy arama açar) ---------- */
+    .forum-gif-btn {
+        flex-shrink: 0;
+        height: 44px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel-raised);
+        color: var(--text-primary);
+        font-weight: 800;
+        font-size: 0.78rem;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        align-self: flex-end;
+    }
+    .forum-gif-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ---------- GIF Arama Popup'ı (Discord tarzı, Giphy) ---------- */
+    .forum-gif-picker-modal {
+        width: 100%;
+        max-width: 420px;
+        height: min(560px, 80vh);
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .forum-gif-picker-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+
+    .forum-gif-search-input {
+        flex: 1;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 10px 12px;
+        font-family: var(--font-display);
+        font-size: 0.9rem;
+    }
+    .forum-gif-search-input:focus { outline: none; border-color: var(--accent); }
+
+    .forum-gif-picker-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        position: relative;
+    }
+
+    .forum-gif-picker-status {
+        text-align: center;
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        padding: 24px 8px;
+    }
+    .forum-gif-picker-status.is-error { color: var(--danger); }
+    .forum-gif-picker-status[hidden],
+    .forum-gif-picker-status.is-empty-hidden { display: none; }
+
+    .forum-gif-picker-grid {
+        column-count: 2;
+        column-gap: 8px;
+    }
+
+    .forum-gif-picker-grid-item {
+        width: 100%;
+        display: block;
+        margin: 0 0 8px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid transparent;
+        background: var(--bg-panel-raised);
+        cursor: pointer;
+        break-inside: avoid;
+        padding: 0;
+    }
+    .forum-gif-picker-grid-item:hover { border-color: var(--accent); }
+    .forum-gif-picker-grid-item img {
+        width: 100%;
+        display: block;
+    }
+
+    .forum-gif-picker-footer {
+        flex-shrink: 0;
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        color: var(--text-dim);
+        padding: 8px;
+        border-top: 1px solid var(--line);
+    }
 
     /* ---------- Yorumlar / Nested Replies (Reply Tree) ---------- */
     .forum-replies {
@@ -2885,18 +3041,22 @@
 
                         <!-- Yeni yorum kutusu (thread kilitliyse gizlenir) -->
                         <div class="forum-composer" id="forumReplyComposerWrap">
+                            <button type="button" class="forum-attach-btn" id="forumReplyAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <input type="file" id="forumReplyAttachInput" style="display:none;" accept="image/*">
+                            <button type="button" class="forum-gif-btn" id="forumReplyGifBtn" title="GIF ekle (Giphy)">GIF</button>
                             <div class="forum-composer-input-wrap">
                                 <textarea
                                     id="forumReplyInput"
                                     class="forum-composer-input"
-                                    placeholder="Bir yorum yaz... (@isim ile etiketle)"
+                                    placeholder="Bir yorum yaz... (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
                                     maxlength="2000"></textarea>
                                 <div class="mention-autocomplete-dropdown" id="forumReplyMentionDropdown"></div>
                             </div>
                             <button class="forum-send-btn" id="forumReplySendBtn">Gönder</button>
                         </div>
+                        <div class="forum-composer-upload-status" id="forumReplyAttachStatus" style="display:none;"></div>
                         <div class="forum-composer-hint">
-                            Zengin içerik: <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · emoji doğrudan yapıştırılabilir
+                            Zengin içerik: link yapıştır otomatik önizlensin · <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · 📎 ile görsel yükle · GIF ile Giphy'den ara · emoji doğrudan yapıştırılabilir
                         </div>
                     </div>
 
@@ -2939,23 +3099,52 @@
 
                         <!-- MESAJ YAZMA KUTUSU -->
                         <div class="forum-composer">
+                            <button type="button" class="forum-attach-btn" id="forumAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <input type="file" id="forumAttachInput" style="display:none;" accept="image/*">
+                            <button type="button" class="forum-gif-btn" id="forumGifBtn" title="GIF ekle (Giphy)">GIF</button>
                             <div class="forum-composer-input-wrap">
                                 <textarea
                                     id="forumComposerInput"
                                     class="forum-composer-input"
-                                    placeholder="Bir mesaj yaz... (@isim, /w isim mesaj)"
+                                    placeholder="Bir mesaj yaz... (@isim, /w isim mesaj, veya bir GIF/görsel linki yapıştır)"
                                     maxlength="1000"></textarea>
                                 <div class="mention-autocomplete-dropdown" id="forumMentionDropdown"></div>
                             </div>
                             <button class="forum-send-btn" id="forumSendBtn">Gönder</button>
                         </div>
+                        <div class="forum-composer-upload-status" id="forumAttachStatus" style="display:none;"></div>
                         <div class="forum-composer-hint">
-                            Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj
+                            Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj · Giphy/görsel/video linki yapıştır, otomatik önizlensin · 📎 ile görsel yükle · GIF ile Giphy'den ara
                         </div>
                     </div>
 
                 </div>
             </section>
+
+            <!-- ============================================================
+                 GIF ARAMA POPUP'I (Discord tarzı, Giphy API ile)
+                 📎 ve "Yeni Konu" gibi tüm composer'lardan tek bir paylaşılan
+                 modal olarak açılır; hangi textarea'ya ekleneceği JS'de
+                 gifPickerTargetTextareaId ile takip edilir.
+                 ============================================================ -->
+            <div class="forum-modal-backdrop" id="forumGifPickerBackdrop" style="display:none;">
+                <div class="forum-gif-picker-modal">
+                    <div class="forum-gif-picker-header">
+                        <input
+                            type="text"
+                            id="forumGifSearchInput"
+                            class="forum-gif-search-input"
+                            placeholder="Giphy'de GIF ara..."
+                            autocomplete="off">
+                        <button type="button" class="forum-modal-close" id="forumGifPickerClose">✕</button>
+                    </div>
+                    <div class="forum-gif-picker-body" id="forumGifPickerBody">
+                        <div class="forum-gif-picker-status" id="forumGifPickerStatus">Trend GIF'ler yükleniyor...</div>
+                        <div class="forum-gif-picker-grid" id="forumGifPickerGrid"></div>
+                    </div>
+                    <div class="forum-gif-picker-footer">Powered by GIPHY</div>
+                </div>
+            </div>
 
             <!-- ============================================================
                  YENİ KONU MODALI (tüm kategorilerde kullanılır, thread
@@ -5518,6 +5707,18 @@
             // varsayılan davranışına (alt satıra geçme) bırakıldı.
             // Mesaj SADECE "Gönder" butonuna basılınca yollanır.
 
+            // 📎 Görsel ekleme (ImgBB) — Genel Sohbet composer'ı.
+            wireAttachButton({
+                btnId: "forumAttachBtn",
+                fileInputId: "forumAttachInput",
+                textareaId: "forumComposerInput",
+                statusId: "forumAttachStatus"
+            });
+
+            // GIF butonu (Giphy arama popup'ı) — hem Genel Sohbet hem Thread
+            // composer'ı için tek seferlik kurulum (modal DOM'da her zaman mevcut).
+            initGifPickerModule();
+
             const replyPreviewCancelBtn = document.getElementById("forumReplyPreviewCancel");
             if (replyPreviewCancelBtn) {
                 replyPreviewCancelBtn.addEventListener("click", hideForumReplyPreview);
@@ -6698,6 +6899,14 @@
                 cancelBtn.addEventListener("click", hideThreadReplyPreview);
             }
 
+            // 📎 Görsel ekleme (ImgBB) — Thread yorum composer'ı.
+            wireAttachButton({
+                btnId: "forumReplyAttachBtn",
+                fileInputId: "forumReplyAttachInput",
+                textareaId: "forumReplyInput",
+                statusId: "forumReplyAttachStatus"
+            });
+
             if (sendBtn) {
                 sendBtn.addEventListener("click", async () => {
                     if (!inputEl) return;
@@ -6846,23 +7055,312 @@
         }
 
         // ------------------------------------------------------------
+        // E-bis) DOSYA/GÖRSEL YÜKLEME ENTEGRASYONU (ImgBB)
+        // ------------------------------------------------------------
+        // 📎 butonuna basınca gizli bir <input type="file"> tetiklenir.
+        // Seçilen görsel ImgBB'ye (https://api.imgbb.com/) yüklenir, dönen
+        // doğrudan görsel linki composer'ın metnine eklenir. Mesaj
+        // gönderildiğinde bu link renderRichContent() / buildAutoMediaEmbed()
+        // tarafından otomatik olarak fotoğraf/GIF şeklinde gömülü render
+        // edilir — ekstra hiçbir etiket yazmaya gerek yoktur.
+        //
+        // NOT: ImgBB SADECE GÖRSEL (jpg/png/gif/webp/bmp/tiff) kabul eder,
+        // video yükleme desteklemez — bu yüzden dosya seçici "accept"
+        // niteliği image/* ile sınırlandırılmıştır. Video paylaşmak isteyen
+        // kullanıcılar hâlâ mesaja doğrudan bir video linki (mp4/webm/Tenor/
+        // Giphy vb.) yapıştırabilir; bu, mevcut otomatik link algılama
+        // mantığıyla ayrıca gömülür.
+        //
+        // ImgBB API anahtarı GEREKLİDİR: https://api.imgbb.com/ adresinden
+        // ücretsiz alınabilir ("Get API key"). Aşağıdaki IMGBB_API_KEY
+        // değerini kendi anahtarınızla değiştirin — anahtar olmadan yükleme
+        // isteği "IMGBB_API_KEY_MISSING" hatasıyla başarısız olur (asla
+        // sahte/uydurma bir görsel linki üretilmez).
+        const IMGBB_API_KEY = "4945e0c80243865b3e92ec8d23dc4b25";
+
+        /**
+         * Bir görseli ImgBB'ye yükler ve doğrudan görüntülenebilir görsel
+         * linkini (display_url) döner. ImgBB API v1: POST
+         * https://api.imgbb.com/1/upload?key=API_KEY, multipart/form-data
+         * içinde "image" alanı ile.
+         */
+        async function uploadFileToImgBB(file, onProgress) {
+            if (!IMGBB_API_KEY || IMGBB_API_KEY === "IMGBB_API_KEY_MISSING") {
+                throw new Error("ImgBB API anahtarı tanımlanmamış. Lütfen IMGBB_API_KEY değerini ayarlayın.");
+            }
+            if (!/^image\//i.test(file.type)) {
+                throw new Error("ImgBB sadece görsel dosyaları destekler (jpg, png, gif, webp vb.).");
+            }
+
+            const formData = new FormData();
+            formData.append("image", file);
+
+            // XMLHttpRequest kullanıyoruz çünkü fetch() ile yükleme ilerleme
+            // (progress) olayları takip edilemiyor; XHR bunu doğal destekler.
+            const responseJson = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", `https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`, true);
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && typeof onProgress === "function") {
+                        onProgress((e.loaded / e.total) * 100);
+                    }
+                };
+
+                xhr.onload = () => {
+                    try {
+                        const json = JSON.parse(xhr.responseText);
+                        if (xhr.status >= 200 && xhr.status < 300 && json && json.success) {
+                            resolve(json);
+                        } else {
+                            const msg = (json && json.error && json.error.message) || `HTTP ${xhr.status}`;
+                            reject(new Error("ImgBB yükleme hatası: " + msg));
+                        }
+                    } catch (e) {
+                        reject(new Error("ImgBB yanıtı ayrıştırılamadı."));
+                    }
+                };
+                xhr.onerror = () => reject(new Error("ImgBB isteği başarısız oldu (ağ hatası)."));
+                xhr.send(formData);
+            });
+
+            const link = responseJson.data && (responseJson.data.display_url || responseJson.data.url);
+            if (!link) throw new Error("ImgBB yükleme yanıtında görsel bağlantısı bulunamadı.");
+            return link;
+        }
+
+        /**
+
+         * Bir composer (📎 buton + gizli file input + textarea + durum satırı)
+         * için ortak kablo bağlama mantığı. Hem Genel Sohbet hem Thread
+         * yorum composer'ı bunu kullanır.
+         */
+        function wireAttachButton({ btnId, fileInputId, textareaId, statusId }) {
+            const btn = document.getElementById(btnId);
+            const fileInput = document.getElementById(fileInputId);
+            const textarea = document.getElementById(textareaId);
+            const statusEl = document.getElementById(statusId);
+            if (!btn || !fileInput || !textarea) return;
+
+            btn.addEventListener("click", () => fileInput.click());
+
+            fileInput.addEventListener("change", async () => {
+                const file = fileInput.files && fileInput.files[0];
+                fileInput.value = ""; // aynı dosyanın tekrar seçilebilmesi için sıfırla
+                if (!file) return;
+
+                const setStatus = (msg, isError) => {
+                    if (!statusEl) return;
+                    if (!msg) { statusEl.style.display = "none"; return; }
+                    statusEl.textContent = msg;
+                    statusEl.style.display = "block";
+                    statusEl.classList.toggle("is-error", !!isError);
+                };
+
+                btn.disabled = true;
+                setStatus(`"${file.name}" ImgBB'ye yükleniyor...`, false);
+
+                try {
+                    const link = await uploadFileToImgBB(file, (pct) => {
+                        if (typeof pct === "number") {
+                            setStatus(`"${file.name}" yükleniyor... %${Math.round(pct)}`, false);
+                        }
+                    });
+
+                    // Linki composer'ın mevcut metnine ekle (imlecin sonuna,
+                    // boşluk ile ayırarak). Kullanıcı gönder'e basınca bu link
+                    // otomatik olarak görsel/GIF şeklinde gömülü render edilir.
+                    const needsSpace = textarea.value && !/\s$/.test(textarea.value);
+                    textarea.value += (needsSpace ? " " : "") + link + " ";
+                    textarea.focus();
+                    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+
+                    setStatus(`Görsel eklendi: ${file.name}`, false);
+                    setTimeout(() => setStatus(null), 2500);
+                } catch (err) {
+                    console.error("[Forum] ImgBB yükleme hatası:", err);
+                    setStatus("Görsel yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata"), true);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        // ------------------------------------------------------------
+        // E-tris) GIF ARAMA POPUP'I (Discord tarzı, Giphy API)
+        // ------------------------------------------------------------
+        // GIF butonuna basınca açılan popup, önce trend GIF'leri gösterir;
+        // arama kutusuna yazıldıkça (debounce ile) Giphy'de arama yapar.
+        // Bir GIF'e tıklanınca, o GIF'in doğrudan .gif linki hedef
+        // composer'ın textarea'sına eklenir — mesaj gönderildiğinde bu
+        // link renderRichContent()/buildAutoMediaEmbed() tarafından zaten
+        // otomatik olarak <img> ile oynatılabilir şekilde gömülür.
+        //
+        // GIPHY API anahtarı GEREKLİDİR: https://developers.giphy.com/
+        // adresinden ücretsiz alınabilir. Aşağıdaki GIPHY_API_KEY değerini
+        // kendi anahtarınızla değiştirin — anahtar olmadan arama/trend
+        // istekleri "GIPHY_API_KEY_MISSING" hatasıyla başarısız olur.
+        const GIPHY_API_KEY = "XNTUisvP3jx6dyPZqxKmHNCMD9tnQv6W";
+        const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
+
+        let gifPickerTargetTextareaId = null; // popup açıldığında hangi composer hedeflendi
+        let gifPickerDebounceTimer = null;
+        let gifPickerRequestSeq = 0; // yarış durumunu (race condition) önlemek için
+
+        function initGifPickerModule() {
+            const backdrop = document.getElementById("forumGifPickerBackdrop");
+            const closeBtn = document.getElementById("forumGifPickerClose");
+            const searchInput = document.getElementById("forumGifSearchInput");
+            const gifBtn = document.getElementById("forumGifBtn");
+            const replyGifBtn = document.getElementById("forumReplyGifBtn");
+            if (!backdrop) return;
+
+            if (gifBtn) {
+                gifBtn.addEventListener("click", () => openGifPicker("forumComposerInput"));
+            }
+            if (replyGifBtn) {
+                replyGifBtn.addEventListener("click", () => openGifPicker("forumReplyInput"));
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener("click", closeGifPicker);
+            }
+            backdrop.addEventListener("click", (e) => {
+                if (e.target === backdrop) closeGifPicker();
+            });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && backdrop.style.display !== "none") closeGifPicker();
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener("input", () => {
+                    clearTimeout(gifPickerDebounceTimer);
+                    gifPickerDebounceTimer = setTimeout(() => {
+                        const q = searchInput.value.trim();
+                        if (q) fetchAndRenderGifs({ q });
+                        else fetchAndRenderGifs({ trending: true });
+                    }, 350); // Discord tarzı debounce: yazma bitince ara
+                });
+            }
+        }
+
+        function openGifPicker(targetTextareaId) {
+            gifPickerTargetTextareaId = targetTextareaId;
+            const backdrop = document.getElementById("forumGifPickerBackdrop");
+            const searchInput = document.getElementById("forumGifSearchInput");
+            if (!backdrop) return;
+            backdrop.style.display = "flex";
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.focus();
+            }
+            fetchAndRenderGifs({ trending: true });
+        }
+
+        function closeGifPicker() {
+            const backdrop = document.getElementById("forumGifPickerBackdrop");
+            if (backdrop) backdrop.style.display = "none";
+            gifPickerTargetTextareaId = null;
+        }
+
+        async function fetchAndRenderGifs({ q, trending }) {
+            const gridEl = document.getElementById("forumGifPickerGrid");
+            const statusEl = document.getElementById("forumGifPickerStatus");
+            if (!gridEl || !statusEl) return;
+
+            if (!GIPHY_API_KEY || GIPHY_API_KEY === "GIPHY_API_KEY_MISSING") {
+                gridEl.innerHTML = "";
+                statusEl.textContent = "Giphy API anahtarı tanımlanmamış. Lütfen GIPHY_API_KEY değerini ayarlayın.";
+                statusEl.classList.add("is-error");
+                statusEl.style.display = "block";
+                return;
+            }
+
+            const thisRequestId = ++gifPickerRequestSeq;
+            gridEl.innerHTML = "";
+            statusEl.textContent = trending ? "Trend GIF'ler yükleniyor..." : `"${q}" için aranıyor...`;
+            statusEl.classList.remove("is-error");
+            statusEl.style.display = "block";
+
+            const endpoint = trending
+                ? `${GIPHY_API_BASE}/trending?api_key=${encodeURIComponent(GIPHY_API_KEY)}&limit=24&rating=pg-13`
+                : `${GIPHY_API_BASE}/search?api_key=${encodeURIComponent(GIPHY_API_KEY)}&q=${encodeURIComponent(q)}&limit=24&rating=pg-13`;
+
+            try {
+                const res = await fetch(endpoint);
+                if (thisRequestId !== gifPickerRequestSeq) return; // eskimiş istek, yoksay
+                if (!res.ok) throw new Error(`Giphy HTTP ${res.status}`);
+                const json = await res.json();
+                if (thisRequestId !== gifPickerRequestSeq) return;
+
+                const items = Array.isArray(json.data) ? json.data : [];
+                if (items.length === 0) {
+                    statusEl.textContent = trending ? "Trend GIF bulunamadı." : "Sonuç bulunamadı.";
+                    statusEl.style.display = "block";
+                    return;
+                }
+
+                statusEl.style.display = "none";
+                gridEl.innerHTML = items.map((gif) => {
+                    const preview = gif.images && (gif.images.fixed_width_small || gif.images.fixed_height_small || gif.images.preview_gif);
+                    const full = gif.images && (gif.images.fixed_height || gif.images.original || gif.images.downsized);
+                    if (!preview || !full || !preview.url || !full.url) return "";
+                    const safePreview = RBAC.escapeHtml(preview.url);
+                    const safeFull = RBAC.escapeHtml(full.url);
+                    const safeTitle = RBAC.escapeHtml(gif.title || "GIF");
+                    return `<button type="button" class="forum-gif-picker-grid-item" data-gif-url="${safeFull}" title="${safeTitle}">` +
+                        `<img src="${safePreview}" alt="${safeTitle}" loading="lazy">` +
+                        `</button>`;
+                }).join("");
+
+                gridEl.querySelectorAll(".forum-gif-picker-grid-item").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const url = btn.getAttribute("data-gif-url");
+                        insertGifIntoComposer(url);
+                        closeGifPicker();
+                    });
+                });
+            } catch (err) {
+                if (thisRequestId !== gifPickerRequestSeq) return;
+                console.error("[Forum] Giphy isteği başarısız:", err);
+                gridEl.innerHTML = "";
+                statusEl.textContent = "GIF'ler yüklenemedi. Lütfen tekrar deneyin.";
+                statusEl.classList.add("is-error");
+                statusEl.style.display = "block";
+            }
+        }
+
+        function insertGifIntoComposer(gifUrl) {
+            if (!gifUrl || !gifPickerTargetTextareaId) return;
+            const textarea = document.getElementById(gifPickerTargetTextareaId);
+            if (!textarea) return;
+            const needsSpace = textarea.value && !/\s$/.test(textarea.value);
+            textarea.value += (needsSpace ? " " : "") + gifUrl + " ";
+            textarea.focus();
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+
         // F) ZENGİN İÇERİK (Emoji / GIF / Resim / Video)
         // ------------------------------------------------------------
         // Emoji zaten düz metin/unicode olarak yazılıp gösterildiği için
-        // ekstra işlem gerekmez. Resim, GIF ve video linkleri basit bir
-        // BBCode benzeri işaretleme ile desteklenir:
-        //   [img]https://...[/img]   -> <img>
-        //   [gif]https://...[/gif]   -> <img> (GIF de görsel olarak aynı şekilde gösterilir)
-        //   [video]https://...[/video] -> tıklanabilir video linki (YouTube/mp4 vb.
-        //     harici embed her platformda garanti çalışmayacağı için güvenli
-        //     bir link kartı olarak gösterilir).
+        // ekstra işlem gerekmez.
+        //
+        // İki yol ile medya gömülebilir:
+        //  1) Elle BBCode benzeri etiket: [img]URL[/img], [gif]URL[/gif],
+        //     [video]URL[/video]
+        //  2) OTOMATİK (Discord tarzı): mesaj içine doğrudan bir Tenor/Giphy
+        //     sayfa linki, bir görsel dosya linki (.png/.jpg/.gif/.webp) veya
+        //     bir video dosya linki (.mp4/.webm/.mov) yapıştırılırsa, hiçbir
+        //     etiket gerekmeden otomatik algılanıp önizlemeli şekilde gömülür.
+        //
         // Metin önce escapeHtml'den, SONRA mention render'dan geçer, EN SON
-        // bu token'lar HTML'e çevrilir — böylece XSS riski oluşmaz (URL'ler
-        // de escape edilmiş haliyle attribute'a yazılır).
+        // bu token'lar/URL'ler HTML'e çevrilir — böylece XSS riski oluşmaz
+        // (URL'ler de escape edilmiş haliyle attribute'a yazılır).
         function renderRichContent(storedText) {
             if (!storedText) return "";
             let html = window.CommunityMentions.renderForDisplay(storedText);
 
+            // ---- 1) Elle BBCode etiketleri (öncelikli, geriye dönük uyum) ----
             html = html.replace(/\[img\](.*?)\[\/img\]/gi, (match, url) => {
                 const safeUrl = RBAC.escapeHtml(url.trim());
                 return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
@@ -6875,10 +7373,108 @@
 
             html = html.replace(/\[video\](.*?)\[\/video\]/gi, (match, url) => {
                 const safeUrl = RBAC.escapeHtml(url.trim());
-                return `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">▶️ Videoyu Aç</a>`;
+                return renderVideoEmbedHtml(safeUrl);
+            });
+
+            // ---- 2) Otomatik link algılama (Discord tarzı) ----
+            // Not: html şu an mention render'dan geçmiş HTML; ham URL'ler
+            // hâlâ düz metin olarak duruyor (escapeHtml zaten < > & gibi
+            // karakterleri kodladı, URL'ler etkilenmez). http(s):// ile
+            // başlayan, boşluk/etiket içermeyen çıplak linkleri yakalayıp
+            // türüne göre gömüyoruz. Zaten bir <img>/<a> etiketinin src/href
+            // attribute'u İÇİNDE olan URL'leri TEKRAR işlememek için basit
+            // bir negatif bakış (lookbehind yerine attribute karakterlerini
+            // dışlayan bir sınır) kullanıyoruz.
+            html = html.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/gi, (match, prefix, rawUrl) => {
+                // Sondaki noktalama/kapanış karakterlerini URL'den ayır.
+                const trailingMatch = rawUrl.match(/[.,!?;:)\]]+$/);
+                const trailing = trailingMatch ? trailingMatch[0] : "";
+                const url = trailing ? rawUrl.slice(0, -trailing.length) : rawUrl;
+                if (!url) return match;
+
+                const embed = buildAutoMediaEmbed(url);
+                if (!embed) return match; // tanınmayan link -> dokunma, düz metin kalır
+
+                return `${prefix}${embed}${RBAC.escapeHtml(trailing)}`;
             });
 
             return html;
+        }
+
+        // Tanınan bir video linki için native <video> oynatıcı veya
+        // (tanınmayan / stream edilemeyen platformlar için) güvenli bir
+        // "Videoyu Aç" link kartı üretir.
+        function renderVideoEmbedHtml(safeUrl) {
+            if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(safeUrl)) {
+                return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
+            }
+            return `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">▶️ Videoyu Aç</a>`;
+        }
+
+        // Ham bir URL string'i alır (henüz escape edilmemiş), tipini
+        // (görsel / video dosyası / Tenor / Giphy) tespit edip uygun HTML
+        // embed'ini üretir. Hiçbir tip eşleşmezse null döner (link olduğu
+        // gibi düz metin bırakılır, otomatik gömme yapılmaz).
+        function buildAutoMediaEmbed(rawUrl) {
+            let parsed;
+            try { parsed = new URL(rawUrl); } catch (e) { return null; }
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+
+            const safeUrl = RBAC.escapeHtml(rawUrl);
+            const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+            const path = parsed.pathname.toLowerCase();
+
+            // Doğrudan görsel dosyası (PNG/JPG/JPEG/GIF/WEBP)
+            if (/\.(png|jpe?g|gif|webp)$/i.test(path)) {
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
+            }
+
+            // Doğrudan video dosyası (MP4/WEBM/MOV)
+            if (/\.(mp4|webm|mov|m4v)$/i.test(path)) {
+                return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
+            }
+
+            // Tenor sayfa linki (ör. tenor.com/view/...-gifXXXXXXXXXXXXXXXXXX)
+            // Tenor'un doğrudan .gif/.mp4 çıktısı olmayan "view" sayfalarında,
+            // URL sonundaki sayısal GIF ID'sinden Tenor'un genel embed
+            // görselini (media.tenor.com) oluşturamayız çünkü ID -> dosya
+            // eşlemesi API gerektirir; bu yüzden Tenor için sayfayı bir
+            // "GIF kartı" olarak, site adını gösteren tıklanabilir bir
+            // önizleme linkiyle gömüyoruz (yeni sekmede tam GIF oynar).
+            if (host === "tenor.com" || host.endsWith(".tenor.com")) {
+                return buildEmbedCardHtml(safeUrl, "TENOR", "🎬 GIF’i Görüntüle");
+            }
+
+            // Giphy sayfa linki
+            if (host === "giphy.com" || host.endsWith(".giphy.com")) {
+                return buildEmbedCardHtml(safeUrl, "GIPHY", "🎬 GIF’i Görüntüle");
+            }
+
+            // Giphy'nin doğrudan medya CDN'i (media.giphy.com/.../giphy.gif)
+            if (host.endsWith("giphy.com") && /\.(gif|webp|mp4)$/i.test(path)) {
+                if (/\.(gif|webp)$/i.test(path)) {
+                    return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan GIF" loading="lazy">`;
+                }
+                return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
+            }
+
+            // ImgBB host'ları (i.ibb.co / ibb.co) — display_url genelde bir
+            // dosya uzantısıyla biter ve yukarıdaki genel görsel-uzantı
+            // kontrolüyle zaten yakalanır. Yine de uzantı belirsizse (nadir),
+            // ImgBB'nin kendisi her zaman görsel döndürdüğü için burada da
+            // doğrudan <img> olarak göm.
+            if (host === "ibb.co" || host === "i.ibb.co" || host.endsWith(".ibb.co")) {
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
+            }
+
+            return null;
+        }
+
+        function buildEmbedCardHtml(safeUrl, sourceLabel, actionLabel) {
+            return `<span class="forum-embed-media-card">` +
+                `<span class="forum-embed-media-source">${sourceLabel}</span>` +
+                `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">${actionLabel}</a>` +
+                `</span>`;
         }
 
         // Konu listesi önizlemesinde ham [img]/[gif]/[video] token'larını
