@@ -1005,14 +1005,29 @@
        aspect-ratio ile otomatik hesaplanır. */
     .forum-embed-platform-video {
         position: relative;
+        display: block;
         width: 100%;
         max-width: 420px;
         aspect-ratio: 16 / 9;
+        min-height: 200px;
         margin-top: 6px;
         border-radius: 8px;
         overflow: hidden;
         border: 1px solid var(--line);
         background: #000;
+    }
+    /* aspect-ratio desteklemeyen tarayıcılar için padding-trick fallback:
+       @supports not koşulu aspect-ratio yoksa devreye girer ve kutuyu
+       16:9 oranında (56.25% üst dolgu) zorla yükseklik kazandırır. */
+    @supports not (aspect-ratio: 16 / 9) {
+        .forum-embed-platform-video {
+            height: 0;
+            min-height: 0;
+            padding-top: 56.25%;
+        }
+        .forum-embed-platform-video.is-vertical {
+            padding-top: 177.78%;
+        }
     }
     .forum-embed-platform-video iframe {
         position: absolute;
@@ -1027,6 +1042,7 @@
     .forum-embed-platform-video.is-vertical {
         max-width: 260px;
         aspect-ratio: 9 / 16;
+        min-height: 320px;
     }
     /* Platform etiketi (küçük başlık, embed kutusunun üstünde) */
     .forum-embed-platform-label {
@@ -7646,9 +7662,9 @@
             const safeSrc = RBAC.escapeHtml(embedInfo.embedSrc);
             const verticalClass = embedInfo.vertical ? " is-vertical" : "";
             return `<span class="forum-embed-platform-label">${embedInfo.label}</span>` +
-                `<span class="forum-embed-platform-video${verticalClass}">` +
+                `<div class="forum-embed-platform-video${verticalClass}">` +
                 `<iframe src="${safeSrc}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` +
-                `</span>`;
+                `</div>`;
         }
 
         // Ham bir URL string'i alır (henüz escape edilmemiş), tipini
