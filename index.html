@@ -6135,8 +6135,7 @@
                         </span>
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
-                    <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
-                    ${canPin ? `<div class="forum-message-actions"><button class="forum-message-action-btn" data-action="pin" data-message-id="${m.id}" data-pinned="true">Sabitlemeyi Kaldır</button></div>` : ''}
+                    <div class="forum-message-text">${renderRichContent(m.text)}</div>
                 </div>
             `;
         }
@@ -6194,7 +6193,7 @@
                             ${m.pinned === true ? '<span class="forum-message-pinned-tag">📌</span>' : ''}
                         </div>
                         ${quoteHtml}
-                        <div class="forum-message-text">${window.CommunityMentions.renderForDisplay(m.text)}</div>
+                        <div class="forum-message-text">${renderRichContent(m.text)}</div>
                         ${actionsHtml ? `<div class="forum-message-actions">${actionsHtml}</div>` : ''}
                     </div>
                 </div>
@@ -7241,6 +7240,17 @@
                     }, 350); // Discord tarzı debounce: yazma bitince ara
                 });
             }
+
+            // SONSUZ KAYDIRMA: popup gövdesinin altına yaklaşınca (son
+            // ~200px) otomatik olarak bir sonraki 24 GIF'lik sayfa
+            // yüklenir — kullanıcı sadece ilk 24 GIF ile sınırlı kalmaz.
+            const bodyEl = document.getElementById("forumGifPickerBody");
+            if (bodyEl) {
+                bodyEl.addEventListener("scroll", () => {
+                    const nearBottom = bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 200;
+                    if (nearBottom) loadMoreGifs({ isFirstPage: false });
+                });
+            }
         }
 
         function openGifPicker(targetTextareaId) {
@@ -7256,13 +7266,41 @@
             fetchAndRenderGifs({ trending: true });
         }
 
+        let gifPickerCurrentQuery = { q: null, trending: true }; // aktif arama/trend modu
+        let gifPickerOffset = 0;
+        let gifPickerHasMore = true;
+        let gifPickerLoadingMore = false;
+        const GIF_PICKER_PAGE_SIZE = 24;
+
         function closeGifPicker() {
             const backdrop = document.getElementById("forumGifPickerBackdrop");
             if (backdrop) backdrop.style.display = "none";
             gifPickerTargetTextareaId = null;
         }
 
-        async function fetchAndRenderGifs({ q, trending }) {
+        /**
+         * GIF popup'ında yeni bir arama/trend sorgusu başlatır: grid'i
+         * temizler, offset'i sıfırlar ve ilk sayfayı yükler.
+         */
+        function fetchAndRenderGifs({ q, trending }) {
+            gifPickerCurrentQuery = { q: q || null, trending: !!trending };
+            gifPickerOffset = 0;
+            gifPickerHasMore = true;
+
+            const gridEl = document.getElementById("forumGifPickerGrid");
+            if (gridEl) gridEl.innerHTML = "";
+
+            return loadMoreGifs({ isFirstPage: true });
+        }
+
+        /**
+         * Aktif sorgu (gifPickerCurrentQuery) için bir sonraki sayfayı
+         * Giphy'den çeker ve grid'in sonuna ekler. Kaydırma popup'ın
+         * altına ulaştığında (bkz. initGifPickerModule'daki scroll
+         * dinleyicisi) otomatik olarak çağrılır — bu sayede kullanıcı
+         * 24 ile sınırlı kalmadan diledigi kadar GIF'i kaydırarak görebilir.
+         */
+        async function loadMoreGifs({ isFirstPage } = {}) {
             const gridEl = document.getElementById("forumGifPickerGrid");
             const statusEl = document.getElementById("forumGifPickerStatus");
             if (!gridEl || !statusEl) return;
@@ -7275,15 +7313,25 @@
                 return;
             }
 
+            if (gifPickerLoadingMore || !gifPickerHasMore) return;
+            gifPickerLoadingMore = true;
+
             const thisRequestId = ++gifPickerRequestSeq;
-            gridEl.innerHTML = "";
-            statusEl.textContent = trending ? "Trend GIF'ler yükleniyor..." : `"${q}" için aranıyor...`;
-            statusEl.classList.remove("is-error");
-            statusEl.style.display = "block";
+            const { q, trending } = gifPickerCurrentQuery;
+
+            if (isFirstPage) {
+                statusEl.textContent = trending ? "Trend GIF'ler yükleniyor..." : `"${q}" için aranıyor...`;
+                statusEl.classList.remove("is-error");
+                statusEl.style.display = "block";
+            } else {
+                statusEl.textContent = "Daha fazla GIF yükleniyor...";
+                statusEl.classList.remove("is-error");
+                statusEl.style.display = "block";
+            }
 
             const endpoint = trending
-                ? `${GIPHY_API_BASE}/trending?api_key=${encodeURIComponent(GIPHY_API_KEY)}&limit=24&rating=pg-13`
-                : `${GIPHY_API_BASE}/search?api_key=${encodeURIComponent(GIPHY_API_KEY)}&q=${encodeURIComponent(q)}&limit=24&rating=pg-13`;
+                ? `${GIPHY_API_BASE}/trending?api_key=${encodeURIComponent(GIPHY_API_KEY)}&limit=${GIF_PICKER_PAGE_SIZE}&offset=${gifPickerOffset}&rating=pg-13`
+                : `${GIPHY_API_BASE}/search?api_key=${encodeURIComponent(GIPHY_API_KEY)}&q=${encodeURIComponent(q)}&limit=${GIF_PICKER_PAGE_SIZE}&offset=${gifPickerOffset}&rating=pg-13`;
 
             try {
                 const res = await fetch(endpoint);
@@ -7293,14 +7341,25 @@
                 if (thisRequestId !== gifPickerRequestSeq) return;
 
                 const items = Array.isArray(json.data) ? json.data : [];
-                if (items.length === 0) {
+                const totalCount = json.pagination && typeof json.pagination.total_count === "number"
+                    ? json.pagination.total_count : null;
+
+                if (items.length === 0 && isFirstPage) {
                     statusEl.textContent = trending ? "Trend GIF bulunamadı." : "Sonuç bulunamadı.";
                     statusEl.style.display = "block";
+                    gifPickerHasMore = false;
                     return;
                 }
 
+                gifPickerOffset += items.length;
+                // Giphy bir sayfada istenenden az öğe döndürdüyse veya
+                // toplam sayıya ulaşıldıysa daha fazla sayfa yoktur.
+                gifPickerHasMore = items.length === GIF_PICKER_PAGE_SIZE &&
+                    (totalCount === null || gifPickerOffset < totalCount);
+
                 statusEl.style.display = "none";
-                gridEl.innerHTML = items.map((gif) => {
+
+                const html = items.map((gif) => {
                     const preview = gif.images && (gif.images.fixed_width_small || gif.images.fixed_height_small || gif.images.preview_gif);
                     const full = gif.images && (gif.images.fixed_height || gif.images.original || gif.images.downsized);
                     if (!preview || !full || !preview.url || !full.url) return "";
@@ -7312,7 +7371,10 @@
                         `</button>`;
                 }).join("");
 
-                gridEl.querySelectorAll(".forum-gif-picker-grid-item").forEach((btn) => {
+                gridEl.insertAdjacentHTML("beforeend", html);
+
+                gridEl.querySelectorAll(".forum-gif-picker-grid-item:not([data-wired])").forEach((btn) => {
+                    btn.setAttribute("data-wired", "1");
                     btn.addEventListener("click", () => {
                         const url = btn.getAttribute("data-gif-url");
                         insertGifIntoComposer(url);
@@ -7322,10 +7384,13 @@
             } catch (err) {
                 if (thisRequestId !== gifPickerRequestSeq) return;
                 console.error("[Forum] Giphy isteği başarısız:", err);
-                gridEl.innerHTML = "";
+                if (isFirstPage) gridEl.innerHTML = "";
                 statusEl.textContent = "GIF'ler yüklenemedi. Lütfen tekrar deneyin.";
                 statusEl.classList.add("is-error");
                 statusEl.style.display = "block";
+                gifPickerHasMore = false;
+            } finally {
+                gifPickerLoadingMore = false;
             }
         }
 
