@@ -998,6 +998,48 @@
         margin-bottom: 4px;
     }
 
+    /* ---------- Evrensel Video Algılayıcı: platform iframe embed'i ---------- */
+    /* YouTube / TikTok / Vimeo / Dailymotion / Streamable / Twitch vb. için
+       Discord tarzı, 16:9 oranını koruyan duyarlı (responsive) oynatıcı
+       kutusu. Gerçek genişlik mesaj balonuna göre değişir, yükseklik
+       aspect-ratio ile otomatik hesaplanır. */
+    .forum-embed-platform-video {
+        position: relative;
+        width: 100%;
+        max-width: 420px;
+        aspect-ratio: 16 / 9;
+        margin-top: 6px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #000;
+    }
+    .forum-embed-platform-video iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+    }
+    /* TikTok dikey (9:16) formatı için daha dar/uzun bir kutu */
+    .forum-embed-platform-video.is-vertical {
+        max-width: 260px;
+        aspect-ratio: 9 / 16;
+    }
+    /* Platform etiketi (küçük başlık, embed kutusunun üstünde) */
+    .forum-embed-platform-label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin-top: 6px;
+        margin-bottom: 4px;
+        display: block;
+    }
+
     /* ---------- Dosya ekleme (📎) butonu ---------- */
     .forum-attach-btn {
         flex-shrink: 0;
@@ -7470,10 +7512,143 @@
         // (tanınmayan / stream edilemeyen platformlar için) güvenli bir
         // "Videoyu Aç" link kartı üretir.
         function renderVideoEmbedHtml(safeUrl) {
-            if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(safeUrl)) {
+            if (/\.(mp4|webm|mov|m4v|m3u8)(\?.*)?$/i.test(safeUrl)) {
                 return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
             }
             return `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">▶️ Videoyu Aç</a>`;
+        }
+
+        // ------------------------------------------------------------
+        // EVRENSEL VİDEO PLATFORM ALGILAYICI (Discord tarzı)
+        // ------------------------------------------------------------
+        // Popüler video platformu linklerini (YouTube, TikTok, Vimeo,
+        // Dailymotion, Streamable, Twitch...) tanır ve o platformun resmî
+        // "embed" (gömülü oynatıcı) URL'ine çevirir. Eşleşme yoksa null
+        // döner. rawUrl HENÜZ escape edilmemiş orijinal string olmalı;
+        // dönen embedSrc de ham bir URL'dir (çağıran taraf escape eder).
+        function resolvePlatformEmbed(rawUrl, parsed) {
+            const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+            const path = parsed.pathname;
+            const search = parsed.searchParams;
+
+            // ---- YouTube (youtube.com, youtu.be, shorts, embed, m.youtube) ----
+            if (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com" || host.endsWith(".youtube.com")) {
+                let videoId = null;
+                let start = null;
+                const tMatch = (search.get("t") || search.get("start") || "").match(/(\d+)/);
+                if (tMatch) start = tMatch[1];
+
+                if (path === "/watch") {
+                    videoId = search.get("v");
+                } else if (path.startsWith("/shorts/")) {
+                    videoId = path.split("/")[2];
+                } else if (path.startsWith("/embed/")) {
+                    videoId = path.split("/")[2];
+                } else if (path.startsWith("/live/")) {
+                    videoId = path.split("/")[2];
+                }
+                if (!videoId) return null;
+                videoId = videoId.split(/[?&]/)[0];
+                let embedSrc = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`;
+                if (start) embedSrc += `?start=${encodeURIComponent(start)}`;
+                return { embedSrc, label: "YOUTUBE", vertical: path.startsWith("/shorts/") };
+            }
+            if (host === "youtu.be") {
+                const videoId = path.slice(1).split(/[?&]/)[0];
+                if (!videoId) return null;
+                return { embedSrc: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`, label: "YOUTUBE", vertical: false };
+            }
+
+            // ---- TikTok (dikey video) ----
+            if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+                const m = path.match(/\/video\/(\d+)/);
+                if (!m) return null;
+                return { embedSrc: `https://www.tiktok.com/embed/v2/${m[1]}`, label: "TIKTOK", vertical: true };
+            }
+
+            // ---- Vimeo ----
+            if (host === "vimeo.com" || host.endsWith(".vimeo.com")) {
+                const m = path.match(/\/(\d+)/);
+                if (!m) return null;
+                return { embedSrc: `https://player.vimeo.com/video/${m[1]}`, label: "VIMEO", vertical: false };
+            }
+
+            // ---- Dailymotion ----
+            if (host === "dailymotion.com" || host.endsWith(".dailymotion.com")) {
+                let m = path.match(/\/video\/([a-zA-Z0-9]+)/);
+                if (!m) return null;
+                const videoId = m[1].split("_")[0];
+                return { embedSrc: `https://www.dailymotion.com/embed/video/${videoId}`, label: "DAILYMOTION", vertical: false };
+            }
+            if (host === "dai.ly") {
+                const videoId = path.slice(1).split(/[?&]/)[0];
+                if (!videoId) return null;
+                return { embedSrc: `https://www.dailymotion.com/embed/video/${videoId}`, label: "DAILYMOTION", vertical: false };
+            }
+
+            // ---- Streamable ----
+            if (host === "streamable.com" || host.endsWith(".streamable.com")) {
+                const videoId = path.slice(1).split(/[?&/]/)[0];
+                if (!videoId) return null;
+                return { embedSrc: `https://streamable.com/e/${videoId}`, label: "STREAMABLE", vertical: false };
+            }
+
+            // ---- Twitch (canlı yayın veya klip/VOD) ----
+            if (host === "twitch.tv" || host.endsWith(".twitch.tv")) {
+                const parentDomain = window.location.hostname || "localhost";
+                const parts = path.split("/").filter(Boolean);
+                // Klip: twitch.tv/<kanal>/clip/<slug>  ya da  clips.twitch.tv/<slug>
+                if (parts[1] === "clip" && parts[2]) {
+                    return { embedSrc: `https://clips.twitch.tv/embed?clip=${encodeURIComponent(parts[2])}&parent=${encodeURIComponent(parentDomain)}&autoplay=false`, label: "TWITCH", vertical: false };
+                }
+                // VOD: twitch.tv/videos/<id>
+                if (parts[0] === "videos" && parts[1]) {
+                    return { embedSrc: `https://player.twitch.tv/?video=${encodeURIComponent(parts[1])}&parent=${encodeURIComponent(parentDomain)}&autoplay=false`, label: "TWITCH", vertical: false };
+                }
+                // Canlı kanal: twitch.tv/<kanal>
+                if (parts.length === 1 && parts[0]) {
+                    return { embedSrc: `https://player.twitch.tv/?channel=${encodeURIComponent(parts[0])}&parent=${encodeURIComponent(parentDomain)}&autoplay=false`, label: "TWITCH", vertical: false };
+                }
+                return null;
+            }
+            if (host === "clips.twitch.tv") {
+                const slug = path.slice(1).split(/[?&/]/)[0];
+                if (!slug) return null;
+                const parentDomain = window.location.hostname || "localhost";
+                return { embedSrc: `https://clips.twitch.tv/embed?clip=${encodeURIComponent(slug)}&parent=${encodeURIComponent(parentDomain)}&autoplay=false`, label: "TWITCH", vertical: false };
+            }
+
+            // ---- Kick (canlı yayın) ----
+            // Kick'in resmî embed oynatıcısı (player.kick.com/<kullanıcı>)
+            // sadece CANLI kanal yayınlarını destekler; VOD ("/videos/<id>")
+            // ve klip ("/clips/<id>") linkleri için resmî bir iframe embed
+            // URL'i yoktur — bu tür linkler tanınmayan link olarak bırakılır
+            // ve buildAutoMediaEmbed sonunda "▶️ Videoyu Aç" kartına düşer.
+            if (host === "kick.com" || host.endsWith(".kick.com")) {
+                const parts = path.split("/").filter(Boolean);
+                if (parts.length === 1 && parts[0] && !["video", "videos", "clips", "clip", "category", "categories"].includes(parts[0].toLowerCase())) {
+                    return { embedSrc: `https://player.kick.com/${encodeURIComponent(parts[0])}?autoplay=false`, label: "KICK", vertical: false };
+                }
+                return null;
+            }
+            if (host === "player.kick.com") {
+                const username = path.slice(1).split(/[?&/]/)[0];
+                if (!username) return null;
+                return { embedSrc: `https://player.kick.com/${encodeURIComponent(username)}?autoplay=false`, label: "KICK", vertical: false };
+            }
+
+            return null;
+        }
+
+        // Bir platform embed sonucundan (resolvePlatformEmbed çıktısı)
+        // güvenli, duyarlı bir iframe kutusu HTML'i üretir.
+        function buildPlatformEmbedHtml(embedInfo) {
+            const safeSrc = RBAC.escapeHtml(embedInfo.embedSrc);
+            const verticalClass = embedInfo.vertical ? " is-vertical" : "";
+            return `<span class="forum-embed-platform-label">${embedInfo.label}</span>` +
+                `<span class="forum-embed-platform-video${verticalClass}">` +
+                `<iframe src="${safeSrc}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` +
+                `</span>`;
         }
 
         // Ham bir URL string'i alır (henüz escape edilmemiş), tipini
@@ -7494,9 +7669,17 @@
                 return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
             }
 
-            // Doğrudan video dosyası (MP4/WEBM/MOV)
-            if (/\.(mp4|webm|mov|m4v)$/i.test(path)) {
+            // Doğrudan video dosyası (MP4/WEBM/MOV/M4V) veya HLS akışı (M3U8)
+            if (/\.(mp4|webm|mov|m4v|m3u8)$/i.test(path)) {
                 return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
+            }
+
+            // Popüler video platformları (YouTube/TikTok/Vimeo/Dailymotion/
+            // Streamable/Twitch vb.) — herhangi bir video sayfası linki
+            // yapıştırıldığında otomatik olarak iframe oynatıcıya çevrilir.
+            const platformEmbed = resolvePlatformEmbed(rawUrl, parsed);
+            if (platformEmbed) {
+                return buildPlatformEmbedHtml(platformEmbed);
             }
 
             // Tenor sayfa linki (ör. tenor.com/view/...-gifXXXXXXXXXXXXXXXXXX)
