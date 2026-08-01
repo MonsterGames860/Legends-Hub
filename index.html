@@ -7698,6 +7698,15 @@
                 return buildPlatformEmbedHtml(platformEmbed);
             }
 
+            // Kick VOD ("/videos/<id>") ve klip ("/clips/<id>") linkleri —
+            // Kick'in resmî embed oynatıcısı bunları desteklemediği için
+            // resolvePlatformEmbed bu linkler için null döner; burada en
+            // azından tıklanabilir bir "Videoyu Aç" medya kartı gösteriyoruz
+            // (linksiz, boş bırakılmış gibi görünmesin diye).
+            if (host === "kick.com" || host.endsWith(".kick.com")) {
+                return buildEmbedCardHtml(safeUrl, "KICK", "▶️ Videoyu Aç");
+            }
+
             // Tenor sayfa linki (ör. tenor.com/view/...-gifXXXXXXXXXXXXXXXXXX)
             // Tenor'un doğrudan .gif/.mp4 çıktısı olmayan "view" sayfalarında,
             // URL sonundaki sayısal GIF ID'sinden Tenor'un genel embed
