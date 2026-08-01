@@ -3467,7 +3467,7 @@
             for (const g of GROUP_MENTIONS) {
                 const esc = g.username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
                 rawText = rawText.replace(
-                    new RegExp("@" + esc + "(?=[\\s.,!?;:\\])|$)", "gi"),
+                    new RegExp("@" + esc + "(?=[\\s.,!?;:)\\]]|$)", "gi"),
                     `[mention:group:${g.groupId}]`
                 );
             }
