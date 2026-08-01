@@ -3709,12 +3709,19 @@
             return;
         }
 
-        // Mention cache'i (Modül 2 - Bölüm D) auth durumundan bağımsız
-        // hemen başlatılıyor — Realtime Database Security Rules zaten
-        // sadece giriş yapmış kullanıcıların 'users' düğümünü okumasına
-        // izin vermelidir, bu yüzden guest/oturumsuz durumda bu .on()
-        // çağrısı sonuçsuz kalır (rules seviyesinde reddedilir).
-        startMentionUserCache();
+        // NOT: Mention cache'in başlatılması artık burada YAPILMIYOR.
+        // Önceden auth durumundan bağımsız hemen çağrılıyordu, ancak
+        // mobil cihazlarda firebase.auth() kullanıcı doğrulamasını PC'ye
+        // göre daha geç tamamladığından, 'users' düğümüne yapılan bu
+        // okuma auth henüz null iken gidiyor ve Realtime Database
+        // Rules'daki "auth != null" koşuluna takılıp SESSİZCE
+        // reddediliyordu (permission_denied). Sonuç: mention cache hiç
+        // dolmuyor, mesaj yazarları "Kullanıcı" olarak görünüyor ve
+        // buna bağımlı akışlar (ör. gönderme sırasında profil arama)
+        // etkileniyordu. Artık startMentionUserCache() çağrısı,
+        // finalizeAuthDecision() içinde auth KESİN olarak doğrulandıktan
+        // sonra tetikleniyor (aşağıda "✅ Yetkili gerçek kullanıcı"
+        // bloğuna bakın).
 
         // ------------------------------------------------------------
         // 3) REDDEDİLME EKRANI — ARTIK OTOMATİK YÖNLENDİRME YOK.
@@ -3930,6 +3937,14 @@
             window.CommunityAuth.profile = profile;
             window.CommunityAuth.ready = true;
             window.CommunityAuth.isAuthorized = true;
+
+            // Mention cache'i artık burada, auth KESİN olarak doğrulandıktan
+            // sonra başlatılıyor (bkz. yukarıdaki NOT). Aynı yerden birden
+            // fazla kez çağrılmasın diye basit bir guard kullanılıyor.
+            if (!window.__mentionCacheStarted) {
+                window.__mentionCacheStarted = true;
+                startMentionUserCache();
+            }
 
             // --- KATILIM TARİHİ BACKFILL ---
             // Bazı hesaplar (ana site/SSO tarafında) `createdAt` alanı
