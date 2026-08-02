@@ -1990,6 +1990,27 @@
         letter-spacing: 0.03em;
     }
 
+    .mkt-card-remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(11,12,16,0.82);
+        border: 1px solid rgba(255,80,80,0.5);
+        color: #ff6b6b;
+        border-radius: 7px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        z-index: 2;
+    }
+    .mkt-card-remove-btn:hover { background: rgba(255,80,80,0.25); }
+
     /* 3D önizleme canvas — kart içi */
     .mkt-card-canvas-wrap {
         width: 100%;
@@ -2140,26 +2161,51 @@
     }
     .mkt-comment-item {
         display: flex;
-        gap: 9px;
+        gap: 10px;
         font-size: 0.82rem;
+        padding: 10px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 9px;
     }
+    .mkt-comment-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .mkt-comment-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .mkt-comment-header { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
     .mkt-comment-author {
         font-weight: 700;
+        font-size: 0.85rem;
         color: var(--text-primary);
         display: inline-flex;
         align-items: center;
         gap: 4px;
         cursor: pointer;
-        white-space: nowrap;
     }
     .mkt-comment-author:hover { color: var(--accent); }
-    .mkt-comment-text { color: var(--text-dim); line-height: 1.55; }
+    .mkt-comment-text { color: var(--text-dim); line-height: 1.55; word-break: break-word; }
+    .mkt-comment-text img.forum-embed-image,
+    .mkt-comment-text video.forum-embed-video {
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 8px;
+        margin-top: 6px;
+        display: block;
+    }
     .mkt-comment-time { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
     .mkt-comment-composer {
         display: flex;
-        gap: 8px;
+        flex-direction: column;
+        gap: 6px;
         margin-top: 4px;
     }
+    .mkt-comment-composer-row { display: flex; gap: 8px; }
     .mkt-comment-input {
         flex: 1;
         background: var(--bg-panel-raised);
@@ -2186,6 +2232,24 @@
         white-space: nowrap;
     }
     .mkt-comment-send-btn:hover { background: var(--accent); }
+    .mkt-comment-composer-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .mkt-comment-attach-btn {
+        background: transparent;
+        border: 1px dashed var(--line);
+        color: var(--text-dim);
+        border-radius: 7px;
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+    .mkt-comment-attach-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+    .mkt-comment-attach-btn.is-active { border-color: var(--accent); color: var(--accent); border-style: solid; }
+    .mkt-comment-attach-preview { font-size: 0.72rem; color: var(--text-dim); }
     .mkt-download-btn {
         display: flex;
         align-items: center;
@@ -2203,6 +2267,13 @@
         transition: background .15s;
     }
     .mkt-download-btn:hover { background: var(--accent); }
+    .mkt-download-btn.is-danger {
+        background: rgba(255,80,80,0.12);
+        border-color: #ff5050;
+        color: #ff6b6b;
+        margin-top: 8px;
+    }
+    .mkt-download-btn.is-danger:hover { background: rgba(255,80,80,0.22); }
 
     /* ---------- MARKETPLACE: modal (satın al / sat) ---------- */
     .mkt-modal-overlay {
@@ -3968,13 +4039,22 @@
                     </div>
                     <!-- İndir -->
                     <button class="mkt-download-btn" id="mktDetailDownloadBtn">⬇ Modeli İndir (Ücretsiz)</button>
+                    <!-- Kendi ilanımsa: kaldır -->
+                    <button class="mkt-download-btn is-danger" id="mktDetailRemoveBtn" style="display:none;">🗑️ Pazardan Kaldır</button>
                     <!-- Yorumlar -->
                     <div class="mkt-comments-section">
                         <div class="mkt-comments-title">Yorumlar</div>
                         <div id="mktDetailCommentsList"></div>
                         <div class="mkt-comment-composer">
-                            <textarea class="mkt-comment-input" id="mktDetailCommentInput" placeholder="Yorum yaz…" rows="1"></textarea>
-                            <button class="mkt-comment-send-btn" id="mktDetailCommentSend">Gönder</button>
+                            <div class="mkt-comment-composer-row">
+                                <textarea class="mkt-comment-input" id="mktDetailCommentInput" placeholder="Yorum yaz… (@isim ile etiketleyebilirsin)" rows="1"></textarea>
+                                <button class="mkt-comment-send-btn" id="mktDetailCommentSend">Gönder</button>
+                            </div>
+                            <div class="mention-autocomplete-dropdown" id="mktDetailCommentMentionDropdown"></div>
+                            <div class="mkt-comment-composer-tools">
+                                <button type="button" class="mkt-comment-attach-btn" id="mktDetailCommentAttachBtn">🖼️ Görsel / GIF Ekle</button>
+                                <span class="mkt-comment-attach-preview" id="mktDetailCommentAttachPreview"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -9053,21 +9133,28 @@
 
             grid.innerHTML = listings.map(l => {
                 const RBAC = window.CommunityRBAC;
-                const verifiedBadge = l.sellerVerified && RBAC
-                    ? RBAC.renderVerifiedBadge(true, "13px")
-                    : "";
+                const sellerCandidate = l.sellerUid ? window.CommunityMentions.getByUid(l.sellerUid) : null;
+                const verifiedBadge = RBAC.renderVerifiedBadge(
+                    sellerCandidate ? sellerCandidate.isVerified : !!l.sellerVerified, "13px"
+                );
+                const sellerDisplayName = (sellerCandidate && sellerCandidate.username) || l.sellerUsername;
                 const avg = mktAvgRating(l.id);
                 const stars = avg ? `<span style="color:var(--gold);font-size:0.7rem;">★ ${avg}</span>` : "";
+                const isOwner = l.sellerUid && l.sellerUid === studioCurrentUid();
+                const removeBadge = isOwner
+                    ? `<button class="mkt-card-remove-btn" data-remove-id="${studioEscapeHtml(l.id)}" title="Pazardan kaldır">🗑️</button>`
+                    : "";
                 return `
                 <div class="mkt-card" data-listing-id="${studioEscapeHtml(l.id)}">
                     <div class="mkt-card-canvas-wrap" id="mkt-canvas-${studioEscapeHtml(l.id)}">
                         <div class="mkt-card-canvas-fallback" id="mkt-fb-${studioEscapeHtml(l.id)}">${l.thumbEmoji || "🧊"}</div>
                         <span class="mkt-card-free-badge">Ücretsiz</span>
+                        ${removeBadge}
                     </div>
                     <div class="mkt-card-body">
                         <div class="mkt-card-name" title="${studioEscapeHtml(l.name)}">${studioEscapeHtml(l.name)}</div>
                         <div class="mkt-card-seller" data-seller-uid="${studioEscapeHtml(l.sellerUid || "")}">
-                            @${studioEscapeHtml(l.sellerUsername)}${verifiedBadge}
+                            @${studioEscapeHtml(sellerDisplayName)}${verifiedBadge}
                         </div>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px;">
                             <div class="mkt-card-tags">
@@ -9082,6 +9169,13 @@
             // Kart tıklamaları
             grid.querySelectorAll(".mkt-card").forEach(card => {
                 card.addEventListener("click", (e) => {
+                    // Kaldır butonuna tıklandıysa → sil, detay açma
+                    const removeEl = e.target.closest(".mkt-card-remove-btn");
+                    if (removeEl) {
+                        e.stopPropagation();
+                        mktRemoveListing(removeEl.getAttribute("data-remove-id"));
+                        return;
+                    }
                     // Satıcı adına tıklandıysa → profile git
                     const sellerEl = e.target.closest(".mkt-card-seller");
                     if (sellerEl) {
@@ -9128,11 +9222,14 @@
             document.getElementById("mktDetailTags").innerHTML =
                 (listing.tags||[]).map(t=>`<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("");
 
-            // Satıcı @mention + mavi tik
-            const verifiedBadge = listing.sellerVerified && RBAC
-                ? RBAC.renderVerifiedBadge(true, "15px") : "";
+            // Satıcı @mention + mavi tik — CommunityMentions cache'inden
+            // CANLI okunur (kayıt anındaki eski snapshot yerine).
             const sellerLink = document.getElementById("mktDetailSellerLink");
-            sellerLink.innerHTML = `@${studioEscapeHtml(listing.sellerUsername)}${verifiedBadge}`;
+            const sellerCandidate = listing.sellerUid ? window.CommunityMentions.getByUid(listing.sellerUid) : null;
+            const sellerBadge = RBAC.renderVerifiedBadge(
+                sellerCandidate ? sellerCandidate.isVerified : !!listing.sellerVerified, "15px"
+            );
+            sellerLink.innerHTML = `@${studioEscapeHtml((sellerCandidate && sellerCandidate.username) || listing.sellerUsername)}${sellerBadge}`;
             sellerLink.onclick = () => {
                 if (listing.sellerUid) {
                     mktCloseDetailModal();
@@ -9163,7 +9260,16 @@
             const dlBtn = document.getElementById("mktDetailDownloadBtn");
             dlBtn.onclick = () => mktDownloadModel(listing);
 
+            // Kendi ilanımsa: kaldırma butonu göster
+            const removeBtn = document.getElementById("mktDetailRemoveBtn");
+            const isOwner = listing.sellerUid && listing.sellerUid === studioCurrentUid();
+            removeBtn.style.display = isOwner ? "flex" : "none";
+            removeBtn.onclick = () => mktRemoveListing(listing.id);
+
             // Yorumlar
+            const cmtInputReset = document.getElementById("mktDetailCommentInput");
+            if (cmtInputReset) cmtInputReset.value = "";
+            if (window.mktClearPendingCommentMedia) window.mktClearPendingCommentMedia();
             mktRenderDetailComments(listingId);
 
             document.getElementById("mktDetailModalOverlay").classList.add("is-open");
@@ -9199,7 +9305,7 @@
                 avg ? `${avg} / 5  (${count} oy)` : "Henüz oy yok";
         }
 
-        // ── Yorum render ──────────────────────────────────────────────
+        // ── Yorum render (forum mesajı tarzı: avatar + rütbe + isim + tik) ──
         function mktRenderDetailComments(listingId) {
             const comments = mktLoadComments(listingId);
             const el = document.getElementById("mktDetailCommentsList");
@@ -9208,17 +9314,30 @@
                 el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-dim);padding:4px 0;">Henüz yorum yok. İlk yorumu sen yap!</div>`;
                 return;
             }
+            const RBAC = window.CommunityRBAC;
             el.innerHTML = comments.map(c => {
-                const RBAC = window.CommunityRBAC;
-                const badge = (c.isVerified && RBAC) ? RBAC.renderVerifiedBadge(true, "13px") : "";
-                const time  = studioFormatRelativeDate(c.createdAt);
+                // Yazar bilgisini CANLI cache'ten al (rütbe/tik/avatar güncel
+                // kalsın diye) — cache'te yoksa yorum kaydındaki snapshot'a düş.
+                const candidate = c.uid ? window.CommunityMentions.getByUid(c.uid) : null;
+                const username  = (candidate && candidate.username) || c.username || "Kullanıcı";
+                const isVerified = candidate ? candidate.isVerified : !!c.isVerified;
+                const role      = candidate ? candidate.role : (c.role || "");
+                const avatarUrl = candidate ? candidate.avatarUrl : (c.avatarUrl || "");
+                const time = studioFormatRelativeDate(c.createdAt);
+                const bodyHtml = typeof renderRichContent === "function"
+                    ? renderRichContent(c.text)
+                    : studioEscapeHtml(c.text);
+
                 return `<div class="mkt-comment-item">
-                    <div style="flex:1;min-width:0;">
-                        <span class="mkt-comment-author" data-cmt-uid="${studioEscapeHtml(c.uid||"")}">
-                            @${studioEscapeHtml(c.username)}${badge}
-                        </span>
-                        <span class="mkt-comment-time" style="margin-left:6px;">${time}</span>
-                        <div class="mkt-comment-text">${studioEscapeHtml(c.text)}</div>
+                    <img class="mkt-comment-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
+                    <div class="mkt-comment-body">
+                        <div class="mkt-comment-header">
+                            <span class="mkt-comment-author" data-cmt-uid="${studioEscapeHtml(c.uid||"")}">
+                                ${RBAC.renderNameWithRank(username, role, isVerified)}
+                            </span>
+                            <span class="mkt-comment-time">${time}</span>
+                        </div>
+                        <div class="mkt-comment-text">${bodyHtml}</div>
                     </div>
                 </div>`;
             }).join("");
@@ -9229,6 +9348,7 @@
                     if (uid) { mktCloseDetailModal(); openUserProfile(uid); }
                 });
             });
+            if (typeof attachMentionClickHandlers === "function") attachMentionClickHandlers(el);
         }
 
         // ── İndir ─────────────────────────────────────────────────────
@@ -9248,6 +9368,21 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             showToastGlobal("\"" + listing.name + "\" indirildi!");
+        }
+
+        // ── Pazardan kaldırma (sadece ilan sahibi) ───────────────────
+        function mktRemoveListing(listingId) {
+            const listing = mktLoadListings().find(l => l.id === listingId);
+            if (!listing) return;
+            if (listing.sellerUid !== studioCurrentUid()) return;
+            if (!confirm(`"${listing.name}" modelini pazardan kaldırmak istediğine emin misin?`)) return;
+
+            const remaining = mktLoadListings().filter(l => l.id !== listingId);
+            mktSaveListings(remaining);
+            mktCloseDetailModal();
+            mktRenderGrid();
+            refreshStudioDashboard();
+            showToastGlobal("Model pazardan kaldırıldı.");
         }
 
         // ── Satışa çıkarma (artık ücretsiz paylaşım) ─────────────────
@@ -9358,6 +9493,38 @@
                 detailClose.addEventListener("click", mktCloseDetailModal);
             }
 
+            // Yorum composer — mention autocomplete
+            const commentInput = document.getElementById("mktDetailCommentInput");
+            const commentMentionDropdown = document.getElementById("mktDetailCommentMentionDropdown");
+            if (commentInput && commentMentionDropdown && !commentInput.dataset.mentionBound) {
+                commentInput.dataset.mentionBound = "1";
+                window.CommunityMentions.attachAutocomplete(commentInput, commentMentionDropdown);
+            }
+
+            // Yorum composer — Görsel / GIF ekle
+            const attachBtn = document.getElementById("mktDetailCommentAttachBtn");
+            const attachPreview = document.getElementById("mktDetailCommentAttachPreview");
+            let mktPendingCommentMediaUrl = "";
+            let mktPendingCommentMediaTag = "img";
+            if (attachBtn && !attachBtn.dataset.bound) {
+                attachBtn.dataset.bound = "1";
+                attachBtn.addEventListener("click", () => {
+                    const url = prompt("Görsel veya GIF linkini yapıştır (URL):");
+                    if (!url || !url.trim()) return;
+                    mktPendingCommentMediaUrl = url.trim();
+                    mktPendingCommentMediaTag = /\.gif(\?.*)?$/i.test(mktPendingCommentMediaUrl) ? "gif" : "img";
+                    attachBtn.classList.add("is-active");
+                    attachPreview.textContent = "✓ Eklendi: " + mktPendingCommentMediaUrl.slice(0, 40) +
+                        (mktPendingCommentMediaUrl.length > 40 ? "…" : "");
+                });
+            }
+            window.mktClearPendingCommentMedia = () => {
+                mktPendingCommentMediaUrl = "";
+                if (attachBtn) attachBtn.classList.remove("is-active");
+                if (attachPreview) attachPreview.textContent = "";
+            };
+            window.mktGetPendingCommentMedia = () => ({ url: mktPendingCommentMediaUrl, tag: mktPendingCommentMediaTag });
+
             // Yorum gönder
             const commentSend = document.getElementById("mktDetailCommentSend");
             if (commentSend && !commentSend.dataset.bound) {
@@ -9365,23 +9532,39 @@
                 commentSend.addEventListener("click", () => {
                     if (!mktOpenListing) return;
                     const input = document.getElementById("mktDetailCommentInput");
-                    const text  = (input.value || "").trim();
+                    let text = (input.value || "").trim();
+                    const pending = window.mktGetPendingCommentMedia ? window.mktGetPendingCommentMedia() : { url: "" };
+                    if (pending.url) {
+                        text = (text ? text + "\n" : "") + `[${pending.tag}]${pending.url}[/${pending.tag}]`;
+                    }
                     if (!text) return;
                     const myUid      = studioCurrentUid();
                     const myUsername = studioCurrentUsername();
                     const isVerified = !!(window.CommunityAuth && window.CommunityAuth.profile &&
                         window.CommunityAuth.profile.isVerified);
+                    const myRole = (window.CommunityAuth && window.CommunityAuth.profile &&
+                        window.CommunityAuth.profile.role) || "";
+                    const myAvatar = (window.CommunityAuth && window.CommunityAuth.profile &&
+                        window.CommunityAuth.profile.avatarUrl) || "";
+                    // @mention'ları depolama formatına çevir ki başkalarının
+                    // yorumlarında da tıklanabilir etiket olarak görünsün.
+                    const encodedText = window.CommunityMentions.encodeForStorage
+                        ? window.CommunityMentions.encodeForStorage(text)
+                        : text;
                     const comments = mktLoadComments(mktOpenListing.id);
                     comments.push({
                         id:         "cmt_" + Date.now(),
                         uid:        myUid,
                         username:   myUsername,
                         isVerified: isVerified,
-                        text,
+                        role:       myRole,
+                        avatarUrl:  myAvatar,
+                        text:       encodedText,
                         createdAt:  new Date().toISOString()
                     });
                     mktSaveComments(mktOpenListing.id, comments);
                     input.value = "";
+                    if (window.mktClearPendingCommentMedia) window.mktClearPendingCommentMedia();
                     mktRenderDetailComments(mktOpenListing.id);
                 });
             }
