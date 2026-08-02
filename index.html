@@ -1361,7 +1361,13 @@
         position: fixed;
         inset: 0;
         background: rgba(0, 0, 0, 0.6);
-        z-index: 200;
+        /* Bu backdrop (GIF arama popup'ı, Yeni Konu modalı vb.) her zaman
+           en üstte açılmalı — özellikle Pazar'daki Model Detay modalı
+           (.mkt-modal-overlay, z-index:500) İÇİNDEN tetiklendiğinde bile.
+           Eskiden 200 idi ve 500'ün ALTINDA kalıp modalın arkasına
+           gizleniyordu ("GIF arkada kalıyor" hatası); artık en yüksek
+           z-index'lerden (9500, forumPinnedToggle) daha da üstte. */
+        z-index: 9600;
         display: flex;
         align-items: center;
         justify-content: center;
