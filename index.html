@@ -1813,6 +1813,15 @@
         color: var(--accent);
         font-size: 2rem;
         position: relative;
+        overflow: hidden;
+    }
+    /* Gerçek 3D render önizlemesi (Thumbnail Generator ile üretilen PNG) —
+       emoji fallback'in yerini alır, kartı tamamen kaplar. */
+    .studio-model-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .studio-model-thumb-badge {
@@ -2034,6 +2043,15 @@
         color: var(--gold);
         pointer-events: none;
     }
+    /* 3D Studio'da üretilen gerçek render önizlemesi — canlı Three.js
+       canvas'ı henüz yüklenmeden/yüklenemediğinde gösterilir; canvas
+       hazır olduğunda mktRender3d() bu katmanı display:none yapar. */
+    .mkt-card-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
 
     .mkt-card-body {
         padding: 12px 14px 14px;
@@ -2170,14 +2188,19 @@
         color: var(--text-dim);
         font-weight: 700;
     }
+    /* Yorum kartı — MYTHIX KINGDOM HUD paneli: belirgin koyu zemin +
+       ince neon kenarlık, arkasındaki modal/arka plan ile ASLA karışmaz
+       (opak arka plan rengi kullanılıyor, yarı saydam değil). */
     .mkt-comment-item {
         display: flex;
         gap: 10px;
-        font-size: 0.82rem;
-        padding: 10px;
-        background: var(--bg-panel-raised);
-        border: 1px solid var(--line);
+        font-size: 0.84rem;
+        padding: 12px;
+        background: #212c3a;
+        border: 1px solid rgba(102, 252, 241, 0.28);
+        border-left: 2px solid var(--accent);
         border-radius: 9px;
+        box-shadow: 0 1px 0 rgba(0,0,0,0.35) inset;
     }
     .mkt-comment-avatar {
         width: 32px;
@@ -2190,17 +2213,24 @@
     }
     .mkt-comment-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .mkt-comment-header { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    /* Yazar adı — açık neon metin + hafif parıltı, koyu panel üzerinde
+       yüksek kontrast (WCAG AA üstü) sağlar. */
     .mkt-comment-author {
         font-weight: 700;
-        font-size: 0.85rem;
-        color: var(--text-primary);
+        font-size: 0.87rem;
+        color: var(--accent);
+        text-shadow: 0 0 6px rgba(102, 252, 241, 0.35);
         display: inline-flex;
         align-items: center;
         gap: 4px;
         cursor: pointer;
     }
-    .mkt-comment-author:hover { color: var(--accent); }
-    .mkt-comment-text { color: var(--text-dim); line-height: 1.55; word-break: break-word; }
+    .mkt-comment-author:hover { color: #9dfff7; }
+    /* Yorum metni — eskiden --text-dim (#8b95a1, soluk gri) kullanılıyordu;
+       MYTHIX temasının koyu panelleri ve gölge efektleriyle üst üste
+       binince pratikte okunmuyordu. Artık --text-primary'ye yakın, yüksek
+       kontrastlı açık bir ton kullanılıyor. */
+    .mkt-comment-text { color: #dfe4ea; line-height: 1.6; word-break: break-word; }
     .mkt-comment-text img.forum-embed-image,
     .mkt-comment-text video.forum-embed-video {
         max-width: 100%;
@@ -2209,7 +2239,7 @@
         margin-top: 6px;
         display: block;
     }
-    .mkt-comment-time { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
+    .mkt-comment-time { font-size: 0.7rem; color: #9aa7b5; white-space: nowrap; }
     .mkt-comment-actions {
         display: flex;
         gap: 12px;
@@ -2218,7 +2248,7 @@
     .mkt-comment-action-btn {
         background: none;
         border: none;
-        color: var(--text-dim);
+        color: #9aa7b5;
         font-size: 0.74rem;
         cursor: pointer;
         padding: 0;
@@ -4423,25 +4453,30 @@
         // Renkler ve kısaltmalar tek bir yerden (burada) yönetilir ki
         // oyun sitesiyle Hub arasında görsel tutarsızlık oluşmasın.
         function getRankColor(role) {
+            // NOT: Bu renkler koyu HUD panelleri (--bg-panel-raised: #1f2833
+            // gibi) üzerinde okunur olmalı. 'Developer' rütbesi eskiden
+            // #660000 (koyu bordo) idi — koyu zemin + text-shadow ile
+            // pratikte görünmez oluyordu; MYTHIX temasına uygun daha
+            // parlak/doygun bir kırmızıya çekildi.
             const map = {
                 'Owner / Developer': '#ff4d4d',
                 'Admin / Developer': '#ff4d4d',
-                'Developer': '#660000',
-                'Admin': '#0049ff',
+                'Developer': '#ff5c5c',
+                'Admin': '#5b8dff',
                 'Mod': '#ffeb3b',
                 'Helper': '#66fcf1',
-                'YouTube': '#e91e63',
-                'Twitch': '#6441a5',
+                'YouTube': '#ff5c93',
+                'Twitch': '#a78bfa',
                 'OG': '#00ffc8',
                 'Tiktoker': '#00f2fe',
                 'TikToker': '#00f2fe',
-                'MVP': '#9c27b0',
+                'MVP': '#d17bf0',
                 'VIP': '#ff9800',
                 'Champion': '#ffd700',
-                'Veteran': '#4caf50',
-                'Beta Tester': '#9e9e9e'
+                'Veteran': '#6fd97f',
+                'Beta Tester': '#c7c7c7'
             };
-            return map[role] || '#ffffff';
+            return map[role] || '#e4e6eb';
         }
 
         // Oyun içindeki rütbe kısaltmaları ile birebir aynı.
@@ -8792,23 +8827,34 @@
         // ════════════════════════════════════════════════════════════════
         // 🧊 MODÜL 4 — 3D STUDIO EDİTÖR (Dashboard) & 3D MODEL PAZARI
         // ════════════════════════════════════════════════════════════════
-        // VERİ ŞEMASI (localStorage — backend yok, tarayıcı-yerel demo katmanı):
-        //   pl3d_models_{uid}  -> JSON array: kullanıcının kendi modelleri
+        // VERİ ŞEMASI (Firebase Realtime Database — HESABA BAĞLI, CİHAZLAR
+        // ARASI CANLI SENKRON):
+        //   models/{uid}/{modelId}     -> kullanıcının kendi modelleri
         //     { id, name, createdAt, updatedAt, cubeCount, vertexCount,
-        //       triangleCount, thumbEmoji, gltf (base64 veya null) }
-        //   pl3d_marketplace   -> JSON array: TÜM kullanıcılar arası paylaşımlı
-        //     satış listesi (aynı tarayıcıda test için; gerçek üründe bu
-        //     Firebase Realtime DB altında marketplace_listings/{id} olurdu)
+        //       triangleCount, thumbEmoji, thumbDataUrl (base64 PNG),
+        //       gltf (JSON string veya null) }
+        //   marketplace_listings/{id}  -> TÜM kullanıcılar arası paylaşımlı
+        //     satış/paylaşım listesi
         //     { id, modelId, sellerUid, sellerUsername, name, description,
-        //       price, category, tags[], thumbEmoji, createdAt, cubeCount }
+        //       category, tags[], thumbEmoji, thumbDataUrl, createdAt, cubeCount,
+        //       gltfData }
+        //   marketplace_ratings/{listingId}/{uid}   -> yıldız puanları
+        //   marketplace_comments/{listingId}/{cmtId} -> yorumlar
         //
-        // "3dstudio.html" (tam ekran editör) modeli localStorage'a
-        // window.saveModel() ile yazar; buraya döndüğümüzde
-        // refreshStudioDashboard() bu veriyi okuyup ekrana basar.
+        // Bu düğümler, forum_threads / forum_replies ile AYNI desende
+        // (database.ref(...).on('value', ...) canlı dinleyici + .push()/
+        // .update()/.remove()) çalışır. Mobilde 3dstudio.html'de kaydedilen
+        // bir model, aynı hesapla PC'de index.html açıldığı anda — sayfa
+        // yenilemeye bile gerek kalmadan — burada görünür, çünkü ikisi de
+        // aynı Firebase projesindeki aynı düğümü dinler.
+        //
+        // "3dstudio.html" (tam ekran editör) modeli window.saveModel() ile
+        // doğrudan bu Firebase düğümlerine yazar (bkz. 3dstudio.html'deki
+        // saveModel fonksiyonu). localStorage SADECE aktif oturum kapalıyken
+        // bile "hangi hesap" olduğunu köprülemek için kullanılır
+        // (pl3d_active_uid) — model/pazar verisinin kendisi artık hiçbir
+        // yerde localStorage'da tutulmuyor.
         // ════════════════════════════════════════════════════════════════
-
-        const STUDIO_MODELS_PREFIX = "pl3d_models_";
-        const STUDIO_MARKETPLACE_KEY = "pl3d_marketplace";
 
         function studioCurrentUid() {
             return (window.CommunityAuth && window.CommunityAuth.user)
@@ -8822,36 +8868,60 @@
                 : "Kullanıcı";
         }
 
-        function studioLoadModels() {
-            try {
-                const raw = localStorage.getItem(STUDIO_MODELS_PREFIX + studioCurrentUid());
-                const parsed = raw ? JSON.parse(raw) : [];
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (_) {
-                return [];
+        // ── Bulut önbellekleri: Firebase 'value' dinleyicileri bu iki
+        //    diziyi canlı tutar; tüm render fonksiyonları senkron olarak
+        //    bunları okur (forumThreadsCache ile aynı desen). ──────────
+        let studioModelsCache = [];       // aktif kullanıcının modelleri
+        let mktListingsCache  = [];       // TÜM pazar ilanları
+        let _studioModelsListenerUid = null;
+        let _mktListingsListenerBound = false;
+
+        /**
+         * Aktif kullanıcının 'models/{uid}' düğümünü dinlemeye başlar.
+         * Kullanıcı değişirse (login/logout) önceki dinleyiciyi kapatıp
+         * yenisini açar — böylece yanlış hesabın verisi sızmaz.
+         */
+        function studioListenModels() {
+            const uid = studioCurrentUid();
+            if (_studioModelsListenerUid === uid) return; // zaten dinleniyor
+            if (_studioModelsListenerUid) {
+                try { database.ref('models/' + _studioModelsListenerUid).off('value'); } catch (_) {}
             }
+            _studioModelsListenerUid = uid;
+            database.ref('models/' + uid).on('value', (snap) => {
+                const val = snap.val() || {};
+                studioModelsCache = Object.keys(val).map(id => Object.assign({ id }, val[id]));
+                refreshStudioDashboard();
+                // Pazara satışa çıkarma modalındaki model seçici açıksa tazele.
+                const sellOverlay = document.getElementById("mktSellModalOverlay");
+                if (sellOverlay && sellOverlay.classList.contains("is-open")) {
+                    mktOpenSellModal();
+                }
+            });
         }
 
-        function studioSaveModels(list) {
-            try {
-                localStorage.setItem(STUDIO_MODELS_PREFIX + studioCurrentUid(), JSON.stringify(list));
-            } catch (_) { /* quota vs. — sessizce geç */ }
+        /** Anlık bulut önbelleğini döndürür (senkron okuma noktalarında kullanılır). */
+        function studioLoadModels() {
+            return studioModelsCache;
+        }
+
+        function mktListenListings() {
+            if (_mktListingsListenerBound) return;
+            _mktListingsListenerBound = true;
+            database.ref('marketplace_listings').on('value', (snap) => {
+                const val = snap.val() || {};
+                mktListingsCache = Object.keys(val).map(id => Object.assign({ id }, val[id]));
+                mktRenderGrid();
+                // Detay modalı açıksa (başka biri yorum/puan eklemiş olabilir) tazele.
+                if (mktOpenListing) {
+                    const fresh = mktListingsCache.find(l => l.id === mktOpenListing.id);
+                    if (fresh) mktOpenListing = fresh;
+                }
+            });
         }
 
         function mktLoadListings() {
-            try {
-                const raw = localStorage.getItem(STUDIO_MARKETPLACE_KEY);
-                const parsed = raw ? JSON.parse(raw) : [];
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (_) {
-                return [];
-            }
-        }
-
-        function mktSaveListings(list) {
-            try {
-                localStorage.setItem(STUDIO_MARKETPLACE_KEY, JSON.stringify(list));
-            } catch (_) { /* sessizce geç */ }
+            return mktListingsCache;
         }
 
         function studioFormatRelativeDate(iso) {
@@ -8926,7 +8996,9 @@
             grid.innerHTML = sorted.map(m => `
                 <div class="studio-model-card" data-model-id="${studioEscapeHtml(m.id)}">
                     <div class="studio-model-thumb">
-                        ${m.thumbEmoji || "🧊"}
+                        ${m.thumbDataUrl
+                            ? `<img class="studio-model-thumb-img" src="${studioEscapeHtml(m.thumbDataUrl)}" alt="${studioEscapeHtml(m.name)}">`
+                            : (m.thumbEmoji || "🧊")}
                         <span class="studio-model-thumb-badge">${(m.cubeCount || 0)} obje</span>
                     </div>
                     <div class="studio-model-body">
@@ -8963,9 +9035,15 @@
         window.refreshStudioDashboard = refreshStudioDashboard;
 
         function studioDeleteModel(id) {
-            const models = studioLoadModels().filter(m => m.id !== id);
-            studioSaveModels(models);
-            refreshStudioDashboard();
+            if (!confirm("Bu modeli kalıcı olarak silmek istediğine emin misin?")) return;
+            database.ref('models/' + studioCurrentUid() + '/' + id).remove()
+                .catch(err => {
+                    console.error("[3D Studio] Model silinemedi:", err);
+                    showToastGlobal("Model silinirken bir sorun oluştu.");
+                });
+            // refreshStudioDashboard() burada ÇAĞRILMIYOR — 'models/{uid}'
+            // dinleyicisi (studioListenModels) silme işlemini Firebase'den
+            // otomatik alıp arayüzü kendisi güncelleyecek.
         }
 
         function studioExportModelGltf(id) {
@@ -8997,11 +9075,16 @@
                 createBtn.addEventListener("click", () => {
                     // Editör sayfası window.opener'a sahip olmayacak (aynı sekme
                     // yönlendirmesi), bu yüzden UID'yi localStorage'a bırakıyoruz
-                    // ki 3dstudio.html modeli doğru anahtara kaydetsin.
+                    // ki 3dstudio.html modeli doğru hesaba (Firebase'deki
+                    // models/{uid} düğümüne) kaydetsin.
                     try { localStorage.setItem("pl3d_active_uid", studioCurrentUid()); } catch (_) {}
                     window.location.href = "3dstudio.html";
                 });
             }
+            // Bulut dinleyicilerini başlat — model listesi + pazar ilanları
+            // artık buradan itibaren Firebase'den canlı akar.
+            studioListenModels();
+            mktListenListings();
             refreshStudioDashboard();
         }
         window.initStudioModule = initStudioModule;
@@ -9014,15 +9097,33 @@
         let mktOpenListing    = null;   // detay modalında açık olan listing
         let _mktDetailRenderer = null; // aktif Three.js renderer (temizleme için)
 
-        // ── Yardımcı: Puanlama ──────────────────────────────────────
+        // ── Yardımcı: Puanlama (Firebase: marketplace_ratings/{listingId}) ──
+        // Senkron API korunuyor (çağıran kod değişmesin diye); bu yüzden
+        // her listing için ayrı bir canlı dinleyici açıp yerel bir
+        // önbellekte tutuyoruz — .once() yerine .on('value') kullanmak
+        // başka kullanıcıların oyladığı anda ekranın da tazelenmesini sağlar.
+        const _mktRatingsCache = {};      // { listingId: {uid: stars} }
+        const _mktRatingsListenerBound = {}; // { listingId: true }
+
+        function mktEnsureRatingsListener(listingId) {
+            if (_mktRatingsListenerBound[listingId]) return;
+            _mktRatingsListenerBound[listingId] = true;
+            database.ref('marketplace_ratings/' + listingId).on('value', (snap) => {
+                _mktRatingsCache[listingId] = snap.val() || {};
+                // Detay modalı bu listing için açıksa yıldızları tazele.
+                if (mktOpenListing && mktOpenListing.id === listingId) {
+                    mktRenderDetailStars(listingId);
+                }
+                mktRenderGrid(); // kart üzerindeki ortalama puanı da güncelle
+            });
+        }
         function mktLoadRatings(listingId) {
-            try { return JSON.parse(localStorage.getItem("pl3d_ratings_" + listingId) || "{}"); }
-            catch (_) { return {}; }
+            mktEnsureRatingsListener(listingId);
+            return _mktRatingsCache[listingId] || {};
         }
         function mktSaveRating(listingId, uid, stars) {
-            const r = mktLoadRatings(listingId);
-            r[uid] = stars;
-            try { localStorage.setItem("pl3d_ratings_" + listingId, JSON.stringify(r)); } catch (_) {}
+            database.ref('marketplace_ratings/' + listingId + '/' + uid).set(stars)
+                .catch(err => console.error("[Pazar] Puan kaydedilemedi:", err));
         }
         function mktAvgRating(listingId) {
             const r = mktLoadRatings(listingId);
@@ -9031,13 +9132,41 @@
             return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
         }
 
-        // ── Yardımcı: Yorumlar ───────────────────────────────────────
-        function mktLoadComments(listingId) {
-            try { return JSON.parse(localStorage.getItem("pl3d_comments_" + listingId) || "[]"); }
-            catch (_) { return []; }
+        // ── Yardımcı: Yorumlar (Firebase: marketplace_comments/{listingId}) ──
+        const _mktCommentsCache = {};        // { listingId: [ {id,...}, ... ] }
+        const _mktCommentsListenerBound = {}; // { listingId: true }
+
+        function mktEnsureCommentsListener(listingId) {
+            if (_mktCommentsListenerBound[listingId]) return;
+            _mktCommentsListenerBound[listingId] = true;
+            database.ref('marketplace_comments/' + listingId).on('value', (snap) => {
+                const val = snap.val() || {};
+                _mktCommentsCache[listingId] = Object.keys(val)
+                    .map(id => Object.assign({ id }, val[id]))
+                    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+                // Detay modalı bu listing için açıksa yorumları anında tazele
+                // — başka bir cihazdan/kullanıcıdan gelen yorumlar da dahil.
+                if (mktOpenListing && mktOpenListing.id === listingId) {
+                    mktRenderDetailComments(listingId);
+                }
+            });
         }
-        function mktSaveComments(listingId, arr) {
-            try { localStorage.setItem("pl3d_comments_" + listingId, JSON.stringify(arr)); } catch (_) {}
+        function mktLoadComments(listingId) {
+            mktEnsureCommentsListener(listingId);
+            return _mktCommentsCache[listingId] || [];
+        }
+        /**
+         * Tek bir yorum ekler (push). Not: eski mktSaveComments(listingId, arr)
+         * imzası "tüm diziyi kaydet" şeklindeydi; Firebase'de bu paylaşımlı bir
+         * düğüm olduğu için artık tekil ekleme/silme fonksiyonları kullanılıyor
+         * (bkz. mktAddComment / mktDeleteComment) — çakışan eşzamanlı yazmalarda
+         * veri kaybını önler.
+         */
+        function mktAddComment(listingId, commentObj) {
+            return database.ref('marketplace_comments/' + listingId).push(commentObj);
+        }
+        function mktDeleteComment(listingId, commentId) {
+            return database.ref('marketplace_comments/' + listingId + '/' + commentId).remove();
         }
 
         // ── Yardımcı: Three.js 3D önizleme ──────────────────────────
@@ -9165,7 +9294,11 @@
                 return `
                 <div class="mkt-card" data-listing-id="${studioEscapeHtml(l.id)}">
                     <div class="mkt-card-canvas-wrap" id="mkt-canvas-${studioEscapeHtml(l.id)}">
-                        <div class="mkt-card-canvas-fallback" id="mkt-fb-${studioEscapeHtml(l.id)}">${l.thumbEmoji || "🧊"}</div>
+                        <div class="mkt-card-canvas-fallback" id="mkt-fb-${studioEscapeHtml(l.id)}">
+                            ${l.thumbDataUrl
+                                ? `<img class="mkt-card-thumb-img" src="${studioEscapeHtml(l.thumbDataUrl)}" alt="${studioEscapeHtml(l.name)}">`
+                                : (l.thumbEmoji || "🧊")}
+                        </div>
                         <span class="mkt-card-free-badge">Ücretsiz</span>
                         ${removeBadge}
                     </div>
@@ -9263,7 +9396,9 @@
             const fb   = document.getElementById("mktDetail3dFallback");
             // önceki canvas'ı temizle
             wrap.querySelectorAll("canvas").forEach(c => c.remove());
-            fb.textContent  = listing.thumbEmoji || "🧊";
+            fb.innerHTML = listing.thumbDataUrl
+                ? `<img class="mkt-card-thumb-img" src="${studioEscapeHtml(listing.thumbDataUrl)}" alt="${studioEscapeHtml(listing.name)}">`
+                : studioEscapeHtml(listing.thumbEmoji || "🧊");
             fb.style.display = "flex";
             if (listing.gltfData) {
                 setTimeout(() => {
@@ -9403,9 +9538,10 @@
                     if (!mktOpenListing) return;
                     const cmtId = btn.getAttribute("data-cmt-id");
                     if (!confirm("Bu yorumu silmek istediğine emin misin?")) return;
-                    const remaining = mktLoadComments(mktOpenListing.id).filter(c => c.id !== cmtId);
-                    mktSaveComments(mktOpenListing.id, remaining);
-                    mktRenderDetailComments(mktOpenListing.id);
+                    mktDeleteComment(mktOpenListing.id, cmtId)
+                        .catch(err => console.error("[Pazar] Yorum silinemedi:", err));
+                    // mktRenderDetailComments() burada çağrılmıyor — Firebase
+                    // dinleyicisi silme işlemini alıp arayüzü kendi güncelleyecek.
                 });
             });
 
@@ -9438,12 +9574,17 @@
             if (listing.sellerUid !== studioCurrentUid()) return;
             if (!confirm(`"${listing.name}" modelini pazardan kaldırmak istediğine emin misin?`)) return;
 
-            const remaining = mktLoadListings().filter(l => l.id !== listingId);
-            mktSaveListings(remaining);
-            mktCloseDetailModal();
-            mktRenderGrid();
-            refreshStudioDashboard();
-            showToastGlobal("Model pazardan kaldırıldı.");
+            database.ref('marketplace_listings/' + listingId).remove()
+                .then(() => {
+                    mktCloseDetailModal();
+                    showToastGlobal("Model pazardan kaldırıldı.");
+                })
+                .catch(err => {
+                    console.error("[Pazar] İlan kaldırılamadı:", err);
+                    showToastGlobal("İlan kaldırılırken bir sorun oluştu.");
+                });
+            // mktRenderGrid() burada çağrılmıyor — 'marketplace_listings'
+            // dinleyicisi silme işlemini alıp arayüzü kendisi güncelleyecek.
         }
 
         // ── Satışa çıkarma (artık ücretsiz paylaşım) ─────────────────
@@ -9493,9 +9634,7 @@
             const isVerified = !!(window.CommunityAuth && window.CommunityAuth.profile &&
                 window.CommunityAuth.profile.isVerified);
 
-            const listings = mktLoadListings();
-            listings.push({
-                id:             "listing_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+            database.ref('marketplace_listings').push({
                 modelId:        model.id,
                 sellerUid:      studioCurrentUid(),
                 sellerUsername: studioCurrentUsername(),
@@ -9504,18 +9643,29 @@
                 description,
                 category,
                 tags,
-                thumbEmoji: model.thumbEmoji || "🧊",
-                cubeCount:  model.cubeCount  || 0,
-                gltfData:   model.gltf       || null,   // 3D önizleme + indirme için
-                createdAt:  new Date().toISOString()
+                thumbEmoji:    model.thumbEmoji    || "🧊",
+                thumbDataUrl:  model.thumbDataUrl  || null,  // gerçek 3D render önizlemesi
+                cubeCount:     model.cubeCount      || 0,
+                gltfData:      model.gltf           || null, // 3D önizleme + indirme için
+                createdAt:     new Date().toISOString()
+            }).then(() => {
+                mktCloseSellModal();
+            }).catch(err => {
+                console.error("[Pazar] İlan paylaşılamadı:", err);
+                showToastGlobal("İlan paylaşılırken bir sorun oluştu.");
             });
-            mktSaveListings(listings);
-            mktCloseSellModal();
-            mktRenderGrid();
-            refreshStudioDashboard();
+            // mktRenderGrid()/refreshStudioDashboard() burada çağrılmıyor —
+            // 'marketplace_listings' dinleyicisi yeni ilanı alıp arayüzü
+            // kendisi güncelleyecek.
         }
 
         function initMarketplaceModule() {
+            // Kullanıcı Studio Dashboard'a hiç uğramadan doğrudan Pazaryeri
+            // sekmesini açabilir — hem ilan listesini hem de "Modeli Paylaş"
+            // modalının ihtiyaç duyduğu kendi model listesini burada da
+            // başlatıyoruz (ikisi de tekrar-bağlamaya karşı korumalı).
+            mktListenListings();
+            studioListenModels();
             const searchInput = document.getElementById("mktSearchInput");
             if (searchInput && !searchInput.dataset.bound) {
                 searchInput.dataset.bound = "1";
@@ -9610,9 +9760,7 @@
                     const encodedText = window.CommunityMentions.encodeForStorage
                         ? window.CommunityMentions.encodeForStorage(text)
                         : text;
-                    const comments = mktLoadComments(mktOpenListing.id);
-                    comments.push({
-                        id:         "cmt_" + Date.now(),
+                    mktAddComment(mktOpenListing.id, {
                         uid:        myUid,
                         username:   myUsername,
                         isVerified: isVerified,
@@ -9620,10 +9768,15 @@
                         avatarUrl:  myAvatar,
                         text:       encodedText,
                         createdAt:  new Date().toISOString()
+                    }).catch(err => {
+                        console.error("[Pazar] Yorum gönderilemedi:", err);
+                        showToastGlobal("Yorum gönderilirken bir sorun oluştu.");
                     });
-                    mktSaveComments(mktOpenListing.id, comments);
                     input.value = "";
-                    mktRenderDetailComments(mktOpenListing.id);
+                    // mktRenderDetailComments() burada çağrılmıyor — Firebase
+                    // dinleyicisi (mktEnsureCommentsListener) yeni yorumu alıp
+                    // arayüzü kendisi güncelleyecek; bu sayede yorum başka bir
+                    // cihazdan gelmiş olsa bile aynı yolla ekrana yansır.
                 });
             }
 

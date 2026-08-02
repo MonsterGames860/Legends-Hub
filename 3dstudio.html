@@ -1096,6 +1096,14 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 <!-- GLTFExporter: .gltf / .glb dışa aktarma -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+
+<!-- Firebase (index.html/Community Hub ile AYNI proje) — modelleri
+     doğrudan hesaba bağlı 'models/{uid}' düğümüne kaydetmek için.
+     Bu sayede mobilde kaydedilen bir model, aynı hesapla PC'de
+     index.html açıldığında anında görünür (cihazlar arası senkron). -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script>
 /* ============================================================
    3D STUDIO EDİTÖR — Blockbench tarzı voksel/küp editörü
@@ -1151,7 +1159,11 @@
   );
   camera.position.set(9, 8, 9);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  // preserveDrawingBuffer:true — Thumbnail Generator (saveModel/
+  // generateModelThumbnail) canvas'ı toDataURL() ile PNG'ye çevirebilsin
+  // diye gereklidir; aksi halde çoğu tarayıcı frame sonrası buffer'ı
+  // temizler ve alınan görüntü boş/siyah çıkar.
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
@@ -3473,11 +3485,33 @@
   document.getElementById("bb-export-json").addEventListener("click", exportRawJSON);
 
   // ------------------------------------------------------------
-  // I3) KAYDET — localStorage üzerine yazar, Studio Dashboard'daki
-  //     model listesine (index.html) aktarılır. saveModel() dışa
-  //     açık bırakılmıştır; istenirse konsoldan da çağrılabilir.
+  // I3) KAYDET — Firebase Realtime Database'e ('models/{uid}')
+  //     doğrudan yazar; Studio Dashboard (index.html) aynı düğümü
+  //     canlı dinlediği için kayıt anında (cihaz/tarayıcı fark etmeksizin)
+  //     orada da görünür. saveModel() dışa açık bırakılmıştır.
   // ------------------------------------------------------------
-  const STUDIO_MODELS_PREFIX = "pl3d_models_";
+  const firebaseConfig = {
+    apiKey: "AIzaSyAG6FsNjMgIXIGQmmmHC6GWjWuzNVDq5KM",
+    authDomain: "play-legends.firebaseapp.com",
+    projectId: "play-legends",
+    storageBucket: "play-legends.firebasestorage.app",
+    messagingSenderId: "64273518072",
+    appId: "1:64273518072:web:5c811f3c0862596ae19a0d",
+    measurementId: "G-96SNV1RDJG",
+    databaseURL: "https://play-legends-default-rtdb.europe-west1.firebasedatabase.app"
+  };
+
+  let studioDb = null;
+  try {
+    // index.html Firebase'i zaten başlatmış olabilir (aynı sekmede SPA
+    // yönlendirmesiyle geldiysek bu sayfa sıfırdan yüklenir, dolayısıyla
+    // normalde her zaman ilk kez burada initializeApp çağrılır — ama yine
+    // de "already exists" hatasına karşı güvenli davranıyoruz).
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    studioDb = firebase.database();
+  } catch (e) {
+    console.error("[3D Studio] Firebase başlatılamadı — kayıtlar buluta senkronlanamayacak:", e);
+  }
 
   function currentUid(){
     try {
@@ -3489,25 +3523,13 @@
     // window.CommunityAuth doğrudan bu sayfada mevcut olmaz — bu yüzden
     // localStorage'da hub tarafından bırakılmış bir uid referansı da
     // ikinci bir kaynak olarak denenir. Hiçbiri yoksa "anon" kullanılır.
+    // NOT: Bu sadece "hangi hesap" sorusunu köprülemek için; modelin
+    // kendisi hiçbir zaman localStorage'a yazılmaz.
     try {
       const stored = localStorage.getItem("pl3d_active_uid");
       if (stored) return stored;
     } catch (_) {}
     return "anon";
-  }
-
-  function loadModelsForCurrentUser(){
-    try {
-      const raw = localStorage.getItem(STUDIO_MODELS_PREFIX + currentUid());
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_) { return []; }
-  }
-
-  function saveModelsForCurrentUser(list){
-    try {
-      localStorage.setItem(STUDIO_MODELS_PREFIX + currentUid(), JSON.stringify(list));
-    } catch (_) { /* quota vs. — sessizce geç */ }
   }
 
   function countTotalVertsTris(){
@@ -3521,50 +3543,115 @@
   }
 
   /**
-   * Sahneyi localStorage'a kaydeder. Mevcut ?modelId= parametresiyle
-   * açıldıysak (Studio Dashboard'dan "Düzenle" ile gelindiyse) o modelin
-   * üzerine yazılır; aksi halde yeni bir model kaydı oluşturulur.
-   * GLTF verisi de birlikte gömülür, böylece Dashboard'dan tek tıkla
-   * tekrar indirilebilir.
+   * Sahnenin canvas'ından anlık bir PNG önizleme (thumbnail) üretir.
+   * Kamera geçici olarak modelin tamamını çerçeveleyecek şekilde
+   * konumlandırılır, bir kare render edilir, toDataURL ile PNG alınır,
+   * ardından kamera kullanıcının bıraktığı konuma geri döndürülür —
+   * yani ekranda hiçbir sıçrama görünmez. renderer WebGLRenderer
+   * preserveDrawingBuffer:true ile kurulduğu için toDataURL güvenilir
+   * biçimde çalışır (bkz. B) THREE.JS SAHNE KURULUMU bölümü).
+   */
+  function generateModelThumbnail(){
+    try {
+      if (state.cubes.length === 0) return null;
+
+      const prevPos = camera.position.clone();
+      const prevQuat = camera.quaternion.clone();
+
+      // Tüm küpleri kapsayan kutuyu bul ve kamerayı ona göre çerçevele —
+      // kullanıcının o an baktığı açı ne olursa olsun tutarlı, modelin
+      // tamamını gösteren bir kart görseli elde edilir.
+      const box = new THREE.Box3();
+      state.cubes.forEach(c => box.expandByObject(c.mesh));
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const dist = maxDim * 1.8 + 2;
+      camera.position.set(center.x + dist * 0.62, center.y + dist * 0.55, center.z + dist * 0.62);
+      camera.lookAt(center);
+      camera.updateProjectionMatrix();
+
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL("image/png");
+
+      // Kamerayı kullanıcının bıraktığı yere geri al.
+      camera.position.copy(prevPos);
+      camera.quaternion.copy(prevQuat);
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+
+      return dataUrl;
+    } catch (e) {
+      console.warn("[3D Studio] Thumbnail oluşturulamadı:", e);
+      return null;
+    }
+  }
+
+  /**
+   * Sahneyi Firebase Realtime Database'e ('models/{uid}/{modelId}')
+   * kaydeder. Mevcut ?modelId= parametresiyle açıldıysak (Studio
+   * Dashboard'dan "Düzenle" ile gelindiyse) o kaydın üzerine .update()
+   * ile yazılır; aksi halde .push() ile yeni bir model kaydı oluşturulur.
+   * GLTF verisi ve gerçek 3D render önizlemesi (thumbDataUrl) birlikte
+   * gömülür — Dashboard/Pazar bu ikisini doğrudan gösterir.
    */
   function saveModel(){
     if (state.cubes.length === 0) {
       showToast("No cubes to save — build something first.");
       return;
     }
+    if (!studioDb) {
+      showToast("Cloud connection unavailable — model could not be saved.");
+      return;
+    }
     const modelName = document.getElementById("bb-model-name").value.trim() || "Untitled Model";
     const { verts, tris } = countTotalVertsTris();
     const urlParams = new URLSearchParams(window.location.search);
     const existingId = urlParams.get("modelId");
-
-    const models = loadModelsForCurrentUser();
     const nowIso = new Date().toISOString();
+    const uid = currentUid();
+
+    const thumbDataUrl = generateModelThumbnail();
 
     const finalizeSave = (gltfJsonString) => {
-      let record = existingId ? models.find(m => m.id === existingId) : null;
-      if (!record) {
-        record = {
-          id: "model_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
-          createdAt: nowIso
-        };
-        models.push(record);
-      }
-      record.name = modelName;
-      record.updatedAt = nowIso;
-      record.cubeCount = state.cubes.length;
-      record.vertexCount = verts;
-      record.triangleCount = tris;
-      record.thumbEmoji = "🧊";
-      record.gltf = gltfJsonString || null;
-      record.cubesRaw = state.cubes.map(c => ({
-        id: c.id, name: c.name, color: c.color,
-        position: { x: c.position.x, y: c.position.y, z: c.position.z },
-        rotation: c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 },
-        scale: { x: c.scale.x, y: c.scale.y, z: c.scale.z }
-      }));
+      const record = {
+        name: modelName,
+        updatedAt: nowIso,
+        cubeCount: state.cubes.length,
+        vertexCount: verts,
+        triangleCount: tris,
+        thumbEmoji: "🧊",
+        thumbDataUrl: thumbDataUrl || null,
+        gltf: gltfJsonString || null,
+        cubesRaw: state.cubes.map(c => ({
+          id: c.id, name: c.name, color: c.color,
+          position: { x: c.position.x, y: c.position.y, z: c.position.z },
+          rotation: c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 },
+          scale: { x: c.scale.x, y: c.scale.y, z: c.scale.z }
+        }))
+      };
 
-      saveModelsForCurrentUser(models);
-      showToast("\"" + modelName + "\" saved.");
+      const writePromise = existingId
+        ? studioDb.ref('models/' + uid + '/' + existingId).update(record)
+        : (() => {
+            record.createdAt = nowIso;
+            const newRef = studioDb.ref('models/' + uid).push();
+            // Yeni kayıttan sonra tekrar "Kaydet"e basılırsa aynı kayda
+            // güncelleme yapılsın diye modelId'yi URL'e yansıtıyoruz.
+            const newId = newRef.key;
+            return newRef.set(record).then(() => {
+              const p = new URLSearchParams(window.location.search);
+              p.set("modelId", newId);
+              window.history.replaceState(null, "", window.location.pathname + "?" + p.toString());
+            });
+          })();
+
+      writePromise
+        .then(() => showToast("\"" + modelName + "\" saved."))
+        .catch(err => {
+          console.error("[3D Studio] Model kaydedilemedi:", err);
+          showToast("Save failed — check your connection and try again.");
+        });
     };
 
     // GLTF verisini de gömmeye çalış (Dashboard'dan tekrar indirilebilsin diye);
@@ -3585,27 +3672,33 @@
 
   document.getElementById("bb-btn-save").addEventListener("click", saveModel);
 
-  // Sayfa ?modelId=... ile açıldıysa, o modeli sahneye geri yükle.
+  // Sayfa ?modelId=... ile açıldıysa, o modeli Firebase'den (models/{uid}/{modelId})
+  // asenkron olarak okuyup sahneye geri yükler.
   (function loadModelFromQueryIfPresent(){
     const urlParams = new URLSearchParams(window.location.search);
     const modelId = urlParams.get("modelId");
-    if (!modelId) return;
-    const models = loadModelsForCurrentUser();
-    const record = models.find(m => m.id === modelId);
-    if (!record || !record.cubesRaw) return;
+    if (!modelId || !studioDb) return;
 
-    document.getElementById("bb-model-name").value = record.name || "Untitled Model";
-    record.cubesRaw.forEach(c => {
-      addCube(c.position.x, c.position.y, c.position.z);
-      const added = state.cubes[state.cubes.length - 1];
-      added.name = c.name || added.name;
-      added.rotation = c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 };
-      added.scale = c.scale ? { x: c.scale.x, y: c.scale.y, z: c.scale.z } : { x: 1, y: 1, z: 1 };
-      paintCube(added.id, c.color || "#3a8ee6");
-      applyCubeTransform(added);
+    studioDb.ref('models/' + currentUid() + '/' + modelId).once('value').then(snap => {
+      const record = snap.val();
+      if (!record || !record.cubesRaw) return;
+
+      document.getElementById("bb-model-name").value = record.name || "Untitled Model";
+      record.cubesRaw.forEach(c => {
+        addCube(c.position.x, c.position.y, c.position.z);
+        const added = state.cubes[state.cubes.length - 1];
+        added.name = c.name || added.name;
+        added.rotation = c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 };
+        added.scale = c.scale ? { x: c.scale.x, y: c.scale.y, z: c.scale.z } : { x: 1, y: 1, z: 1 };
+        paintCube(added.id, c.color || "#3a8ee6");
+        applyCubeTransform(added);
+      });
+      selectCube(null);
+      showToast("\"" + record.name + "\" loaded");
+    }).catch(err => {
+      console.error("[3D Studio] Model yüklenemedi:", err);
+      showToast("Could not load model — check your connection.");
     });
-    selectCube(null);
-    showToast("\"" + record.name + "\" loaded");
   })();
 
   // ------------------------------------------------------------
