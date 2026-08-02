@@ -2428,6 +2428,405 @@
     }
     .mkt-download-btn.is-danger:hover { background: rgba(255,80,80,0.22); }
 
+    /* ════════════════════════════════════════════════════════════════
+       MODÜL 5 — MESAJLAR (DM) & GRUP SOHBETLERİ
+       Ortak iskelet: sol/üst sohbet listesi + sağ/alt konuşma penceresi.
+       Masaüstünde yan yana (grid), mobilde tek panel + "←" ile geri
+       dönülen yığın (stack) görünümüne dönüşür.
+       ════════════════════════════════════════════════════════════════ */
+    .msg-shell {
+        display: grid;
+        grid-template-columns: minmax(240px, 320px) 1fr;
+        gap: 14px;
+        height: calc(100vh - 220px);
+        min-height: 420px;
+    }
+    @media (max-width: 780px) {
+        .msg-shell {
+            grid-template-columns: 1fr;
+            height: calc(100vh - 190px);
+        }
+        /* Mobilde: bir sohbet açıkken listeyi, kapalıyken konuşmayı gizle. */
+        .msg-shell.is-conversation-open .msg-chat-list-panel { display: none; }
+        .msg-shell:not(.is-conversation-open) .msg-conversation-panel { display: none; }
+        .msg-back-btn { display: inline-flex !important; }
+    }
+
+    .msg-chat-list-panel,
+    .msg-conversation-panel {
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .msg-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 14px 10px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--line);
+    }
+    .msg-new-chat-btn {
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .msg-new-chat-btn:hover { background: var(--accent); color: #06110f; }
+
+    .msg-search-input {
+        margin: 10px 14px 8px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 9px 12px;
+        font-size: 0.84rem;
+        font-family: var(--font-display);
+    }
+    .msg-search-input:focus { outline: none; border-color: var(--accent); }
+
+    .msg-chat-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* Sohbet listesi satırı: avatar + isim + son mesaj önizlemesi +
+       okunmamış rozet. */
+    .msg-chat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 9px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        background: transparent;
+        text-align: left;
+        width: 100%;
+        transition: background .12s ease, border-color .12s ease;
+    }
+    .msg-chat-item:hover { background: var(--bg-panel-raised); }
+    .msg-chat-item.is-active {
+        background: var(--accent-soft);
+        border-color: rgba(102, 252, 241, 0.35);
+    }
+    .msg-chat-item-avatar,
+    .msg-group-thumb {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .msg-group-thumb {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        background: var(--bg-panel-raised);
+    }
+    .msg-chat-item-body { flex: 1; min-width: 0; }
+    .msg-chat-item-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 6px;
+    }
+    .msg-chat-item-name {
+        font-weight: 700;
+        font-size: 0.87rem;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .msg-chat-item-time {
+        font-size: 0.68rem;
+        color: var(--text-dim);
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .msg-chat-item-preview {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .msg-unread-badge {
+        flex-shrink: 0;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #06110f;
+        font-size: 0.68rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ── Konuşma paneli (sağ/alt) ───────────────────────────────── */
+    .msg-conversation-empty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 30px;
+        color: var(--text-dim);
+        font-size: 0.88rem;
+        line-height: 1.6;
+    }
+    .msg-conversation-active {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+    }
+    .msg-conversation-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .msg-back-btn {
+        display: none; /* masaüstünde gizli, mobilde media query ile açılır */
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        color: var(--text-primary);
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .msg-back-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .msg-conversation-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .msg-group-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    .msg-conversation-header-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+    .msg-conversation-header-name {
+        font-weight: 800;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .msg-conversation-header-sub {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+    }
+    .msg-group-leave-btn {
+        background: rgba(255,80,80,0.1);
+        border: 1px solid rgba(255,80,80,0.4);
+        color: #ff6b6b;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .msg-group-leave-btn:hover { background: rgba(255,80,80,0.2); }
+
+    /* ── Mesaj baloncukları ─────────────────────────────────────── */
+    .msg-bubble-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .msg-bubble-row {
+        display: flex;
+        gap: 8px;
+        max-width: 78%;
+    }
+    .msg-bubble-row.is-own {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+    .msg-bubble-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+        align-self: flex-end;
+    }
+    .msg-bubble {
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        border-bottom-left-radius: 4px;
+        padding: 9px 13px;
+        font-size: 0.86rem;
+        line-height: 1.55;
+        color: var(--text-primary);
+        min-width: 0;
+    }
+    .msg-bubble-row.is-own .msg-bubble {
+        background: var(--accent-soft);
+        border-color: rgba(102, 252, 241, 0.35);
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 4px;
+    }
+    /* Grup sohbetinde gönderenin adı/rozeti baloncuğun içinde üstte
+       gösterilir (kendi mesajlarımızda gösterilmez — zaten sağda). */
+    .msg-bubble-sender {
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 3px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .msg-bubble-text { word-break: break-word; }
+    .msg-bubble-text img.forum-embed-image,
+    .msg-bubble-text video.forum-embed-video {
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 8px;
+        margin-top: 6px;
+        display: block;
+    }
+    .msg-bubble-time {
+        font-size: 0.64rem;
+        color: var(--text-dim);
+        margin-top: 4px;
+        text-align: right;
+    }
+    .msg-bubble-row.is-own .msg-bubble-time { color: rgba(102,252,241,0.6); }
+
+    /* ── Composer (metin girişi + görsel/GIF + Gönder) ───────────── */
+    .msg-composer {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        padding: 10px 12px;
+        border-top: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    @media (max-width: 560px) {
+        .msg-composer { flex-wrap: wrap; }
+        .msg-composer .forum-composer-input-wrap { order: 1; flex-basis: 100%; }
+        .msg-composer .forum-send-btn { order: 2; flex: 1; }
+        .msg-composer .forum-plus-btn { order: 0; }
+    }
+
+    /* ── "Yeni Sohbet / Yeni Grup" kullanıcı seçici listeleri ────── */
+    .msg-user-picker-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 220px;
+        overflow-y: auto;
+        margin-top: 8px;
+    }
+    .msg-user-picker-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        background: var(--bg-panel-raised);
+    }
+    .msg-user-picker-item:hover { border-color: var(--accent); }
+    .msg-user-picker-item img {
+        width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
+        background: #000; border: 1px solid var(--line); flex-shrink: 0;
+    }
+    .msg-user-picker-item span { font-size: 0.84rem; color: var(--text-primary); }
+
+    .msg-selected-members {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+        min-height: 36px;
+    }
+    .msg-selected-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-soft);
+        border: 1px solid rgba(102, 252, 241, 0.35);
+        border-radius: 999px;
+        padding: 4px 6px 4px 10px;
+        font-size: 0.78rem;
+        color: var(--text-primary);
+    }
+    .msg-selected-chip button {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.9rem;
+        line-height: 1;
+        padding: 2px;
+    }
+    .msg-selected-chip button:hover { color: var(--danger); }
+
     /* ---------- MARKETPLACE: modal (satın al / sat) ---------- */
     .mkt-modal-overlay {
         position: fixed;
@@ -4355,13 +4754,187 @@
                 </div>
             </section>
 
+            <!-- ════════════════════════════════════════════════════════════
+                 MODÜL 5 — MESAJLAR (Birebir Özel Mesajlaşma / DM)
+                 ════════════════════════════════════════════════════════════ -->
             <section class="hub-view" data-view="messages">
-                <div class="hub-placeholder">ÖZEL MESAJLAR / w KOMUTU — Modül 5'te doldurulacak</div>
+                <div class="msg-shell" id="dmShell">
+                    <!-- SOL/ÜST: Sohbet listesi -->
+                    <div class="msg-chat-list-panel" id="dmChatListPanel">
+                        <div class="msg-panel-header">
+                            <span>Sohbetler</span>
+                            <button type="button" class="msg-new-chat-btn" id="dmNewChatBtn" title="Yeni özel mesaj başlat">✎ Yeni</button>
+                        </div>
+                        <input type="text" class="msg-search-input" id="dmChatSearchInput" placeholder="Kişi ara…">
+                        <div class="msg-chat-list" id="dmChatList">
+                            <div class="hub-placeholder">Yükleniyor…</div>
+                        </div>
+                    </div>
+
+                    <!-- SAĞ/ALT: Aktif sohbet penceresi -->
+                    <div class="msg-conversation-panel" id="dmConversationPanel">
+                        <div class="msg-conversation-empty" id="dmConversationEmpty">
+                            💬 Mesajlaşmaya başlamak için soldaki listeden bir sohbet seç, ya da "Yeni" ile birini bul.
+                        </div>
+
+                        <div class="msg-conversation-active" id="dmConversationActive" style="display:none;">
+                            <div class="msg-conversation-header" id="dmConversationHeader">
+                                <button type="button" class="msg-back-btn" id="dmBackBtn" title="Sohbet listesine dön">←</button>
+                                <img class="msg-conversation-avatar" id="dmHeaderAvatar" alt="">
+                                <div class="msg-conversation-header-info">
+                                    <span class="msg-conversation-header-name" id="dmHeaderName">—</span>
+                                    <span class="msg-conversation-header-sub" id="dmHeaderSub"></span>
+                                </div>
+                            </div>
+
+                            <div class="msg-bubble-list" id="dmMessageList"></div>
+
+                            <div class="msg-composer">
+                                <div class="forum-plus-btn" id="dmPlusBtn" title="Fotoğraf veya GIF ekle">
+                                    +
+                                    <div class="forum-attach-popover" id="dmPlusPopover">
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
+                                            <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                        </button>
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
+                                            <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="dmAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                                <input type="file" id="dmAttachInput" style="display:none;" accept="image/*">
+                                <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="dmGifBtn" title="GIF ekle (Giphy)">GIF</button>
+
+                                <div class="forum-composer-input-wrap">
+                                    <textarea
+                                        id="dmComposerInput"
+                                        class="forum-composer-input"
+                                        placeholder="Bir mesaj yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
+                                        maxlength="2000"
+                                        rows="1"></textarea>
+                                    <div class="mention-autocomplete-dropdown" id="dmMentionDropdown"></div>
+                                </div>
+                                <button type="button" class="forum-send-btn" id="dmSendBtn">Gönder</button>
+                            </div>
+                            <div class="forum-composer-upload-status" id="dmAttachStatus" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YENİ SOHBET MODALI: kullanıcı arayıp DM başlatma -->
+                <div class="forum-modal-backdrop" id="dmNewChatModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span>Yeni Özel Mesaj</span>
+                            <button class="forum-modal-close" id="dmNewChatModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">Kullanıcı Ara</label>
+                            <input type="text" class="forum-text-input" id="dmNewChatSearchInput" placeholder="Kullanıcı adı yaz…" autocomplete="off">
+                            <div class="msg-user-picker-list" id="dmNewChatResultsList"></div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
+            <!-- ════════════════════════════════════════════════════════════
+                 MODÜL 5 — GRUP SOHBETLERİ
+                 ════════════════════════════════════════════════════════════ -->
             <section class="hub-view" data-view="groups">
-                <div class="hub-placeholder">GRUP SOHBETLERİ — Modül 5'te doldurulacak</div>
+                <div class="msg-shell" id="groupShell">
+                    <!-- SOL/ÜST: Katılınan gruplar listesi -->
+                    <div class="msg-chat-list-panel" id="groupChatListPanel">
+                        <div class="msg-panel-header">
+                            <span>Gruplarım</span>
+                            <button type="button" class="msg-new-chat-btn" id="groupCreateBtn" title="Yeni grup oluştur">+ Yeni Grup</button>
+                        </div>
+                        <input type="text" class="msg-search-input" id="groupChatSearchInput" placeholder="Grup ara…">
+                        <div class="msg-chat-list" id="groupChatList">
+                            <div class="hub-placeholder">Yükleniyor…</div>
+                        </div>
+                    </div>
+
+                    <!-- SAĞ/ALT: Aktif grup sohbeti -->
+                    <div class="msg-conversation-panel" id="groupConversationPanel">
+                        <div class="msg-conversation-empty" id="groupConversationEmpty">
+                            👥 Bir gruba tıkla, ya da "+ Yeni Grup" ile kendi grubunu oluştur.
+                        </div>
+
+                        <div class="msg-conversation-active" id="groupConversationActive" style="display:none;">
+                            <div class="msg-conversation-header" id="groupConversationHeader">
+                                <button type="button" class="msg-back-btn" id="groupBackBtn" title="Grup listesine dön">←</button>
+                                <div class="msg-group-avatar" id="groupHeaderAvatar">👥</div>
+                                <div class="msg-conversation-header-info">
+                                    <span class="msg-conversation-header-name" id="groupHeaderName">—</span>
+                                    <span class="msg-conversation-header-sub" id="groupHeaderSub">0 üye</span>
+                                </div>
+                                <button type="button" class="msg-group-leave-btn" id="groupLeaveBtn" title="Gruptan ayrıl">Ayrıl</button>
+                            </div>
+
+                            <div class="msg-bubble-list" id="groupMessageList"></div>
+
+                            <div class="msg-composer">
+                                <div class="forum-plus-btn" id="groupPlusBtn" title="Fotoğraf veya GIF ekle">
+                                    +
+                                    <div class="forum-attach-popover" id="groupPlusPopover">
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
+                                            <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                        </button>
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
+                                            <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="groupAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                                <input type="file" id="groupAttachInput" style="display:none;" accept="image/*">
+                                <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="groupGifBtn" title="GIF ekle (Giphy)">GIF</button>
+
+                                <div class="forum-composer-input-wrap">
+                                    <textarea
+                                        id="groupComposerInput"
+                                        class="forum-composer-input"
+                                        placeholder="Gruba bir mesaj yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
+                                        maxlength="2000"
+                                        rows="1"></textarea>
+                                    <div class="mention-autocomplete-dropdown" id="groupMentionDropdown"></div>
+                                </div>
+                                <button type="button" class="forum-send-btn" id="groupSendBtn">Gönder</button>
+                            </div>
+                            <div class="forum-composer-upload-status" id="groupAttachStatus" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YENİ GRUP OLUŞTURMA MODALI -->
+                <div class="forum-modal-backdrop" id="groupCreateModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span>Yeni Grup Oluştur</span>
+                            <button class="forum-modal-close" id="groupCreateModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">Grup Adı</label>
+                            <input type="text" class="forum-text-input" id="groupCreateNameInput" maxlength="60" placeholder="Örn: Efsane Avcıları">
+
+                            <label class="forum-field-label">Üye Ekle</label>
+                            <input type="text" class="forum-text-input" id="groupCreateMemberSearchInput" placeholder="Kullanıcı adı yaz…" autocomplete="off">
+                            <div class="msg-user-picker-list" id="groupCreateMemberResults"></div>
+
+                            <label class="forum-field-label">Seçilen Üyeler</label>
+                            <div class="msg-selected-members" id="groupCreateSelectedMembers">
+                                <span class="hub-placeholder" style="padding:8px;">Henüz üye seçilmedi (sadece sen olursun).</span>
+                            </div>
+
+                            <div class="forum-modal-error" id="groupCreateError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost" id="groupCreateCancelBtn">Vazgeç</button>
+                            <button class="forum-btn forum-btn-primary" id="groupCreateSubmitBtn">Grubu Oluştur</button>
+                        </div>
+                    </div>
+                </div>
             </section>
+
 
             <!-- ════════════════════════════════════════════════════════════
                  MENTIONS & REPLIES — SANA GELENLER PANELİ
@@ -10379,6 +10952,650 @@
         })();
 
         // ════════════════════════════════════════════════════════════════
+        // 🗨️ MODÜL 5 — MESAJLAR (DM) & GRUP SOHBETLERİ (MessagingSystem)
+        // ════════════════════════════════════════════════════════════════
+        // Firebase Realtime Database yapısı (projedeki tüm diğer modüllerle
+        // aynı `database.ref()` deseni kullanılır — RTDB, Firestore DEĞİL):
+        //
+        //   dms/{dmId}/meta            -> { members: {uidA:true, uidB:true}, updatedAt, lastMessage, lastSenderUid }
+        //   dms/{dmId}/messages/{msgId} -> { authorUid, text, createdAt }
+        //   dmId, iki üyenin UID'leri küçükten büyüğe sıralanıp "_" ile
+        //   birleştirilerek üretilir (aynı iki kişi için her zaman aynı
+        //   dmId — sonsuz sohbet oluşturmayı engeller).
+        //
+        //   dm_inbox/{myUid}/{dmId}    -> { otherUid, lastMessage, updatedAt,
+        //                                   lastSenderUid, unreadCount }
+        //   (her kullanıcının KENDİ sohbet listesini hızlı okuması için
+        //   "fan-out" kopyası — DM listesini dms/ altında tüm sohbetleri
+        //   tarayarak bulmak yerine doğrudan buradan okunur.)
+        //
+        //   group_chats/{groupId}/meta                 -> { name, ownerUid, members: {uid:true,...}, memberCount, createdAt }
+        //   group_chats/{groupId}/messages/{msgId}      -> { authorUid, text, createdAt }
+        //   user_groups/{myUid}/{groupId}               -> true  (hangi gruplarda olduğumu hızlı bulmak için)
+        //
+        // NOT: Gerçek bir üretim ortamında okunmamış sayaç/inbox güncelleme
+        // işlemleri Cloud Functions ile sunucu tarafında yapılmalıdır;
+        // burada tamamen client-side (RTDB Security Rules'a güvenerek)
+        // uygulanmıştır — mevcut projenin diğer modülleriyle aynı yaklaşım.
+        const MessagingSystem = (() => {
+            let _myUid = null;
+
+            // Aktif açık DM / Grup takibi.
+            let _activeDmId = null;
+            let _activeDmOtherUid = null;
+            let _activeGroupId = null;
+
+            // Dinleyici referansları (sohbet değişince eskisini kapatmak için).
+            let _dmMessagesRef = null;
+            let _groupMessagesRef = null;
+            let _dmInboxRef = null;
+            let _userGroupsRef = null;
+
+            let _dmInboxCache = {};   // dmId -> {otherUid, lastMessage, updatedAt, lastSenderUid, unreadCount}
+            let _userGroupsCache = {}; // groupId -> true
+            let _groupMetaCache = {};  // groupId -> meta (canlı dinlenir, liste render için)
+            let _groupCreateSelected = {}; // uid -> {uid, username, avatarUrl} (Yeni Grup modalında seçilenler)
+
+            // ── Yardımcılar ──────────────────────────────────────────
+            function makeDmId(uidA, uidB) {
+                return [uidA, uidB].sort().join("_");
+            }
+
+            function escapeAttr(str) {
+                return escapeHtml(str == null ? "" : String(str));
+            }
+
+            // Kısa "önizleme" metni: mesajdaki linkleri/mention kodlarını
+            // sadeleştirip listede tek satırda gösterilecek hale getirir.
+            function makePreviewSnippet(rawText) {
+                if (!rawText) return "";
+                let t = String(rawText)
+                    .replace(/\[mention:[^\]]+\]/g, "@birisi")
+                    .replace(/https?:\/\/\S+/g, "[medya/link]")
+                    .trim();
+                return t.length > 46 ? t.slice(0, 46) + "…" : t;
+            }
+
+            function relativeTimeShort(ts) {
+                if (!ts) return "";
+                const diffMs = Date.now() - ts;
+                const min = Math.floor(diffMs / 60000);
+                if (min < 1) return "şimdi";
+                if (min < 60) return `${min}dk`;
+                const hr = Math.floor(min / 60);
+                if (hr < 24) return `${hr}sa`;
+                const day = Math.floor(hr / 24);
+                if (day < 7) return `${day}g`;
+                return new Date(ts).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // A) ÖZEL MESAJLAR (DM)
+            // ══════════════════════════════════════════════════════════
+
+            // dm_inbox/{myUid} canlı dinlenir — sol listedeki tüm sohbetler
+            // (son mesaj + okunmamış rozeti dahil) buradan gelir.
+            function attachDmInboxListener() {
+                if (_dmInboxRef) _dmInboxRef.off();
+                _dmInboxRef = database.ref("dm_inbox/" + _myUid);
+                _dmInboxRef.on("value", (snap) => {
+                    _dmInboxCache = snap.val() || {};
+                    renderDmChatList();
+                });
+            }
+
+            function renderDmChatList(filterText) {
+                const listEl = document.getElementById("dmChatList");
+                if (!listEl) return;
+
+                let entries = Object.keys(_dmInboxCache).map((dmId) => ({ dmId, ..._dmInboxCache[dmId] }));
+
+                entries = entries.map((e) => {
+                    const candidate = window.CommunityMentions.getByUid(e.otherUid);
+                    return {
+                        ...e,
+                        _username: candidate ? candidate.username : "Kullanıcı",
+                        _avatarUrl: candidate ? candidate.avatarUrl : "",
+                        _isVerified: candidate ? candidate.isVerified : false
+                    };
+                });
+
+                if (filterText) {
+                    const q = filterText.trim().toLowerCase();
+                    entries = entries.filter((e) => e._username.toLowerCase().includes(q));
+                }
+
+                entries.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                if (entries.length === 0) {
+                    listEl.innerHTML = filterText
+                        ? '<div class="hub-placeholder">Eşleşen sohbet bulunamadı.</div>'
+                        : '<div class="hub-placeholder">Henüz bir özel mesajın yok. "✎ Yeni" ile birini bulabilirsin.</div>';
+                    return;
+                }
+
+                const RBAC = window.CommunityRBAC;
+                listEl.innerHTML = entries.map((e) => {
+                    const unread = e.unreadCount > 0;
+                    return `
+                        <button type="button" class="msg-chat-item${e.dmId === _activeDmId ? ' is-active' : ''}" data-dm-id="${escapeAttr(e.dmId)}" data-other-uid="${escapeAttr(e.otherUid)}">
+                            <img class="msg-chat-item-avatar" ${RBAC.renderAvatarAttrs(e._avatarUrl)} alt="">
+                            <div class="msg-chat-item-body">
+                                <div class="msg-chat-item-top">
+                                    <span class="msg-chat-item-name">${RBAC.renderNameWithRank ? escapeAttr(e._username) : escapeAttr(e._username)}${RBAC.renderVerifiedBadge(e._isVerified, "13px")}</span>
+                                    <span class="msg-chat-item-time">${relativeTimeShort(e.updatedAt)}</span>
+                                </div>
+                                <div class="msg-chat-item-preview">
+                                    ${e.lastSenderUid === _myUid ? '<span>Sen:</span>' : ''}
+                                    <span>${escapeAttr(makePreviewSnippet(e.lastMessage))}</span>
+                                </div>
+                            </div>
+                            ${unread ? `<span class="msg-unread-badge">${e.unreadCount > 9 ? "9+" : e.unreadCount}</span>` : ''}
+                        </button>
+                    `;
+                }).join("");
+
+                listEl.querySelectorAll(".msg-chat-item").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        openDmConversation(btn.getAttribute("data-dm-id"), btn.getAttribute("data-other-uid"));
+                    });
+                });
+            }
+
+            function openDmConversation(dmId, otherUid) {
+                _activeDmId = dmId;
+                _activeDmOtherUid = otherUid;
+
+                document.getElementById("dmConversationEmpty").style.display = "none";
+                document.getElementById("dmConversationActive").style.display = "flex";
+                document.getElementById("dmShell").classList.add("is-conversation-open");
+
+                const candidate = window.CommunityMentions.getByUid(otherUid);
+                const username = candidate ? candidate.username : "Kullanıcı";
+                const avatarUrl = candidate ? candidate.avatarUrl : "";
+                const RBAC = window.CommunityRBAC;
+                document.getElementById("dmHeaderName").innerHTML = escapeAttr(username) + RBAC.renderVerifiedBadge(candidate ? candidate.isVerified : false, "14px");
+                document.getElementById("dmHeaderSub").textContent = "Özel Mesaj";
+                RBAC.applyAvatarToImg(document.getElementById("dmHeaderAvatar"), avatarUrl);
+
+                renderDmChatList(); // aktif satırı vurgulamak için yeniden çiz
+
+                if (_dmMessagesRef) _dmMessagesRef.off();
+                _dmMessagesRef = database.ref("dms/" + dmId + "/messages").orderByChild("createdAt").limitToLast(150);
+                _dmMessagesRef.on("value", (snap) => {
+                    const all = snap.val() || {};
+                    const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    renderBubbleList(document.getElementById("dmMessageList"), arr, { isGroup: false });
+                });
+
+                // Bu sohbeti açtık — okunmamış sayacı sıfırla.
+                database.ref("dm_inbox/" + _myUid + "/" + dmId + "/unreadCount").set(0);
+            }
+
+            function closeDmConversation() {
+                _activeDmId = null;
+                _activeDmOtherUid = null;
+                if (_dmMessagesRef) { _dmMessagesRef.off(); _dmMessagesRef = null; }
+                document.getElementById("dmShell").classList.remove("is-conversation-open");
+                document.getElementById("dmConversationEmpty").style.display = "flex";
+                document.getElementById("dmConversationActive").style.display = "none";
+                renderDmChatList();
+            }
+
+            async function sendDmMessage(text) {
+                if (!text || !text.trim() || !_activeDmId || !_activeDmOtherUid) return;
+                const encoded = window.CommunityMentions.encodeForStorage(text.trim());
+                const now = firebase.database.ServerValue.TIMESTAMP;
+
+                const msgRef = database.ref("dms/" + _activeDmId + "/messages").push();
+                await msgRef.set({ authorUid: _myUid, text: encoded, createdAt: now });
+
+                const preview = makePreviewSnippet(text.trim());
+                const clientNow = Date.now();
+
+                // Kendi inbox kaydımızı güncelle (okundu, çünkü zaten açığız).
+                await database.ref("dm_inbox/" + _myUid + "/" + _activeDmId).update({
+                    otherUid: _activeDmOtherUid,
+                    lastMessage: preview,
+                    lastSenderUid: _myUid,
+                    updatedAt: clientNow,
+                    unreadCount: 0
+                });
+                // Karşı tarafın inbox kaydını güncelle + okunmamışını artır.
+                const otherUnreadSnap = await database.ref("dm_inbox/" + _activeDmOtherUid + "/" + _activeDmId + "/unreadCount").once("value");
+                const otherUnread = (otherUnreadSnap.val() || 0) + 1;
+                await database.ref("dm_inbox/" + _activeDmOtherUid + "/" + _activeDmId).update({
+                    otherUid: _myUid,
+                    lastMessage: preview,
+                    lastSenderUid: _myUid,
+                    updatedAt: clientNow,
+                    unreadCount: otherUnread
+                });
+                // dms/{id}/meta -> her iki üyenin de bu dm'e sahip olduğunu
+                // garanti eder (ör. Security Rules üyelik kontrolü için).
+                await database.ref("dms/" + _activeDmId + "/meta").update({
+                    members: { [_myUid]: true, [_activeDmOtherUid]: true },
+                    updatedAt: clientNow
+                });
+            }
+
+            // ── "Yeni Sohbet" modalı: kullanıcı arayıp DM başlatma ──────
+            function openNewChatModal() {
+                document.getElementById("dmNewChatModalBackdrop").style.display = "flex";
+                document.getElementById("dmNewChatSearchInput").value = "";
+                document.getElementById("dmNewChatResultsList").innerHTML =
+                    '<div class="hub-placeholder">Aramaya başla…</div>';
+                document.getElementById("dmNewChatSearchInput").focus();
+            }
+            function closeNewChatModal() {
+                document.getElementById("dmNewChatModalBackdrop").style.display = "none";
+            }
+            function renderNewChatResults(query) {
+                const resultsEl = document.getElementById("dmNewChatResultsList");
+                if (!query || !query.trim()) {
+                    resultsEl.innerHTML = '<div class="hub-placeholder">Aramaya başla…</div>';
+                    return;
+                }
+                const candidates = window.CommunityMentions.search(query.trim()).filter((c) => c.uid !== _myUid);
+                if (candidates.length === 0) {
+                    resultsEl.innerHTML = '<div class="hub-placeholder">Kimse bulunamadı.</div>';
+                    return;
+                }
+                const RBAC = window.CommunityRBAC;
+                resultsEl.innerHTML = candidates.map((c) => `
+                    <div class="msg-user-picker-item" data-uid="${escapeAttr(c.uid)}">
+                        <img ${RBAC.renderAvatarAttrs(c.avatarUrl)} alt="">
+                        <span>${escapeAttr(c.username)}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
+                    </div>
+                `).join("");
+                resultsEl.querySelectorAll(".msg-user-picker-item").forEach((item) => {
+                    item.addEventListener("click", () => {
+                        const otherUid = item.getAttribute("data-uid");
+                        closeNewChatModal();
+                        const dmId = makeDmId(_myUid, otherUid);
+                        openDmConversation(dmId, otherUid);
+                    });
+                });
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // B) GRUP SOHBETLERİ
+            // ══════════════════════════════════════════════════════════
+
+            // user_groups/{myUid} -> hangi gruplardayım. Her groupId için
+            // group_chats/{id}/meta ayrıca canlı dinlenir (isim/üye sayısı
+            // değişebilir).
+            function attachUserGroupsListener() {
+                if (_userGroupsRef) _userGroupsRef.off();
+                _userGroupsRef = database.ref("user_groups/" + _myUid);
+                _userGroupsRef.on("value", (snap) => {
+                    _userGroupsCache = snap.val() || {};
+                    const groupIds = Object.keys(_userGroupsCache);
+
+                    // Artık üyesi olmadığımız grupların meta dinleyicilerini
+                    // temizle (basit yaklaşım: cache'i filtrele, render'da
+                    // sadece hâlâ üye olduğumuz gruplar kalır).
+                    Object.keys(_groupMetaCache).forEach((gid) => {
+                        if (!_userGroupsCache[gid]) delete _groupMetaCache[gid];
+                    });
+
+                    groupIds.forEach((gid) => {
+                        database.ref("group_chats/" + gid + "/meta").on("value", (metaSnap) => {
+                            const meta = metaSnap.val();
+                            if (!meta) { delete _groupMetaCache[gid]; }
+                            else { _groupMetaCache[gid] = meta; }
+                            renderGroupChatList();
+                        });
+                    });
+
+                    if (groupIds.length === 0) renderGroupChatList();
+                });
+            }
+
+            function renderGroupChatList(filterText) {
+                const listEl = document.getElementById("groupChatList");
+                if (!listEl) return;
+
+                let entries = Object.keys(_groupMetaCache).map((gid) => ({ groupId: gid, ..._groupMetaCache[gid] }));
+
+                if (filterText) {
+                    const q = filterText.trim().toLowerCase();
+                    entries = entries.filter((e) => (e.name || "").toLowerCase().includes(q));
+                }
+
+                entries.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+
+                if (entries.length === 0) {
+                    listEl.innerHTML = filterText
+                        ? '<div class="hub-placeholder">Eşleşen grup bulunamadı.</div>'
+                        : '<div class="hub-placeholder">Henüz bir grubun yok. "+ Yeni Grup" ile birini kur!</div>';
+                    return;
+                }
+
+                listEl.innerHTML = entries.map((e) => `
+                    <button type="button" class="msg-chat-item${e.groupId === _activeGroupId ? ' is-active' : ''}" data-group-id="${escapeAttr(e.groupId)}">
+                        <div class="msg-group-thumb">👥</div>
+                        <div class="msg-chat-item-body">
+                            <div class="msg-chat-item-top">
+                                <span class="msg-chat-item-name">${escapeAttr(e.name || "İsimsiz Grup")}</span>
+                                <span class="msg-chat-item-time">${relativeTimeShort(e.updatedAt || e.createdAt)}</span>
+                            </div>
+                            <div class="msg-chat-item-preview">
+                                <span>${escapeAttr(makePreviewSnippet(e.lastMessage) || (Object.keys(e.members || {}).length + " üye"))}</span>
+                            </div>
+                        </div>
+                    </button>
+                `).join("");
+
+                listEl.querySelectorAll(".msg-chat-item").forEach((btn) => {
+                    btn.addEventListener("click", () => openGroupConversation(btn.getAttribute("data-group-id")));
+                });
+            }
+
+            function openGroupConversation(groupId) {
+                _activeGroupId = groupId;
+                const meta = _groupMetaCache[groupId];
+                if (!meta) return;
+
+                document.getElementById("groupConversationEmpty").style.display = "none";
+                document.getElementById("groupConversationActive").style.display = "flex";
+                document.getElementById("groupShell").classList.add("is-conversation-open");
+
+                document.getElementById("groupHeaderName").textContent = meta.name || "İsimsiz Grup";
+                document.getElementById("groupHeaderSub").textContent = `${Object.keys(meta.members || {}).length} üye`;
+
+                renderGroupChatList();
+
+                if (_groupMessagesRef) _groupMessagesRef.off();
+                _groupMessagesRef = database.ref("group_chats/" + groupId + "/messages").orderByChild("createdAt").limitToLast(150);
+                _groupMessagesRef.on("value", (snap) => {
+                    const all = snap.val() || {};
+                    const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
+                });
+            }
+
+            function closeGroupConversation() {
+                _activeGroupId = null;
+                if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
+                document.getElementById("groupShell").classList.remove("is-conversation-open");
+                document.getElementById("groupConversationEmpty").style.display = "flex";
+                document.getElementById("groupConversationActive").style.display = "none";
+                renderGroupChatList();
+            }
+
+            async function sendGroupMessage(text) {
+                if (!text || !text.trim() || !_activeGroupId) return;
+                const encoded = window.CommunityMentions.encodeForStorage(text.trim());
+                const now = firebase.database.ServerValue.TIMESTAMP;
+
+                const msgRef = database.ref("group_chats/" + _activeGroupId + "/messages").push();
+                await msgRef.set({ authorUid: _myUid, text: encoded, createdAt: now });
+
+                await database.ref("group_chats/" + _activeGroupId + "/meta").update({
+                    lastMessage: makePreviewSnippet(text.trim()),
+                    lastSenderUid: _myUid,
+                    updatedAt: Date.now()
+                });
+            }
+
+            async function leaveActiveGroup() {
+                if (!_activeGroupId) return;
+                const meta = _groupMetaCache[_activeGroupId];
+                if (!confirm(`"${meta ? meta.name : "Bu grup"}" gruptan ayrılmak istediğine emin misin?`)) return;
+
+                const gid = _activeGroupId;
+                await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
+                await database.ref("group_chats/" + gid + "/meta/memberCount").set(
+                    Math.max(0, ((_groupMetaCache[gid] && Object.keys(_groupMetaCache[gid].members || {}).length) || 1) - 1)
+                );
+                await database.ref("user_groups/" + _myUid + "/" + gid).remove();
+                closeGroupConversation();
+            }
+
+            // ── "Yeni Grup Oluştur" modalı ───────────────────────────────
+            function openCreateGroupModal() {
+                _groupCreateSelected = {};
+                document.getElementById("groupCreateModalBackdrop").style.display = "flex";
+                document.getElementById("groupCreateNameInput").value = "";
+                document.getElementById("groupCreateMemberSearchInput").value = "";
+                document.getElementById("groupCreateMemberResults").innerHTML = "";
+                document.getElementById("groupCreateError").style.display = "none";
+                renderSelectedMembersChips();
+            }
+            function closeCreateGroupModal() {
+                document.getElementById("groupCreateModalBackdrop").style.display = "none";
+            }
+            function renderCreateGroupMemberResults(query) {
+                const resultsEl = document.getElementById("groupCreateMemberResults");
+                if (!query || !query.trim()) { resultsEl.innerHTML = ""; return; }
+                const candidates = window.CommunityMentions.search(query.trim())
+                    .filter((c) => c.uid !== _myUid && !_groupCreateSelected[c.uid]);
+                if (candidates.length === 0) {
+                    resultsEl.innerHTML = '<div class="hub-placeholder">Kimse bulunamadı.</div>';
+                    return;
+                }
+                const RBAC = window.CommunityRBAC;
+                resultsEl.innerHTML = candidates.map((c) => `
+                    <div class="msg-user-picker-item" data-uid="${escapeAttr(c.uid)}">
+                        <img ${RBAC.renderAvatarAttrs(c.avatarUrl)} alt="">
+                        <span>${escapeAttr(c.username)}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
+                    </div>
+                `).join("");
+                resultsEl.querySelectorAll(".msg-user-picker-item").forEach((item) => {
+                    item.addEventListener("click", () => {
+                        const uid = item.getAttribute("data-uid");
+                        const c = window.CommunityMentions.getByUid(uid);
+                        if (!c) return;
+                        _groupCreateSelected[uid] = { uid, username: c.username, avatarUrl: c.avatarUrl };
+                        document.getElementById("groupCreateMemberSearchInput").value = "";
+                        resultsEl.innerHTML = "";
+                        renderSelectedMembersChips();
+                    });
+                });
+            }
+            function renderSelectedMembersChips() {
+                const wrap = document.getElementById("groupCreateSelectedMembers");
+                const chips = Object.values(_groupCreateSelected);
+                if (chips.length === 0) {
+                    wrap.innerHTML = '<span class="hub-placeholder" style="padding:8px;">Henüz üye seçilmedi (sadece sen olursun).</span>';
+                    return;
+                }
+                wrap.innerHTML = chips.map((c) => `
+                    <span class="msg-selected-chip" data-uid="${escapeAttr(c.uid)}">
+                        ${escapeAttr(c.username)}
+                        <button type="button" data-remove-uid="${escapeAttr(c.uid)}" title="Kaldır">✕</button>
+                    </span>
+                `).join("");
+                wrap.querySelectorAll("[data-remove-uid]").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        delete _groupCreateSelected[btn.getAttribute("data-remove-uid")];
+                        renderSelectedMembersChips();
+                    });
+                });
+            }
+            async function submitCreateGroup() {
+                const nameInput = document.getElementById("groupCreateNameInput");
+                const errorEl = document.getElementById("groupCreateError");
+                const name = nameInput.value.trim();
+                if (!name) {
+                    errorEl.textContent = "Lütfen bir grup adı yaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                errorEl.style.display = "none";
+
+                const members = { [_myUid]: true };
+                Object.keys(_groupCreateSelected).forEach((uid) => { members[uid] = true; });
+
+                const groupRef = database.ref("group_chats").push();
+                const groupId = groupRef.key;
+                const now = firebase.database.ServerValue.TIMESTAMP;
+
+                await groupRef.child("meta").set({
+                    name,
+                    ownerUid: _myUid,
+                    members,
+                    memberCount: Object.keys(members).length,
+                    createdAt: now,
+                    updatedAt: now,
+                    lastMessage: "",
+                    lastSenderUid: ""
+                });
+
+                const updates = {};
+                Object.keys(members).forEach((uid) => { updates["user_groups/" + uid + "/" + groupId] = true; });
+                await database.ref().update(updates);
+
+                closeCreateGroupModal();
+                openGroupConversation(groupId);
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // ORTAK: mesaj baloncuğu render'ı (DM + Grup için tek fonksiyon)
+            // ══════════════════════════════════════════════════════════
+            function renderBubbleList(listEl, messages, { isGroup }) {
+                if (!listEl) return;
+                if (messages.length === 0) {
+                    listEl.innerHTML = '<div class="hub-placeholder">Henüz mesaj yok. İlk mesajı sen yaz!</div>';
+                    return;
+                }
+                const RBAC = window.CommunityRBAC;
+                listEl.innerHTML = messages.map((m) => {
+                    const isOwn = m.authorUid === _myUid;
+                    const candidate = window.CommunityMentions.getByUid(m.authorUid);
+                    const username = candidate ? candidate.username : "Kullanıcı";
+                    const avatarUrl = candidate ? candidate.avatarUrl : "";
+                    const isVerified = candidate ? candidate.isVerified : false;
+                    const role = candidate ? candidate.role : "";
+
+                    // Grup sohbetinde, KENDİ mesajlarımız hariç, gönderenin
+                    // kullanıcı adı + rütbe rozeti baloncuğun içinde üstte
+                    // gösterilir (istenen davranış).
+                    const senderHtml = (isGroup && !isOwn)
+                        ? `<div class="msg-bubble-sender">${RBAC.renderNameWithRank(username, role, isVerified)}</div>`
+                        : "";
+
+                    return `
+                        <div class="msg-bubble-row${isOwn ? ' is-own' : ''}">
+                            <img class="msg-bubble-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
+                            <div class="msg-bubble">
+                                ${senderHtml}
+                                <div class="msg-bubble-text">${renderRichContent(m.text)}</div>
+                                <div class="msg-bubble-time">${formatMessageTime(m.createdAt)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                listEl.scrollTop = listEl.scrollHeight;
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // Composer kurulumu (DM ve Grup için ortak: metin + mention
+            // autocomplete + 📎/GIF + "+" popover + Gönder butonu).
+            // ══════════════════════════════════════════════════════════
+            function wireComposer({ textareaId, sendBtnId, mentionDropdownId, attachBtnId, fileInputId, statusId, gifBtnId, plusBtnId, plusPopoverId, onSend }) {
+                const textarea = document.getElementById(textareaId);
+                const sendBtn = document.getElementById(sendBtnId);
+                const mentionDropdown = document.getElementById(mentionDropdownId);
+
+                if (textarea && mentionDropdown && !textarea.dataset.mentionBound) {
+                    textarea.dataset.mentionBound = "1";
+                    window.CommunityMentions.attachAutocomplete(textarea, mentionDropdown);
+                }
+
+                if (sendBtn && !sendBtn.dataset.bound) {
+                    sendBtn.dataset.bound = "1";
+                    const doSend = async () => {
+                        const val = textarea.value;
+                        if (!val || !val.trim()) return;
+                        textarea.value = "";
+                        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+                        try {
+                            await onSend(val);
+                        } catch (err) {
+                            console.error("[Messaging] Gönderme hatası:", err);
+                            textarea.value = val; // hata olursa metni geri koy
+                        }
+                    };
+                    sendBtn.addEventListener("click", doSend);
+                }
+
+                if (typeof wireAttachButton === "function") {
+                    wireAttachButton({ btnId: attachBtnId, fileInputId, textareaId, statusId });
+                }
+
+                const gifBtn = document.getElementById(gifBtnId);
+                if (gifBtn && !gifBtn.dataset.bound) {
+                    gifBtn.dataset.bound = "1";
+                    gifBtn.addEventListener("click", () => openGifPicker(textareaId));
+                }
+
+                if (typeof wirePlusButton === "function") {
+                    wirePlusButton({ plusBtnId, popoverId: plusPopoverId, attachBtnId, gifBtnId });
+                }
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // init — MesajlarModülü'nün tüm event bağlamalarını yapar.
+            // Tek seferlik çağrılır (auth-ready anında).
+            // ══════════════════════════════════════════════════════════
+            let _initDone = false;
+            function init(uid) {
+                _myUid = uid;
+                attachDmInboxListener();
+                attachUserGroupsListener();
+
+                if (_initDone) return;
+                _initDone = true;
+
+                // Sohbet listesi arama kutuları
+                document.getElementById("dmChatSearchInput")?.addEventListener("input", (e) => renderDmChatList(e.target.value));
+                document.getElementById("groupChatSearchInput")?.addEventListener("input", (e) => renderGroupChatList(e.target.value));
+
+                // Geri (mobil) butonları
+                document.getElementById("dmBackBtn")?.addEventListener("click", closeDmConversation);
+                document.getElementById("groupBackBtn")?.addEventListener("click", closeGroupConversation);
+
+                // Yeni Sohbet (DM) modalı
+                document.getElementById("dmNewChatBtn")?.addEventListener("click", openNewChatModal);
+                document.getElementById("dmNewChatModalClose")?.addEventListener("click", closeNewChatModal);
+                document.getElementById("dmNewChatModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "dmNewChatModalBackdrop") closeNewChatModal();
+                });
+                document.getElementById("dmNewChatSearchInput")?.addEventListener("input", (e) => renderNewChatResults(e.target.value));
+
+                // Yeni Grup modalı
+                document.getElementById("groupCreateBtn")?.addEventListener("click", openCreateGroupModal);
+                document.getElementById("groupCreateModalClose")?.addEventListener("click", closeCreateGroupModal);
+                document.getElementById("groupCreateCancelBtn")?.addEventListener("click", closeCreateGroupModal);
+                document.getElementById("groupCreateModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "groupCreateModalBackdrop") closeCreateGroupModal();
+                });
+                document.getElementById("groupCreateMemberSearchInput")?.addEventListener("input", (e) => renderCreateGroupMemberResults(e.target.value));
+                document.getElementById("groupCreateSubmitBtn")?.addEventListener("click", submitCreateGroup);
+                document.getElementById("groupLeaveBtn")?.addEventListener("click", leaveActiveGroup);
+
+                // Composer'lar
+                wireComposer({
+                    textareaId: "dmComposerInput", sendBtnId: "dmSendBtn", mentionDropdownId: "dmMentionDropdown",
+                    attachBtnId: "dmAttachBtn", fileInputId: "dmAttachInput", statusId: "dmAttachStatus",
+                    gifBtnId: "dmGifBtn", plusBtnId: "dmPlusBtn", plusPopoverId: "dmPlusPopover",
+                    onSend: sendDmMessage
+                });
+                wireComposer({
+                    textareaId: "groupComposerInput", sendBtnId: "groupSendBtn", mentionDropdownId: "groupMentionDropdown",
+                    attachBtnId: "groupAttachBtn", fileInputId: "groupAttachInput", statusId: "groupAttachStatus",
+                    gifBtnId: "groupGifBtn", plusBtnId: "groupPlusBtn", plusPopoverId: "groupPlusPopover",
+                    onSend: sendGroupMessage
+                });
+            }
+
+            return { init, renderDmChatList, renderGroupChatList };
+        })();
+
+        // ════════════════════════════════════════════════════════════════
         // BİLDİRİM SİSTEMİ (NotificationSystem)
         // ════════════════════════════════════════════════════════════════
         /**
@@ -10559,6 +11776,7 @@
             showHubShell(e.detail.user, e.detail.profile);
             NotificationSystem.init(e.detail.user.uid);
             InboxSystem.init(e.detail.user.uid);
+            MessagingSystem.init(e.detail.user.uid);
         });
 
         document.addEventListener("communitystudio:profile-updated", (e) => {
