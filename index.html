@@ -1164,6 +1164,15 @@
         z-index: 40;
     }
     .forum-attach-popover.is-open { display: flex; }
+    /* JS bu popover'ı açılırken document.body'ye taşıyıp position:fixed
+       yapar (bkz. wirePlusButton) — böylece .mkt-detail-modal /
+       .mkt-comments-scroll gibi overflow:auto/hidden ile kırpma yapan
+       üst elemanların İÇİNDE hapsolmaz ve buton her nerede olursa
+       olsun (scroll konumundan bağımsız) doğru yerde, en üstte görünür. */
+    .forum-attach-popover.is-fixed-popover {
+        position: fixed;
+        z-index: 2000;
+    }
 
     .forum-attach-popover-item {
         display: flex;
@@ -2262,12 +2271,22 @@
     /* Yorum listesi kendi içinde kaydırılır — modal büyüyüp composer'ı
        ekran dışına itmesin diye sabit bir tavan yüksekliği var. */
     .mkt-comments-scroll {
-        max-height: 46vh;
+        min-height: 120px;
+        max-height: 250px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding-right: 2px;
+        padding: 2px 2px 2px 0;
+    }
+    /* Yorum yoksa/az varsa placeholder da aynı min-height alanını kaplasın,
+       böylece liste her zaman aynı basık olmayan yükseklikte görünür. */
+    .mkt-comments-scroll .hub-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 116px;
+        text-align: center;
     }
     .mkt-comments-title {
         font-size: 0.78rem;
@@ -2283,12 +2302,14 @@
         display: flex;
         gap: 10px;
         font-size: 0.84rem;
-        padding: 12px;
+        padding: 12px 14px;
         background: #212c3a;
         border: 1px solid rgba(102, 252, 241, 0.28);
         border-left: 2px solid var(--accent);
         border-radius: 9px;
         box-shadow: 0 1px 0 rgba(0,0,0,0.35) inset;
+        box-sizing: border-box;
+        width: 100%;
     }
     .mkt-comment-avatar {
         width: 32px;
@@ -2299,7 +2320,7 @@
         border: 1px solid var(--line);
         flex-shrink: 0;
     }
-    .mkt-comment-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .mkt-comment-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .mkt-comment-header { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
     /* Yazar adı — açık neon metin + hafif parıltı, koyu panel üzerinde
        yüksek kontrast (WCAG AA üstü) sağlar. */
@@ -2330,8 +2351,9 @@
     .mkt-comment-time { font-size: 0.7rem; color: #9aa7b5; white-space: nowrap; }
     .mkt-comment-actions {
         display: flex;
-        gap: 12px;
-        margin-top: 2px;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 4px;
     }
     .mkt-comment-action-btn {
         background: none;
@@ -2339,7 +2361,9 @@
         color: #9aa7b5;
         font-size: 0.74rem;
         cursor: pointer;
-        padding: 0;
+        padding: 4px 0;
+        line-height: 1.2;
+        white-space: nowrap;
     }
     .mkt-comment-action-btn:hover { color: var(--accent); text-decoration: underline; }
     .mkt-comment-action-btn.is-danger:hover { color: #ff6b6b; }
@@ -8317,9 +8341,44 @@
                 if (popoverId === exceptPopoverId) return;
                 const popover = document.getElementById(popoverId);
                 const plusBtn = document.getElementById(plusBtnId);
-                if (popover) popover.classList.remove("is-open");
-                if (plusBtn) plusBtn.classList.remove("is-open");
+                if (popover && typeof popover.__closePopover === "function") {
+                    popover.__closePopover();
+                } else {
+                    if (popover) popover.classList.remove("is-open", "is-fixed-popover");
+                    if (plusBtn) plusBtn.classList.remove("is-open");
+                }
             });
+        }
+
+        // Popover'ı ekrana (viewport'a) göre konumlandırır. Butonun hemen
+        // üstüne, sol kenarları hizalı şekilde yerleştirmeye çalışır;
+        // eğer bu, popover'ı ekranın üstünden veya sağından taşırırsa
+        // otomatik olarak aşağıya/sola kayar — böylece hangi composer'da
+        // olursa olsun (yorum kutusu, yanıt kutusu, vb.) her zaman metin
+        // alanının veya Gönder butonunun ÜZERİNE binmeden görünür.
+        function positionFixedPopover(plusBtn, popover) {
+            const btnRect = plusBtn.getBoundingClientRect();
+            // Genişliğini ölçebilmek için önce görünür ama konumsuz aç.
+            popover.style.left = "0px";
+            popover.style.top = "0px";
+            const popRect = popover.getBoundingClientRect();
+            const margin = 8;
+
+            let left = btnRect.left;
+            if (left + popRect.width > window.innerWidth - margin) {
+                left = Math.max(margin, window.innerWidth - popRect.width - margin);
+            }
+            left = Math.max(margin, left);
+
+            let top = btnRect.top - popRect.height - margin;
+            if (top < margin) {
+                // Üstte yer yoksa (ör. buton ekranın en üstündeyse) butonun
+                // altına aç.
+                top = Math.min(btnRect.bottom + margin, window.innerHeight - popRect.height - margin);
+            }
+
+            popover.style.left = `${left}px`;
+            popover.style.top = `${top}px`;
         }
 
         function wirePlusButton({ plusBtnId, popoverId, attachBtnId, gifBtnId }) {
@@ -8331,22 +8390,52 @@
             if (plusBtn.dataset.bound) return;
             plusBtn.dataset.bound = "1";
 
+            // Popover'ın orijinal DOM konumunu hatırla (kapanınca geri
+            // koymak için) — açılınca body'nin sonuna taşınacak.
+            const originalParent = popover.parentNode;
+            const originalNextSibling = popover.nextSibling;
+
             allPlusPopovers.push({ plusBtnId, popoverId });
+
+            function openPopover() {
+                // body'ye taşı: .mkt-detail-modal / .mkt-comments-scroll gibi
+                // overflow:auto|hidden üst elemanların kırpmasından kaçınır.
+                document.body.appendChild(popover);
+                popover.classList.add("is-fixed-popover", "is-open");
+                plusBtn.classList.add("is-open");
+                positionFixedPopover(plusBtn, popover);
+            }
+
+            function closePopover() {
+                popover.classList.remove("is-open", "is-fixed-popover");
+                popover.style.left = "";
+                popover.style.top = "";
+                plusBtn.classList.remove("is-open");
+                // Orijinal yerine geri koy.
+                if (popover.parentNode === document.body) {
+                    originalParent.insertBefore(popover, originalNextSibling);
+                }
+            }
 
             plusBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const willOpen = !popover.classList.contains("is-open");
                 closeAllPlusPopovers(willOpen ? popoverId : null);
-                popover.classList.toggle("is-open", willOpen);
-                plusBtn.classList.toggle("is-open", willOpen);
+                if (willOpen) openPopover(); else closePopover();
             });
+
+            window.addEventListener("resize", () => {
+                if (popover.classList.contains("is-open")) positionFixedPopover(plusBtn, popover);
+            });
+            window.addEventListener("scroll", () => {
+                if (popover.classList.contains("is-open")) positionFixedPopover(plusBtn, popover);
+            }, true);
 
             popover.querySelectorAll("[data-plus-action]").forEach((item) => {
                 item.addEventListener("click", (e) => {
                     e.stopPropagation();
                     const action = item.getAttribute("data-plus-action");
-                    popover.classList.remove("is-open");
-                    plusBtn.classList.remove("is-open");
+                    closePopover();
                     if (action === "photo" && attachBtn) {
                         attachBtn.click();
                     } else if (action === "gif" && gifBtn) {
@@ -8354,6 +8443,9 @@
                     }
                 });
             });
+
+            // closeAllPlusPopovers tarafından çağrılabilmesi için referans sakla.
+            popover.__closePopover = closePopover;
         }
 
         // Panelin dışına tıklanınca ya da Escape'e basılınca tüm "+"
