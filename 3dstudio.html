@@ -1133,6 +1133,10 @@
     nextCubeIndex: 1,
     nextGroupIndex: 1
   };
+  // Yerel yedekleme katmanının (studio-local-backup.js) gerçek voxel/mesh
+  // verisine erişebilmesi için state referansını dışa açıyoruz. saveModel()
+  // ve Firebase akışı bundan ETKİLENMEZ — sadece okunur bir köprüdür.
+  window.__pl3dStudioState = state;
 
   const PRESET_COLORS = [
     "#e6533a", "#e6a13a", "#e6d63a", "#a1e63a",
@@ -3670,6 +3674,21 @@
   }
   window.saveModel = saveModel;
 
+  // ------------------------------------------------------------
+  // I3-b) YEREL YEDEKLEME KATMANI İÇİN DIŞA AÇMA (studio-local-backup.js)
+  //     Bu fonksiyonlar zaten yukarıda tanımlı; burada sadece window'a
+  //     referanslarını veriyoruz ki ayrı dosyadaki auto-save/restore/export
+  //     mantığı gerçek sahne API'sini kullanabilsin. Firebase akışını veya
+  //     mevcut davranışı HİÇBİR ŞEKİLDE değiştirmez.
+  // ------------------------------------------------------------
+  window.addCube = addCube;
+  window.paintCube = paintCube;
+  window.applyCubeTransform = applyCubeTransform;
+  window.selectCube = selectCube;
+  window.exportGLTF = exportGLTF;
+  window.exportRawJSON = exportRawJSON;
+  window.showToast = showToast;
+
   document.getElementById("bb-btn-save").addEventListener("click", saveModel);
 
   // Sayfa ?modelId=... ile açıldıysa, o modeli Firebase'den (models/{uid}/{modelId})
@@ -3797,5 +3816,10 @@
 
 })();
 </script>
+
+<!-- Yerel Yedekleme / Offline Taslak Katmanı — Firebase'in YANINDA çalışır,
+     onun yerine geçmez. Auto-save (IndexedDB), sayfa yenilemede taslak
+     geri yükleme ve .json export fallback'i sağlar. -->
+<script src="studio-engine.js"></script>
 </body>
 </html>
