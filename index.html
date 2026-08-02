@@ -1100,6 +1100,94 @@
     }
     .forum-gif-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* ---------- "+" Ekle Butonu (📎/GIF'in yerini alır) ----------
+       Eski composer'larda 📎 ve GIF ayrı iki buton olarak textarea'nın
+       SOLUNDA duruyordu ve aralarında/arkalarında koyu bir dikdörtgen
+       (araç çubuğu satırı) kalıyordu — bu da composer'ı gereğinden
+       büyük/tuhaf gösteriyordu. Bunun yerine tek, dairesel bir "+"
+       butonu kullanılır; tıklanınca üstünde küçük bir panel açılır
+       (Fotoğraf Yükle / GIF Ekle). Panel açıldığında mevcut 📎 ve GIF
+       butonları JS tarafından programatik olarak tıklanır — böylece
+       upload/Giphy mantığı hiç değişmeden aynen çalışmaya devam eder;
+       sadece görünüm/etkileşim değişir. */
+    .forum-plus-btn {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--bg-panel-raised);
+        color: var(--accent);
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: flex-end;
+        margin-bottom: 1px;
+        position: relative;
+        transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
+    }
+    .forum-plus-btn:hover { border-color: var(--accent); background: var(--bg-panel); }
+    .forum-plus-btn:active { transform: scale(0.94); }
+    .forum-plus-btn.is-open {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+        color: var(--text-primary);
+        transform: rotate(45deg);
+    }
+
+    /* Eski araç çubuğu satırını (mkt-comment-toolbar-row) ve genel
+       composer'lardaki 📎/GIF butonlarını artık göstermiyoruz — bu
+       elemanlar DOM'da kalır (display:none), JS hâlâ onlara .click()
+       ile erişebilir; sadece görsel olarak gizlenirler. */
+    .forum-composer-legacy-toolbar,
+    .forum-composer-legacy-btn { display: none !important; }
+
+    /* "+" butonuna basınca açılan panel: Fotoğraf / GIF seçenekleri. */
+    .forum-attach-popover {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 0;
+        min-width: 190px;
+        max-width: min(240px, calc(100vw - 32px));
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        z-index: 40;
+    }
+    .forum-attach-popover.is-open { display: flex; }
+
+    .forum-attach-popover-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        padding: 9px 10px;
+        border-radius: 7px;
+        font-size: 0.85rem;
+        font-family: var(--font-display);
+        cursor: pointer;
+    }
+    .forum-attach-popover-item:hover { background: var(--bg-panel); color: var(--accent); }
+    .forum-attach-popover-item .forum-attach-popover-icon {
+        flex-shrink: 0;
+        width: 22px;
+        text-align: center;
+        font-size: 1rem;
+    }
+
     /* ---------- GIF Arama Popup'ı (Discord tarzı, Giphy) ---------- */
     .forum-gif-picker-modal {
         width: 100%;
@@ -2256,14 +2344,19 @@
     .mkt-comment-action-btn:hover { color: var(--accent); text-decoration: underline; }
     .mkt-comment-action-btn.is-danger:hover { color: #ff6b6b; }
 
-    /* Yorum composer v2: küçük araç çubuğu (📎/GIF) üstte, altında
-       tam genişlik metin kutusu + Gönder butonu — mobilde dikeyleşince
+    /* Yorum composer v2: "+" butonu (📷/GIF paneli) ve metin kutusu
+       yan yana, altında tam genişlik Gönder butonu — mobilde dikeyleşince
        bile modalı taşırmayacak kompakt bir düzen. */
     .mkt-comment-composer-v2 {
         display: flex;
         flex-direction: column;
         gap: 8px;
         margin-top: 4px;
+    }
+    .mkt-comment-input-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
     }
     .mkt-comment-toolbar-row {
         display: flex;
@@ -3883,9 +3976,22 @@
 
                         <!-- Yeni yorum kutusu (thread kilitliyse gizlenir) -->
                         <div class="forum-composer" id="forumReplyComposerWrap">
-                            <button type="button" class="forum-attach-btn" id="forumReplyAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="forumReplyAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
                             <input type="file" id="forumReplyAttachInput" style="display:none;" accept="image/*">
-                            <button type="button" class="forum-gif-btn" id="forumReplyGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                            <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="forumReplyGifBtn" title="GIF ekle (Giphy)">GIF</button>
+
+                            <div class="forum-plus-btn" id="forumReplyPlusBtn" title="Fotoğraf veya GIF ekle">
+                                +
+                                <div class="forum-attach-popover" id="forumReplyPlusPopover">
+                                    <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
+                                        <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                    </button>
+                                    <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
+                                        <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="forum-composer-input-wrap">
                                 <textarea
                                     id="forumReplyInput"
@@ -3898,7 +4004,7 @@
                         </div>
                         <div class="forum-composer-upload-status" id="forumReplyAttachStatus" style="display:none;"></div>
                         <div class="forum-composer-hint">
-                            Zengin içerik: link yapıştır otomatik önizlensin · <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · 📎 ile görsel yükle · GIF ile Giphy'den ara · emoji doğrudan yapıştırılabilir
+                            Zengin içerik: link yapıştır otomatik önizlensin · <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · + ile fotoğraf yükle veya GIF ekle · emoji doğrudan yapıştırılabilir
                         </div>
                     </div>
 
@@ -3941,9 +4047,25 @@
 
                         <!-- MESAJ YAZMA KUTUSU -->
                         <div class="forum-composer">
-                            <button type="button" class="forum-attach-btn" id="forumAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <!-- Eski 📎/GIF butonları JS tarafından hâlâ kullanılıyor
+                                 (wireAttachButton / openGifPicker) ama görsel olarak
+                                 gizli — bkz. .forum-composer-legacy-btn CSS kuralı. -->
+                            <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="forumAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
                             <input type="file" id="forumAttachInput" style="display:none;" accept="image/*">
-                            <button type="button" class="forum-gif-btn" id="forumGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                            <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="forumGifBtn" title="GIF ekle (Giphy)">GIF</button>
+
+                            <div class="forum-plus-btn" id="forumPlusBtn" title="Fotoğraf veya GIF ekle">
+                                +
+                                <div class="forum-attach-popover" id="forumPlusPopover">
+                                    <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
+                                        <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                    </button>
+                                    <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
+                                        <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="forum-composer-input-wrap">
                                 <textarea
                                     id="forumComposerInput"
@@ -3956,7 +4078,7 @@
                         </div>
                         <div class="forum-composer-upload-status" id="forumAttachStatus" style="display:none;"></div>
                         <div class="forum-composer-hint">
-                            Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj · Giphy/görsel/video linki yapıştır, otomatik önizlensin · 📎 ile görsel yükle · GIF ile Giphy'den ara
+                            Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj · Giphy/görsel/video linki yapıştır, otomatik önizlensin · + ile fotoğraf yükle veya GIF ekle
                         </div>
                     </div>
 
@@ -4074,19 +4196,36 @@
                         <div class="mkt-comments-title">Yorumlar</div>
                         <div class="mkt-comments-scroll" id="mktDetailCommentsList"></div>
                         <div class="mkt-comment-composer-v2" id="mktCommentComposerWrap">
-                            <div class="mkt-comment-toolbar-row">
+                            <!-- Eski araç çubuğu satırı: 📎/GIF butonları JS
+                                 tarafından hâlâ kullanılıyor ama görsel olarak
+                                 gizli (bkz. .forum-composer-legacy-toolbar). -->
+                            <div class="mkt-comment-toolbar-row forum-composer-legacy-toolbar">
                                 <button type="button" class="forum-attach-btn" id="mktDetailCommentAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
                                 <input type="file" id="mktDetailCommentAttachInput" style="display:none;" accept="image/*">
                                 <button type="button" class="forum-gif-btn" id="mktDetailCommentGifBtn" title="GIF ekle (Giphy)">GIF</button>
                             </div>
-                            <div class="forum-composer-input-wrap">
-                                <textarea
-                                    id="mktDetailCommentInput"
-                                    class="forum-composer-input"
-                                    placeholder="Yorum yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
-                                    maxlength="2000"
-                                    rows="1"></textarea>
-                                <div class="mention-autocomplete-dropdown" id="mktDetailCommentMentionDropdown"></div>
+
+                            <div class="mkt-comment-input-row">
+                                <div class="forum-plus-btn" id="mktCommentPlusBtn" title="Fotoğraf veya GIF ekle">
+                                    +
+                                    <div class="forum-attach-popover" id="mktCommentPlusPopover">
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
+                                            <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                        </button>
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
+                                            <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="forum-composer-input-wrap">
+                                    <textarea
+                                        id="mktDetailCommentInput"
+                                        class="forum-composer-input"
+                                        placeholder="Yorum yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
+                                        maxlength="2000"
+                                        rows="1"></textarea>
+                                    <div class="mention-autocomplete-dropdown" id="mktDetailCommentMentionDropdown"></div>
+                                </div>
                             </div>
                             <button class="forum-send-btn" id="mktDetailCommentSend">Gönder</button>
                         </div>
@@ -6745,6 +6884,12 @@
             // composer'ı için tek seferlik kurulum (modal DOM'da her zaman mevcut).
             initGifPickerModule();
 
+            // "+" Ekle butonları (Fotoğraf/GIF paneli) — Genel Sohbet ve
+            // Thread yorum composer'ı statik DOM'da her zaman mevcut olduğu
+            // için burada tek seferlik bağlanır (dataset.bound koruması
+            // sayesinde tekrar çağrılırsa da sorun olmaz).
+            initAllPlusButtons();
+
             const replyPreviewCancelBtn = document.getElementById("forumReplyPreviewCancel");
             if (replyPreviewCancelBtn) {
                 replyPreviewCancelBtn.addEventListener("click", hideForumReplyPreview);
@@ -8153,6 +8298,90 @@
             if (!link) throw new Error("ImgBB yükleme yanıtında görsel bağlantısı bulunamadı.");
             return link;
         }
+
+        /**
+         * "+" Ekle butonu ve altındaki panel (Fotoğraf Yükle / GIF Ekle)
+         * için ortak kablo bağlama mantığı. Panel içindeki seçeneklere
+         * tıklanınca, o composer'ın GÖRSEL OLARAK GİZLİ 📎/GIF butonlarına
+         * programatik .click() gönderilir — böylece uploadFileToImgBB /
+         * openGifPicker mantığı hiç değişmeden aynen çalışır, sadece
+         * kullanıcıya tek bir "+" ikonu gösterilir.
+         *
+         * Aynı anda birden fazla panel açık kalmasın diye, bir panel
+         * açılırken diğer tüm "+" panelleri kapatılır.
+         */
+        const allPlusPopovers = []; // { plusBtnId, popoverId } — kapatma için global liste
+
+        function closeAllPlusPopovers(exceptPopoverId) {
+            allPlusPopovers.forEach(({ plusBtnId, popoverId }) => {
+                if (popoverId === exceptPopoverId) return;
+                const popover = document.getElementById(popoverId);
+                const plusBtn = document.getElementById(plusBtnId);
+                if (popover) popover.classList.remove("is-open");
+                if (plusBtn) plusBtn.classList.remove("is-open");
+            });
+        }
+
+        function wirePlusButton({ plusBtnId, popoverId, attachBtnId, gifBtnId }) {
+            const plusBtn = document.getElementById(plusBtnId);
+            const popover = document.getElementById(popoverId);
+            const attachBtn = document.getElementById(attachBtnId);
+            const gifBtn = document.getElementById(gifBtnId);
+            if (!plusBtn || !popover) return;
+            if (plusBtn.dataset.bound) return;
+            plusBtn.dataset.bound = "1";
+
+            allPlusPopovers.push({ plusBtnId, popoverId });
+
+            plusBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const willOpen = !popover.classList.contains("is-open");
+                closeAllPlusPopovers(willOpen ? popoverId : null);
+                popover.classList.toggle("is-open", willOpen);
+                plusBtn.classList.toggle("is-open", willOpen);
+            });
+
+            popover.querySelectorAll("[data-plus-action]").forEach((item) => {
+                item.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const action = item.getAttribute("data-plus-action");
+                    popover.classList.remove("is-open");
+                    plusBtn.classList.remove("is-open");
+                    if (action === "photo" && attachBtn) {
+                        attachBtn.click();
+                    } else if (action === "gif" && gifBtn) {
+                        gifBtn.click();
+                    }
+                });
+            });
+        }
+
+        // Panelin dışına tıklanınca ya da Escape'e basılınca tüm "+"
+        // panellerini kapat (composer'lar arası ortak, tek dinleyici).
+        document.addEventListener("click", () => closeAllPlusPopovers(null));
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeAllPlusPopovers(null);
+        });
+
+        function initAllPlusButtons() {
+            wirePlusButton({
+                plusBtnId: "forumPlusBtn",
+                popoverId: "forumPlusPopover",
+                attachBtnId: "forumAttachBtn",
+                gifBtnId: "forumGifBtn"
+            });
+            wirePlusButton({
+                plusBtnId: "forumReplyPlusBtn",
+                popoverId: "forumReplyPlusPopover",
+                attachBtnId: "forumReplyAttachBtn",
+                gifBtnId: "forumReplyGifBtn"
+            });
+            // NOT: mktCommentPlusBtn burada DEĞİL — o, marketplace detay
+            // modalının kendi init fonksiyonunda (modal her açıldığında
+            // çalışan blokta) ayrıca bağlanıyor; bkz. "Yorum composer —
+            // '+' Ekle butonu" yorumu.
+        }
+        window.initAllPlusButtons = initAllPlusButtons;
 
         /**
 
@@ -9736,6 +9965,18 @@
             if (commentGifBtn && !commentGifBtn.dataset.bound) {
                 commentGifBtn.dataset.bound = "1";
                 commentGifBtn.addEventListener("click", () => openGifPicker("mktDetailCommentInput"));
+            }
+
+            // Yorum composer — "+" Ekle butonu (Fotoğraf/GIF paneli).
+            // dataset.bound koruması wirePlusButton içinde olduğu için bu
+            // çağrı modal her açıldığında tekrarlansa da sorun oluşturmaz.
+            if (typeof wirePlusButton === "function") {
+                wirePlusButton({
+                    plusBtnId: "mktCommentPlusBtn",
+                    popoverId: "mktCommentPlusPopover",
+                    attachBtnId: "mktDetailCommentAttachBtn",
+                    gifBtnId: "mktDetailCommentGifBtn"
+                });
             }
 
             // Yorum gönder
