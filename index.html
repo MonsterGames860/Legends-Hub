@@ -2151,6 +2151,17 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+        min-height: 0;
+    }
+    /* Yorum listesi kendi içinde kaydırılır — modal büyüyüp composer'ı
+       ekran dışına itmesin diye sabit bir tavan yüksekliği var. */
+    .mkt-comments-scroll {
+        max-height: 46vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 2px;
     }
     .mkt-comments-title {
         font-size: 0.78rem;
@@ -2199,57 +2210,44 @@
         display: block;
     }
     .mkt-comment-time { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
-    .mkt-comment-composer {
+    .mkt-comment-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 2px;
+    }
+    .mkt-comment-action-btn {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 0.74rem;
+        cursor: pointer;
+        padding: 0;
+    }
+    .mkt-comment-action-btn:hover { color: var(--accent); text-decoration: underline; }
+    .mkt-comment-action-btn.is-danger:hover { color: #ff6b6b; }
+
+    /* Yorum composer v2: küçük araç çubuğu (📎/GIF) üstte, altında
+       tam genişlik metin kutusu + Gönder butonu — mobilde dikeyleşince
+       bile modalı taşırmayacak kompakt bir düzen. */
+    .mkt-comment-composer-v2 {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         margin-top: 4px;
     }
-    .mkt-comment-composer-row { display: flex; gap: 8px; }
-    .mkt-comment-input {
-        flex: 1;
-        background: var(--bg-panel-raised);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        color: var(--text-primary);
-        padding: 8px 11px;
-        font-size: 0.84rem;
-        font-family: var(--font-display);
-        resize: none;
-        min-height: 38px;
-        max-height: 120px;
-    }
-    .mkt-comment-input:focus { outline: none; border-color: var(--accent); }
-    .mkt-comment-send-btn {
-        background: var(--accent-dim);
-        border: 1px solid var(--accent);
-        color: var(--text-primary);
-        border-radius: 8px;
-        padding: 0 14px;
-        font-size: 0.82rem;
-        cursor: pointer;
-        transition: background .1s;
-        white-space: nowrap;
-    }
-    .mkt-comment-send-btn:hover { background: var(--accent); }
-    .mkt-comment-composer-tools {
+    .mkt-comment-toolbar-row {
         display: flex;
-        align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
     }
-    .mkt-comment-attach-btn {
-        background: transparent;
-        border: 1px dashed var(--line);
-        color: var(--text-dim);
-        border-radius: 7px;
-        padding: 5px 10px;
-        font-size: 0.75rem;
-        cursor: pointer;
+    .mkt-comment-toolbar-row .forum-attach-btn,
+    .mkt-comment-toolbar-row .forum-gif-btn {
+        flex: 0 0 auto;
+        padding: 6px 12px;
+        font-size: 0.78rem;
     }
-    .mkt-comment-attach-btn:hover { border-color: var(--accent); color: var(--text-primary); }
-    .mkt-comment-attach-btn.is-active { border-color: var(--accent); color: var(--accent); border-style: solid; }
-    .mkt-comment-attach-preview { font-size: 0.72rem; color: var(--text-dim); }
+    .mkt-comment-composer-v2 .forum-send-btn {
+        width: 100%;
+    }
     .mkt-download-btn {
         display: flex;
         align-items: center;
@@ -4044,11 +4042,13 @@
                     <!-- Yorumlar -->
                     <div class="mkt-comments-section">
                         <div class="mkt-comments-title">Yorumlar</div>
-                        <div id="mktDetailCommentsList"></div>
-                        <div class="forum-composer" id="mktCommentComposerWrap">
-                            <button type="button" class="forum-attach-btn" id="mktDetailCommentAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
-                            <input type="file" id="mktDetailCommentAttachInput" style="display:none;" accept="image/*">
-                            <button type="button" class="forum-gif-btn" id="mktDetailCommentGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                        <div class="mkt-comments-scroll" id="mktDetailCommentsList"></div>
+                        <div class="mkt-comment-composer-v2" id="mktCommentComposerWrap">
+                            <div class="mkt-comment-toolbar-row">
+                                <button type="button" class="forum-attach-btn" id="mktDetailCommentAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                                <input type="file" id="mktDetailCommentAttachInput" style="display:none;" accept="image/*">
+                                <button type="button" class="forum-gif-btn" id="mktDetailCommentGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                            </div>
                             <div class="forum-composer-input-wrap">
                                 <textarea
                                     id="mktDetailCommentInput"
@@ -9332,6 +9332,11 @@
                 return;
             }
             const RBAC = window.CommunityRBAC;
+            const myUid = studioCurrentUid();
+            const viewerProfile = window.CommunityAuth && window.CommunityAuth.profile;
+            const canModerate = RBAC.canModerate ? RBAC.canModerate(viewerProfile) : false;
+            const isListingOwner = mktOpenListing && mktOpenListing.sellerUid === myUid;
+
             el.innerHTML = comments.map(c => {
                 // Yazar bilgisini CANLI cache'ten al (rütbe/tik/avatar güncel
                 // kalsın diye) — cache'te yoksa yorum kaydındaki snapshot'a düş.
@@ -9345,6 +9350,18 @@
                     ? renderRichContent(c.text)
                     : studioEscapeHtml(c.text);
 
+                // Yanıtla: kendi yorumun hariç herkese. Sil: yorum sahibi,
+                // bu ilanın sahibi (kendi modelinin yorumlarını yönetebilsin)
+                // veya moderatör/üst rütbe.
+                const canDelete = c.uid === myUid || isListingOwner || canModerate;
+                let actionsHtml = "";
+                if (c.uid !== myUid) {
+                    actionsHtml += `<button type="button" class="mkt-comment-action-btn" data-action="reply" data-cmt-username="${studioEscapeHtml(username)}">Yanıtla</button>`;
+                }
+                if (canDelete) {
+                    actionsHtml += `<button type="button" class="mkt-comment-action-btn is-danger" data-action="delete" data-cmt-id="${studioEscapeHtml(c.id)}">Sil</button>`;
+                }
+
                 return `<div class="mkt-comment-item">
                     <img class="mkt-comment-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     <div class="mkt-comment-body">
@@ -9355,6 +9372,7 @@
                             <span class="mkt-comment-time">${time}</span>
                         </div>
                         <div class="mkt-comment-text">${bodyHtml}</div>
+                        ${actionsHtml ? `<div class="mkt-comment-actions">${actionsHtml}</div>` : ""}
                     </div>
                 </div>`;
             }).join("");
@@ -9365,6 +9383,32 @@
                     if (uid) { mktCloseDetailModal(); openUserProfile(uid); }
                 });
             });
+
+            // Yanıtla — composer'a "@isim " ekler ve odaklanır.
+            el.querySelectorAll('[data-action="reply"]').forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const uname = btn.getAttribute("data-cmt-username");
+                    const input = document.getElementById("mktDetailCommentInput");
+                    if (!input) return;
+                    const mention = "@" + uname + " ";
+                    if (!input.value.startsWith(mention)) input.value = mention + input.value;
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                });
+            });
+
+            // Sil — yetkiliyse yorum kaydını kaldırır.
+            el.querySelectorAll('[data-action="delete"]').forEach(btn => {
+                btn.addEventListener("click", () => {
+                    if (!mktOpenListing) return;
+                    const cmtId = btn.getAttribute("data-cmt-id");
+                    if (!confirm("Bu yorumu silmek istediğine emin misin?")) return;
+                    const remaining = mktLoadComments(mktOpenListing.id).filter(c => c.id !== cmtId);
+                    mktSaveComments(mktOpenListing.id, remaining);
+                    mktRenderDetailComments(mktOpenListing.id);
+                });
+            });
+
             if (typeof attachMentionClickHandlers === "function") attachMentionClickHandlers(el);
         }
 
