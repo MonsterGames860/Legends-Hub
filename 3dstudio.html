@@ -1133,10 +1133,6 @@
     nextCubeIndex: 1,
     nextGroupIndex: 1
   };
-  // Yerel yedekleme katmanının (studio-local-backup.js) gerçek voxel/mesh
-  // verisine erişebilmesi için state referansını dışa açıyoruz. saveModel()
-  // ve Firebase akışı bundan ETKİLENMEZ — sadece okunur bir köprüdür.
-  window.__pl3dStudioState = state;
 
   const PRESET_COLORS = [
     "#e6533a", "#e6a13a", "#e6d63a", "#a1e63a",
@@ -3517,7 +3513,49 @@
     console.error("[3D Studio] Firebase başlatılamadı — kayıtlar buluta senkronlanamayacak:", e);
   }
 
+  // ------------------------------------------------------------
+  // I3-a) GERÇEK FIREBASE AUTH DURUMU
+  //     ÖNEMLİ: 'models/{uid}' güvenlik kuralı "auth.uid === $uid" şartını
+  //     arar — yani Realtime Database'e yazabilmek için tarayıcıda GERÇEK
+  //     bir firebase.auth().currentUser oturumu olması ZORUNLUDUR.
+  //     window.opener.CommunityAuth veya localStorage'daki "hangi hesap"
+  //     bilgisi SADECE hangi uid'nin kullanılacağını hatırlamak içindir;
+  //     bunlar Firebase'e kimlik doğrulaması SAĞLAMAZ. index.html'de
+  //     zaten yapılmış olan firebase.auth() girişi, SDK'nın kendi
+  //     persistence'ı (varsayılan: LOCAL/IndexedDB) sayesinde bu sayfada
+  //     da otomatik olarak geri yüklenir — ama bu işlem ASENKRONDUR.
+  //     Bu yüzden auth durumu netleşene kadar (authReady) saveModel()
+  //     bekletilir; aksi halde "auth.currentUser henüz null" anında
+  //     yazma denenirse kural onu reddeder ve "Save failed" görünür.
+  // ------------------------------------------------------------
+  let firebaseAuthUser = null;   // firebase.auth().currentUser senkronize kopyası
+  let authReady = false;         // onAuthStateChanged en az bir kez tetiklendi mi?
+  let authReadyPromiseResolve;
+  const authReadyPromise = new Promise((resolve) => { authReadyPromiseResolve = resolve; });
+
+  try {
+    firebase.auth().onAuthStateChanged((user) => {
+      firebaseAuthUser = user;
+      authReady = true;
+      authReadyPromiseResolve();
+      if (!user) {
+        console.warn("[3D Studio] Firebase Auth oturumu bulunamadı — kayıt öncesi giriş yapılmış olmalı.");
+      }
+    });
+  } catch (e) {
+    console.error("[3D Studio] firebase.auth() dinleyicisi kurulamadı:", e);
+    authReady = true;
+    authReadyPromiseResolve();
+  }
+
   function currentUid(){
+    // Öncelik sırası: 1) gerçek Firebase Auth oturumu (kurallarla eşleşen
+    // TEK geçerli kaynak), 2) window.opener üzerinden hub'ın bildirdiği uid
+    // (yalnızca bilgi amaçlı / auth henüz netleşmediyse geçici tahmin),
+    // 3) localStorage köprüsü, 4) "anon".
+    if (firebaseAuthUser && firebaseAuthUser.uid) {
+      return firebaseAuthUser.uid;
+    }
     try {
       if (window.opener && window.opener.CommunityAuth && window.opener.CommunityAuth.user) {
         return window.opener.CommunityAuth.user.uid;
@@ -3599,7 +3637,7 @@
    * GLTF verisi ve gerçek 3D render önizlemesi (thumbDataUrl) birlikte
    * gömülür — Dashboard/Pazar bu ikisini doğrudan gösterir.
    */
-  function saveModel(){
+  async function saveModel(){
     if (state.cubes.length === 0) {
       showToast("No cubes to save — build something first.");
       return;
@@ -3608,6 +3646,30 @@
       showToast("Cloud connection unavailable — model could not be saved.");
       return;
     }
+
+    // Firebase Auth SDK'sının önceki oturumu geri yüklemesi (persistence)
+    // asenkron çalışır. onAuthStateChanged henüz hiç tetiklenmediyse
+    // (authReady === false), bir sonraki karara kadar bekliyoruz —
+    // aksi halde auth.currentUser henüz null iken yazma denenip
+    // "models/{uid}" kuralı tarafından PERMISSION_DENIED ile reddedilir.
+    if (!authReady) {
+      showToast("Checking your session…");
+      await authReadyPromise;
+    }
+
+    // Auth netleşti ama gerçek bir oturum yoksa (örn. sayfa doğrudan/
+    // yeni sekmede açıldı ve index.html'deki login hiç taşınmadı),
+    // "models/{uid}" kuralı auth.uid === $uid şartını her koşulda arar;
+    // bu yüzden burada net bir mesajla erken çıkıyoruz — sessizce
+    // "anon" ile yazmayı denemek zaten PERMISSION_DENIED verir.
+    if (!firebaseAuthUser) {
+      showToast("You're not signed in — please sign in from the Community Hub first.");
+      console.error("[3D Studio] saveModel() iptal edildi: firebase.auth().currentUser null. " +
+        "index.html üzerinden giriş yapıp buraya index.html'deki 'Yeni Model Oluştur' / " +
+        "'Düzenle' butonlarıyla gelindiğinden emin olun.");
+      return;
+    }
+
     const modelName = document.getElementById("bb-model-name").value.trim() || "Untitled Model";
     const { verts, tris } = countTotalVertsTris();
     const urlParams = new URLSearchParams(window.location.search);
@@ -3654,7 +3716,11 @@
         .then(() => showToast("\"" + modelName + "\" saved."))
         .catch(err => {
           console.error("[3D Studio] Model kaydedilemedi:", err);
-          showToast("Save failed — check your connection and try again.");
+          // Firebase'in kendi hata kodunu (örn. PERMISSION_DENIED) toast'a
+          // da yansıtıyoruz ki bağlantı sorunuyla yetki sorunu ekran
+          // görüntüsünden bile ayırt edilebilsin.
+          const code = (err && err.code) ? " (" + err.code + ")" : "";
+          showToast("Save failed" + code + " — check your connection and try again.");
         });
     };
 
@@ -3674,29 +3740,23 @@
   }
   window.saveModel = saveModel;
 
-  // ------------------------------------------------------------
-  // I3-b) YEREL YEDEKLEME KATMANI İÇİN DIŞA AÇMA (studio-local-backup.js)
-  //     Bu fonksiyonlar zaten yukarıda tanımlı; burada sadece window'a
-  //     referanslarını veriyoruz ki ayrı dosyadaki auto-save/restore/export
-  //     mantığı gerçek sahne API'sini kullanabilsin. Firebase akışını veya
-  //     mevcut davranışı HİÇBİR ŞEKİLDE değiştirmez.
-  // ------------------------------------------------------------
-  window.addCube = addCube;
-  window.paintCube = paintCube;
-  window.applyCubeTransform = applyCubeTransform;
-  window.selectCube = selectCube;
-  window.exportGLTF = exportGLTF;
-  window.exportRawJSON = exportRawJSON;
-  window.showToast = showToast;
-
   document.getElementById("bb-btn-save").addEventListener("click", saveModel);
 
   // Sayfa ?modelId=... ile açıldıysa, o modeli Firebase'den (models/{uid}/{modelId})
-  // asenkron olarak okuyup sahneye geri yükler.
-  (function loadModelFromQueryIfPresent(){
+  // asenkron olarak okuyup sahneye geri yükler. currentUid()'in gerçek
+  // auth.uid'yi döndürebilmesi için (models/{uid} kuralı bunu şart koşar)
+  // önce authReadyPromise beklenir — aksi halde sayfa yeni açıldığında
+  // auth henüz netleşmeden "anon" ile okuma denenip PERMISSION_DENIED alınır.
+  (async function loadModelFromQueryIfPresent(){
     const urlParams = new URLSearchParams(window.location.search);
     const modelId = urlParams.get("modelId");
     if (!modelId || !studioDb) return;
+
+    if (!authReady) await authReadyPromise;
+    if (!firebaseAuthUser) {
+      showToast("You're not signed in — please sign in from the Community Hub first.");
+      return;
+    }
 
     studioDb.ref('models/' + currentUid() + '/' + modelId).once('value').then(snap => {
       const record = snap.val();
@@ -3716,7 +3776,8 @@
       showToast("\"" + record.name + "\" loaded");
     }).catch(err => {
       console.error("[3D Studio] Model yüklenemedi:", err);
-      showToast("Could not load model — check your connection.");
+      const code = (err && err.code) ? " (" + err.code + ")" : "";
+      showToast("Could not load model" + code + " — check your connection.");
     });
   })();
 
@@ -3816,10 +3877,5 @@
 
 })();
 </script>
-
-<!-- Yerel Yedekleme / Offline Taslak Katmanı — Firebase'in YANINDA çalışır,
-     onun yerine geçmez. Auto-save (IndexedDB), sayfa yenilemede taslak
-     geri yükleme ve .json export fallback'i sağlar. -->
-<script src="studio-engine.js"></script>
 </body>
 </html>
