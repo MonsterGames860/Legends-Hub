@@ -1975,18 +1975,43 @@
         position: relative;
     }
 
-    .mkt-card-price {
+    .mkt-card-free-badge {
         position: absolute;
         bottom: 8px;
         left: 8px;
-        background: rgba(11,12,16,0.8);
-        border: 1px solid rgba(245,197,66,0.4);
-        color: var(--gold);
+        background: rgba(11,12,16,0.82);
+        border: 1px solid rgba(102,252,241,0.45);
+        color: #66FCF1;
         font-family: var(--font-mono);
         font-weight: 700;
-        font-size: 0.78rem;
-        padding: 4px 9px;
+        font-size: 0.72rem;
+        padding: 3px 8px;
         border-radius: 7px;
+        letter-spacing: 0.03em;
+    }
+
+    /* 3D önizleme canvas — kart içi */
+    .mkt-card-canvas-wrap {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background: var(--bg-panel-raised);
+        position: relative;
+        overflow: hidden;
+    }
+    .mkt-card-canvas-wrap canvas {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+    }
+    .mkt-card-canvas-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--gold);
+        pointer-events: none;
     }
 
     .mkt-card-body {
@@ -2008,7 +2033,12 @@
     .mkt-card-seller {
         font-size: 0.74rem;
         color: var(--text-dim);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
     }
+    .mkt-card-seller:hover { color: var(--accent); text-decoration: underline; }
 
     .mkt-card-tags {
         display: flex;
@@ -2025,6 +2055,154 @@
         border-radius: 5px;
         padding: 2px 6px;
     }
+
+    /* ---------- MARKETPLACE: detay + 3D önizleme modalı ---------- */
+    .mkt-detail-modal {
+        width: 100%;
+        max-width: min(96vw, 640px);
+        max-height: 92vh;
+        overflow-y: auto;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: clamp(18px,4vw,26px);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .mkt-detail-3d-wrap {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--bg-panel-raised);
+        position: relative;
+    }
+    .mkt-detail-3d-wrap canvas { width:100%!important; height:100%!important; display:block; }
+    .mkt-detail-3d-fallback {
+        position:absolute; inset:0;
+        display:flex; align-items:center; justify-content:center;
+        font-size:3rem; color:var(--gold);
+    }
+    .mkt-detail-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .mkt-detail-seller-link {
+        font-size: 0.82rem;
+        color: var(--accent);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 600;
+    }
+    .mkt-detail-seller-link:hover { text-decoration: underline; }
+    /* Yıldız puanlama */
+    .mkt-star-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 2px;
+    }
+    .mkt-star {
+        font-size: 1.35rem;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: color .1s, transform .1s;
+        user-select: none;
+        line-height: 1;
+    }
+    .mkt-star.is-lit { color: var(--gold); }
+    .mkt-star:hover { transform: scale(1.2); color: var(--gold); }
+    .mkt-star-avg-label {
+        font-size: 0.74rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        margin-left: 4px;
+    }
+    /* Yorum bölümü */
+    .mkt-comments-section {
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .mkt-comments-title {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--text-dim);
+        font-weight: 700;
+    }
+    .mkt-comment-item {
+        display: flex;
+        gap: 9px;
+        font-size: 0.82rem;
+    }
+    .mkt-comment-author {
+        font-weight: 700;
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .mkt-comment-author:hover { color: var(--accent); }
+    .mkt-comment-text { color: var(--text-dim); line-height: 1.55; }
+    .mkt-comment-time { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
+    .mkt-comment-composer {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    .mkt-comment-input {
+        flex: 1;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 8px 11px;
+        font-size: 0.84rem;
+        font-family: var(--font-display);
+        resize: none;
+        min-height: 38px;
+        max-height: 120px;
+    }
+    .mkt-comment-input:focus { outline: none; border-color: var(--accent); }
+    .mkt-comment-send-btn {
+        background: var(--accent-dim);
+        border: 1px solid var(--accent);
+        color: var(--text-primary);
+        border-radius: 8px;
+        padding: 0 14px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: background .1s;
+        white-space: nowrap;
+    }
+    .mkt-comment-send-btn:hover { background: var(--accent); }
+    .mkt-download-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        background: var(--accent-dim);
+        border: 1px solid var(--accent);
+        color: var(--text-primary);
+        border-radius: 9px;
+        padding: 11px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .mkt-download-btn:hover { background: var(--accent); }
 
     /* ---------- MARKETPLACE: modal (satın al / sat) ---------- */
     .mkt-modal-overlay {
@@ -3753,7 +3931,7 @@
                         <button class="mkt-filter-chip" data-cat="prop">Prop / Eşya</button>
                         <button class="mkt-filter-chip" data-cat="silah">Silah</button>
                     </div>
-                    <button class="forum-btn forum-btn-primary mkt-sell-btn" id="mktSellBtn">+ Model Satışa Çıkar</button>
+                    <button class="forum-btn forum-btn-primary mkt-sell-btn" id="mktSellBtn">+ Modeli Paylaş</button>
                 </div>
 
                 <div class="mkt-grid" id="mktGrid">
@@ -3761,20 +3939,43 @@
                 </div>
             </section>
 
-            <!-- ── PAZAR: Satın Alma Modalı ── -->
-            <div class="mkt-modal-overlay" id="mktBuyModalOverlay">
-                <div class="mkt-modal" role="dialog" aria-label="Model satın al">
+            <!-- ── PAZAR: Model Detay Modalı ── -->
+            <div class="mkt-modal-overlay" id="mktDetailModalOverlay">
+                <div class="mkt-detail-modal" role="dialog" aria-label="Model detayı">
                     <div class="mkt-modal-head">
-                        <div class="mkt-modal-title" id="mktBuyModalTitle">Model Adı</div>
-                        <button class="mkt-modal-close" id="mktBuyModalClose">✕</button>
+                        <div class="mkt-modal-title" id="mktDetailTitle">Model Adı</div>
+                        <button class="mkt-modal-close" id="mktDetailClose">✕</button>
                     </div>
-                    <div class="mkt-modal-thumb-lg" id="mktBuyModalThumb">🧊</div>
-                    <div class="mkt-modal-desc" id="mktBuyModalDesc">Açıklama.</div>
-                    <div class="mkt-card-tags" id="mktBuyModalTags"></div>
-                    <div class="mkt-modal-footer">
-                        <span style="margin-right:auto; font-family:var(--font-mono); font-weight:800; color:var(--gold); font-size:1.05rem;" id="mktBuyModalPrice">0 ₺</span>
-                        <button class="forum-btn forum-btn-ghost" id="mktBuyModalCancel">Vazgeç</button>
-                        <button class="forum-btn forum-btn-primary" id="mktBuyModalConfirm">Satın Al</button>
+                    <!-- 3D önizleme -->
+                    <div class="mkt-detail-3d-wrap" id="mktDetail3dWrap">
+                        <div class="mkt-detail-3d-fallback" id="mktDetail3dFallback">🧊</div>
+                    </div>
+                    <!-- Yazar + mavi tik -->
+                    <div class="mkt-detail-meta">
+                        <span class="mkt-detail-seller-link" id="mktDetailSellerLink">@kullanici</span>
+                        <div class="mkt-card-tags" id="mktDetailTags"></div>
+                    </div>
+                    <!-- Açıklama -->
+                    <div class="mkt-modal-desc" id="mktDetailDesc">Açıklama.</div>
+                    <!-- Yıldız puanlama -->
+                    <div class="mkt-star-row" id="mktDetailStarRow">
+                        <span class="mkt-star" data-star="1">★</span>
+                        <span class="mkt-star" data-star="2">★</span>
+                        <span class="mkt-star" data-star="3">★</span>
+                        <span class="mkt-star" data-star="4">★</span>
+                        <span class="mkt-star" data-star="5">★</span>
+                        <span class="mkt-star-avg-label" id="mktDetailStarLabel"></span>
+                    </div>
+                    <!-- İndir -->
+                    <button class="mkt-download-btn" id="mktDetailDownloadBtn">⬇ Modeli İndir (Ücretsiz)</button>
+                    <!-- Yorumlar -->
+                    <div class="mkt-comments-section">
+                        <div class="mkt-comments-title">Yorumlar</div>
+                        <div id="mktDetailCommentsList"></div>
+                        <div class="mkt-comment-composer">
+                            <textarea class="mkt-comment-input" id="mktDetailCommentInput" placeholder="Yorum yaz…" rows="1"></textarea>
+                            <button class="mkt-comment-send-btn" id="mktDetailCommentSend">Gönder</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3783,7 +3984,7 @@
             <div class="mkt-modal-overlay" id="mktSellModalOverlay">
                 <div class="mkt-modal" role="dialog" aria-label="Model satışa çıkar">
                     <div class="mkt-modal-head">
-                        <div class="mkt-modal-title">Model Satışa Çıkar</div>
+                        <div class="mkt-modal-title">Modeli Paylaş</div>
                         <button class="mkt-modal-close" id="mktSellModalClose">✕</button>
                     </div>
 
@@ -3799,21 +4000,15 @@
                         <textarea class="mkt-modal-textarea" id="mktSellDesc" placeholder="Modelin hakkında kısa bir açıklama yaz…"></textarea>
                     </div>
 
-                    <div class="mkt-modal-row2">
-                        <div>
-                            <div class="mkt-modal-field-label">Fiyat (₺)</div>
-                            <input type="number" min="0" step="1" class="mkt-modal-input" id="mktSellPrice" placeholder="0">
-                        </div>
-                        <div>
-                            <div class="mkt-modal-field-label">Kategori</div>
-                            <select class="mkt-modal-select" id="mktSellCategory">
-                                <option value="karakter">Karakter</option>
-                                <option value="cevre">Çevre / Bina</option>
-                                <option value="araç">Araç</option>
-                                <option value="prop">Prop / Eşya</option>
-                                <option value="silah">Silah</option>
-                            </select>
-                        </div>
+                    <div>
+                        <div class="mkt-modal-field-label">Kategori</div>
+                        <select class="mkt-modal-select" id="mktSellCategory">
+                            <option value="karakter">Karakter</option>
+                            <option value="cevre">Çevre / Bina</option>
+                            <option value="araç">Araç</option>
+                            <option value="prop">Prop / Eşya</option>
+                            <option value="silah">Silah</option>
+                        </select>
                     </div>
 
                     <div>
@@ -3823,7 +4018,7 @@
 
                     <div class="mkt-modal-footer">
                         <button class="forum-btn forum-btn-ghost" id="mktSellModalCancel">Vazgeç</button>
-                        <button class="forum-btn forum-btn-primary" id="mktSellModalConfirm">Satışa Çıkar</button>
+                        <button class="forum-btn forum-btn-primary" id="mktSellModalConfirm">Paylaş</button>
                     </div>
                 </div>
             </div>
@@ -4019,6 +4214,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Three.js — 3D model önizleme (Marketplace kartları + detay modalı) -->
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.157.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <!-- ================================================================
          MODÜL 1 - BÖLÜM B + HUB BOOTSTRAP (TEK DOSYA, INLINE)
@@ -8724,20 +8922,117 @@
         window.initStudioModule = initStudioModule;
 
         // ---------------------------------------------------------------
-        // B) 3D MODEL PAZARI — listeleme, filtre, arama, al/sat modalları
+        // B) 3D MODEL PAZARI — listeleme, filtre, arama, paylaş/detay
         // ---------------------------------------------------------------
         let mktActiveCategory = "all";
-        let mktActiveSearch = "";
-        let mktSelectedListingForBuy = null;
+        let mktActiveSearch   = "";
+        let mktOpenListing    = null;   // detay modalında açık olan listing
+        let _mktDetailRenderer = null; // aktif Three.js renderer (temizleme için)
 
+        // ── Yardımcı: Puanlama ──────────────────────────────────────
+        function mktLoadRatings(listingId) {
+            try { return JSON.parse(localStorage.getItem("pl3d_ratings_" + listingId) || "{}"); }
+            catch (_) { return {}; }
+        }
+        function mktSaveRating(listingId, uid, stars) {
+            const r = mktLoadRatings(listingId);
+            r[uid] = stars;
+            try { localStorage.setItem("pl3d_ratings_" + listingId, JSON.stringify(r)); } catch (_) {}
+        }
+        function mktAvgRating(listingId) {
+            const r = mktLoadRatings(listingId);
+            const vals = Object.values(r);
+            if (!vals.length) return null;
+            return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+        }
+
+        // ── Yardımcı: Yorumlar ───────────────────────────────────────
+        function mktLoadComments(listingId) {
+            try { return JSON.parse(localStorage.getItem("pl3d_comments_" + listingId) || "[]"); }
+            catch (_) { return []; }
+        }
+        function mktSaveComments(listingId, arr) {
+            try { localStorage.setItem("pl3d_comments_" + listingId, JSON.stringify(arr)); } catch (_) {}
+        }
+
+        // ── Yardımcı: Three.js 3D önizleme ──────────────────────────
+        /**
+         * gltfJson string veya null. containerEl içine Three.js canvas
+         * yerleştirir, 360° oto-döner. Temizleme için renderer'ı döner.
+         */
+        function mktRender3d(containerEl, gltfJson, fallbackEl) {
+            if (!gltfJson || typeof THREE === "undefined" || !THREE.GLTFLoader) {
+                if (fallbackEl) fallbackEl.style.display = "flex";
+                return null;
+            }
+            if (fallbackEl) fallbackEl.style.display = "none";
+
+            const w = containerEl.clientWidth  || 320;
+            const h = containerEl.clientHeight || 180;
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(w, h);
+            renderer.outputColorSpace = THREE.SRGBColorSpace || THREE.LinearSRGBColorSpace || "srgb";
+            containerEl.appendChild(renderer.domElement);
+
+            const scene  = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+            const dl = new THREE.DirectionalLight(0xffffff, 1.2);
+            dl.position.set(5, 8, 6);
+            scene.add(dl);
+
+            const loader = new THREE.GLTFLoader();
+            let modelGroup = null;
+            let animId = null;
+            let active = true;
+
+            loader.parse(gltfJson, "", (gltf) => {
+                if (!active) return;
+                modelGroup = gltf.scene;
+                // Merkeze + fit
+                const box    = new THREE.Box3().setFromObject(modelGroup);
+                const size   = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z) || 1;
+                const scale  = 2 / maxDim;
+                modelGroup.scale.setScalar(scale);
+                modelGroup.position.sub(center.multiplyScalar(scale));
+                scene.add(modelGroup);
+                camera.position.set(0, 0.8, 3.5);
+                camera.lookAt(0, 0, 0);
+
+                function animate() {
+                    if (!active) return;
+                    animId = requestAnimationFrame(animate);
+                    if (modelGroup) modelGroup.rotation.y += 0.008;
+                    renderer.render(scene, camera);
+                }
+                animate();
+            }, (err) => {
+                if (fallbackEl) fallbackEl.style.display = "flex";
+            });
+
+            // Temizleyici — modal kapanınca çağrılır
+            renderer.__dispose = () => {
+                active = false;
+                if (animId) cancelAnimationFrame(animId);
+                renderer.dispose();
+                if (renderer.domElement.parentNode)
+                    renderer.domElement.parentNode.removeChild(renderer.domElement);
+            };
+            return renderer;
+        }
+
+        // ── Kart grid'i ──────────────────────────────────────────────
         function mktRenderGrid() {
             const grid = document.getElementById("mktGrid");
             if (!grid) return;
             let listings = mktLoadListings();
 
-            if (mktActiveCategory !== "all") {
+            if (mktActiveCategory !== "all")
                 listings = listings.filter(l => l.category === mktActiveCategory);
-            }
             if (mktActiveSearch.trim()) {
                 const q = mktActiveSearch.trim().toLowerCase();
                 listings = listings.filter(l =>
@@ -8746,63 +9041,216 @@
                     (l.tags || []).some(t => t.toLowerCase().includes(q))
                 );
             }
-
-            listings = listings.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            listings = listings.slice().sort((a, b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
 
             if (listings.length === 0) {
-                grid.innerHTML = `
-                    <div class="mkt-empty-state">
-                        Aradığın kriterlere uygun bir model bulunamadı.<br>
-                        Stüdyonda oluşturduğun bir modeli "+ Model Satışa Çıkar" ile pazara ekleyebilirsin.
-                    </div>`;
+                grid.innerHTML = `<div class="mkt-empty-state">
+                    Aradığın kriterlere uygun bir model bulunamadı.<br>
+                    Stüdyonda oluşturduğun bir modeli "+ Modeli Paylaş" ile pazara ekleyebilirsin.
+                </div>`;
                 return;
             }
 
-            grid.innerHTML = listings.map(l => `
+            grid.innerHTML = listings.map(l => {
+                const RBAC = window.CommunityRBAC;
+                const verifiedBadge = l.sellerVerified && RBAC
+                    ? RBAC.renderVerifiedBadge(true, "13px")
+                    : "";
+                const avg = mktAvgRating(l.id);
+                const stars = avg ? `<span style="color:var(--gold);font-size:0.7rem;">★ ${avg}</span>` : "";
+                return `
                 <div class="mkt-card" data-listing-id="${studioEscapeHtml(l.id)}">
-                    <div class="mkt-card-thumb">
-                        ${l.thumbEmoji || "🧊"}
-                        <span class="mkt-card-price">${Number(l.price || 0).toLocaleString("tr-TR")} ₺</span>
+                    <div class="mkt-card-canvas-wrap" id="mkt-canvas-${studioEscapeHtml(l.id)}">
+                        <div class="mkt-card-canvas-fallback" id="mkt-fb-${studioEscapeHtml(l.id)}">${l.thumbEmoji || "🧊"}</div>
+                        <span class="mkt-card-free-badge">Ücretsiz</span>
                     </div>
                     <div class="mkt-card-body">
                         <div class="mkt-card-name" title="${studioEscapeHtml(l.name)}">${studioEscapeHtml(l.name)}</div>
-                        <div class="mkt-card-seller">@${studioEscapeHtml(l.sellerUsername)}</div>
-                        <div class="mkt-card-tags">
-                            ${(l.tags || []).slice(0, 3).map(t => `<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("")}
+                        <div class="mkt-card-seller" data-seller-uid="${studioEscapeHtml(l.sellerUid || "")}">
+                            @${studioEscapeHtml(l.sellerUsername)}${verifiedBadge}
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px;">
+                            <div class="mkt-card-tags">
+                                ${(l.tags||[]).slice(0,3).map(t=>`<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("")}
+                            </div>
+                            ${stars}
                         </div>
                     </div>
-                </div>
-            `).join("");
+                </div>`;
+            }).join("");
 
+            // Kart tıklamaları
             grid.querySelectorAll(".mkt-card").forEach(card => {
-                card.addEventListener("click", () => {
-                    const id = card.getAttribute("data-listing-id");
-                    mktOpenBuyModal(id);
+                card.addEventListener("click", (e) => {
+                    // Satıcı adına tıklandıysa → profile git
+                    const sellerEl = e.target.closest(".mkt-card-seller");
+                    if (sellerEl) {
+                        e.stopPropagation();
+                        const uid = sellerEl.getAttribute("data-seller-uid");
+                        if (uid) openUserProfile(uid);
+                        return;
+                    }
+                    mktOpenDetailModal(card.getAttribute("data-listing-id"));
                 });
+            });
+
+            // Three.js 3D önizleme — kartlara async yükle
+            listings.forEach(l => {
+                if (!l.gltfData) return;
+                const wrap = document.getElementById("mkt-canvas-" + l.id);
+                const fb   = document.getElementById("mkt-fb-"     + l.id);
+                if (!wrap) return;
+                // Biraz geciktir ki DOM yerleşsin
+                setTimeout(() => {
+                    if (wrap.querySelector("canvas")) return; // zaten yüklendi
+                    mktRender3d(wrap, l.gltfData, fb);
+                }, 60);
             });
         }
         window.refreshMarketplaceGrid = mktRenderGrid;
 
-        function mktOpenBuyModal(listingId) {
+        // ── Detay Modalı ─────────────────────────────────────────────
+        function mktOpenDetailModal(listingId) {
             const listing = mktLoadListings().find(l => l.id === listingId);
             if (!listing) return;
-            mktSelectedListingForBuy = listing;
+            mktOpenListing = listing;
 
-            document.getElementById("mktBuyModalTitle").textContent = listing.name;
-            document.getElementById("mktBuyModalThumb").textContent = listing.thumbEmoji || "🧊";
-            document.getElementById("mktBuyModalDesc").textContent = listing.description || "Açıklama girilmemiş.";
-            document.getElementById("mktBuyModalPrice").textContent = Number(listing.price || 0).toLocaleString("tr-TR") + " ₺";
-            document.getElementById("mktBuyModalTags").innerHTML = (listing.tags || [])
-                .map(t => `<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("");
+            const RBAC = window.CommunityRBAC;
 
-            document.getElementById("mktBuyModalOverlay").classList.add("is-open");
+            // Başlık
+            document.getElementById("mktDetailTitle").textContent = listing.name;
+
+            // Açıklama
+            document.getElementById("mktDetailDesc").textContent =
+                listing.description || "Açıklama girilmemiş.";
+
+            // Etiketler
+            document.getElementById("mktDetailTags").innerHTML =
+                (listing.tags||[]).map(t=>`<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("");
+
+            // Satıcı @mention + mavi tik
+            const verifiedBadge = listing.sellerVerified && RBAC
+                ? RBAC.renderVerifiedBadge(true, "15px") : "";
+            const sellerLink = document.getElementById("mktDetailSellerLink");
+            sellerLink.innerHTML = `@${studioEscapeHtml(listing.sellerUsername)}${verifiedBadge}`;
+            sellerLink.onclick = () => {
+                if (listing.sellerUid) {
+                    mktCloseDetailModal();
+                    openUserProfile(listing.sellerUid);
+                }
+            };
+
+            // 3D önizleme — öncekini temizle
+            if (_mktDetailRenderer && _mktDetailRenderer.__dispose)
+                _mktDetailRenderer.__dispose();
+            _mktDetailRenderer = null;
+            const wrap = document.getElementById("mktDetail3dWrap");
+            const fb   = document.getElementById("mktDetail3dFallback");
+            // önceki canvas'ı temizle
+            wrap.querySelectorAll("canvas").forEach(c => c.remove());
+            fb.textContent  = listing.thumbEmoji || "🧊";
+            fb.style.display = "flex";
+            if (listing.gltfData) {
+                setTimeout(() => {
+                    _mktDetailRenderer = mktRender3d(wrap, listing.gltfData, fb);
+                }, 80);
+            }
+
+            // Yıldız puanlama
+            mktRenderDetailStars(listingId);
+
+            // İndir
+            const dlBtn = document.getElementById("mktDetailDownloadBtn");
+            dlBtn.onclick = () => mktDownloadModel(listing);
+
+            // Yorumlar
+            mktRenderDetailComments(listingId);
+
+            document.getElementById("mktDetailModalOverlay").classList.add("is-open");
         }
 
-        function mktCloseBuyModal() {
-            document.getElementById("mktBuyModalOverlay").classList.remove("is-open");
-            mktSelectedListingForBuy = null;
+        function mktCloseDetailModal() {
+            document.getElementById("mktDetailModalOverlay").classList.remove("is-open");
+            if (_mktDetailRenderer && _mktDetailRenderer.__dispose)
+                _mktDetailRenderer.__dispose();
+            _mktDetailRenderer = null;
+            mktOpenListing = null;
         }
 
+        // ── Yıldız render ─────────────────────────────────────────────
+        function mktRenderDetailStars(listingId) {
+            const RBAC     = window.CommunityRBAC;
+            const myUid    = studioCurrentUid();
+            const ratings  = mktLoadRatings(listingId);
+            const myRating = ratings[myUid] || 0;
+            const avg      = mktAvgRating(listingId);
+            const count    = Object.keys(ratings).length;
+
+            const row = document.getElementById("mktDetailStarRow");
+            row.querySelectorAll(".mkt-star").forEach(s => {
+                const v = parseInt(s.getAttribute("data-star"), 10);
+                s.classList.toggle("is-lit", v <= myRating);
+                s.onclick = () => {
+                    mktSaveRating(listingId, myUid, v);
+                    mktRenderDetailStars(listingId);
+                };
+            });
+            document.getElementById("mktDetailStarLabel").textContent =
+                avg ? `${avg} / 5  (${count} oy)` : "Henüz oy yok";
+        }
+
+        // ── Yorum render ──────────────────────────────────────────────
+        function mktRenderDetailComments(listingId) {
+            const comments = mktLoadComments(listingId);
+            const el = document.getElementById("mktDetailCommentsList");
+            if (!el) return;
+            if (comments.length === 0) {
+                el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-dim);padding:4px 0;">Henüz yorum yok. İlk yorumu sen yap!</div>`;
+                return;
+            }
+            el.innerHTML = comments.map(c => {
+                const RBAC = window.CommunityRBAC;
+                const badge = (c.isVerified && RBAC) ? RBAC.renderVerifiedBadge(true, "13px") : "";
+                const time  = studioFormatRelativeDate(c.createdAt);
+                return `<div class="mkt-comment-item">
+                    <div style="flex:1;min-width:0;">
+                        <span class="mkt-comment-author" data-cmt-uid="${studioEscapeHtml(c.uid||"")}">
+                            @${studioEscapeHtml(c.username)}${badge}
+                        </span>
+                        <span class="mkt-comment-time" style="margin-left:6px;">${time}</span>
+                        <div class="mkt-comment-text">${studioEscapeHtml(c.text)}</div>
+                    </div>
+                </div>`;
+            }).join("");
+
+            el.querySelectorAll(".mkt-comment-author[data-cmt-uid]").forEach(a => {
+                a.addEventListener("click", () => {
+                    const uid = a.getAttribute("data-cmt-uid");
+                    if (uid) { mktCloseDetailModal(); openUserProfile(uid); }
+                });
+            });
+        }
+
+        // ── İndir ─────────────────────────────────────────────────────
+        function mktDownloadModel(listing) {
+            const gltf = listing.gltfData;
+            if (!gltf) {
+                showToastGlobal("Bu modelin GLTF verisi mevcut değil.");
+                return;
+            }
+            const blob = new Blob([gltf], { type: "model/gltf+json" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = (listing.name||"model").replace(/[^a-zA-Z0-9_\-ğüşıöçĞÜŞİÖÇ ]/g,"").trim().replace(/\s+/g,"_") + ".gltf";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToastGlobal("\"" + listing.name + "\" indirildi!");
+        }
+
+        // ── Satışa çıkarma (artık ücretsiz paylaşım) ─────────────────
         function mktOpenSellModal() {
             const select = document.getElementById("mktSellModelSelect");
             const models = studioLoadModels();
@@ -8814,7 +9262,6 @@
                 ).join("");
             }
             document.getElementById("mktSellDesc").value = "";
-            document.getElementById("mktSellPrice").value = "";
             document.getElementById("mktSellTags").value = "";
             document.getElementById("mktSellModalOverlay").classList.add("is-open");
         }
@@ -8826,32 +9273,36 @@
         function mktSubmitSellListing() {
             const modelId = document.getElementById("mktSellModelSelect").value;
             if (!modelId) {
-                alert("Lütfen satışa çıkaracağın bir model seç.");
+                alert("Lütfen paylaşacağın bir model seç.");
                 return;
             }
             const model = studioLoadModels().find(m => m.id === modelId);
             if (!model) return;
 
-            const price = parseFloat(document.getElementById("mktSellPrice").value) || 0;
-            const category = document.getElementById("mktSellCategory").value;
+            const category    = document.getElementById("mktSellCategory").value;
             const description = document.getElementById("mktSellDesc").value.trim();
-            const tags = document.getElementById("mktSellTags").value
+            const tags        = document.getElementById("mktSellTags").value
                 .split(",").map(t => t.trim()).filter(Boolean);
+
+            // Mevcut kullanıcının verified durumunu snapshot al
+            const isVerified = !!(window.CommunityAuth && window.CommunityAuth.profile &&
+                window.CommunityAuth.profile.isVerified);
 
             const listings = mktLoadListings();
             listings.push({
-                id: "listing_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
-                modelId: model.id,
-                sellerUid: studioCurrentUid(),
+                id:             "listing_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+                modelId:        model.id,
+                sellerUid:      studioCurrentUid(),
                 sellerUsername: studioCurrentUsername(),
-                name: model.name,
+                sellerVerified: isVerified,
+                name:           model.name,
                 description,
-                price,
                 category,
                 tags,
                 thumbEmoji: model.thumbEmoji || "🧊",
-                cubeCount: model.cubeCount || 0,
-                createdAt: new Date().toISOString()
+                cubeCount:  model.cubeCount  || 0,
+                gltfData:   model.gltf       || null,   // 3D önizleme + indirme için
+                createdAt:  new Date().toISOString()
             });
             mktSaveListings(listings);
             mktCloseSellModal();
@@ -8888,8 +9339,9 @@
                 sellBtn.addEventListener("click", mktOpenSellModal);
             }
 
-            const sellModalClose = document.getElementById("mktSellModalClose");
-            const sellModalCancel = document.getElementById("mktSellModalCancel");
+            // Satış modalı
+            const sellModalClose   = document.getElementById("mktSellModalClose");
+            const sellModalCancel  = document.getElementById("mktSellModalCancel");
             const sellModalConfirm = document.getElementById("mktSellModalConfirm");
             [sellModalClose, sellModalCancel].forEach(btn => {
                 if (btn && !btn.dataset.bound) { btn.dataset.bound = "1"; btn.addEventListener("click", mktCloseSellModal); }
@@ -8899,30 +9351,56 @@
                 sellModalConfirm.addEventListener("click", mktSubmitSellListing);
             }
 
-            const buyModalClose = document.getElementById("mktBuyModalClose");
-            const buyModalCancel = document.getElementById("mktBuyModalCancel");
-            const buyModalConfirm = document.getElementById("mktBuyModalConfirm");
-            [buyModalClose, buyModalCancel].forEach(btn => {
-                if (btn && !btn.dataset.bound) { btn.dataset.bound = "1"; btn.addEventListener("click", mktCloseBuyModal); }
-            });
-            if (buyModalConfirm && !buyModalConfirm.dataset.bound) {
-                buyModalConfirm.dataset.bound = "1";
-                buyModalConfirm.addEventListener("click", () => {
-                    if (!mktSelectedListingForBuy) return;
-                    showToastGlobal("\"" + mktSelectedListingForBuy.name + "\" satın alındı! (Demo — ödeme entegrasyonu bağlı değil)");
-                    mktCloseBuyModal();
+            // Detay modalı kapat
+            const detailClose = document.getElementById("mktDetailClose");
+            if (detailClose && !detailClose.dataset.bound) {
+                detailClose.dataset.bound = "1";
+                detailClose.addEventListener("click", mktCloseDetailModal);
+            }
+
+            // Yorum gönder
+            const commentSend = document.getElementById("mktDetailCommentSend");
+            if (commentSend && !commentSend.dataset.bound) {
+                commentSend.dataset.bound = "1";
+                commentSend.addEventListener("click", () => {
+                    if (!mktOpenListing) return;
+                    const input = document.getElementById("mktDetailCommentInput");
+                    const text  = (input.value || "").trim();
+                    if (!text) return;
+                    const myUid      = studioCurrentUid();
+                    const myUsername = studioCurrentUsername();
+                    const isVerified = !!(window.CommunityAuth && window.CommunityAuth.profile &&
+                        window.CommunityAuth.profile.isVerified);
+                    const comments = mktLoadComments(mktOpenListing.id);
+                    comments.push({
+                        id:         "cmt_" + Date.now(),
+                        uid:        myUid,
+                        username:   myUsername,
+                        isVerified: isVerified,
+                        text,
+                        createdAt:  new Date().toISOString()
+                    });
+                    mktSaveComments(mktOpenListing.id, comments);
+                    input.value = "";
+                    mktRenderDetailComments(mktOpenListing.id);
                 });
             }
 
             // Overlay dışına tıklayınca kapat
-            [document.getElementById("mktBuyModalOverlay"), document.getElementById("mktSellModalOverlay")].forEach(overlay => {
-                if (overlay && !overlay.dataset.bound) {
-                    overlay.dataset.bound = "1";
-                    overlay.addEventListener("click", (e) => {
-                        if (e.target === overlay) overlay.classList.remove("is-open");
-                    });
-                }
-            });
+            const detailOverlay = document.getElementById("mktDetailModalOverlay");
+            if (detailOverlay && !detailOverlay.dataset.bound) {
+                detailOverlay.dataset.bound = "1";
+                detailOverlay.addEventListener("click", (e) => {
+                    if (e.target === detailOverlay) mktCloseDetailModal();
+                });
+            }
+            const sellOverlay = document.getElementById("mktSellModalOverlay");
+            if (sellOverlay && !sellOverlay.dataset.bound) {
+                sellOverlay.dataset.bound = "1";
+                sellOverlay.addEventListener("click", (e) => {
+                    if (e.target === sellOverlay) mktCloseSellModal();
+                });
+            }
 
             mktRenderGrid();
         }
