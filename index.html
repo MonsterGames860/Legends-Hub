@@ -8370,18 +8370,34 @@
                 return;
             }
 
+            // Mobilde klavye açıkken window.innerWidth/innerHeight KLAVYENİN
+            // KAPLADIĞI ALANI DA sayar (layout viewport değişmez) — bu yüzden
+            // popover, klavyenin arkasında kalan görünmez bir "top" değeri
+            // alabiliyordu. visualViewport ise klavye açıkken küçülen GERÇEK
+            // görünür alanı verir; varsa onu, yoksa window boyutlarını kullan.
+            const vv = window.visualViewport;
+            const viewLeft = vv ? vv.offsetLeft : 0;
+            const viewTop = vv ? vv.offsetTop : 0;
+            const viewWidth = vv ? vv.width : window.innerWidth;
+            const viewHeight = vv ? vv.height : window.innerHeight;
+            const viewRight = viewLeft + viewWidth;
+            const viewBottom = viewTop + viewHeight;
+
             let left = btnRect.left;
-            if (left + popRect.width > window.innerWidth - margin) {
-                left = Math.max(margin, window.innerWidth - popRect.width - margin);
+            if (left + popRect.width > viewRight - margin) {
+                left = Math.max(viewLeft + margin, viewRight - popRect.width - margin);
             }
-            left = Math.max(margin, left);
+            left = Math.max(viewLeft + margin, left);
 
             let top = btnRect.top - popRect.height - margin;
-            if (top < margin) {
-                // Üstte yer yoksa (ör. buton ekranın en üstündeyse) butonun
-                // altına aç.
-                top = Math.min(btnRect.bottom + margin, window.innerHeight - popRect.height - margin);
+            if (top < viewTop + margin) {
+                // Üstte yer yoksa (ör. buton görünür alanın en üstündeyse
+                // ya da klavye çok yer kaplıyorsa) butonun altına aç.
+                top = Math.min(btnRect.bottom + margin, viewBottom - popRect.height - margin);
             }
+            // Klavye popover'ın sığacağı alanı tamamen yutmuşsa (çok küçük
+            // ekran/çok büyük klavye), en azından görünür alanın içinde kalsın.
+            top = Math.max(viewTop + margin, Math.min(top, viewBottom - popRect.height - margin));
 
             popover.style.left = `${left}px`;
             popover.style.top = `${top}px`;
@@ -8443,6 +8459,17 @@
             window.addEventListener("scroll", () => {
                 if (popover.classList.contains("is-open")) positionFixedPopover(plusBtn, popover);
             }, true);
+            // Mobilde klavye açılıp kapanınca layout viewport DEĞİL, visual
+            // viewport boyutu değişir — window'un resize/scroll'u bunu her
+            // zaman tetiklemeyebilir, bu yüzden ayrıca dinliyoruz.
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener("resize", () => {
+                    if (popover.classList.contains("is-open")) positionFixedPopover(plusBtn, popover);
+                });
+                window.visualViewport.addEventListener("scroll", () => {
+                    if (popover.classList.contains("is-open")) positionFixedPopover(plusBtn, popover);
+                });
+            }
 
             popover.querySelectorAll("[data-plus-action]").forEach((item) => {
                 item.addEventListener("click", (e) => {
