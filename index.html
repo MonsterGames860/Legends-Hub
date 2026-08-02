@@ -1171,6 +1171,8 @@
        olsun (scroll konumundan bağımsız) doğru yerde, en üstte görünür. */
     .forum-attach-popover.is-fixed-popover {
         position: fixed;
+        bottom: auto;
+        right: auto;
         z-index: 2000;
     }
 
@@ -8358,11 +8360,15 @@
         // alanının veya Gönder butonunun ÜZERİNE binmeden görünür.
         function positionFixedPopover(plusBtn, popover) {
             const btnRect = plusBtn.getBoundingClientRect();
-            // Genişliğini ölçebilmek için önce görünür ama konumsuz aç.
-            popover.style.left = "0px";
-            popover.style.top = "0px";
             const popRect = popover.getBoundingClientRect();
             const margin = 8;
+
+            // Popover henüz ölçülemiyorsa (0 genişlik/yükseklik) sonraki
+            // frame'de tekrar dene — hiçbir zaman (0,0)'a yanlış konumlanmasın.
+            if (popRect.width === 0 && popRect.height === 0) {
+                requestAnimationFrame(() => positionFixedPopover(plusBtn, popover));
+                return;
+            }
 
             let left = btnRect.left;
             if (left + popRect.width > window.innerWidth - margin) {
@@ -8401,9 +8407,16 @@
                 // body'ye taşı: .mkt-detail-modal / .mkt-comments-scroll gibi
                 // overflow:auto|hidden üst elemanların kırpmasından kaçınır.
                 document.body.appendChild(popover);
+                // Önce fixed + açık class'larını uygula ki bir sonraki
+                // ölçüm (getBoundingClientRect) doğru mod üzerinden yapılsın;
+                // 'bottom: calc(100%+8px)' gibi eski absolute kuralları
+                // artık .is-fixed-popover ile bottom:auto olarak eziliyor.
                 popover.classList.add("is-fixed-popover", "is-open");
                 plusBtn.classList.add("is-open");
-                positionFixedPopover(plusBtn, popover);
+                // Bir sonraki frame'de konumlandır — tarayıcının class
+                // değişikliğini gerçekten layout'a yansıtmasını garantiler
+                // (mobil tarayıcılarda senkron reflow garanti değildir).
+                requestAnimationFrame(() => positionFixedPopover(plusBtn, popover));
             }
 
             function closePopover() {
