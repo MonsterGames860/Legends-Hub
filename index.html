@@ -4045,17 +4045,22 @@
                     <div class="mkt-comments-section">
                         <div class="mkt-comments-title">Yorumlar</div>
                         <div id="mktDetailCommentsList"></div>
-                        <div class="mkt-comment-composer">
-                            <div class="mkt-comment-composer-row">
-                                <textarea class="mkt-comment-input" id="mktDetailCommentInput" placeholder="Yorum yaz… (@isim ile etiketleyebilirsin)" rows="1"></textarea>
-                                <button class="mkt-comment-send-btn" id="mktDetailCommentSend">Gönder</button>
+                        <div class="forum-composer" id="mktCommentComposerWrap">
+                            <button type="button" class="forum-attach-btn" id="mktDetailCommentAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <input type="file" id="mktDetailCommentAttachInput" style="display:none;" accept="image/*">
+                            <button type="button" class="forum-gif-btn" id="mktDetailCommentGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                            <div class="forum-composer-input-wrap">
+                                <textarea
+                                    id="mktDetailCommentInput"
+                                    class="forum-composer-input"
+                                    placeholder="Yorum yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
+                                    maxlength="2000"
+                                    rows="1"></textarea>
+                                <div class="mention-autocomplete-dropdown" id="mktDetailCommentMentionDropdown"></div>
                             </div>
-                            <div class="mention-autocomplete-dropdown" id="mktDetailCommentMentionDropdown"></div>
-                            <div class="mkt-comment-composer-tools">
-                                <button type="button" class="mkt-comment-attach-btn" id="mktDetailCommentAttachBtn">🖼️ Görsel / GIF Ekle</button>
-                                <span class="mkt-comment-attach-preview" id="mktDetailCommentAttachPreview"></span>
-                            </div>
+                            <button class="forum-send-btn" id="mktDetailCommentSend">Gönder</button>
                         </div>
+                        <div class="forum-composer-upload-status" id="mktDetailCommentAttachStatus" style="display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -9041,7 +9046,19 @@
          * yerleştirir, 360° oto-döner. Temizleme için renderer'ı döner.
          */
         function mktRender3d(containerEl, gltfJson, fallbackEl) {
-            if (!gltfJson || typeof THREE === "undefined" || !THREE.GLTFLoader) {
+            if (!gltfJson) {
+                console.warn("[Pazar 3D] Önizleme yok: bu listing için gltfData boş/eksik. " +
+                    "Model 3D Studio Editör'de export edilirken .gltf verisi kaydedilmemiş olabilir.");
+                if (fallbackEl) fallbackEl.style.display = "flex";
+                return null;
+            }
+            if (typeof THREE === "undefined") {
+                console.warn("[Pazar 3D] Önizleme yok: Three.js kütüphanesi yüklenemedi (ağ/CDN sorunu olabilir).");
+                if (fallbackEl) fallbackEl.style.display = "flex";
+                return null;
+            }
+            if (!THREE.GLTFLoader) {
+                console.warn("[Pazar 3D] Önizleme yok: THREE.GLTFLoader bulunamadı (GLTFLoader.js script'i yüklenemedi).");
                 if (fallbackEl) fallbackEl.style.display = "flex";
                 return null;
             }
@@ -9091,6 +9108,7 @@
                 }
                 animate();
             }, (err) => {
+                console.warn("[Pazar 3D] gltfData mevcuttu ama parse edilemedi (bozuk/eksik JSON olabilir):", err);
                 if (fallbackEl) fallbackEl.style.display = "flex";
             });
 
@@ -9269,7 +9287,6 @@
             // Yorumlar
             const cmtInputReset = document.getElementById("mktDetailCommentInput");
             if (cmtInputReset) cmtInputReset.value = "";
-            if (window.mktClearPendingCommentMedia) window.mktClearPendingCommentMedia();
             mktRenderDetailComments(listingId);
 
             document.getElementById("mktDetailModalOverlay").classList.add("is-open");
@@ -9413,6 +9430,15 @@
             }
             const model = studioLoadModels().find(m => m.id === modelId);
             if (!model) return;
+            if (!model.gltf) {
+                console.warn("[Pazar] Seçilen modelde .gltf verisi yok — pazarda 3D önizleme/indirme çalışmayacak.", model);
+                if (!confirm(
+                    "Bu model için kaydedilmiş bir 3D (.gltf) verisi bulunamadı.\n\n" +
+                    "Pazarda önizleme yerine sabit bir küp ikonu görünecek ve \"İndir\" çalışmayacak.\n\n" +
+                    "3D Studio Editör'de modeli açıp dışa aktardıktan (export) sonra tekrar denemen önerilir.\n\n" +
+                    "Yine de bu şekilde paylaşmak istiyor musun?"
+                )) return;
+            }
 
             const category    = document.getElementById("mktSellCategory").value;
             const description = document.getElementById("mktSellDesc").value.trim();
@@ -9501,29 +9527,22 @@
                 window.CommunityMentions.attachAutocomplete(commentInput, commentMentionDropdown);
             }
 
-            // Yorum composer — Görsel / GIF ekle
-            const attachBtn = document.getElementById("mktDetailCommentAttachBtn");
-            const attachPreview = document.getElementById("mktDetailCommentAttachPreview");
-            let mktPendingCommentMediaUrl = "";
-            let mktPendingCommentMediaTag = "img";
-            if (attachBtn && !attachBtn.dataset.bound) {
-                attachBtn.dataset.bound = "1";
-                attachBtn.addEventListener("click", () => {
-                    const url = prompt("Görsel veya GIF linkini yapıştır (URL):");
-                    if (!url || !url.trim()) return;
-                    mktPendingCommentMediaUrl = url.trim();
-                    mktPendingCommentMediaTag = /\.gif(\?.*)?$/i.test(mktPendingCommentMediaUrl) ? "gif" : "img";
-                    attachBtn.classList.add("is-active");
-                    attachPreview.textContent = "✓ Eklendi: " + mktPendingCommentMediaUrl.slice(0, 40) +
-                        (mktPendingCommentMediaUrl.length > 40 ? "…" : "");
+            // Yorum composer — 📎 Görsel yükle (ImgBB) — forumla AYNI mekanizma
+            if (typeof wireAttachButton === "function") {
+                wireAttachButton({
+                    btnId: "mktDetailCommentAttachBtn",
+                    fileInputId: "mktDetailCommentAttachInput",
+                    textareaId: "mktDetailCommentInput",
+                    statusId: "mktDetailCommentAttachStatus"
                 });
             }
-            window.mktClearPendingCommentMedia = () => {
-                mktPendingCommentMediaUrl = "";
-                if (attachBtn) attachBtn.classList.remove("is-active");
-                if (attachPreview) attachPreview.textContent = "";
-            };
-            window.mktGetPendingCommentMedia = () => ({ url: mktPendingCommentMediaUrl, tag: mktPendingCommentMediaTag });
+
+            // Yorum composer — GIF butonu (Giphy popup) — forumla AYNI popup
+            const commentGifBtn = document.getElementById("mktDetailCommentGifBtn");
+            if (commentGifBtn && !commentGifBtn.dataset.bound) {
+                commentGifBtn.dataset.bound = "1";
+                commentGifBtn.addEventListener("click", () => openGifPicker("mktDetailCommentInput"));
+            }
 
             // Yorum gönder
             const commentSend = document.getElementById("mktDetailCommentSend");
@@ -9532,11 +9551,7 @@
                 commentSend.addEventListener("click", () => {
                     if (!mktOpenListing) return;
                     const input = document.getElementById("mktDetailCommentInput");
-                    let text = (input.value || "").trim();
-                    const pending = window.mktGetPendingCommentMedia ? window.mktGetPendingCommentMedia() : { url: "" };
-                    if (pending.url) {
-                        text = (text ? text + "\n" : "") + `[${pending.tag}]${pending.url}[/${pending.tag}]`;
-                    }
+                    const text = (input.value || "").trim();
                     if (!text) return;
                     const myUid      = studioCurrentUid();
                     const myUsername = studioCurrentUsername();
@@ -9564,7 +9579,6 @@
                     });
                     mktSaveComments(mktOpenListing.id, comments);
                     input.value = "";
-                    if (window.mktClearPendingCommentMedia) window.mktClearPendingCommentMedia();
                     mktRenderDetailComments(mktOpenListing.id);
                 });
             }
