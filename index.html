@@ -1646,6 +1646,513 @@
         font-size: 0.85rem;
     }
 
+    /* ================================================================
+       MODÜL 4 — 3D STUDIO EDİTÖR (Dashboard) & 3D MODEL PAZARI
+       Sınırsız/esnek: hiçbir bileşende sabit px genişlik/yükseklik yok,
+       tamamen flexbox/grid + % + vw/vh ile cihaza göre şekilleniyor.
+       ================================================================ */
+
+    /* ---------- STUDIO: Dashboard üst istatistik kartları ---------- */
+    .studio-dash-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .studio-stat-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px 18px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .studio-stat-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+    }
+
+    .studio-stat-value {
+        font-size: clamp(1.35rem, 3vw, 1.75rem);
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+        word-break: break-word;
+    }
+
+    .studio-stat-label {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        letter-spacing: 0.02em;
+    }
+
+    .studio-stat-trend {
+        font-size: 0.72rem;
+        font-family: var(--font-mono);
+        color: var(--accent);
+        opacity: 0.85;
+    }
+    .studio-stat-trend.is-flat { color: var(--text-dim); }
+
+    /* ---------- STUDIO: "Yeni Model Oluştur" vurgulu banner ---------- */
+    .studio-cta-banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        background:
+            radial-gradient(circle at 15% 30%, rgba(102,252,241,0.10), transparent 55%),
+            var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: clamp(18px, 3vw, 28px);
+        margin-bottom: 26px;
+    }
+
+    .studio-cta-text {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+
+    .studio-cta-title {
+        font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    .studio-cta-sub {
+        font-size: 0.86rem;
+        color: var(--text-dim);
+        line-height: 1.5;
+        max-width: 46em;
+    }
+
+    .studio-cta-btn {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 13px 24px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: var(--bg-void);
+        font-weight: 800;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: filter 0.15s ease, transform 0.1s ease;
+        white-space: nowrap;
+    }
+    .studio-cta-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .studio-cta-btn:active { transform: translateY(0); }
+    .studio-cta-btn svg { flex-shrink: 0; }
+
+    /* ---------- STUDIO: Model listesi (sınırsız responsive grid) ---------- */
+    .studio-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .studio-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .studio-section-count {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--text-dim);
+    }
+
+    .studio-model-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+        gap: 16px;
+    }
+
+    .studio-model-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        transition: border-color 0.15s ease, transform 0.12s ease;
+    }
+    .studio-model-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .studio-model-thumb {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background:
+            linear-gradient(135deg, rgba(102,252,241,0.12), rgba(102,252,241,0.02)),
+            var(--bg-panel-raised);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-size: 2rem;
+        position: relative;
+    }
+
+    .studio-model-thumb-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(11,12,16,0.75);
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        padding: 3px 7px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+    }
+
+    .studio-model-body {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .studio-model-name {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .studio-model-meta {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .studio-model-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .studio-model-actions button {
+        flex: 1;
+        padding: 7px 8px;
+        border-radius: 7px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--text-dim);
+        font-size: 0.74rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        min-width: 0;
+    }
+    .studio-model-actions button:hover { color: var(--text-primary); border-color: var(--accent); }
+    .studio-model-actions button.is-danger:hover { color: var(--danger); border-color: var(--danger); }
+
+    .studio-empty-state {
+        border: 1px dashed var(--line);
+        border-radius: var(--radius);
+        padding: clamp(28px, 6vw, 48px) 20px;
+        text-align: center;
+        color: var(--text-dim);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    .studio-empty-state-icon { font-size: 2rem; opacity: 0.7; }
+    .studio-empty-state-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+    .studio-empty-state-sub { font-size: 0.82rem; max-width: 40em; line-height: 1.55; }
+
+    /* ---------- MARKETPLACE (3D Model Pazarı) ---------- */
+    .mkt-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+        align-items: center;
+    }
+
+    .mkt-search {
+        flex: 1 1 200px;
+        min-width: 0;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 14px;
+        color: var(--text-primary);
+        font-size: 0.86rem;
+        font-family: var(--font-display);
+    }
+    .mkt-search:focus { outline: none; border-color: var(--accent); }
+
+    .mkt-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .mkt-filter-chip {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .mkt-filter-chip:hover { color: var(--text-primary); border-color: var(--accent); }
+    .mkt-filter-chip.is-active {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .mkt-sell-btn {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .mkt-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+        gap: 16px;
+    }
+
+    .mkt-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        min-width: 0;
+        transition: border-color 0.15s ease, transform 0.12s ease;
+    }
+    .mkt-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .mkt-card-thumb {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background:
+            linear-gradient(135deg, rgba(245,197,66,0.12), rgba(102,252,241,0.05)),
+            var(--bg-panel-raised);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--gold);
+        position: relative;
+    }
+
+    .mkt-card-price {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        background: rgba(11,12,16,0.8);
+        border: 1px solid rgba(245,197,66,0.4);
+        color: var(--gold);
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 0.78rem;
+        padding: 4px 9px;
+        border-radius: 7px;
+    }
+
+    .mkt-card-body {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .mkt-card-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mkt-card-seller {
+        font-size: 0.74rem;
+        color: var(--text-dim);
+    }
+
+    .mkt-card-tags {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+
+    .mkt-card-tag {
+        font-size: 0.66rem;
+        font-family: var(--font-mono);
+        color: var(--text-dim);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 2px 6px;
+    }
+
+    /* ---------- MARKETPLACE: modal (satın al / sat) ---------- */
+    .mkt-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 500;
+        background: rgba(6,7,10,0.72);
+        backdrop-filter: blur(3px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 4vh 4vw;
+    }
+    .mkt-modal-overlay.is-open { display: flex; }
+
+    .mkt-modal {
+        width: 100%;
+        max-width: min(92vw, 520px);
+        max-height: 90vh;
+        overflow-y: auto;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: clamp(18px, 4vw, 26px);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .mkt-modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .mkt-modal-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .mkt-modal-close {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        border-radius: 7px;
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    .mkt-modal-close:hover { color: var(--text-primary); border-color: var(--accent); }
+
+    .mkt-modal-thumb-lg {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 8px;
+        background:
+            linear-gradient(135deg, rgba(245,197,66,0.14), rgba(102,252,241,0.05)),
+            var(--bg-panel-raised);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.6rem;
+        color: var(--gold);
+    }
+
+    .mkt-modal-field-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+    }
+
+    .mkt-modal-input,
+    .mkt-modal-textarea,
+    .mkt-modal-select {
+        width: 100%;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 10px 12px;
+        font-size: 0.86rem;
+        font-family: var(--font-display);
+    }
+    .mkt-modal-textarea { resize: vertical; min-height: 80px; }
+    .mkt-modal-input:focus,
+    .mkt-modal-textarea:focus,
+    .mkt-modal-select:focus { outline: none; border-color: var(--accent); }
+
+    .mkt-modal-row2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+        gap: 10px;
+    }
+
+    .mkt-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .mkt-modal-desc {
+        font-size: 0.84rem;
+        color: var(--text-dim);
+        line-height: 1.6;
+    }
+
+    .mkt-empty-state {
+        border: 1px dashed var(--line);
+        border-radius: var(--radius);
+        padding: clamp(28px, 6vw, 48px) 20px;
+        text-align: center;
+        color: var(--text-dim);
+        grid-column: 1 / -1;
+    }
+
+    @media (max-width: 560px) {
+        .mkt-sell-btn { margin-left: 0; width: 100%; }
+        .studio-cta-banner { flex-direction: column; align-items: stretch; }
+        .studio-cta-btn { width: 100%; justify-content: center; }
+    }
+
     /* ---------- RÜTBE (RANK) ETİKETİ — index-29-1 (oyun sitesi) ile
        birebir aynı Shiny/Sweep animasyonu. OG ve üzeri tüm rütbeler
        bu ışıltı geçişini kullanır. ---------- */
@@ -3236,11 +3743,135 @@
             </div>
 
             <section class="hub-view" data-view="marketplace">
-                <div class="hub-placeholder">3D MODEL PAZARI — Modül 4'te doldurulacak</div>
+                <div class="mkt-toolbar">
+                    <input type="text" class="mkt-search" id="mktSearchInput" placeholder="Model, etiket veya satıcı ara…">
+                    <div class="mkt-filter-row" id="mktFilterRow">
+                        <button class="mkt-filter-chip is-active" data-cat="all">Tümü</button>
+                        <button class="mkt-filter-chip" data-cat="karakter">Karakter</button>
+                        <button class="mkt-filter-chip" data-cat="cevre">Çevre / Bina</button>
+                        <button class="mkt-filter-chip" data-cat="araç">Araç</button>
+                        <button class="mkt-filter-chip" data-cat="prop">Prop / Eşya</button>
+                        <button class="mkt-filter-chip" data-cat="silah">Silah</button>
+                    </div>
+                    <button class="forum-btn forum-btn-primary mkt-sell-btn" id="mktSellBtn">+ Model Satışa Çıkar</button>
+                </div>
+
+                <div class="mkt-grid" id="mktGrid">
+                    <div class="mkt-empty-state">Yükleniyor…</div>
+                </div>
             </section>
 
+            <!-- ── PAZAR: Satın Alma Modalı ── -->
+            <div class="mkt-modal-overlay" id="mktBuyModalOverlay">
+                <div class="mkt-modal" role="dialog" aria-label="Model satın al">
+                    <div class="mkt-modal-head">
+                        <div class="mkt-modal-title" id="mktBuyModalTitle">Model Adı</div>
+                        <button class="mkt-modal-close" id="mktBuyModalClose">✕</button>
+                    </div>
+                    <div class="mkt-modal-thumb-lg" id="mktBuyModalThumb">🧊</div>
+                    <div class="mkt-modal-desc" id="mktBuyModalDesc">Açıklama.</div>
+                    <div class="mkt-card-tags" id="mktBuyModalTags"></div>
+                    <div class="mkt-modal-footer">
+                        <span style="margin-right:auto; font-family:var(--font-mono); font-weight:800; color:var(--gold); font-size:1.05rem;" id="mktBuyModalPrice">0 ₺</span>
+                        <button class="forum-btn forum-btn-ghost" id="mktBuyModalCancel">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="mktBuyModalConfirm">Satın Al</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── PAZAR: Satışa Çıkarma Modalı ── -->
+            <div class="mkt-modal-overlay" id="mktSellModalOverlay">
+                <div class="mkt-modal" role="dialog" aria-label="Model satışa çıkar">
+                    <div class="mkt-modal-head">
+                        <div class="mkt-modal-title">Model Satışa Çıkar</div>
+                        <button class="mkt-modal-close" id="mktSellModalClose">✕</button>
+                    </div>
+
+                    <div>
+                        <div class="mkt-modal-field-label">Stüdyodaki Modelin</div>
+                        <select class="mkt-modal-select" id="mktSellModelSelect">
+                            <option value="">— Kayıtlı model bulunamadı —</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="mkt-modal-field-label">Açıklama</div>
+                        <textarea class="mkt-modal-textarea" id="mktSellDesc" placeholder="Modelin hakkında kısa bir açıklama yaz…"></textarea>
+                    </div>
+
+                    <div class="mkt-modal-row2">
+                        <div>
+                            <div class="mkt-modal-field-label">Fiyat (₺)</div>
+                            <input type="number" min="0" step="1" class="mkt-modal-input" id="mktSellPrice" placeholder="0">
+                        </div>
+                        <div>
+                            <div class="mkt-modal-field-label">Kategori</div>
+                            <select class="mkt-modal-select" id="mktSellCategory">
+                                <option value="karakter">Karakter</option>
+                                <option value="cevre">Çevre / Bina</option>
+                                <option value="araç">Araç</option>
+                                <option value="prop">Prop / Eşya</option>
+                                <option value="silah">Silah</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="mkt-modal-field-label">Etiketler (virgülle ayır)</div>
+                        <input type="text" class="mkt-modal-input" id="mktSellTags" placeholder="ör: low-poly, fantastik, oyun-hazır">
+                    </div>
+
+                    <div class="mkt-modal-footer">
+                        <button class="forum-btn forum-btn-ghost" id="mktSellModalCancel">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="mktSellModalConfirm">Satışa Çıkar</button>
+                    </div>
+                </div>
+            </div>
+
             <section class="hub-view" data-view="studio">
-                <div class="hub-placeholder">3D STUDIO EDİTÖR — Modül 4'te doldurulacak</div>
+                <div class="studio-dash-stats" id="studioDashStats">
+                    <div class="studio-stat-card">
+                        <div class="studio-stat-icon">🧊</div>
+                        <div class="studio-stat-value" id="studioStatModelCount">0</div>
+                        <div class="studio-stat-label">Toplam Oluşturulan Model</div>
+                    </div>
+                    <div class="studio-stat-card">
+                        <div class="studio-stat-icon">📐</div>
+                        <div class="studio-stat-value" id="studioStatPolyCount">0</div>
+                        <div class="studio-stat-label">Toplam Poligon (tüm modeller)</div>
+                    </div>
+                    <div class="studio-stat-card">
+                        <div class="studio-stat-icon">🕒</div>
+                        <div class="studio-stat-value" id="studioStatLastEdit">—</div>
+                        <div class="studio-stat-label">Son Düzenleme</div>
+                    </div>
+                    <div class="studio-stat-card">
+                        <div class="studio-stat-icon">🛒</div>
+                        <div class="studio-stat-value" id="studioStatOnSale">0</div>
+                        <div class="studio-stat-label">Pazarda Satışta Olan</div>
+                        <div class="studio-stat-trend is-flat" id="studioStatOnSaleTrend">3D Model Pazarı</div>
+                    </div>
+                </div>
+
+                <div class="studio-cta-banner">
+                    <div class="studio-cta-text">
+                        <div class="studio-cta-title">Yeni bir 3D model oluşturmaya hazır mısın?</div>
+                        <div class="studio-cta-sub">Tam ekran editörde küpten başla, transform gizmo'larıyla şekillendir, ızgaraya otur ve .GLTF/.GLB olarak dışa aktar.</div>
+                    </div>
+                    <button class="studio-cta-btn" id="studioCreateNewBtn">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+                        Yeni Model Oluştur
+                    </button>
+                </div>
+
+                <div class="studio-section-head">
+                    <div class="studio-section-title">Kayıtlı Modellerim</div>
+                    <div class="studio-section-count" id="studioModelListCount">0 model</div>
+                </div>
+
+                <div class="studio-model-grid" id="studioModelGrid">
+                    <!-- JS ile doldurulacak -->
+                </div>
             </section>
 
             <section class="hub-view" data-view="messages">
@@ -4406,6 +5037,14 @@
             // Modül 3: Forum, auth onaylandıktan sonra bir kez başlatılır.
             if (typeof window.initForumModule === "function") {
                 window.initForumModule();
+            }
+
+            // Modül 4: 3D Studio Editör (Dashboard) & 3D Model Pazarı
+            if (typeof window.initStudioModule === "function") {
+                window.initStudioModule();
+            }
+            if (typeof window.initMarketplaceModule === "function") {
+                window.initMarketplaceModule();
             }
         }
 
@@ -7825,6 +8464,17 @@
                 InboxSystem.openInbox();
             }
 
+            // 3D Studio Dashboard'a her girişte istatistik + model listesini tazele
+            // (3dstudio.html'den dönüşte localStorage değişmiş olabilir).
+            if (view === "studio" && typeof window.refreshStudioDashboard === "function") {
+                window.refreshStudioDashboard();
+            }
+
+            // 3D Model Pazarı'na her girişte listeleri tazele.
+            if (view === "marketplace" && typeof window.refreshMarketplaceGrid === "function") {
+                window.refreshMarketplaceGrid();
+            }
+
             // "Profilim" sekmesine geçildiğinde, kendi profilimizi render
             // ediyoruz. Daha önce bu hiç tetiklenmiyordu; sekme boş
             // görünüyordu çünkü renderProfileView sadece auth-ready /
@@ -7844,6 +8494,434 @@
         }
 
 
+
+        // ════════════════════════════════════════════════════════════════
+        // 🧊 MODÜL 4 — 3D STUDIO EDİTÖR (Dashboard) & 3D MODEL PAZARI
+        // ════════════════════════════════════════════════════════════════
+        // VERİ ŞEMASI (localStorage — backend yok, tarayıcı-yerel demo katmanı):
+        //   pl3d_models_{uid}  -> JSON array: kullanıcının kendi modelleri
+        //     { id, name, createdAt, updatedAt, cubeCount, vertexCount,
+        //       triangleCount, thumbEmoji, gltf (base64 veya null) }
+        //   pl3d_marketplace   -> JSON array: TÜM kullanıcılar arası paylaşımlı
+        //     satış listesi (aynı tarayıcıda test için; gerçek üründe bu
+        //     Firebase Realtime DB altında marketplace_listings/{id} olurdu)
+        //     { id, modelId, sellerUid, sellerUsername, name, description,
+        //       price, category, tags[], thumbEmoji, createdAt, cubeCount }
+        //
+        // "3dstudio.html" (tam ekran editör) modeli localStorage'a
+        // window.saveModel() ile yazar; buraya döndüğümüzde
+        // refreshStudioDashboard() bu veriyi okuyup ekrana basar.
+        // ════════════════════════════════════════════════════════════════
+
+        const STUDIO_MODELS_PREFIX = "pl3d_models_";
+        const STUDIO_MARKETPLACE_KEY = "pl3d_marketplace";
+
+        function studioCurrentUid() {
+            return (window.CommunityAuth && window.CommunityAuth.user)
+                ? window.CommunityAuth.user.uid
+                : "anon";
+        }
+
+        function studioCurrentUsername() {
+            return (window.CommunityAuth && window.CommunityAuth.profile && window.CommunityAuth.profile.username)
+                ? window.CommunityAuth.profile.username
+                : "Kullanıcı";
+        }
+
+        function studioLoadModels() {
+            try {
+                const raw = localStorage.getItem(STUDIO_MODELS_PREFIX + studioCurrentUid());
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function studioSaveModels(list) {
+            try {
+                localStorage.setItem(STUDIO_MODELS_PREFIX + studioCurrentUid(), JSON.stringify(list));
+            } catch (_) { /* quota vs. — sessizce geç */ }
+        }
+
+        function mktLoadListings() {
+            try {
+                const raw = localStorage.getItem(STUDIO_MARKETPLACE_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function mktSaveListings(list) {
+            try {
+                localStorage.setItem(STUDIO_MARKETPLACE_KEY, JSON.stringify(list));
+            } catch (_) { /* sessizce geç */ }
+        }
+
+        function studioFormatRelativeDate(iso) {
+            if (!iso) return "—";
+            const then = new Date(iso).getTime();
+            if (isNaN(then)) return "—";
+            const diffMs = Date.now() - then;
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return "az önce";
+            if (mins < 60) return mins + " dk önce";
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + " sa önce";
+            const days = Math.floor(hrs / 24);
+            if (days < 30) return days + " gün önce";
+            return new Date(iso).toLocaleDateString("tr-TR");
+        }
+
+        function studioEscapeHtml(str) {
+            const div = document.createElement("div");
+            div.textContent = str == null ? "" : String(str);
+            return div.innerHTML;
+        }
+
+        // ---------------------------------------------------------------
+        // A) DASHBOARD — istatistik kartları + model grid
+        // ---------------------------------------------------------------
+        function refreshStudioDashboard() {
+            const models = studioLoadModels();
+            const listings = mktLoadListings();
+            const myUid = studioCurrentUid();
+
+            // İstatistik kartları
+            const totalPoly = models.reduce((sum, m) => sum + (m.triangleCount || 0), 0);
+            const lastEdit = models.reduce((latest, m) => {
+                const t = m.updatedAt || m.createdAt;
+                return (!latest || (t && t > latest)) ? t : latest;
+            }, null);
+            const myOnSale = listings.filter(l => l.sellerUid === myUid).length;
+
+            const elCount = document.getElementById("studioStatModelCount");
+            const elPoly = document.getElementById("studioStatPolyCount");
+            const elLast = document.getElementById("studioStatLastEdit");
+            const elSale = document.getElementById("studioStatOnSale");
+            if (elCount) elCount.textContent = models.length;
+            if (elPoly) elPoly.textContent = totalPoly.toLocaleString("tr-TR");
+            if (elLast) elLast.textContent = studioFormatRelativeDate(lastEdit);
+            if (elSale) elSale.textContent = myOnSale;
+
+            // Model listesi
+            const grid = document.getElementById("studioModelGrid");
+            const countLabel = document.getElementById("studioModelListCount");
+            if (countLabel) countLabel.textContent = models.length + (models.length === 1 ? " model" : " model");
+            if (!grid) return;
+
+            if (models.length === 0) {
+                grid.innerHTML = `
+                    <div class="studio-empty-state" style="grid-column:1/-1;">
+                        <div class="studio-empty-state-icon">🗂️</div>
+                        <div class="studio-empty-state-title">Henüz kayıtlı bir modelin yok</div>
+                        <div class="studio-empty-state-sub">Yukarıdaki "Yeni Model Oluştur" butonuna basarak tam ekran 3D editörde ilk modelini oluşturmaya başla.</div>
+                    </div>`;
+                return;
+            }
+
+            // En yeni önce
+            const sorted = models.slice().sort((a, b) => {
+                const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
+                const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
+                return tb - ta;
+            });
+
+            grid.innerHTML = sorted.map(m => `
+                <div class="studio-model-card" data-model-id="${studioEscapeHtml(m.id)}">
+                    <div class="studio-model-thumb">
+                        ${m.thumbEmoji || "🧊"}
+                        <span class="studio-model-thumb-badge">${(m.cubeCount || 0)} obje</span>
+                    </div>
+                    <div class="studio-model-body">
+                        <div class="studio-model-name" title="${studioEscapeHtml(m.name)}">${studioEscapeHtml(m.name)}</div>
+                        <div class="studio-model-meta">
+                            <span>${(m.triangleCount || 0).toLocaleString("tr-TR")} poligon</span>
+                            <span>${studioFormatRelativeDate(m.updatedAt || m.createdAt)}</span>
+                        </div>
+                        <div class="studio-model-actions">
+                            <button data-act="edit" data-id="${studioEscapeHtml(m.id)}">✏️ Düzenle</button>
+                            <button data-act="export" data-id="${studioEscapeHtml(m.id)}">⬇️ GLTF</button>
+                            <button data-act="delete" data-id="${studioEscapeHtml(m.id)}" class="is-danger">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+
+            grid.querySelectorAll("button[data-act]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute("data-id");
+                    const act = btn.getAttribute("data-act");
+                    if (act === "edit") {
+                        window.location.href = "3dstudio.html?modelId=" + encodeURIComponent(id);
+                    } else if (act === "delete") {
+                        studioDeleteModel(id);
+                    } else if (act === "export") {
+                        studioExportModelGltf(id);
+                    }
+                });
+            });
+        }
+        window.refreshStudioDashboard = refreshStudioDashboard;
+
+        function studioDeleteModel(id) {
+            const models = studioLoadModels().filter(m => m.id !== id);
+            studioSaveModels(models);
+            refreshStudioDashboard();
+        }
+
+        function studioExportModelGltf(id) {
+            const model = studioLoadModels().find(m => m.id === id);
+            if (!model) return;
+            if (!model.gltf) {
+                alert("Bu model için kaydedilmiş bir .gltf verisi bulunamadı. 3D Studio Editör'de tekrar dışa aktarabilirsin.");
+                return;
+            }
+            try {
+                const blob = new Blob([model.gltf], { type: "model/gltf+json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = (model.name || "model").replace(/[^a-zA-Z0-9_\-ğüşıöçĞÜŞİÖÇ ]/g, "").trim().replace(/\s+/g, "_") + ".gltf";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (_) {
+                alert("Dışa aktarma sırasında bir sorun oluştu.");
+            }
+        }
+
+        function initStudioModule() {
+            const createBtn = document.getElementById("studioCreateNewBtn");
+            if (createBtn && !createBtn.dataset.bound) {
+                createBtn.dataset.bound = "1";
+                createBtn.addEventListener("click", () => {
+                    window.location.href = "3dstudio.html";
+                });
+            }
+            refreshStudioDashboard();
+        }
+        window.initStudioModule = initStudioModule;
+
+        // ---------------------------------------------------------------
+        // B) 3D MODEL PAZARI — listeleme, filtre, arama, al/sat modalları
+        // ---------------------------------------------------------------
+        let mktActiveCategory = "all";
+        let mktActiveSearch = "";
+        let mktSelectedListingForBuy = null;
+
+        function mktRenderGrid() {
+            const grid = document.getElementById("mktGrid");
+            if (!grid) return;
+            let listings = mktLoadListings();
+
+            if (mktActiveCategory !== "all") {
+                listings = listings.filter(l => l.category === mktActiveCategory);
+            }
+            if (mktActiveSearch.trim()) {
+                const q = mktActiveSearch.trim().toLowerCase();
+                listings = listings.filter(l =>
+                    (l.name || "").toLowerCase().includes(q) ||
+                    (l.sellerUsername || "").toLowerCase().includes(q) ||
+                    (l.tags || []).some(t => t.toLowerCase().includes(q))
+                );
+            }
+
+            listings = listings.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+            if (listings.length === 0) {
+                grid.innerHTML = `
+                    <div class="mkt-empty-state">
+                        Aradığın kriterlere uygun bir model bulunamadı.<br>
+                        Stüdyonda oluşturduğun bir modeli "+ Model Satışa Çıkar" ile pazara ekleyebilirsin.
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = listings.map(l => `
+                <div class="mkt-card" data-listing-id="${studioEscapeHtml(l.id)}">
+                    <div class="mkt-card-thumb">
+                        ${l.thumbEmoji || "🧊"}
+                        <span class="mkt-card-price">${Number(l.price || 0).toLocaleString("tr-TR")} ₺</span>
+                    </div>
+                    <div class="mkt-card-body">
+                        <div class="mkt-card-name" title="${studioEscapeHtml(l.name)}">${studioEscapeHtml(l.name)}</div>
+                        <div class="mkt-card-seller">@${studioEscapeHtml(l.sellerUsername)}</div>
+                        <div class="mkt-card-tags">
+                            ${(l.tags || []).slice(0, 3).map(t => `<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("")}
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+
+            grid.querySelectorAll(".mkt-card").forEach(card => {
+                card.addEventListener("click", () => {
+                    const id = card.getAttribute("data-listing-id");
+                    mktOpenBuyModal(id);
+                });
+            });
+        }
+        window.refreshMarketplaceGrid = mktRenderGrid;
+
+        function mktOpenBuyModal(listingId) {
+            const listing = mktLoadListings().find(l => l.id === listingId);
+            if (!listing) return;
+            mktSelectedListingForBuy = listing;
+
+            document.getElementById("mktBuyModalTitle").textContent = listing.name;
+            document.getElementById("mktBuyModalThumb").textContent = listing.thumbEmoji || "🧊";
+            document.getElementById("mktBuyModalDesc").textContent = listing.description || "Açıklama girilmemiş.";
+            document.getElementById("mktBuyModalPrice").textContent = Number(listing.price || 0).toLocaleString("tr-TR") + " ₺";
+            document.getElementById("mktBuyModalTags").innerHTML = (listing.tags || [])
+                .map(t => `<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("");
+
+            document.getElementById("mktBuyModalOverlay").classList.add("is-open");
+        }
+
+        function mktCloseBuyModal() {
+            document.getElementById("mktBuyModalOverlay").classList.remove("is-open");
+            mktSelectedListingForBuy = null;
+        }
+
+        function mktOpenSellModal() {
+            const select = document.getElementById("mktSellModelSelect");
+            const models = studioLoadModels();
+            if (models.length === 0) {
+                select.innerHTML = `<option value="">— Önce 3D Studio Editör'de bir model oluştur —</option>`;
+            } else {
+                select.innerHTML = models.map(m =>
+                    `<option value="${studioEscapeHtml(m.id)}">${studioEscapeHtml(m.name)}</option>`
+                ).join("");
+            }
+            document.getElementById("mktSellDesc").value = "";
+            document.getElementById("mktSellPrice").value = "";
+            document.getElementById("mktSellTags").value = "";
+            document.getElementById("mktSellModalOverlay").classList.add("is-open");
+        }
+
+        function mktCloseSellModal() {
+            document.getElementById("mktSellModalOverlay").classList.remove("is-open");
+        }
+
+        function mktSubmitSellListing() {
+            const modelId = document.getElementById("mktSellModelSelect").value;
+            if (!modelId) {
+                alert("Lütfen satışa çıkaracağın bir model seç.");
+                return;
+            }
+            const model = studioLoadModels().find(m => m.id === modelId);
+            if (!model) return;
+
+            const price = parseFloat(document.getElementById("mktSellPrice").value) || 0;
+            const category = document.getElementById("mktSellCategory").value;
+            const description = document.getElementById("mktSellDesc").value.trim();
+            const tags = document.getElementById("mktSellTags").value
+                .split(",").map(t => t.trim()).filter(Boolean);
+
+            const listings = mktLoadListings();
+            listings.push({
+                id: "listing_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+                modelId: model.id,
+                sellerUid: studioCurrentUid(),
+                sellerUsername: studioCurrentUsername(),
+                name: model.name,
+                description,
+                price,
+                category,
+                tags,
+                thumbEmoji: model.thumbEmoji || "🧊",
+                cubeCount: model.cubeCount || 0,
+                createdAt: new Date().toISOString()
+            });
+            mktSaveListings(listings);
+            mktCloseSellModal();
+            mktRenderGrid();
+            refreshStudioDashboard();
+        }
+
+        function initMarketplaceModule() {
+            const searchInput = document.getElementById("mktSearchInput");
+            if (searchInput && !searchInput.dataset.bound) {
+                searchInput.dataset.bound = "1";
+                searchInput.addEventListener("input", (e) => {
+                    mktActiveSearch = e.target.value;
+                    mktRenderGrid();
+                });
+            }
+
+            const filterRow = document.getElementById("mktFilterRow");
+            if (filterRow && !filterRow.dataset.bound) {
+                filterRow.dataset.bound = "1";
+                filterRow.querySelectorAll(".mkt-filter-chip").forEach(chip => {
+                    chip.addEventListener("click", () => {
+                        filterRow.querySelectorAll(".mkt-filter-chip").forEach(c => c.classList.remove("is-active"));
+                        chip.classList.add("is-active");
+                        mktActiveCategory = chip.getAttribute("data-cat");
+                        mktRenderGrid();
+                    });
+                });
+            }
+
+            const sellBtn = document.getElementById("mktSellBtn");
+            if (sellBtn && !sellBtn.dataset.bound) {
+                sellBtn.dataset.bound = "1";
+                sellBtn.addEventListener("click", mktOpenSellModal);
+            }
+
+            const sellModalClose = document.getElementById("mktSellModalClose");
+            const sellModalCancel = document.getElementById("mktSellModalCancel");
+            const sellModalConfirm = document.getElementById("mktSellModalConfirm");
+            [sellModalClose, sellModalCancel].forEach(btn => {
+                if (btn && !btn.dataset.bound) { btn.dataset.bound = "1"; btn.addEventListener("click", mktCloseSellModal); }
+            });
+            if (sellModalConfirm && !sellModalConfirm.dataset.bound) {
+                sellModalConfirm.dataset.bound = "1";
+                sellModalConfirm.addEventListener("click", mktSubmitSellListing);
+            }
+
+            const buyModalClose = document.getElementById("mktBuyModalClose");
+            const buyModalCancel = document.getElementById("mktBuyModalCancel");
+            const buyModalConfirm = document.getElementById("mktBuyModalConfirm");
+            [buyModalClose, buyModalCancel].forEach(btn => {
+                if (btn && !btn.dataset.bound) { btn.dataset.bound = "1"; btn.addEventListener("click", mktCloseBuyModal); }
+            });
+            if (buyModalConfirm && !buyModalConfirm.dataset.bound) {
+                buyModalConfirm.dataset.bound = "1";
+                buyModalConfirm.addEventListener("click", () => {
+                    if (!mktSelectedListingForBuy) return;
+                    showToastGlobal("\"" + mktSelectedListingForBuy.name + "\" satın alındı! (Demo — ödeme entegrasyonu bağlı değil)");
+                    mktCloseBuyModal();
+                });
+            }
+
+            // Overlay dışına tıklayınca kapat
+            [document.getElementById("mktBuyModalOverlay"), document.getElementById("mktSellModalOverlay")].forEach(overlay => {
+                if (overlay && !overlay.dataset.bound) {
+                    overlay.dataset.bound = "1";
+                    overlay.addEventListener("click", (e) => {
+                        if (e.target === overlay) overlay.classList.remove("is-open");
+                    });
+                }
+            });
+
+            mktRenderGrid();
+        }
+        window.initMarketplaceModule = initMarketplaceModule;
+
+        function showToastGlobal(msg) {
+            const existing = document.querySelector(".pl3d-global-toast");
+            if (existing) existing.remove();
+            const el = document.createElement("div");
+            el.className = "pl3d-global-toast";
+            el.textContent = msg;
+            el.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-panel-raised);border:1px solid var(--accent);color:var(--text-primary);padding:12px 20px;border-radius:10px;font-size:0.85rem;z-index:9998;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:90vw;text-align:center;";
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3200);
+        }
 
         // ════════════════════════════════════════════════════════════════
         // MENTIONS & REPLIES — INBOX SİSTEMİ (InboxSystem)

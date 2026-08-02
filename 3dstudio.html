@@ -1,0 +1,3707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Studio Editor</title>
+<style>
+  /* ============================================================
+     BLOCKBENCH DARK THEME — token'lar
+     ============================================================ */
+  :root{
+    --bb-bg-darkest:#1c1c1c;
+    --bb-bg-dark:#232323;
+    --bb-bg-panel:#2b2b2b;
+    --bb-bg-panel-raised:#333333;
+    --bb-bg-input:#1a1a1a;
+    --bb-border:#111111;
+    --bb-border-light:#3d3d3d;
+    --bb-text:#c6c6c6;
+    --bb-text-dim:#8a8a8a;
+    --bb-text-bright:#f0f0f0;
+    --bb-accent:#3a8ee6;
+    --bb-accent-hover:#5aa3ef;
+    --bb-accent-dim:#2a5f99;
+    --bb-danger:#e6533a;
+    --bb-danger-hover:#f2694f;
+    --bb-success:#4caf6a;
+    --bb-grid-line:#3a3a3a;
+    --bb-radius:3px;
+    --bb-font: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --bb-font-mono: "SF Mono", "Consolas", "Menlo", monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    background:var(--bb-bg-darkest);
+    color:var(--bb-text);
+    font-family:var(--bb-font);
+    font-size:13px;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+
+  #bb-studio{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    width:100vw;
+  }
+
+  /* ---------------- ÜST BAR ---------------- */
+  .bb-topbar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    height:44px;
+    min-height:44px;
+    background:var(--bb-bg-dark);
+    border-bottom:1px solid var(--bb-border);
+    padding:0 12px;
+    flex-shrink:0;
+  }
+  .bb-topbar-logo{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:700;
+    color:var(--bb-text-bright);
+    letter-spacing:0.02em;
+    font-size:13px;
+    white-space:nowrap;
+    margin-right:6px;
+  }
+  .bb-topbar-logo svg{ flex-shrink:0; }
+  .bb-model-name-wrap{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .bb-model-name-wrap label{
+    color:var(--bb-text-dim);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  #bb-model-name{
+    background:var(--bb-bg-input);
+    border:1px solid var(--bb-border-light);
+    color:var(--bb-text-bright);
+    border-radius:var(--bb-radius);
+    padding:5px 8px;
+    font-size:13px;
+    width:clamp(100px, 14vw, 200px);
+    min-width:0;
+    font-family:var(--bb-font);
+  }
+  #bb-model-name:focus{ outline:none; border-color:var(--bb-accent); }
+
+  .bb-topbar-spacer{ flex:1; }
+
+  .bb-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--bb-bg-panel-raised);
+    border:1px solid var(--bb-border-light);
+    color:var(--bb-text);
+    padding:6px 12px;
+    border-radius:var(--bb-radius);
+    font-size:12px;
+    cursor:pointer;
+    font-family:var(--bb-font);
+    white-space:nowrap;
+    transition:background .1s, border-color .1s, color .1s;
+  }
+  .bb-btn:hover{ background:#3d3d3d; border-color:#4d4d4d; color:var(--bb-text-bright); }
+  .bb-btn:active{ background:#292929; }
+  .bb-btn svg{ flex-shrink:0; }
+
+  .bb-btn-primary{
+    background:var(--bb-accent-dim);
+    border-color:var(--bb-accent);
+    color:#fff;
+  }
+  .bb-btn-primary:hover{ background:var(--bb-accent); border-color:var(--bb-accent-hover); }
+
+  .bb-btn-danger{
+    background:#4a2620;
+    border-color:#6e352a;
+    color:#f0b8a8;
+  }
+  .bb-btn-danger:hover{ background:var(--bb-danger); border-color:var(--bb-danger-hover); color:#fff; }
+
+  /* ---------------- ANA GÖVDE (3 panel) ---------------- */
+  .bb-body{
+    flex:1;
+    display:flex;
+    min-height:0;
+  }
+
+  /* ---------------- SOL PANEL ---------------- */
+  .bb-panel-left{
+    flex:0 0 clamp(160px, 15vw, 240px);
+    width:clamp(160px, 15vw, 240px);
+    min-width:0;
+    background:var(--bb-bg-dark);
+    border-right:1px solid var(--bb-border);
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  .bb-panel-section{
+    padding:10px;
+    border-bottom:1px solid var(--bb-border);
+  }
+  .bb-panel-section-title{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--bb-text-dim);
+    margin-bottom:8px;
+    font-weight:600;
+  }
+
+  .bb-tool-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+  }
+  .bb-tool-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    background:var(--bb-bg-panel);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:8px 4px;
+    cursor:pointer;
+    color:var(--bb-text-dim);
+    font-size:10px;
+    text-align:center;
+    line-height:1.2;
+    transition:background .1s,border-color .1s,color .1s;
+  }
+  .bb-tool-btn:hover{ background:var(--bb-bg-panel-raised); color:var(--bb-text); }
+  .bb-tool-btn.is-active{
+    background:var(--bb-accent-dim);
+    border-color:var(--bb-accent);
+    color:#fff;
+  }
+  .bb-tool-btn svg{ width:18px; height:18px; flex-shrink:0; }
+
+  /* Renk paleti */
+  .bb-color-current{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .bb-color-swatch-current{
+    width:32px; height:32px;
+    border-radius:var(--bb-radius);
+    border:1px solid var(--bb-border-light);
+    flex-shrink:0;
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+  }
+  #bb-color-picker-native{
+    position:absolute;
+    inset:0;
+    width:100%; height:100%;
+    opacity:0;
+    cursor:pointer;
+    border:none;
+    padding:0;
+  }
+  #bb-color-hex-label{
+    font-family:var(--bb-font-mono);
+    font-size:11px;
+    color:var(--bb-text-dim);
+  }
+  .bb-swatch-grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:4px;
+  }
+  .bb-swatch{
+    aspect-ratio:1;
+    border-radius:2px;
+    border:1px solid rgba(255,255,255,0.08);
+    cursor:pointer;
+    transition:transform .08s;
+  }
+  .bb-swatch:hover{ transform:scale(1.15); border-color:rgba(255,255,255,0.4); }
+  .bb-swatch.is-selected{ outline:2px solid var(--bb-accent); outline-offset:1px; }
+
+  .bb-hint-text{
+    font-size:10.5px;
+    color:var(--bb-text-dim);
+    line-height:1.5;
+    margin-top:8px;
+  }
+
+  /* ---------------- ORTA PANEL (viewport) ---------------- */
+  .bb-viewport-wrap{
+    flex:1;
+    position:relative;
+    background:#1a1a1a;
+    min-width:0;
+  }
+  #bb-canvas-container{
+    position:absolute;
+    inset:0;
+  }
+  #bb-canvas-container canvas{
+    display:block;
+    touch-action:none;
+  }
+  .bb-viewport-overlay-top{
+    position:absolute;
+    top:8px;
+    left:8px;
+    right:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    pointer-events:none;
+    gap:8px;
+  }
+  .bb-viewport-badge{
+    background:rgba(30,30,30,0.85);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:5px 10px;
+    font-size:11px;
+    color:var(--bb-text-dim);
+    font-family:var(--bb-font-mono);
+    pointer-events:auto;
+    backdrop-filter:blur(4px);
+  }
+  .bb-viewport-controls-hint{
+    background:rgba(30,30,30,0.85);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:6px 10px;
+    font-size:10.5px;
+    color:var(--bb-text-dim);
+    line-height:1.6;
+    pointer-events:auto;
+    backdrop-filter:blur(4px);
+    max-width:220px;
+  }
+  .bb-viewport-controls-hint b{ color:var(--bb-text); }
+
+  .bb-axis-indicator{
+    position:absolute;
+    bottom:12px;
+    left:12px;
+    display:flex;
+    gap:10px;
+    font-family:var(--bb-font-mono);
+    font-size:11px;
+    pointer-events:none;
+  }
+  .bb-axis-x{ color:#e6533a; }
+  .bb-axis-y{ color:#4caf6a; }
+  .bb-axis-z{ color:#3a8ee6; }
+
+  /* ---------------- CANLI SAHNE İSTATİSTİKLERİ (FPS/Obje/Poligon/Vertex) ---------------- */
+  .bb-stats-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    pointer-events:auto;
+  }
+  .bb-stat-chip{
+    background:rgba(30,30,30,0.85);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:5px 9px;
+    font-size:10.5px;
+    font-family:var(--bb-font-mono);
+    color:var(--bb-text-dim);
+    backdrop-filter:blur(4px);
+    display:flex;
+    align-items:center;
+    gap:5px;
+    white-space:nowrap;
+  }
+  .bb-stat-chip b{ color:var(--bb-text-bright); font-weight:700; }
+  .bb-stat-chip.fps-good b{ color:var(--bb-success); }
+  .bb-stat-chip.fps-warn b{ color:#e6c23a; }
+  .bb-stat-chip.fps-bad b{ color:var(--bb-danger); }
+
+  /* ---------------- GİZMO MOD SEÇİCİ (Taşı/Döndür/Ölçekle — W/E/R) ---------------- */
+  .bb-gizmo-mode-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:6px;
+  }
+  .bb-gizmo-mode-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    background:var(--bb-bg-panel);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:7px 4px;
+    cursor:pointer;
+    color:var(--bb-text-dim);
+    font-size:9.5px;
+    transition:background .1s,border-color .1s,color .1s;
+  }
+  .bb-gizmo-mode-btn:hover{ background:var(--bb-bg-panel-raised); color:var(--bb-text); }
+  .bb-gizmo-mode-btn.is-active{
+    background:var(--bb-accent-dim);
+    border-color:var(--bb-accent);
+    color:#fff;
+  }
+  .bb-gizmo-mode-btn kbd{
+    font-family:var(--bb-font-mono);
+    font-size:9px;
+    opacity:0.7;
+  }
+
+  /* ---------------- GRID SNAP AYARLARI ---------------- */
+  .bb-snap-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .bb-snap-toggle-label{
+    font-size:11px;
+    color:var(--bb-text);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .bb-switch{
+    position:relative;
+    width:32px;
+    height:18px;
+    flex-shrink:0;
+  }
+  .bb-switch input{
+    opacity:0;
+    width:100%;
+    height:100%;
+    margin:0;
+    cursor:pointer;
+    position:absolute;
+    z-index:2;
+  }
+  .bb-switch-track{
+    position:absolute;
+    inset:0;
+    background:var(--bb-bg-input);
+    border:1px solid var(--bb-border-light);
+    border-radius:10px;
+    transition:background .15s,border-color .15s;
+  }
+  .bb-switch-thumb{
+    position:absolute;
+    top:2px; left:2px;
+    width:12px; height:12px;
+    border-radius:50%;
+    background:var(--bb-text-dim);
+    transition:transform .15s, background .15s;
+  }
+  .bb-switch input:checked ~ .bb-switch-track{ background:var(--bb-accent-dim); border-color:var(--bb-accent); }
+  .bb-switch input:checked ~ .bb-switch-thumb{ transform:translateX(14px); background:#fff; }
+
+  .bb-snap-step-row{
+    display:flex;
+    gap:6px;
+  }
+  .bb-snap-step-btn{
+    flex:1;
+    background:var(--bb-bg-panel);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:6px 4px;
+    color:var(--bb-text-dim);
+    font-size:11px;
+    font-family:var(--bb-font-mono);
+    cursor:pointer;
+    text-align:center;
+  }
+  .bb-snap-step-btn:hover{ color:var(--bb-text); background:var(--bb-bg-panel-raised); }
+  .bb-snap-step-btn.is-active{
+    background:var(--bb-accent-dim);
+    border-color:var(--bb-accent);
+    color:#fff;
+  }
+
+  /* ---------------- KAYDET & GLTF/GLB EXPORT BUTONLARI ---------------- */
+  .bb-btn-success{
+    background:#1f4a2e;
+    border-color:#2d6b40;
+    color:#b8f2c8;
+  }
+  .bb-btn-success:hover{ background:var(--bb-success); border-color:#5fc27f; color:#fff; }
+
+  .bb-export-dropdown{
+    position:relative;
+    display:inline-flex;
+  }
+  .bb-export-menu{
+    position:absolute;
+    top:calc(100% + 4px);
+    right:0;
+    background:var(--bb-bg-panel-raised);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    padding:5px;
+    display:none;
+    flex-direction:column;
+    gap:2px;
+    min-width:150px;
+    z-index:50;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  }
+  .bb-export-menu.is-open{ display:flex; }
+  .bb-export-menu button{
+    background:none;
+    border:none;
+    color:var(--bb-text);
+    text-align:left;
+    padding:7px 9px;
+    border-radius:3px;
+    font-size:12px;
+    cursor:pointer;
+    font-family:var(--bb-font);
+  }
+  .bb-export-menu button:hover{ background:var(--bb-bg-panel); color:var(--bb-text-bright); }
+
+  /* ---------------- MOBİL SEKMELER (Responsive Tabs) ---------------- */
+  .bb-mobile-tabbar{
+    display:none;
+    flex-shrink:0;
+    background:var(--bb-bg-dark);
+    border-top:1px solid var(--bb-border);
+  }
+  .bb-mobile-tabbar-inner{
+    display:flex;
+    width:100%;
+  }
+  .bb-mobile-tab-btn{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--bb-text-dim);
+    padding:10px 4px;
+    font-size:10.5px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    cursor:pointer;
+    border-top:2px solid transparent;
+  }
+  .bb-mobile-tab-btn.is-active{
+    color:var(--bb-accent);
+    border-top-color:var(--bb-accent);
+  }
+  .bb-mobile-tab-btn svg{ width:16px; height:16px; }
+
+  /* ---------------- SAĞ PANEL ---------------- */
+  .bb-panel-right{
+    flex:0 0 clamp(220px, 18vw, 300px);
+    width:clamp(220px, 18vw, 300px);
+    min-width:0;
+    background:var(--bb-bg-dark);
+    border-left:1px solid var(--bb-border);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .bb-outliner{
+    flex:1;
+    overflow-y:auto;
+    min-height:120px;
+  }
+  .bb-outliner-header{
+    padding:10px 10px 8px;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--bb-text-dim);
+    font-weight:600;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid var(--bb-border);
+  }
+  .bb-outliner-count{
+    background:var(--bb-bg-panel);
+    border-radius:8px;
+    padding:1px 7px;
+    font-size:10px;
+    color:var(--bb-text);
+  }
+  .bb-outliner-empty{
+    padding:20px 12px;
+    text-align:center;
+    color:var(--bb-text-dim);
+    font-size:11.5px;
+    line-height:1.6;
+  }
+  .bb-outliner-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 10px;
+    cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.03);
+    font-size:12px;
+    color:var(--bb-text);
+  }
+  .bb-outliner-item:hover{ background:var(--bb-bg-panel); }
+  .bb-outliner-item.is-selected{ background:var(--bb-accent-dim); color:#fff; }
+  .bb-outliner-item-swatch{
+    width:12px; height:12px;
+    border-radius:2px;
+    flex-shrink:0;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+  .bb-outliner-item-name{
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .bb-outliner-item-del{
+    opacity:0;
+    background:none;
+    border:none;
+    color:var(--bb-text-dim);
+    cursor:pointer;
+    padding:2px 5px;
+    border-radius:2px;
+    font-size:13px;
+    line-height:1;
+  }
+  .bb-outliner-item:hover .bb-outliner-item-del{ opacity:1; }
+  .bb-outliner-item-del:hover{ color:var(--bb-danger-hover); background:rgba(230,83,58,0.15); }
+
+  /* ---- Grup Ekle Butonu (Outliner header) ---- */
+  .bb-outliner-add-group-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    background:var(--bb-bg-panel);
+    border:1px solid var(--bb-border-light);
+    color:var(--bb-text-dim);
+    padding:3px 7px;
+    border-radius:var(--bb-radius);
+    font-size:10px;
+    cursor:pointer;
+    font-family:var(--bb-font);
+    text-transform:none;
+    letter-spacing:0;
+    transition:background .1s, border-color .1s, color .1s;
+  }
+  .bb-outliner-add-group-btn:hover{ background:var(--bb-bg-panel-raised); color:var(--bb-text-bright); border-color:#4d4d4d; }
+  .bb-outliner-add-group-btn svg{ flex-shrink:0; }
+
+  /* ---- Outliner ağaç (tree) satırları — grup + küp ortak yapı ---- */
+  .bb-outliner-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:7px 10px;
+    cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.03);
+    font-size:12px;
+    color:var(--bb-text);
+    position:relative;
+    -webkit-user-select:none; user-select:none;
+  }
+  .bb-outliner-row:hover{ background:var(--bb-bg-panel); }
+  .bb-outliner-row.is-selected{ background:var(--bb-accent-dim); color:#fff; }
+  .bb-outliner-row.is-dragging{ opacity:0.35; }
+  .bb-outliner-row.is-drop-target-inside{ outline:1.5px dashed var(--bb-accent); outline-offset:-2px; background:rgba(58,142,230,0.12); }
+  .bb-outliner-row.is-drop-target-before{ box-shadow: inset 0 2px 0 var(--bb-accent); }
+  .bb-outliner-row.is-drop-target-after{ box-shadow: inset 0 -2px 0 var(--bb-accent); }
+
+  .bb-outliner-indent{ flex-shrink:0; }
+
+  .bb-outliner-caret{
+    width:14px; height:14px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--bb-text-dim);
+    cursor:pointer;
+    transition:transform .12s;
+  }
+  .bb-outliner-caret.is-collapsed{ transform:rotate(-90deg); }
+  .bb-outliner-caret-spacer{ width:14px; flex-shrink:0; }
+
+  .bb-outliner-group-icon{
+    width:13px; height:13px;
+    flex-shrink:0;
+    color:var(--bb-accent);
+  }
+  .bb-outliner-row.is-selected .bb-outliner-group-icon{ color:#fff; }
+
+  .bb-outliner-item-swatch{
+    width:12px; height:12px;
+    border-radius:2px;
+    flex-shrink:0;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+  .bb-outliner-item-name{
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .bb-outliner-item-name.is-group-name{ font-weight:600; }
+  .bb-outliner-rename-input{
+    flex:1;
+    background:var(--bb-bg-input);
+    border:1px solid var(--bb-accent);
+    color:var(--bb-text-bright);
+    border-radius:2px;
+    padding:2px 5px;
+    font-size:12px;
+    font-family:var(--bb-font);
+    min-width:0;
+  }
+  .bb-outliner-row-del{
+    opacity:0;
+    background:none;
+    border:none;
+    color:var(--bb-text-dim);
+    cursor:pointer;
+    padding:2px 5px;
+    border-radius:2px;
+    font-size:13px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .bb-outliner-row:hover .bb-outliner-row-del{ opacity:1; }
+  .bb-outliner-row-del:hover{ color:var(--bb-danger-hover); background:rgba(230,83,58,0.15); }
+
+  .bb-outliner-group-count{
+    font-size:10px;
+    color:var(--bb-text-dim);
+    flex-shrink:0;
+    margin-right:2px;
+  }
+  .bb-outliner-row.is-selected .bb-outliner-group-count{ color:rgba(255,255,255,0.75); }
+
+  /* ---- Sağ tık bağlam menüsü (Context Menu) ---- */
+  .bb-context-menu{
+    position:fixed;
+    z-index:1000;
+    min-width:170px;
+    background:var(--bb-bg-panel-raised);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    box-shadow:0 6px 18px rgba(0,0,0,0.45);
+    padding:4px;
+    display:none;
+    flex-direction:column;
+    gap:1px;
+  }
+  .bb-context-menu.is-open{ display:flex; }
+  .bb-context-menu-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 9px;
+    font-size:12px;
+    color:var(--bb-text);
+    border-radius:2px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .bb-context-menu-item:hover{ background:var(--bb-accent-dim); color:#fff; }
+  .bb-context-menu-item.is-danger:hover{ background:var(--bb-danger); color:#fff; }
+  .bb-context-menu-sep{
+    height:1px;
+    background:var(--bb-border);
+    margin:3px 2px;
+  }
+
+  /* Özellikler (Inspector) */
+  .bb-inspector{
+    border-top:1px solid var(--bb-border);
+    padding:10px;
+    max-height:48%;
+    overflow-y:auto;
+    flex-shrink:0;
+  }
+  .bb-inspector-title{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--bb-text-dim);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .bb-inspector-empty{
+    color:var(--bb-text-dim);
+    font-size:11.5px;
+    line-height:1.6;
+    padding:6px 0;
+  }
+  .bb-field-group{
+    margin-bottom:12px;
+  }
+  .bb-field-group-label{
+    font-size:10.5px;
+    color:var(--bb-text-dim);
+    margin-bottom:6px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .bb-vec3-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:5px;
+  }
+  .bb-vec3-input-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+    background:var(--bb-bg-input);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    overflow:hidden;
+  }
+  .bb-vec3-axis-label{
+    padding:0 5px;
+    font-size:10px;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .bb-vec3-input-wrap.axis-x .bb-vec3-axis-label{ color:#e6533a; }
+  .bb-vec3-input-wrap.axis-y .bb-vec3-axis-label{ color:#4caf6a; }
+  .bb-vec3-input-wrap.axis-z .bb-vec3-axis-label{ color:#3a8ee6; }
+  .bb-vec3-input-wrap input{
+    width:100%;
+    background:transparent;
+    border:none;
+    color:var(--bb-text-bright);
+    padding:5px 4px 5px 0;
+    font-size:11.5px;
+    font-family:var(--bb-font-mono);
+    min-width:0;
+  }
+  .bb-vec3-input-wrap input:focus{ outline:none; }
+  .bb-vec3-input-wrap:focus-within{ border-color:var(--bb-accent); }
+
+  .bb-name-input-wrap input{
+    width:100%;
+    background:var(--bb-bg-input);
+    border:1px solid var(--bb-border-light);
+    border-radius:var(--bb-radius);
+    color:var(--bb-text-bright);
+    padding:6px 8px;
+    font-size:12px;
+    font-family:var(--bb-font);
+  }
+  .bb-name-input-wrap input:focus{ outline:none; border-color:var(--bb-accent); }
+
+  .bb-inspector-delete-btn{
+    width:100%;
+    margin-top:4px;
+  }
+
+  /* Scroll bar styling */
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-track{ background:var(--bb-bg-dark); }
+  ::-webkit-scrollbar-thumb{ background:#454545; border-radius:5px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#565656; }
+
+  /* ---------------- RESPONSIVE / MOBİL SEKMELER ---------------- */
+  @media (max-width: 900px){
+    #bb-studio{ height:100dvh; }
+    .bb-body{ flex-direction:column; min-height:0; }
+
+    .bb-panel-left, .bb-panel-right{
+      width:100%;
+      flex:0 0 auto;
+      min-width:0;
+      max-height:none;
+      height:34vh;
+      border:none;
+      display:none; /* varsayılan gizli — sadece aktif mobil sekme görünür */
+      overflow-y:auto;
+    }
+    .bb-panel-left.is-mobile-active,
+    .bb-panel-right.is-mobile-active{
+      display:flex;
+    }
+    .bb-panel-left{ flex-direction:column; order:2; }
+    .bb-panel-right{ order:2; }
+
+    .bb-viewport-wrap{ order:1; min-height:0; flex:1; }
+    .bb-topbar{ flex-wrap:wrap; height:auto; padding:8px 10px; gap:8px; }
+    #bb-model-name{ width:clamp(90px, 40vw, 160px); }
+    .bb-viewport-controls-hint{ display:none; }
+    .bb-stats-bar{ max-width:60vw; }
+
+    .bb-mobile-tabbar{ display:flex; }
+    .bb-topbar-logo span{ display:none; }
+  }
+
+  @media (max-width: 480px){
+    .bb-topbar-logo{ margin-right:2px; }
+    .bb-btn span.bb-btn-label{ display:none; }
+  }
+
+  /* Toast bildirimi */
+  #bb-toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--bb-bg-panel-raised);
+    border:1px solid var(--bb-border-light);
+    color:var(--bb-text-bright);
+    padding:10px 18px;
+    border-radius:var(--bb-radius);
+    font-size:12.5px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+    z-index:999;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  #bb-toast.is-visible{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div id="bb-studio">
+
+  <!-- ================= ÜST BAR ================= -->
+  <div class="bb-topbar">
+    <div class="bb-topbar-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#3a8ee6" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M2 17L12 22L22 17" stroke="#3a8ee6" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M2 12L12 17L22 12" stroke="#3a8ee6" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+      3D Studio Editor
+    </div>
+    <div class="bb-model-name-wrap">
+      <label for="bb-model-name">Model:</label>
+      <input type="text" id="bb-model-name" value="Untitled Model" spellcheck="false">
+    </div>
+    <div class="bb-topbar-spacer"></div>
+
+    <div class="bb-stats-bar" id="bb-stats-bar">
+      <div class="bb-stat-chip fps-good" id="bb-stat-fps"><span>FPS</span><b id="bb-stat-fps-val">60</b></div>
+      <div class="bb-stat-chip"><span>Objects</span><b id="bb-stat-obj-val">0</b></div>
+      <div class="bb-stat-chip"><span>Polygons</span><b id="bb-stat-tri-val">0</b></div>
+      <div class="bb-stat-chip"><span>Vertex</span><b id="bb-stat-vert-val">0</b></div>
+    </div>
+
+    <button class="bb-btn" id="bb-btn-back" title="Return to Studio Dashboard">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="bb-btn-label">Back</span>
+    </button>
+    <button class="bb-btn bb-btn-danger" id="bb-btn-clear" title="Delete all cubes from the scene">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V6H19Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="bb-btn-label">Clear</span>
+    </button>
+    <button class="bb-btn bb-btn-success" id="bb-btn-save" title="Save model">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span class="bb-btn-label">Save</span>
+    </button>
+    <div class="bb-export-dropdown">
+      <button class="bb-btn bb-btn-primary" id="bb-btn-export-toggle" title="Export options">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3V15M12 15L7 10M12 15L17 10M5 21H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="bb-btn-label">Export</span>
+      </button>
+      <div class="bb-export-menu" id="bb-export-menu">
+        <button id="bb-export-gltf">Download .GLTF (JSON)</button>
+        <button id="bb-export-glb">Download .GLB (Binary)</button>
+        <button id="bb-export-json">Download .JSON (Raw Data)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ANA GÖVDE ================= -->
+  <div class="bb-body">
+
+    <!-- ---------- SOL PANEL: Araçlar & Renk ---------- -->
+    <div class="bb-panel-left">
+      <div class="bb-panel-section">
+        <div class="bb-panel-section-title">Tools</div>
+        <div class="bb-tool-grid">
+          <button class="bb-tool-btn is-active" data-tool="add" title="Add Cube">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Add Cube
+          </button>
+          <button class="bb-tool-btn" data-tool="delete" title="Delete Cube">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Delete Cube
+          </button>
+          <button class="bb-tool-btn" data-tool="paint" title="Paint / Apply Color">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7 6 4 10.5 4 14A8 8 0 0020 14C20 10.5 17 6 12 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            Paint
+          </button>
+          <button class="bb-tool-btn" data-tool="select" title="Select / Move Cube">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 3L20 10L13 12L11 19L6 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            Select/Move
+          </button>
+        </div>
+        <div class="bb-hint-text" id="bb-tool-hint">Click on an empty grid cell or the face of an existing cube to add a new cube.</div>
+      </div>
+
+      <div class="bb-panel-section" id="bb-section-gizmo">
+        <div class="bb-panel-section-title">Transform Gizmo (W/E/R)</div>
+        <div class="bb-gizmo-mode-row">
+          <div class="bb-gizmo-mode-btn is-active" data-gizmo="translate" title="Move (W)">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2V22M2 12H22M5 9L2 12L5 15M19 9L22 12L19 15M9 5L12 2L15 5M9 19L12 22L15 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Move</span>
+            <kbd>W</kbd>
+          </div>
+          <div class="bb-gizmo-mode-btn" data-gizmo="rotate" title="Rotate (E)">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12a9 9 0 11-3.5-7.1M21 3v6h-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Rotate</span>
+            <kbd>E</kbd>
+          </div>
+          <div class="bb-gizmo-mode-btn" data-gizmo="scale" title="Scale (R)">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 20L10 14M4 20V15M4 20H9M20 4L14 10M20 4H15M20 4V9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Scale</span>
+            <kbd>R</kbd>
+          </div>
+        </div>
+        <div class="bb-hint-text">The gizmo appears in the viewport when a cube is selected with the 'Select/Move' tool. In Move/Rotate mode, drag the <b>colored axis arrows</b> (red=X, green=Y, blue=Z) — only that axis changes. In Scale (R) mode, axis-colored <b>squares on 6 faces</b> (red=X, green=Y, blue=Z) and <b>yellow cube handles on 8 corners</b> appear: dragging a <b>face</b> handle outward enlarges only that face (inward shrinks it); dragging a <b>corner</b> handle uniformly scales all three axes — the opposite face/corner always stays fixed. Handles stay locked to the cube's own orientation even as the camera rotates.</div>
+      </div>
+
+      <div class="bb-panel-section" id="bb-section-snap">
+        <div class="bb-panel-section-title">Grid Snap</div>
+        <div class="bb-snap-row">
+          <span class="bb-snap-toggle-label">Snap Active</span>
+          <label class="bb-switch">
+            <input type="checkbox" id="bb-snap-toggle" checked>
+            <span class="bb-switch-track"></span>
+            <span class="bb-switch-thumb"></span>
+          </label>
+        </div>
+        <div class="bb-snap-step-row" id="bb-snap-step-row">
+          <div class="bb-snap-step-btn is-active" data-step="0.5">0.5</div>
+          <div class="bb-snap-step-btn" data-step="1">1</div>
+        </div>
+      </div>
+
+      <div class="bb-panel-section" id="bb-section-palette">
+        <div class="bb-panel-section-title">Color Palette</div>
+        <div class="bb-color-current">
+          <div class="bb-color-swatch-current" id="bb-color-swatch-current" style="background:#3a8ee6;">
+            <input type="color" id="bb-color-picker-native" value="#3a8ee6">
+          </div>
+          <span id="bb-color-hex-label">#3A8EE6</span>
+        </div>
+        <div class="bb-swatch-grid" id="bb-swatch-grid"></div>
+      </div>
+    </div>
+
+    <!-- ---------- ORTA PANEL: 3D Viewport ---------- -->
+    <div class="bb-viewport-wrap">
+      <div id="bb-canvas-container"></div>
+      <div class="bb-viewport-overlay-top">
+        <div class="bb-viewport-badge" id="bb-cube-count-badge">0 cubes</div>
+        <div class="bb-viewport-controls-hint">
+          <b>Left-drag</b>: Pan<br>
+          <b>Right-drag</b>: Orbit 360°<br>
+          <b>Middle-drag</b>: Zoom<br>
+          <b>Scroll Wheel</b>: Zoom<br>
+          <b>Left-click (tool)</b>: Add / Delete / Paint / Select
+        </div>
+      </div>
+      <div class="bb-axis-indicator">
+        <span class="bb-axis-x">X</span>
+        <span class="bb-axis-y">Y</span>
+        <span class="bb-axis-z">Z</span>
+      </div>
+    </div>
+
+    <!-- ---------- SAĞ PANEL: Outliner & Inspector ---------- -->
+    <div class="bb-panel-right">
+      <div class="bb-outliner">
+        <div class="bb-outliner-header">
+          <span>Model / Cubes</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="bb-outliner-add-group-btn" id="bb-btn-add-group" title="Add new group / folder">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12"><path d="M3 7C3 5.9 3.9 5 5 5H9L11 7H19C20.1 7 21 7.9 21 9V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 11V15M10 13H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Group</span>
+            </button>
+            <span class="bb-outliner-count" id="bb-outliner-count">0</span>
+          </div>
+        </div>
+        <div id="bb-outliner-list">
+          <div class="bb-outliner-empty">No cubes yet.<br>Click in the viewport to get started.</div>
+        </div>
+      </div>
+
+      <div class="bb-inspector">
+        <div class="bb-inspector-title">Properties</div>
+        <div id="bb-inspector-content">
+          <div class="bb-inspector-empty">Select a cube to view and edit its position and size.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= MOBİL SEKMELER (Responsive Tabs) ================= -->
+  <div class="bb-mobile-tabbar">
+    <div class="bb-mobile-tabbar-inner">
+      <button class="bb-mobile-tab-btn" data-mobile-tab="viewport">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>
+        Scene
+      </button>
+      <button class="bb-mobile-tab-btn" data-mobile-tab="left">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        Tools
+      </button>
+      <button class="bb-mobile-tab-btn" data-mobile-tab="right">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 10H20" stroke="currentColor" stroke-width="1.6"/></svg>
+        Properties
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="bb-toast"></div>
+
+<!-- Outliner sağ-tık bağlam menüsü (Create Group / Rename / Delete vs.) -->
+<div class="bb-context-menu" id="bb-outliner-context-menu"></div>
+
+<!-- Three.js (r128 — OrbitControls uyumlu sürüm) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- TransformControls: W/E/R gizmo okları (Taşı/Döndür/Ölçekle) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+<!-- GLTFExporter: .gltf / .glb dışa aktarma -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+<script>
+/* ============================================================
+   3D STUDIO EDİTÖR — Blockbench tarzı voksel/küp editörü
+   Three.js r128 kullanılarak oluşturulmuştur.
+   ============================================================ */
+(function(){
+  "use strict";
+
+  // ------------------------------------------------------------
+  // A) SABİTLER & DURUM (STATE)
+  // ------------------------------------------------------------
+  const GRID_SIZE = 1;              // Bir voksel/küp birim uzunluğu
+  const GRID_EXTENT = 12;           // Izgaranın yarım genişliği (birim)
+  const GROUND_Y = 0;               // Zemin düzleminin Y konumu
+
+  const state = {
+    tool: "add",                    // "add" | "delete" | "paint" | "select"
+    currentColor: "#3a8ee6",
+    // cubes[i]: { id, mesh, name, color, position:{x,y,z}, scale:{x,y,z}, parentId }
+    // parentId: null (kökte) veya bir grubun id'si (o grubun içinde).
+    cubes: [],
+    // groups[i]: { id, name, parentId, collapsed }
+    // parentId: null (kökte) veya başka bir grubun id'si (iç içe gruplama).
+    groups: [],
+    selectedId: null,               // seçili küpün id'si (grup seçimi ayrı: selectedGroupId)
+    selectedGroupId: null,          // seçili grubun id'si (küp ile aynı anda ikisi birden seçili olmaz)
+    nextCubeIndex: 1,
+    nextGroupIndex: 1
+  };
+
+  const PRESET_COLORS = [
+    "#e6533a", "#e6a13a", "#e6d63a", "#a1e63a",
+    "#3ae65a", "#3ae6c2", "#3ab8e6", "#3a8ee6",
+    "#3a5ee6", "#6e3ae6", "#c23ae6", "#e63aa8",
+    "#ffffff", "#c6c6c6", "#8a8a8a", "#4a4a4a",
+    "#232323", "#8b5a2b", "#5a3a1e", "#2e7d32"
+  ];
+
+  // ------------------------------------------------------------
+  // B) THREE.JS SAHNE KURULUMU
+  // ------------------------------------------------------------
+  const container = document.getElementById("bb-canvas-container");
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a1a1a);
+  scene.fog = new THREE.Fog(0x1a1a1a, 30, 70);
+
+  const camera = new THREE.PerspectiveCamera(
+    50,
+    container.clientWidth / container.clientHeight,
+    0.1,
+    1000
+  );
+  camera.position.set(9, 8, 9);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+
+  // -- Işıklandırma --
+  const hemiLight = new THREE.HemisphereLight(0xbfd9ff, 0x2a2a2a, 0.9);
+  scene.add(hemiLight);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
+  dirLight.position.set(8, 14, 6);
+  scene.add(dirLight);
+  const dirLight2 = new THREE.DirectionalLight(0x88aaff, 0.25);
+  dirLight2.position.set(-8, 6, -6);
+  scene.add(dirLight2);
+
+  // -- Izgara (Grid) --
+  const gridHelper = new THREE.GridHelper(GRID_EXTENT * 2, GRID_EXTENT * 2, 0x555555, 0x3a3a3a);
+  gridHelper.position.y = GROUND_Y;
+  scene.add(gridHelper);
+
+  // Zemin düzlemi — raycaster'ın boş alana tıklamaları yakalaması için
+  // görünmez ama raycast edilebilir bir taban.
+  const groundGeo = new THREE.PlaneGeometry(GRID_EXTENT * 2, GRID_EXTENT * 2);
+  const groundMat = new THREE.MeshBasicMaterial({ visible: false });
+  const groundPlane = new THREE.Mesh(groundGeo, groundMat);
+  groundPlane.rotation.x = -Math.PI / 2;
+  groundPlane.position.y = GROUND_Y;
+  groundPlane.name = "__ground__";
+  scene.add(groundPlane);
+
+  // Eksen çizgileri (küçük, orijin göstergesi)
+  const axesHelper = new THREE.AxesHelper(0.6);
+  axesHelper.position.set(-GRID_EXTENT + 0.02, 0.02, -GRID_EXTENT + 0.02);
+  scene.add(axesHelper);
+
+  // -- Seçim vurgusu (kenar çizgileri) --
+  // NOT: Önceden BoxGeometry + wireframe:true kullanılıyordu; ancak
+  // wireframe modu BoxGeometry'nin her yüzünü oluşturan 2 üçgenin TÜM
+  // kenarlarını çizer — bu da her yüzde köşegen (çapraz/X şeklinde)
+  // çizgiler olarak görünüyordu. EdgesGeometry ise sadece geometrinin
+  // GERÇEK kenarlarını (küpün 12 kenarı) hesaplayıp çizer, köşegen
+  // olmadan — normal küplerdeki siyah kenar çizgileriyle aynı teknik.
+  const selectionOutlineGeo = new THREE.EdgesGeometry(
+    new THREE.BoxGeometry(GRID_SIZE * 1.04, GRID_SIZE * 1.04, GRID_SIZE * 1.04)
+  );
+  const selectionOutlineMat = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.9,
+    depthTest: false
+  });
+  const selectionOutline = new THREE.LineSegments(selectionOutlineGeo, selectionOutlineMat);
+  selectionOutline.visible = false;
+  selectionOutline.renderOrder = 999;
+  scene.add(selectionOutline);
+
+  // ------------------------------------------------------------
+  // C0) GRUP-BAĞLANTILI SEÇİM ÇERÇEVELERİ
+  // ------------------------------------------------------------
+  // Bir küp bir GRUBUN içindeyse, o küp seçildiğinde aynı gruptaki DİĞER
+  // küpler de (soluk/yarı saydam çerçevelerle) görsel olarak "seçili"
+  // gösterilir — kullanıcı, taşıma/döndürme/ölçekleme yaptığında hangi
+  // küplerin birlikte hareket edeceğini görebilsin diye.
+  const groupMemberOutlineMat = new THREE.LineBasicMaterial({
+    color: 0xffd23a,
+    transparent: true,
+    opacity: 0.5,
+    depthTest: false
+  });
+  let groupSelectionOutlines = []; // [{ outline, cube }]
+
+  function clearGroupSelectionOutlines(){
+    groupSelectionOutlines.forEach(o => scene.remove(o.outline));
+    groupSelectionOutlines = [];
+  }
+
+  /** Seçili küple aynı GRUPTAKİ diğer küpleri döndürür (grupta değilse boş dizi). */
+  function getGroupSiblingCubes(cube){
+    if (!cube || !cube.parentId) return [];
+    return state.cubes.filter(c => c.id !== cube.id && c.parentId === cube.parentId);
+  }
+
+  function refreshGroupSelectionOutlines(){
+    clearGroupSelectionOutlines();
+    const cube = state.cubes.find(c => c.id === state.selectedId);
+    if (!cube || !cube.parentId) return;
+    getGroupSiblingCubes(cube).forEach(sib => {
+      const outline = new THREE.LineSegments(selectionOutlineGeo, groupMemberOutlineMat);
+      outline.renderOrder = 998;
+      scene.add(outline);
+      groupSelectionOutlines.push({ outline, cube: sib });
+    });
+    syncGroupSelectionOutlines();
+  }
+
+  function syncGroupSelectionOutlines(){
+    groupSelectionOutlines.forEach(({ outline, cube }) => {
+      outline.position.copy(cube.mesh.position);
+      outline.rotation.copy(cube.mesh.rotation);
+      outline.scale.set(cube.scale.x, cube.scale.y, cube.scale.z);
+    });
+  }
+
+  // -- Hover ön-izleme küpü (yeni küp eklerken nereye ekleneceğini gösterir) --
+  const previewGeo = new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, GRID_SIZE);
+  const previewMat = new THREE.MeshBasicMaterial({
+    color: 0x3a8ee6,
+    transparent: true,
+    opacity: 0.28,
+    depthWrite: false
+  });
+  const previewCube = new THREE.Mesh(previewGeo, previewMat);
+  previewCube.visible = false;
+  scene.add(previewCube);
+  const previewEdges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(previewGeo),
+    new THREE.LineBasicMaterial({ color: 0x3a8ee6, transparent: true, opacity: 0.7 })
+  );
+  previewCube.add(previewEdges);
+
+  // ------------------------------------------------------------
+  // C0) TRANSFORM CONTROLS — XYZ Yön Okları Gizmo (W/E/R)
+  // ------------------------------------------------------------
+  // TransformControls kendi PerspectiveCamera + DOM elemanına ihtiyaç duyar.
+  // Aşağıdaki orbit kontrolcüsüyle aynı domEl üzerinde çalışır; gizmo
+  // sürüklemesi başladığında orbit döndürme/pan'ı devre dışı bırakılır
+  // (bkz. transformControls "dragging-changed" event'i, aşağıda).
+  const transformControls = new THREE.TransformControls(camera, renderer.domElement);
+  transformControls.setMode("translate");
+  // Gizmo boyutu büyütüldü: küçük boyutta eksen okları/tutamaçları birbirine
+  // çok yaklaşıyor ve kullanıcı istemeden merkezdeki "uniform scale"
+  // tutamacına (üçü de birden değişen) tıklayabiliyordu. 1.15 ile eksenler
+  // arası mesafe artırılıp yanlış tutamaç seçimi azaltıldı.
+  transformControls.setSize(1.15);
+  // Yön/eksen kilidi: translate ve rotate WORLD uzayında çalışır — böylece
+  // kamera döndürüldüğünde veya nesne kendi ekseninde döndürüldüğünde
+  // oklar sahnenin sabit X/Y/Z eksenlerini gösterir, kamera açısına göre
+  // ters dönmez ("Space Fix"). Not: TransformControls'te "scale" modu
+  // three.js tarafından dahili olarak HER ZAMAN LOCAL uzayda çalıştırılır
+  // (bu, kütüphanenin kendi tasarımıdır ve doğru davranıştır — aksi halde
+  // döndürülmüş bir küpü ölçeklemek anlamsız/tutarsız sonuç verirdi).
+  transformControls.setSpace("world");
+  scene.add(transformControls);
+
+  // ÖNEMLİ (PART 1 güncellemesi): Standart TransformControls "scale" VE
+  // "translate" modları ARTIK KULLANILMIYOR. Onların yerine tamamen özel
+  // (custom), kamera açısından bağımsız gizmo'lar kullanılıyor:
+  //   - "scale"     -> küpün 6 yüzü + 8 köşesindeki özel tutamaçlar
+  //                    (bkz. "C1) ÖZEL ÇOKLU NOKTA SCALE GIZMO")
+  //   - "translate" -> 3 sabit eksen oku, özel çizim (bkz. "C2) ÖZEL
+  //                    TAŞIMA GIZMO") — three.js'in dahili translate
+  //                    gizmo'su kamera açısına göre ok yönünü ("hangi uç
+  //                    kameraya dönük") dinamik olarak değiştirdiği için
+  //                    tamamen devre dışı bırakıldı.
+  // TransformControls nesnesi SADECE "rotate" modu için kullanılmaya
+  // devam ediyor (döner halkalar zaten kameraya göre yön değiştirmiyor).
+  // Bu yüzden dahili "scale" ve "translate" gizmo/picker görselleri
+  // TAMAMEN gizlenip tıklanamaz hale getiriliyor.
+  (function hideBuiltinScaleAndTranslateGizmoEntirely(){
+    try {
+      const gizmoObj = transformControls._gizmo;
+      if (!gizmoObj) return;
+      ["gizmo", "picker"].forEach(kind => {
+        ["scale", "translate"].forEach(mode => {
+          const group = gizmoObj[kind] && gizmoObj[kind][mode];
+          if (!group) return;
+          group.children.forEach(child => {
+            child.visible = false;
+            child.raycast = function(){};
+          });
+        });
+      });
+    } catch (_) {
+      // İç yapıya erişilemezse sessizce geç.
+    }
+  })();
+
+  // Varsayılan mod artık "rotate" GİBİ DAVRANMAZ — kullanıcı seçimini
+  // etkilememesi için varsayılan mod yine "translate" kalıyor, sadece bu
+  // moddaki GÖRSEL artık transformControls yerine translateGizmo'dan gelir
+  // (bkz. attachGizmoTo, aşağıda tanımlanan translateGizmo modülünden sonra).
+
+  let gizmoIsDragging = false;
+  let rotateGroupDragState = null; // rotate sürüklemesi başında yakalanan grup pivot durumu
+
+  // NOT: transformControls artık SADECE "rotate" modunda kullanılıyor
+  // (translate ve scale tamamen özel gizmo'lara taşındı — bkz. C1/C2).
+  // Bu yüzden aşağıdaki event handler'lar sadeleştirildi; eski "tek
+  // taraflı ölçekleme telafisi" mantığı artık scale gizmo'nun kendi
+  // sürükleme fonksiyonunda (updateScaleHandleDrag) uygulanıyor.
+  transformControls.addEventListener("dragging-changed", (e) => {
+    gizmoIsDragging = e.value;
+    // Gizmo sürüklenirken orbit kamera kontrolünü tamamen kilitle.
+    orbitLocked = e.value;
+
+    if (e.value) {
+      // Sürükleme BAŞLADI: seçili küp bir GRUP içindeyse, gruptaki diğer
+      // küplerin başlangıç konum/rotasyonlarını kaydet — böylece objectChange
+      // sırasında hepsi ORTAK PİVOT (seçili küpün merkezi) etrafında birlikte
+      // dönebilir (rijit grup rotasyonu).
+      const cube = state.cubes.find(c => c.id === state.selectedId);
+      if (cube && cube.parentId && transformControls.mode === "rotate") {
+        const pivotObj = transformControls.object;
+        const siblings = getGroupSiblingCubes(cube);
+        rotateGroupDragState = siblings.length ? {
+          pivotStartPos: pivotObj.position.clone(),
+          pivotStartQuat: pivotObj.quaternion.clone(),
+          siblings: siblings.map(sib => ({
+            cube: sib,
+            startPos: new THREE.Vector3(sib.position.x, sib.position.y, sib.position.z),
+            startQuat: new THREE.Quaternion().setFromEuler(new THREE.Euler(
+              (sib.rotation && sib.rotation.x) || 0,
+              (sib.rotation && sib.rotation.y) || 0,
+              (sib.rotation && sib.rotation.z) || 0
+            ))
+          }))
+        } : null;
+      } else {
+        rotateGroupDragState = null;
+      }
+    } else {
+      rotateGroupDragState = null;
+    }
+  });
+
+  // Gizmo (rotate) hareket ettiğinde, ilgili cube state objesini mesh'ten
+  // geri okuyup Inspector panelini canlı güncelle.
+  transformControls.addEventListener("objectChange", () => {
+    const cube = state.cubes.find(c => c.id === state.selectedId);
+    if (!cube) return;
+
+    cube.position.x = transformControls.object.position.x;
+    cube.position.y = transformControls.object.position.y;
+    cube.position.z = transformControls.object.position.z;
+    cube.scale.x = transformControls.object.scale.x;
+    cube.scale.y = transformControls.object.scale.y;
+    cube.scale.z = transformControls.object.scale.z;
+    cube.rotation = cube.rotation || { x: 0, y: 0, z: 0 };
+    cube.rotation.x = transformControls.object.rotation.x;
+    cube.rotation.y = transformControls.object.rotation.y;
+    cube.rotation.z = transformControls.object.rotation.z;
+
+    // Grup içindeki diğer küpler, seçili küpün ORTAK PİVOTU etrafında
+    // birlikte döner (rijit grup rotasyonu) — her biri hem konum hem de
+    // kendi rotasyonu açısından güncellenir.
+    if (rotateGroupDragState && rotateGroupDragState.siblings.length) {
+      const currentQuat = transformControls.object.quaternion.clone();
+      const deltaQuat = currentQuat.clone().multiply(rotateGroupDragState.pivotStartQuat.clone().invert());
+      const pivotStart = rotateGroupDragState.pivotStartPos;
+      rotateGroupDragState.siblings.forEach(s => {
+        const relative = s.startPos.clone().sub(pivotStart);
+        relative.applyQuaternion(deltaQuat);
+        const newPos = pivotStart.clone().add(relative);
+        const newQuat = deltaQuat.clone().multiply(s.startQuat);
+        const newEuler = new THREE.Euler().setFromQuaternion(newQuat);
+
+        s.cube.position.x = newPos.x;
+        s.cube.position.y = newPos.y;
+        s.cube.position.z = newPos.z;
+        s.cube.rotation = s.cube.rotation || { x: 0, y: 0, z: 0 };
+        s.cube.rotation.x = newEuler.x;
+        s.cube.rotation.y = newEuler.y;
+        s.cube.rotation.z = newEuler.z;
+        applyCubeTransform(s.cube);
+      });
+      syncGroupSelectionOutlines();
+    }
+
+    selectionOutline.position.copy(transformControls.object.position);
+    selectionOutline.rotation.copy(transformControls.object.rotation);
+    selectionOutline.scale.copy(transformControls.object.scale);
+
+    refreshInspector(); // ANLIK panel güncellemesi
+  });
+
+  // ------------------------------------------------------------
+  // C1) ÖZEL ÇOKLU NOKTA SCALE GIZMO — 6 Yüz + 8 Köşe Tutamaçları
+  // ------------------------------------------------------------
+  // GEREKSİNİM (PART 1 / madde 2): Scale modunda (R) standart 3-ok yerine
+  // küpün 6 yüzünde ve 8 köşesinde ayrı ayrı konumlandırılmış bağımsız
+  // tutamaçlar gösterilecek.
+  //   - Yüz tutamacı sürüklenince SADECE o yüz dışarı/içeri büyür/küçülür
+  //     (karşı yüz sabit kalır — tek taraflı ölçekleme).
+  //   - Köşe tutamacı sürüklenince o köşe yönünde 3 eksen BİRDEN, orantılı
+  //     şekilde büyür/küçülür (karşı köşe sabit kalır).
+  //   - Tutamaçlar HER ZAMAN objenin kendi (local) eksenlerine hizalı
+  //     kalır; kamera açısına göre yön DEĞİŞTİRMEZ ("Space Fix").
+  const scaleGizmo = new THREE.Group();
+  scaleGizmo.visible = false;
+  scaleGizmo.renderOrder = 1000;
+  scene.add(scaleGizmo);
+
+  // Yüz tutamaçlarının local-uzay yönleri (küpün 6 yüzü).
+  const SCALE_FACE_DIRS = [
+    { axis: "x", sign:  1, name: "PX" },
+    { axis: "x", sign: -1, name: "NX" },
+    { axis: "y", sign:  1, name: "PY" },
+    { axis: "y", sign: -1, name: "NY" },
+    { axis: "z", sign:  1, name: "PZ" },
+    { axis: "z", sign: -1, name: "NZ" }
+  ];
+  // Köşe tutamaçlarının local-uzay yönleri (küpün 8 köşesi) — üç eksenin
+  // işaret kombinasyonu (±1, ±1, ±1).
+  const SCALE_CORNER_DIRS = [];
+  [1, -1].forEach(sx => [1, -1].forEach(sy => [1, -1].forEach(sz => {
+    SCALE_CORNER_DIRS.push({ x: sx, y: sy, z: sz, name: `C${sx>0?'P':'N'}${sy>0?'P':'N'}${sz>0?'P':'N'}` });
+  })));
+
+  // Yüz tutamaçları artık translate okları ile AYNI eksen renklerini
+  // kullanıyor (kırmızı=X, yeşil=Y, mavi=Z) — Roblox Studio'daki gibi
+  // hangi tutamacın hangi ekseni değiştireceği ilk bakışta anlaşılsın diye.
+  // (Eskiden hepsi aynı soluk beyazdı ve küple neredeyse aynı tonda olan
+  // köşe tutamaçlarıyla birlikte ayırt edilemez küçük noktalar gibi
+  // görünüyordu.)
+  const FACE_AXIS_COLOR = { x: 0xe6533a, y: 0x4caf6a, z: 0x3a8ee6 };
+  const FACE_HANDLE_HOVER = 0xffd23a;
+  // Köşe tutamaçları küpün kendi mavisiyle karışmasın diye belirgin sarı.
+  const CORNER_HANDLE_COLOR = 0xffd23a;
+  const CORNER_HANDLE_HOVER = 0xffffff;
+
+  // NOT: Geometriler artık BİRİM boyutta (1x1x1 / 1x1x0.28) oluşturuluyor;
+  // gerçek görsel boyut her karede mesh.scale üzerinden, kameraya olan
+  // mesafeye göre EKRANDA SABİT büyüklükte kalacak şekilde ayarlanıyor
+  // (bkz. updateScaleHandleScreenSize). Böylece küp uzaktan küçük
+  // görünse de tutamaçlar küple iç içe geçip bulanık bir kütle gibi
+  // görünmüyor — her zaman net, ayrı ayrı seçilebilir noktalar olarak kalıyor.
+  const faceHandleGeo = new THREE.BoxGeometry(1, 1, 0.28);
+  const cornerHandleGeo = new THREE.BoxGeometry(1, 1, 1);
+  // İnce beyaz/siyah kontur çizgisi — tutamaçların küpün kendi rengiyle
+  // görsel olarak karışmaması, net bir şekil olarak ayırt edilmesi için.
+  const faceHandleOutlineGeo = new THREE.EdgesGeometry(faceHandleGeo);
+  const cornerHandleOutlineGeo = new THREE.EdgesGeometry(cornerHandleGeo);
+
+  const scaleHandles = []; // { mesh, kind:"face"|"corner", dir, baseColor }
+  // Roblox'a daha yakın, daha rahat tıklanabilir boyut için büyütüldü.
+  const HANDLE_BASE_SIZE = { face: 0.46, corner: 0.26 }; // birim geometri -> gerçek dünya taban boyutu çarpanı
+  // Tutamaçların yüzeyden/köşeden ne kadar DIŞARI taşacağı (dünya birimi
+  // cinsinden) — böylece tutamaçlar küpün yüzeyine gömülü/içinde değil,
+  // tam olarak yüzeyin biraz dışında, havada asılı gibi görünür.
+  // Yüz tutamaçları için ok gövdesi (sap) uzunluğu — kamera mesafesine göre
+  // ölçeklenen bir taban değer (bkz. updateScaleHandlePositions).
+  const FACE_STICK_LENGTH_BASE = 0.9;
+  // Köşe tutamaçları küpün köşesine yakın, küçük bir boşlukla durur (sapsız).
+  const CORNER_SURFACE_GAP = 0.08;
+
+  SCALE_FACE_DIRS.forEach(dir => {
+    const axisColor = FACE_AXIS_COLOR[dir.axis];
+    // depthTest AÇIK: böylece küpün arkasında kalan (kameradan görünmeyen)
+    // tutamaçlar küp tarafından doğru şekilde gizlenir — önceden depthTest
+    // kapalıydı ve tüm tutamaçlar küpün İÇİNDEYMİŞ gibi her zaman üstte
+    // çiziliyordu (kullanıcının bildirdiği "içinde görünüyor" sorunu).
+    const mat = new THREE.MeshBasicMaterial({ color: axisColor, depthTest: true, depthWrite: false, transparent: true, opacity: 0.95 });
+    const mesh = new THREE.Mesh(faceHandleGeo, mat);
+    mesh.renderOrder = 1001;
+    // Kullanıcı isteği: kırmızı/yeşil/mavi yüz tutamaçlarının etrafındaki
+    // siyah kontur çizgisi kaldırıldı (sadece köşe tutamaçlarında kalıyor).
+    // Yüz tutamacının düzlemi, yüzeyin normaline dik olacak şekilde döndür.
+    if (dir.axis === "x") mesh.rotation.y = Math.PI / 2;
+    else if (dir.axis === "y") mesh.rotation.x = Math.PI / 2;
+
+    // Ok gövdesi: küpün yüzeyinden tutamacın ucuna kadar uzanan ince çizgi
+    // (translate okları gibi) — tutamaç artık yüzeye yapışık değil, bir
+    // "sap" ile dışarı uzanıyor ve ucunda basık kare duruyor.
+    const stickMat = new THREE.LineBasicMaterial({ color: axisColor, depthTest: true, depthWrite: false, transparent: true, opacity: 0.9 });
+    const stickGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]);
+    const stick = new THREE.Line(stickGeo, stickMat);
+    stick.renderOrder = 1000;
+    scaleGizmo.add(stick);
+
+    scaleHandles.push({ mesh, stick, kind: "face", dir, baseColor: axisColor, hoverColor: FACE_HANDLE_HOVER });
+    scaleGizmo.add(mesh);
+  });
+
+  SCALE_CORNER_DIRS.forEach(dir => {
+    const mat = new THREE.MeshBasicMaterial({ color: CORNER_HANDLE_COLOR, depthTest: true, depthWrite: false, transparent: true, opacity: 0.95 });
+    const mesh = new THREE.Mesh(cornerHandleGeo, mat);
+    mesh.renderOrder = 1001;
+    const outline = new THREE.LineSegments(cornerHandleOutlineGeo, new THREE.LineBasicMaterial({ color: 0x0a1622, depthTest: true, depthWrite: false, transparent: true, opacity: 0.6 }));
+    outline.renderOrder = 1002;
+    mesh.add(outline);
+    scaleHandles.push({ mesh, kind: "corner", dir, baseColor: CORNER_HANDLE_COLOR, hoverColor: CORNER_HANDLE_HOVER });
+    scaleGizmo.add(mesh);
+  });
+
+  let scaleGizmoTarget = null; // attach edilen mesh (obje)
+  let scaleGizmoHovered = null;
+  let scaleGizmoDragging = null; // sürükleme state'i
+
+  /**
+   * Her tutamacın GÖRSEL boyutunu (mesh.scale) ve konumunu tek seferde
+   * hesaplar. Boyut, kamera-obje mesafesine göre EKRANDA sabit kalacak
+   * şekilde ayarlanır (uzaklaşınca büyür, yaklaşınca küçülür) — tıpkı
+   * translate gizmo okları gibi.
+   */
+  function updateScaleHandleScreenSize(){
+    if (!scaleGizmoTarget) return;
+    const dist = camera.position.distanceTo(scaleGizmo.position);
+    // Translate/rotate modunda Shift basılı tutulduğunda transformControls.setSize(2.2)
+    // ile gizmo büyüyor (1.15 -> 2.2, yaklaşık x1.9); özel scale gizmo'su
+    // transformControls'ü kullanmadığı için aynı davranış burada manuel uygulanıyor.
+    const precisionMul = (typeof shiftPrecisionActive !== "undefined" && shiftPrecisionActive) ? 1.9 : 1;
+    const s = Math.max(0.18, dist * 0.06) * precisionMul;
+    scaleHandles.forEach(h => {
+      const base = HANDLE_BASE_SIZE[h.kind];
+      if (h.kind === "face") {
+        h.mesh.scale.set(base * s, base * s, base * s * 0.9);
+      } else {
+        h.mesh.scale.set(base * s, base * s, base * s);
+      }
+    });
+    return s;
+  }
+
+  /**
+   * Tutamaçları, hedef objenin GÜNCEL local scale'ine göre küpün yüzeyi/
+   * köşesi üzerine yeniden konumlandırır. Küpün yerel (unit) yarı-kenarı
+   * 0.5'tir (GRID_SIZE=1); tutamaç objenin local scale'i kadar dışa taşınır
+   * (obje döndüğünde/scale'lendiğinde tutamaçlar hep yüzeyde/köşede kalır).
+   * Yüz tutamaçları artık yüzeye yapışık değil — küpün yüzeyinden bir OK
+   * GÖVDESİ ile dışarı uzanıp ucunda basık kare duruyor (translate okuna
+   * benzer şekilde, sadece koni yerine düz kare ile).
+   */
+  function updateScaleHandlePositions(){
+    if (!scaleGizmoTarget) return;
+    const screenScale = updateScaleHandleScreenSize();
+    const s = scaleGizmoTarget.scale;
+    const half = 0.5; // birim küpün yarı kenar uzunluğu (local uzayda)
+    // Ok gövdesinin uzunluğu da kameraya göre ekranda sabit kalsın diye
+    // aynı screenScale faktörüyle ölçekleniyor (yakından bakınca kısa,
+    // uzaktan bakınca uzun görünmesin diye).
+    const stickLength = FACE_STICK_LENGTH_BASE * screenScale;
+    scaleHandles.forEach(h => {
+      if (h.kind === "face") {
+        const axis = h.dir.axis;
+        const sign = h.dir.sign;
+        const surfaceVal = sign * half * s[axis];
+        const tipVal = sign * (half * s[axis] + stickLength);
+        const p = new THREE.Vector3(0, 0, 0);
+        p[axis] = tipVal;
+        h.mesh.position.copy(p);
+        if (h.stick) {
+          const p0 = new THREE.Vector3(0, 0, 0); p0[axis] = surfaceVal;
+          const p1 = new THREE.Vector3(0, 0, 0); p1[axis] = tipVal;
+          const posAttr = h.stick.geometry.attributes.position;
+          posAttr.setXYZ(0, p0.x, p0.y, p0.z);
+          posAttr.setXYZ(1, p1.x, p1.y, p1.z);
+          posAttr.needsUpdate = true;
+        }
+      } else {
+        h.mesh.position.set(
+          h.dir.x * (half * s.x + CORNER_SURFACE_GAP),
+          h.dir.y * (half * s.y + CORNER_SURFACE_GAP),
+          h.dir.z * (half * s.z + CORNER_SURFACE_GAP)
+        );
+      }
+    });
+  }
+
+  /**
+   * scaleGizmo grubunu hedef objenin dünya konum + rotasyonuna hizalar
+   * (ölçek HARİÇ — grup kendi scale'i 1 kalır, tutamaç konumları yukarıdaki
+   * fonksiyonla local-scale'e göre zaten hesaplanıyor). Bu sayede tutamaçlar
+   * objenin döndürülmüş yüzeylerine/köşelerine tam oturur ama KAMERA AÇISINA
+   * GÖRE ASLA YÖN DEĞİŞTİRMEZ — sadece objenin kendi rotasyonunu takip eder.
+   */
+  function syncScaleGizmoTransform(){
+    if (!scaleGizmoTarget) return;
+    scaleGizmo.position.copy(scaleGizmoTarget.position);
+    scaleGizmo.quaternion.copy(scaleGizmoTarget.quaternion);
+    updateScaleHandlePositions();
+  }
+
+  function attachScaleGizmo(mesh){
+    scaleGizmoTarget = mesh;
+    scaleGizmo.visible = true;
+    syncScaleGizmoTransform();
+  }
+  function detachScaleGizmo(){
+    scaleGizmoTarget = null;
+    scaleGizmo.visible = false;
+    if (scaleGizmoHovered) { scaleGizmoHovered.mesh.material.color.setHex(scaleGizmoHovered.baseColor); scaleGizmoHovered = null; }
+    if (typeof domEl !== "undefined" && domEl) domEl.style.cursor = "";
+  }
+
+  // ------------------------------------------------------------
+  // C2) ÖZEL TAŞIMA (TRANSLATE) GIZMO — 3 Sabit Eksen Oku
+  // ------------------------------------------------------------
+  // SORUN: three.js r128'in dahili TransformControls'ü, translate modunda
+  // her eksen okunu "kameraya dönük" görünmesi için dahili olarak DİNAMİK
+  // biçimde ters çevirebiliyor (kamera bir eksenin arkasına geçtiğinde ok
+  // görsel olarak ters yöne "zıplıyor" — kullanıcının bildirdiği "Z ekseni
+  // Z+ yerine Z-'ye döndü" görüntüsü tam olarak bu). setSpace("world")
+  // sadece eksenlerin YÖNÜNÜ world'e sabitliyor, ama okun hangi UCUNUN
+  // (pozitif mi negatif mi) kameraya dönük çizileceğine karışmıyor — bu
+  // three.js'in kendi iç gizmo çizim mantığının bir parçası ve dışarıdan
+  // kapatılamıyor. ÇÖZÜM: TransformControls'ü translate için TAMAMEN
+  // devre dışı bırakıp, kendi okumuzu çiziyoruz — konumu/yönü SADECE
+  // objenin dünya pozisyonu ve quaternion'ından hesaplanıyor, kameranın
+  // neresi olduğu okun yönünü/tarafını HİÇ etkilemiyor.
+  const translateGizmo = new THREE.Group();
+  translateGizmo.visible = false;
+  translateGizmo.renderOrder = 1000;
+  scene.add(translateGizmo);
+
+  const TRANSLATE_AXES = [
+    { axis: "x", color: 0xe6533a, hover: 0xffd23a, dir: new THREE.Vector3(1, 0, 0) },
+    { axis: "y", color: 0x4caf6a, hover: 0xffd23a, dir: new THREE.Vector3(0, 1, 0) },
+    { axis: "z", color: 0x3a8ee6, hover: 0xffd23a, dir: new THREE.Vector3(0, 0, 1) }
+  ];
+
+  const translateHandles = []; // { group, line, cone, axis, dir, baseColor, hoverColor }
+
+  TRANSLATE_AXES.forEach(a => {
+    const group = new THREE.Group();
+
+    // Ok gövdesi (ince çizgi) — screen-space sabit uzunlukta tutulacak,
+    // her karede kamera mesafesine göre yeniden ölçeklenir (bkz.
+    // updateTranslateGizmoScale).
+    const lineMat = new THREE.LineBasicMaterial({ color: a.color, depthTest: false, transparent: true, opacity: 0.95, linewidth: 2 });
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1)]);
+    const line = new THREE.Line(lineGeo, lineMat);
+    line.renderOrder = 1001;
+
+    // Ok ucu (koni) — çizginin ucunda, HER ZAMAN o eksenin POZİTİF yönünü
+    // gösterir; kamera nerede olursa olsun konum/yön DEĞİŞMEZ.
+    const coneMat = new THREE.MeshBasicMaterial({ color: a.color, depthTest: false, transparent: true, opacity: 0.98 });
+    const coneGeo = new THREE.ConeGeometry(0.055, 0.22, 12);
+    const cone = new THREE.Mesh(coneGeo, coneMat);
+    cone.renderOrder = 1002;
+    cone.rotation.x = Math.PI / 2; // ConeGeometry varsayılan olarak +Y yönünde; +Z'ye çevir
+
+    // Sürüklemeyi kolaylaştırmak için görünmez, biraz daha kalın bir
+    // "picker" silindiri de ekleniyor (ince çizgiye tam isabet etmek zor).
+    const pickerMat = new THREE.MeshBasicMaterial({ visible: false });
+    const pickerGeo = new THREE.CylinderGeometry(0.09, 0.09, 1, 6);
+    const picker = new THREE.Mesh(pickerGeo, pickerMat);
+    picker.rotation.x = Math.PI / 2;
+    picker.position.z = 0.5;
+
+    group.add(line, cone, picker);
+
+    // Grubu, eksenin +Z ekseninden gerçek yönüne (X/Y/Z) döndür.
+    const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), a.dir);
+    group.quaternion.copy(quat);
+
+    translateGizmo.add(group);
+    translateHandles.push({ group, line, cone, picker, axis: a.axis, dir: a.dir.clone(), baseColor: a.color, hoverColor: a.hover });
+  });
+
+  let translateGizmoTarget = null;
+  let translateGizmoHovered = null;
+  let translateGizmoDragging = null;
+
+  function setTranslateHandleColor(h, hex){
+    h.line.material.color.setHex(hex);
+    h.cone.material.color.setHex(hex);
+  }
+
+  /**
+   * Ok uzunluğunu, kamera-obje mesafesine göre EKRANDA sabit boyutta
+   * kalacak şekilde ölçekler (yakınlaşınca küçülür, uzaklaşınca büyür —
+   * tıpkı çoğu 3D editördeki gizmo davranışı gibi). Bu sayede küçük bir
+   * küpte de büyük bir küpte de tutamaç okunabilir kalır.
+   */
+  function updateTranslateGizmoScale(){
+    if (!translateGizmoTarget) return;
+    const dist = camera.position.distanceTo(translateGizmo.position);
+    const s = Math.max(0.35, dist * 0.16);
+    translateHandles.forEach(h => {
+      h.line.scale.set(1, 1, s);
+      h.cone.position.z = s;
+      h.picker.scale.set(1, 1, s);
+      h.picker.position.z = s / 2;
+    });
+  }
+
+  function syncTranslateGizmoTransform(){
+    if (!translateGizmoTarget) return;
+    translateGizmo.position.copy(translateGizmoTarget.position);
+    translateGizmo.quaternion.copy(translateGizmoTarget.quaternion);
+    updateTranslateGizmoScale();
+  }
+
+  function attachTranslateGizmo(mesh){
+    translateGizmoTarget = mesh;
+    translateGizmo.visible = true;
+    syncTranslateGizmoTransform();
+  }
+  function detachTranslateGizmo(){
+    translateGizmoTarget = null;
+    translateGizmo.visible = false;
+    if (translateGizmoHovered) { setTranslateHandleColor(translateGizmoHovered, translateGizmoHovered.baseColor); translateGizmoHovered = null; }
+    if (typeof domEl !== "undefined" && domEl) domEl.style.cursor = "";
+  }
+
+  function detachGizmo(){
+    transformControls.detach();
+    detachScaleGizmo();
+    detachTranslateGizmo();
+  }
+  function attachGizmoTo(mesh){
+    if (transformControls.mode === "scale") {
+      transformControls.detach();
+      detachTranslateGizmo();
+      attachScaleGizmo(mesh);
+    } else if (transformControls.mode === "translate") {
+      transformControls.detach();
+      detachScaleGizmo();
+      attachTranslateGizmo(mesh);
+    } else {
+      // rotate: three.js'in dahili döner halka gizmo'su kullanılmaya
+      // devam ediyor — döner halkalar tasarım gereği zaten kameraya göre
+      // yön değiştirmiyor (X/Y/Z halkaları sabit dünya düzlemlerinde).
+      detachScaleGizmo();
+      detachTranslateGizmo();
+      transformControls.attach(mesh);
+    }
+  }
+
+  // ------------------------------------------------------------
+  // C) ORBIT CONTROLS (basit, bağımlılıksız kamera kontrolcüsü)
+  // ------------------------------------------------------------
+  let orbitLocked = false; // TransformControls sürüklenirken true olur
+  // Not: Ortam r128 THREE ile OrbitControls.js ayrı bir dosya
+  // gerektirir ve CDN'den ekstra script yükü getirir; tek dosyalık
+  // taşınabilirlik için burada hafif, bağımsız bir orbit kontrolcü
+  // implementasyonu kullanılıyor. Davranış: sol tık = döndür,
+  // sağ tık = pan (kaydır), tekerlek = zoom.
+  const orbit = {
+    target: new THREE.Vector3(0, 1, 0),
+    radius: 14,
+    theta: Math.PI / 4,      // yatay açı
+    phi: Math.PI / 3.2,      // dikey açı
+    minPhi: 0.15,
+    maxPhi: Math.PI / 2 - 0.02,
+    minRadius: 3,
+    maxRadius: 40,
+    isRotating: false,
+    isPanning: false,
+    isZooming: false,
+    lastX: 0,
+    lastY: 0
+  };
+
+  function updateCameraFromOrbit(){
+    const sinPhi = Math.sin(orbit.phi);
+    camera.position.x = orbit.target.x + orbit.radius * sinPhi * Math.sin(orbit.theta);
+    camera.position.y = orbit.target.y + orbit.radius * Math.cos(orbit.phi);
+    camera.position.z = orbit.target.z + orbit.radius * sinPhi * Math.cos(orbit.theta);
+    camera.lookAt(orbit.target);
+  }
+  updateCameraFromOrbit();
+
+  const domEl = renderer.domElement;
+  domEl.addEventListener("contextmenu", (e) => e.preventDefault());
+  // Tarayıcının orta-tık autoscroll (yuvarlak scroll ikonu) davranışını
+  // devre dışı bırak — orta tık burada "zoom sürükle" için kullanılıyor.
+  domEl.addEventListener("mousedown", (e) => { if (e.button === 1) e.preventDefault(); });
+  domEl.addEventListener("auxclick", (e) => { if (e.button === 1) e.preventDefault(); });
+
+  // Kontrol şeması:
+  //   Sol tık basılı + sürükle  -> Pan (kamerayı kaydır)
+  //                                (sürükleme yoksa: araç tıklaması / küp seç-ekle)
+  //   Sağ tık basılı + sürükle  -> Orbit döndürme (360° bakış)
+  //   Orta tık basılı + sürükle -> Zoom (dikey sürükleme ile yakınlaştır/uzaklaştır)
+  //   Fare tekerleği             -> Zoom (klasik, ek kolaylık)
+  domEl.addEventListener("pointerdown", (e) => {
+    if (gizmoIsDragging) return; // gizmo okundan tutuluyorsa orbit'e hiç girme
+    if (e.button === 0 && tryStartScaleHandleDrag(e)) return; // özel scale tutamacı yakalandı
+    if (e.button === 0 && tryStartTranslateHandleDrag(e)) return; // özel taşıma oku yakalandı
+    if (e.button === 0) {
+      // Sol tık: sürüklenirse pan, sürüklenmezse (küçük hareket) araç tıklaması.
+      orbit.isPanning = true;
+      orbit.lastX = e.clientX;
+      orbit.lastY = e.clientY;
+      orbit.dragDistance = 0;
+      orbit.downX = e.clientX;
+      orbit.downY = e.clientY;
+    } else if (e.button === 2) {
+      orbit.isRotating = true;
+      orbit.lastX = e.clientX;
+      orbit.lastY = e.clientY;
+    } else if (e.button === 1) {
+      e.preventDefault();
+      orbit.isZooming = true;
+      orbit.lastX = e.clientX;
+      orbit.lastY = e.clientY;
+    }
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (scaleGizmoDragging) { updateScaleHandleDrag(e); return; }
+    if (translateGizmoDragging) { updateTranslateHandleDrag(e); return; }
+    if (orbitLocked) return; // gizmo sürüklenirken kamera sabit kalır
+    if (!orbit.isRotating && !orbit.isPanning && !orbit.isZooming) {
+      updateScaleHandleHover(e);
+      updateTranslateHandleHover(e);
+    }
+    if (orbit.isRotating) {
+      const dx = e.clientX - orbit.lastX;
+      const dy = e.clientY - orbit.lastY;
+      orbit.theta -= dx * 0.008;
+      orbit.phi -= dy * 0.008;
+      orbit.phi = Math.max(orbit.minPhi, Math.min(orbit.maxPhi, orbit.phi));
+      orbit.lastX = e.clientX;
+      orbit.lastY = e.clientY;
+      updateCameraFromOrbit();
+    } else if (orbit.isPanning) {
+      const dx = e.clientX - orbit.lastX;
+      const dy = e.clientY - orbit.lastY;
+      orbit.dragDistance += Math.abs(dx) + Math.abs(dy);
+      const panSpeed = orbit.radius * 0.0016;
+      const right = new THREE.Vector3();
+      camera.getWorldDirection(right);
+      right.cross(camera.up).normalize();
+      const up = camera.up.clone();
+      orbit.target.addScaledVector(right, -dx * panSpeed);
+      orbit.target.addScaledVector(up, dy * panSpeed);
+      orbit.lastX = e.clientX;
+      orbit.lastY = e.clientY;
+      updateCameraFromOrbit();
+    } else if (orbit.isZooming) {
+      const dy = e.clientY - orbit.lastY;
+      orbit.radius += dy * 0.02 * (orbit.radius * 0.05 + 0.4);
+      orbit.radius = Math.max(orbit.minRadius, Math.min(orbit.maxRadius, orbit.radius));
+      orbit.lastX = e.clientX;
+      orbit.lastY = e.clientY;
+      updateCameraFromOrbit();
+    } else {
+      handlePointerHover(e);
+    }
+  });
+
+  window.addEventListener("pointerup", (e) => {
+    if (scaleGizmoDragging) { endScaleHandleDrag(); return; }
+    if (translateGizmoDragging) { endTranslateHandleDrag(); return; }
+    if (gizmoIsDragging) { orbit.isRotating = false; orbit.isPanning = false; orbit.isZooming = false; return; }
+    if (e.button === 0 && orbit.isPanning) {
+      // Eğer sürükleme mesafesi küçükse, bu bir "tıklama" sayılır (küp seç/ekle).
+      if (orbit.dragDistance < 5) {
+        handleToolClick(e);
+      }
+    }
+    orbit.isRotating = false;
+    orbit.isPanning = false;
+    orbit.isZooming = false;
+  });
+
+  domEl.addEventListener("wheel", (e) => {
+    if (gizmoIsDragging) return;
+    e.preventDefault();
+    orbit.radius += e.deltaY * 0.012 * (orbit.radius * 0.05 + 0.4);
+    orbit.radius = Math.max(orbit.minRadius, Math.min(orbit.maxRadius, orbit.radius));
+    updateCameraFromOrbit();
+  }, { passive: false });
+
+  // ------------------------------------------------------------
+  // D) RAYCASTER — tıklanan noktayı ızgaraya hizalama (snap) mantığı
+  // ------------------------------------------------------------
+  const raycaster = new THREE.Raycaster();
+  const pointerNDC = new THREE.Vector2();
+
+  function getIntersectableMeshes(){
+    const meshes = state.cubes.map(c => c.mesh);
+    meshes.push(groundPlane);
+    return meshes;
+  }
+
+  function updatePointerNDC(e){
+    const rect = domEl.getBoundingClientRect();
+    pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+
+  // ------------------------------------------------------------
+  // D0) ÖZEL SCALE GIZMO — Sürükleme Mantığı (6 Yüz + 8 Köşe)
+  // ------------------------------------------------------------
+  // Bir yüz/köşe tutamacı tıklandığında (mousedown), o anki durum
+  // (scale/position/quaternion) ve sürüklemenin hangi tutamaçla, hangi
+  // yönde yapıldığı burada saklanır. Fare hareketi, tutamacın DÜNYA
+  // uzayındaki (objenin kendi rotasyonuna göre hizalı) yönüne projekte
+  // edilerek bir "delta" mesafesine çevrilir — bu delta doğrudan scale'e
+  // eklenir. Karşı yüz/köşe SABİT kalması için, scale değiştikçe objenin
+  // pozisyonu da telafi edilir (tıpkı eski 3-ok gizmo'daki tek-taraflı
+  // ölçekleme mantığı gibi — bkz. objectChange handler'ı yukarıda).
+  function raycastScaleHandles(e){
+    if (!scaleGizmoTarget || !scaleGizmo.visible) return null;
+    updatePointerNDC(e);
+    raycaster.setFromCamera(pointerNDC, camera);
+    const meshes = scaleHandles.map(h => h.mesh);
+    const hits = raycaster.intersectObjects(meshes, false);
+    if (hits.length === 0) return null;
+    const hitMesh = hits[0].object;
+    return scaleHandles.find(h => h.mesh === hitMesh) || null;
+  }
+
+  function updateScaleHandleHover(e){
+    if (!scaleGizmoTarget || !scaleGizmo.visible) return;
+    const handle = raycastScaleHandles(e);
+    if (scaleGizmoHovered && scaleGizmoHovered !== handle) {
+      scaleGizmoHovered.mesh.material.color.setHex(scaleGizmoHovered.baseColor);
+      scaleGizmoHovered = null;
+    }
+    if (handle && scaleGizmoHovered !== handle) {
+      handle.mesh.material.color.setHex(handle.hoverColor);
+      scaleGizmoHovered = handle;
+    }
+    domEl.style.cursor = handle ? "pointer" : "";
+  }
+
+  function tryStartScaleHandleDrag(e){
+    const handle = raycastScaleHandles(e);
+    if (!handle || !scaleGizmoTarget) return false;
+
+    const obj = scaleGizmoTarget;
+
+    // Sürükleme başlangıcındaki dünya-uzay referans noktaları: gizmo'nun
+    // merkezi (objenin dünya konumu) ve tutamacın o anki dünya konumu.
+    // MERKEZ->TUTAMAÇ dünya vektörü objenin rotasyonuna göre hizalıdır —
+    // bu yüzden bu vektörden türetilen ekran yönü KAMERA AÇISINDAN
+    // TAMAMEN BAĞIMSIZDIR (Space Fix gereksinimi): kamera dönse de aynı
+    // tutamaç sürüklemesi her zaman aynı local eksende scale üretir.
+    const centerWorld = obj.position.clone();
+    const handleWorld = handle.mesh.getWorldPosition(new THREE.Vector3());
+    if (handleWorld.distanceToSquared(centerWorld) < 1e-8) return false;
+
+    // Fare hareketini dünya mesafesine çevirmek için, sürüklenen tutamacın
+    // ekran-uzayı projeksiyonunu kullanan bir yardımcı düzlem/ölçek
+    // faktörü hesaplanır (perspektif kameraya göre yaklaşık ekran<->dünya
+    // oranı, sürüklemenin başındaki kamera mesafesine göre sabitlenir).
+    const camDist = camera.position.distanceTo(handleWorld);
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const worldPerPixel = (2 * Math.tan(vFov / 2) * camDist) / domEl.clientHeight;
+
+    // Tutamacın ekrandaki 2D yönünü (merkez->tutamaç vektörünün ekrana
+    // izdüşümü) hesapla — fare hareketi bu 2D yön üzerine projekte edilecek.
+    const originScreen = worldToScreen(centerWorld);
+    const handleScreen = worldToScreen(handleWorld);
+    const screenDir = new THREE.Vector2(handleScreen.x - originScreen.x, handleScreen.y - originScreen.y);
+    if (screenDir.lengthSq() < 1e-6) {
+      // Tutamaç ekranda merkezle çakışıyorsa (kamera tam o eksene bakıyorsa)
+      // dikey fare hareketini yedek olarak kullan.
+      screenDir.set(0, -1);
+    } else {
+      screenDir.normalize();
+    }
+
+    scaleGizmoDragging = {
+      handle,
+      obj,
+      startScale: obj.scale.clone(),
+      startPosition: obj.position.clone(),
+      startQuaternion: obj.quaternion.clone(),
+      screenDir,
+      worldPerPixel,
+      startClientX: e.clientX,
+      startClientY: e.clientY
+    };
+
+    // Küp bir GRUP içindeyse, gruptaki diğer küplerin başlangıç konum/ölçek
+    // değerlerini de kaydet — sürükleme sırasında hepsine aynı delta uygulanacak.
+    const groupCube = state.cubes.find(c => c.id === state.selectedId);
+    scaleGizmoDragging.siblingStarts = (groupCube && groupCube.parentId)
+      ? getGroupSiblingCubes(groupCube).map(sib => ({
+          cube: sib,
+          startPos: { x: sib.position.x, y: sib.position.y, z: sib.position.z },
+          startScale: { x: sib.scale.x, y: sib.scale.y, z: sib.scale.z }
+        }))
+      : [];
+
+    gizmoIsDragging = true; // orbit kamerasını kilitle (mevcut mekanizmayı yeniden kullan)
+    orbitLocked = true;
+    handle.mesh.material.color.setHex(handle.hoverColor);
+    return true;
+  }
+
+  function worldToScreen(vec3){
+    const p = vec3.clone().project(camera);
+    const rect = domEl.getBoundingClientRect();
+    return {
+      x: (p.x * 0.5 + 0.5) * rect.width,
+      y: (-p.y * 0.5 + 0.5) * rect.height
+    };
+  }
+
+  const MIN_SCALE = 0.05; // 0'a veya negatife çökmeyi engelle
+
+  function updateScaleHandleDrag(e){
+    const d = scaleGizmoDragging;
+    if (!d) return;
+
+    const dx = e.clientX - d.startClientX;
+    const dy = e.clientY - d.startClientY;
+    // Fare hareketinin, tutamacın ekran yönü üzerindeki izdüşümü ->
+    // dünya-uzayı mesafe deltası. Tutamaç dışa doğru (merkezden uzağa)
+    // sürüklendiğinde delta POZİTİF, içe doğru sürüklendiğinde NEGATİF
+    // olur — kamera açısından bağımsız, çünkü screenDir zaten tutamacın
+    // o anki gerçek ekran yönünü temsil ediyor (sürükleme başında bir kez
+    // hesaplanıp sabitlendi; bu sırasında obje/kamera taşınmıyor).
+    const proj = dx * d.screenDir.x + dy * d.screenDir.y;
+    const worldDelta = proj * d.worldPerPixel;
+
+    const obj = d.obj;
+
+    if (d.handle.kind === "face") {
+      const axis = d.handle.dir.axis;
+      const sign = d.handle.dir.sign;
+      // scaleDelta: local scale birimindeki değişim miktarı. ÖNEMLİ: worldDelta
+      // zaten "tutamaç dışa çekildiğinde pozitif" mantığıyla hesaplanıyor
+      // (screenDir, merkez->tutamaç yönünden bulunduğu için PX ve NX tutamaçları
+      // için otomatik olarak doğru işareti taşıyor). Burada AYRICA "sign" ile
+      // çarpmak yönü NX/NY/NZ (negatif taraf) tutamaçlarında bir kez daha ters
+      // çevirip büyüme/küçülmeyi tersine döndürüyordu — bu yüzden kaldırıldı.
+      const newScaleVal = Math.max(MIN_SCALE, d.startScale[axis] + worldDelta);
+      obj.scale[axis] = newScaleVal;
+
+      // Karşı yüz sabit kalsın diye, scale değişiminin YARISI kadar objenin
+      // merkezini tutamaç yönünde kaydır (tek taraflı ölçekleme telafisi).
+      const localOffset = new THREE.Vector3();
+      localOffset[axis] = sign * (newScaleVal - d.startScale[axis]) / 2;
+      localOffset.applyQuaternion(d.startQuaternion);
+      obj.position.copy(d.startPosition).add(localOffset);
+
+    } else {
+      // Köşe tutamacı: üç eksen BİRDEN, orantılı şekilde değişir. Köşenin
+      // dünya yönündeki hareketi referans alınıp, üç eksene de aynı
+      // ORANLA (uniform) dağıtılır — karşı köşe sabit kalır.
+      const dir = d.handle.dir; // {x,y,z} = ±1
+      // Köşe teşhis vektörünün local uzunluğu sqrt(3)*half*scale civarı;
+      // basitlik ve öngörülebilirlik için worldDelta'yı doğrudan HER
+      // eksenin scale birimine eşit miktarda uniform delta olarak uygula
+      // (üç eksen aynı anda, aynı miktarda büyür/küçülür => orantılı).
+      const uniformDelta = worldDelta;
+      ["x", "y", "z"].forEach(axis => {
+        const newVal = Math.max(MIN_SCALE, d.startScale[axis] + uniformDelta);
+        obj.scale[axis] = newVal;
+      });
+      const localOffset = new THREE.Vector3(
+        dir.x * (obj.scale.x - d.startScale.x) / 2,
+        dir.y * (obj.scale.y - d.startScale.y) / 2,
+        dir.z * (obj.scale.z - d.startScale.z) / 2
+      );
+      localOffset.applyQuaternion(d.startQuaternion);
+      obj.position.copy(d.startPosition).add(localOffset);
+    }
+
+    // -- Canlı senkronizasyon: cube state, seçim çerçevesi, gizmo tutamaçları, panel --
+    const cube = state.cubes.find(c => c.id === state.selectedId);
+    if (cube) {
+      cube.position.x = obj.position.x;
+      cube.position.y = obj.position.y;
+      cube.position.z = obj.position.z;
+      cube.scale.x = obj.scale.x;
+      cube.scale.y = obj.scale.y;
+      cube.scale.z = obj.scale.z;
+
+      // Grup içindeki diğer küpler de aynı ölçek/konum delta'sını alır
+      // (rijit grup ölçekleme — her küp kendi ölçeğinde aynı miktarda büyür/küçülür).
+      if (d.siblingStarts && d.siblingStarts.length) {
+        const dPos = {
+          x: obj.position.x - d.startPosition.x,
+          y: obj.position.y - d.startPosition.y,
+          z: obj.position.z - d.startPosition.z
+        };
+        const dScale = {
+          x: obj.scale.x - d.startScale.x,
+          y: obj.scale.y - d.startScale.y,
+          z: obj.scale.z - d.startScale.z
+        };
+        d.siblingStarts.forEach(s => {
+          s.cube.position.x = s.startPos.x + dPos.x;
+          s.cube.position.y = s.startPos.y + dPos.y;
+          s.cube.position.z = s.startPos.z + dPos.z;
+          s.cube.scale.x = Math.max(MIN_SCALE, s.startScale.x + dScale.x);
+          s.cube.scale.y = Math.max(MIN_SCALE, s.startScale.y + dScale.y);
+          s.cube.scale.z = Math.max(MIN_SCALE, s.startScale.z + dScale.z);
+          applyCubeTransform(s.cube);
+        });
+        syncGroupSelectionOutlines();
+      }
+    }
+    selectionOutline.position.copy(obj.position);
+    selectionOutline.rotation.copy(obj.rotation);
+    selectionOutline.scale.copy(obj.scale);
+    syncScaleGizmoTransform();
+    refreshInspector(); // ANLIK panel güncellemesi (Position/Scale/Size +/- işaretleriyle doğru)
+  }
+
+  function endScaleHandleDrag(){
+    if (scaleGizmoDragging && scaleGizmoDragging.handle) {
+      scaleGizmoDragging.handle.mesh.material.color.setHex(scaleGizmoDragging.handle.baseColor);
+    }
+    scaleGizmoDragging = null;
+    gizmoIsDragging = false;
+    orbitLocked = false;
+  }
+
+  // ------------------------------------------------------------
+  // D1) ÖZEL TAŞIMA GIZMO — Sürükleme Mantığı (3 Sabit Eksen Oku)
+  // ------------------------------------------------------------
+  // Scale tutamaçlarıyla AYNI güvenilir ekran-izdüşümü tekniği kullanılır:
+  // sürükleme başında eksenin (objenin rotasyonuna göre hizalı) dünya
+  // yönü bir kez ekrana izdüşürülüp sabitlenir; fare hareketi bu sabit
+  // 2D yön üzerine projekte edilip dünya mesafesine çevrilir. Kamera
+  // sürükleme sırasında döndürülemez zaten (orbit kilitli), bu yüzden bu
+  // yaklaşım hem tutarlı hem de KAMERA AÇISINDAN TAMAMEN BAĞIMSIZDIR.
+  function raycastTranslateHandles(e){
+    if (!translateGizmoTarget || !translateGizmo.visible) return null;
+    updatePointerNDC(e);
+    raycaster.setFromCamera(pointerNDC, camera);
+    const meshes = translateHandles.map(h => h.picker);
+    const hits = raycaster.intersectObjects(meshes, false);
+    if (hits.length === 0) return null;
+    const hitMesh = hits[0].object;
+    return translateHandles.find(h => h.picker === hitMesh) || null;
+  }
+
+  function updateTranslateHandleHover(e){
+    if (!translateGizmoTarget || !translateGizmo.visible) return;
+    const handle = raycastTranslateHandles(e);
+    if (translateGizmoHovered && translateGizmoHovered !== handle) {
+      setTranslateHandleColor(translateGizmoHovered, translateGizmoHovered.baseColor);
+      translateGizmoHovered = null;
+    }
+    if (handle && translateGizmoHovered !== handle) {
+      setTranslateHandleColor(handle, handle.hoverColor);
+      translateGizmoHovered = handle;
+    }
+    domEl.style.cursor = handle ? "pointer" : "";
+  }
+
+  function tryStartTranslateHandleDrag(e){
+    const handle = raycastTranslateHandles(e);
+    if (!handle || !translateGizmoTarget) return false;
+
+    const obj = translateGizmoTarget;
+
+    // Eksenin DÜNYA yönü — objenin quaternion'ı üzerinden hesaplanır
+    // (translateGizmo objeyle aynı rotasyonu paylaşıyor). Bu, kamera
+    // açısından tamamen bağımsız, sabit bir dünya vektörüdür.
+    const axisWorldDir = handle.dir.clone().applyQuaternion(obj.quaternion).normalize();
+
+    const centerWorld = obj.position.clone();
+    const aheadWorld = centerWorld.clone().add(axisWorldDir);
+    const camDist = camera.position.distanceTo(centerWorld);
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const worldPerPixel = (2 * Math.tan(vFov / 2) * camDist) / domEl.clientHeight;
+
+    const originScreen = worldToScreen(centerWorld);
+    const aheadScreen = worldToScreen(aheadWorld);
+    const screenDir = new THREE.Vector2(aheadScreen.x - originScreen.x, aheadScreen.y - originScreen.y);
+    if (screenDir.lengthSq() < 1e-6) {
+      screenDir.set(0, -1); // eksen tam kameraya bakıyorsa dikey sürüklemeyi yedek olarak kullan
+    } else {
+      screenDir.normalize();
+    }
+
+    translateGizmoDragging = {
+      handle,
+      obj,
+      axisWorldDir,
+      startPosition: obj.position.clone(),
+      screenDir,
+      worldPerPixel,
+      startClientX: e.clientX,
+      startClientY: e.clientY
+    };
+
+    // Küp bir GRUP içindeyse, gruptaki diğer küplerin başlangıç konumlarını
+    // da kaydet — sürükleme sırasında hepsi aynı delta kadar taşınacak.
+    const groupCube = state.cubes.find(c => c.id === state.selectedId);
+    translateGizmoDragging.siblingStarts = (groupCube && groupCube.parentId)
+      ? getGroupSiblingCubes(groupCube).map(sib => ({
+          cube: sib,
+          startPos: { x: sib.position.x, y: sib.position.y, z: sib.position.z }
+        }))
+      : [];
+
+    gizmoIsDragging = true;
+    orbitLocked = true;
+    setTranslateHandleColor(handle, handle.hoverColor);
+    return true;
+  }
+
+  function updateTranslateHandleDrag(e){
+    const d = translateGizmoDragging;
+    if (!d) return;
+
+    const dx = e.clientX - d.startClientX;
+    const dy = e.clientY - d.startClientY;
+    const proj = dx * d.screenDir.x + dy * d.screenDir.y;
+    const worldDelta = proj * d.worldPerPixel;
+
+    const obj = d.obj;
+    obj.position.copy(d.startPosition).addScaledVector(d.axisWorldDir, worldDelta);
+
+    // Izgaraya oturma (grid snap) aktifse, mevcut snap adımına yuvarla —
+    // "Izgaraya Oturt" panelindeki snapToggle/snapStep ile aynı ayarları
+    // kullanır (bkz. F1 bölümü, aşağıda); Shift ("hassas mod") basılıyken
+    // TransformControls'teki gibi snap kasıtlı olarak devre dışı kalır.
+    if (typeof snapToggle !== "undefined" && snapToggle.checked && !shiftPrecisionActive) {
+      const snap = snapStep;
+      obj.position.x = Math.round(obj.position.x / snap) * snap;
+      obj.position.y = Math.round(obj.position.y / snap) * snap;
+      obj.position.z = Math.round(obj.position.z / snap) * snap;
+    }
+
+    const cube = state.cubes.find(c => c.id === state.selectedId);
+    if (cube) {
+      cube.position.x = obj.position.x;
+      cube.position.y = obj.position.y;
+      cube.position.z = obj.position.z;
+
+      // Grup içindeki diğer küpleri de aynı delta kadar taşı (rijit grup hareketi).
+      if (d.siblingStarts && d.siblingStarts.length) {
+        const totalDelta = obj.position.clone().sub(d.startPosition);
+        d.siblingStarts.forEach(s => {
+          s.cube.position.x = s.startPos.x + totalDelta.x;
+          s.cube.position.y = s.startPos.y + totalDelta.y;
+          s.cube.position.z = s.startPos.z + totalDelta.z;
+          applyCubeTransform(s.cube);
+        });
+        syncGroupSelectionOutlines();
+      }
+    }
+    selectionOutline.position.copy(obj.position);
+    syncTranslateGizmoTransform();
+    refreshInspector();
+  }
+
+  function endTranslateHandleDrag(){
+    if (translateGizmoDragging && translateGizmoDragging.handle) {
+      setTranslateHandleColor(translateGizmoDragging.handle, translateGizmoDragging.handle.baseColor);
+    }
+    translateGizmoDragging = null;
+    gizmoIsDragging = false;
+    orbitLocked = false;
+  }
+
+  /**
+   * Bir raycast sonucundan, "yeni küp buraya eklenmeli" konumunu
+   * hesaplar: vurulan yüzeyin normali yönünde bitişik ızgara hücresi.
+   * Izgaraya snap için Math.round kullanılır (voksel mantığı).
+   */
+  /**
+   * Bir raycast sonucundan, "yeni küp buraya eklenmeli" ızgara hücre
+   * indekslerini (tam sayılar) hesaplar. Dönen {x,y,z} bir HÜCRE
+   * İNDEKSİDİR — küpün gerçek merkez Y konumu çağıran tarafta
+   * (hücreY + 0.5) olarak hesaplanmalıdır (y=0 hücresi, merkezi
+   * y=0.5'te olan zemin üstü küpe karşılık gelir).
+   */
+  function computeSnappedAddPosition(intersect){
+    const normal = intersect.face ? intersect.face.normal.clone() : new THREE.Vector3(0, 1, 0);
+    // Normal HER ZAMAN local uzaydadır (hem küp yüzeyleri hem de
+    // döndürülmüş zemin düzlemi için); dünya uzayına çevrilmesi şart —
+    // aksi halde zemine tıklamalarda yanlış yön hesaplanır.
+    normal.transformDirection(intersect.object.matrixWorld);
+
+    if (intersect.object.name === "__ground__") {
+      // Zemine tıklandığında hedef hücre her zaman y=0 (zemin üstü ilk
+      // katman); x/z tıklanan noktaya en yakın tam sayıya yuvarlanır.
+      return {
+        x: Math.round(intersect.point.x),
+        y: 0,
+        z: Math.round(intersect.point.z)
+      };
+    }
+
+    // Bir küpün yüzeyine tıklandıysa: önce o küpün MERKEZ konumunu kendi
+    // hücre indeksine çeviriyoruz (Y ekseni merkezden -0.5 kaydırılarak,
+    // çünkü küp merkezleri her zaman hücreY + 0.5'te durur; X/Z zaten
+    // tam sayı hücre indeksidir). Sonra tıklanan yüzeyin normali
+    // yönünde BİR hücre ötesine geçiyoruz. Son olarak yeni hücrenin
+    // gerçek merkez Y'sini elde etmek için tekrar +0.5 eklenir — bu
+    // adım da çağıran taraf (addCube) tarafından yapılır, burada sadece
+    // hücre indeksleri döndürülür.
+    const originCell = {
+      x: intersect.object.position.x,
+      y: intersect.object.position.y - 0.5,
+      z: intersect.object.position.z
+    };
+    const normalStep = {
+      x: Math.round(normal.x),
+      y: Math.round(normal.y),
+      z: Math.round(normal.z)
+    };
+
+    return {
+      x: Math.round(originCell.x + normalStep.x),
+      y: Math.max(0, Math.round(originCell.y + normalStep.y)),
+      z: Math.round(originCell.z + normalStep.z)
+    };
+  }
+
+  function handlePointerHover(e){
+    if (state.tool !== "add") {
+      previewCube.visible = false;
+      return;
+    }
+    updatePointerNDC(e);
+    raycaster.setFromCamera(pointerNDC, camera);
+    const intersects = raycaster.intersectObjects(getIntersectableMeshes(), false);
+    if (intersects.length > 0) {
+      const pos = computeSnappedAddPosition(intersects[0]);
+      // Hedef hücrede zaten bir küp var mı kontrol et. c.position.y
+      // küpün MERKEZ Y konumudur (hücreY + 0.5); pos.y ise
+      // computeSnappedAddPosition'dan gelen HÜCRE İNDEKSİDİR — bu
+      // yüzden karşılaştırmadan önce c.position.y - 0.5 ile hücre
+      // indeksine geri çevrilir.
+      const occupied = state.cubes.some(c =>
+        c.position.x === pos.x && (c.position.y - 0.5) === pos.y && c.position.z === pos.z
+      );
+      if (!occupied) {
+        previewCube.position.set(pos.x, pos.y + 0.5, pos.z);
+        previewCube.visible = true;
+      } else {
+        previewCube.visible = false;
+      }
+    } else {
+      previewCube.visible = false;
+    }
+  }
+
+  function handleToolClick(e){
+    updatePointerNDC(e);
+    raycaster.setFromCamera(pointerNDC, camera);
+    const intersects = raycaster.intersectObjects(getIntersectableMeshes(), false);
+    if (intersects.length === 0) return;
+
+    const hit = intersects[0];
+
+    if (state.tool === "add") {
+      const pos = computeSnappedAddPosition(hit);
+      const occupied = state.cubes.some(c =>
+        c.position.x === pos.x && (c.position.y - 0.5) === pos.y && c.position.z === pos.z
+      );
+      if (!occupied) {
+        addCube(pos.x, pos.y + 0.5, pos.z);
+      }
+      return;
+    }
+
+    // Diğer araçlar (delete/paint/select) sadece gerçek küplere tıklandığında çalışır.
+    if (hit.object.name === "__ground__") {
+      if (state.tool === "select") selectCube(null);
+      return;
+    }
+
+    const cube = state.cubes.find(c => c.mesh === hit.object);
+    if (!cube) return;
+
+    if (state.tool === "delete") {
+      deleteCube(cube.id);
+    } else if (state.tool === "paint") {
+      paintCube(cube.id, state.currentColor);
+    } else if (state.tool === "select") {
+      selectCube(cube.id);
+    }
+  }
+
+  // ------------------------------------------------------------
+  // E) KÜP CRUD İŞLEMLERİ
+  // ------------------------------------------------------------
+  const cubeGeometry = new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, GRID_SIZE);
+
+  function makeCubeMaterial(hexColor){
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color(hexColor),
+      roughness: 0.75,
+      metalness: 0.05
+    });
+  }
+
+  function addCube(x, y, z){
+    const id = "cube_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    const material = makeCubeMaterial(state.currentColor);
+    const mesh = new THREE.Mesh(cubeGeometry, material);
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(cubeGeometry),
+      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 })
+    );
+    mesh.add(edges);
+
+    const cube = {
+      id,
+      mesh,
+      name: "Cube " + state.nextCubeIndex,
+      color: state.currentColor,
+      position: { x, y, z },
+      scale: { x: 1, y: 1, z: 1 },
+      parentId: null            // null = kökte; aksi halde bir grubun id'si
+    };
+    state.nextCubeIndex++;
+    state.cubes.push(cube);
+
+    refreshOutliner();
+    updateCubeCountBadge();
+    selectCube(id);
+    showToast(cube.name + " added");
+    if (typeof markStatsDirty === "function") markStatsDirty();
+  }
+
+  function deleteCube(id){
+    const idx = state.cubes.findIndex(c => c.id === id);
+    if (idx === -1) return;
+    const cube = state.cubes[idx];
+    scene.remove(cube.mesh);
+    // Not: cube.mesh.geometry, tüm küpler arasında PAYLAŞILAN cubeGeometry
+    // referansıdır — burada dispose EDİLMEZ (diğer küpler hâlâ kullanıyor).
+    // Sadece bu küpe özel olan material dispose edilir.
+    cube.mesh.material.dispose();
+    state.cubes.splice(idx, 1);
+
+    if (state.selectedId === id) {
+      selectCube(null);
+    } else {
+      refreshGroupSelectionOutlines(); // silinen küp, seçili küpün grup arkadaşıysa çerçeveler güncellenir
+    }
+    refreshOutliner();
+    updateCubeCountBadge();
+    showToast(cube.name + " deleted");
+    if (typeof markStatsDirty === "function") markStatsDirty();
+  }
+
+  function paintCube(id, hexColor){
+    const cube = state.cubes.find(c => c.id === id);
+    if (!cube) return;
+    cube.color = hexColor;
+    cube.mesh.material.color.set(hexColor);
+    refreshOutliner();
+    if (state.selectedId === id) refreshInspector();
+  }
+
+  function selectCube(id){
+    state.selectedId = id;
+    state.selectedGroupId = null; // bir küp seçilince grup seçimi temizlenir
+    if (id === null) {
+      selectionOutline.visible = false;
+      detachGizmo();
+    } else {
+      const cube = state.cubes.find(c => c.id === id);
+      if (cube) {
+        selectionOutline.position.copy(cube.mesh.position);
+        selectionOutline.rotation.copy(cube.mesh.rotation);
+        selectionOutline.scale.set(cube.scale.x, cube.scale.y, cube.scale.z);
+        selectionOutline.visible = true;
+        // Gizmo yalnızca "select" aracı aktifken küpe bağlanır — add/delete/paint
+        // araçlarında viewport'u kalabalıklaştırmaması için gizli tutulur.
+        if (state.tool === "select") {
+          attachGizmoTo(cube.mesh);
+        } else {
+          detachGizmo();
+        }
+      }
+    }
+    refreshGroupSelectionOutlines();
+    refreshOutliner();
+    refreshInspector();
+  }
+
+  function clearAllCubes(){
+    if (state.cubes.length === 0) return;
+    if (!confirm("All cubes will be deleted. Are you sure?")) return;
+    state.cubes.slice().forEach(c => {
+      scene.remove(c.mesh);
+      c.mesh.material.dispose();
+    });
+    state.cubes = [];
+    state.groups = [];
+    state.selectedId = null;
+    state.selectedGroupId = null;
+    state.nextCubeIndex = 1;
+    state.nextGroupIndex = 1;
+    selectionOutline.visible = false;
+    clearGroupSelectionOutlines();
+    detachGizmo();
+    refreshOutliner();
+    refreshInspector();
+    updateCubeCountBadge();
+    showToast("Scene cleared");
+    if (typeof markStatsDirty === "function") markStatsDirty();
+  }
+
+  // ------------------------------------------------------------
+  // F0.5) GRUP (KLASÖR) YÖNETİMİ — Outliner hiyerarşisi
+  // ------------------------------------------------------------
+
+  /** Yeni bir grup oluşturur. parentId verilirse o grubun içine iç içe eklenir. */
+  function createGroup(parentId){
+    const id = "group_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    const group = {
+      id,
+      name: "Group " + state.nextGroupIndex,
+      parentId: parentId || null,
+      collapsed: false
+    };
+    state.nextGroupIndex++;
+    state.groups.push(group);
+    refreshOutliner();
+    showToast(group.name + " created");
+    return group;
+  }
+
+  /** id'nin group2'nin (veya onun herhangi bir atasının) içinde olup olmadığını kontrol eder — döngüsel iç içe geçmeyi engellemek için. */
+  function isGroupDescendantOf(candidateGroupId, ancestorGroupId){
+    let current = state.groups.find(g => g.id === candidateGroupId);
+    while (current) {
+      if (current.parentId === ancestorGroupId) return true;
+      current = state.groups.find(g => g.id === current.parentId);
+    }
+    return false;
+  }
+
+  /** Bir grubu ve içindeki tüm alt-gruplar/küpleri siler. */
+  function deleteGroup(groupId){
+    const group = state.groups.find(g => g.id === groupId);
+    if (!group) return;
+    if (!confirm(`Delete group "${group.name}" and all objects inside it?`)) return;
+
+    // İçindeki alt-grupları toplu bul (iç içe olabilir).
+    const groupIdsToDelete = new Set([groupId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      state.groups.forEach(g => {
+        if (groupIdsToDelete.has(g.parentId) && !groupIdsToDelete.has(g.id)) {
+          groupIdsToDelete.add(g.id);
+          changed = true;
+        }
+      });
+    }
+
+    // Bu gruplara ait tüm küpleri sil.
+    state.cubes.slice().forEach(c => {
+      if (c.parentId && groupIdsToDelete.has(c.parentId)) {
+        scene.remove(c.mesh);
+        c.mesh.material.dispose();
+      }
+    });
+    state.cubes = state.cubes.filter(c => !(c.parentId && groupIdsToDelete.has(c.parentId)));
+    state.groups = state.groups.filter(g => !groupIdsToDelete.has(g.id));
+
+    if (state.selectedId && !state.cubes.find(c => c.id === state.selectedId)) {
+      selectCube(null);
+    }
+    if (state.selectedGroupId && groupIdsToDelete.has(state.selectedGroupId)) {
+      state.selectedGroupId = null;
+    }
+    refreshOutliner();
+    updateCubeCountBadge();
+    showToast("Group deleted");
+    if (typeof markStatsDirty === "function") markStatsDirty();
+  }
+
+  function renameGroup(groupId, newName){
+    const group = state.groups.find(g => g.id === groupId);
+    if (!group) return;
+    group.name = (newName || "").trim() || group.name;
+    refreshOutliner();
+  }
+
+  function toggleGroupCollapsed(groupId){
+    const group = state.groups.find(g => g.id === groupId);
+    if (!group) return;
+    group.collapsed = !group.collapsed;
+    refreshOutliner();
+  }
+
+  function selectGroup(groupId){
+    state.selectedGroupId = groupId;
+    state.selectedId = null; // grup seçilince küp seçimi temizlenir
+    selectionOutline.visible = false;
+    clearGroupSelectionOutlines();
+    detachGizmo();
+    refreshOutliner();
+    refreshInspector();
+  }
+
+  /** Bir küpü ya da grubu başka bir grubun içine (veya köke, groupId=null) taşır. */
+  function moveCubeToGroup(cubeId, groupId){
+    const cube = state.cubes.find(c => c.id === cubeId);
+    if (!cube) return;
+    cube.parentId = groupId || null;
+    refreshOutliner();
+    refreshGroupSelectionOutlines(); // grup üyeliği değişti, mevcut seçimin çerçeveleri güncellenmeli
+  }
+
+  function moveGroupToGroup(movingGroupId, targetGroupId){
+    if (movingGroupId === targetGroupId) return; // kendi içine taşınamaz
+    if (targetGroupId && isGroupDescendantOf(targetGroupId, movingGroupId)) {
+      // Bir grup, kendi alt-grubunun içine taşınamaz (döngüsel iç içe geçme engeli).
+      showToast("A group cannot be moved into one of its own subgroups.");
+      return;
+    }
+    const group = state.groups.find(g => g.id === movingGroupId);
+    if (!group) return;
+    group.parentId = targetGroupId || null;
+    refreshOutliner();
+  }
+
+  function applyCubeTransform(cube){
+    cube.mesh.position.set(cube.position.x, cube.position.y, cube.position.z);
+    if (cube.rotation) {
+      cube.mesh.rotation.set(cube.rotation.x, cube.rotation.y, cube.rotation.z);
+    }
+    cube.mesh.scale.set(cube.scale.x, cube.scale.y, cube.scale.z);
+    if (state.selectedId === cube.id) {
+      selectionOutline.position.copy(cube.mesh.position);
+      selectionOutline.rotation.copy(cube.mesh.rotation);
+      selectionOutline.scale.set(cube.scale.x, cube.scale.y, cube.scale.z);
+      // Panelden manuel Position/Scale değişikliği yapıldığında, ekranda
+      // scale/translate gizmo görünüyorsa tutamaçları yeni değerlere göre kaydır.
+      if (scaleGizmoTarget === cube.mesh) syncScaleGizmoTransform();
+      if (translateGizmoTarget === cube.mesh) syncTranslateGizmoTransform();
+    }
+  }
+
+  // ------------------------------------------------------------
+  // F) UI — SOL PANEL (Araçlar & Renk)
+  // ------------------------------------------------------------
+  const TOOL_HINTS = {
+    add: "Click on an empty grid cell or the face of an existing cube to add a new cube.",
+    delete: "Click a cube to delete it.",
+    paint: "Click a cube to apply the selected color.",
+    select: "Click a cube to select it and edit its position and size."
+  };
+
+  const toolButtons = document.querySelectorAll(".bb-tool-btn");
+  const sectionGizmo = document.getElementById("bb-section-gizmo");
+  const sectionSnap = document.getElementById("bb-section-snap");
+  const sectionPalette = document.getElementById("bb-section-palette");
+
+  /**
+   * Sol paneldeki üç bölümü ("Transform Gizmo", "Izgaraya Oturt",
+   * "Renk Paleti") aktif araca göre gösterir/gizler:
+   *   - Ekle / Sil       -> üçü de gizli (bu araçlarla ilgisiz)
+   *   - Boya             -> sadece Renk Paleti görünür
+   *   - Seç / Taşı       -> sadece Transform Gizmo + Izgaraya Oturt görünür
+   */
+  function updateToolSectionVisibility(tool){
+    const showGizmoAndSnap = (tool === "select");
+    const showPalette = (tool === "paint");
+    sectionGizmo.style.display = showGizmoAndSnap ? "" : "none";
+    sectionSnap.style.display = showGizmoAndSnap ? "" : "none";
+    sectionPalette.style.display = showPalette ? "" : "none";
+  }
+
+  toolButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      toolButtons.forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      state.tool = btn.getAttribute("data-tool");
+      document.getElementById("bb-tool-hint").textContent = TOOL_HINTS[state.tool] || "";
+      if (state.tool !== "add") previewCube.visible = false;
+      updateToolSectionVisibility(state.tool);
+      // Gizmo sadece "Seç/Taşı" aracında görünür.
+      if (state.tool === "select" && state.selectedId) {
+        const cube = state.cubes.find(c => c.id === state.selectedId);
+        if (cube) attachGizmoTo(cube.mesh);
+      } else {
+        detachGizmo();
+      }
+    });
+  });
+
+  // Sayfa ilk açıldığında varsayılan araç "Ekle" olduğu için üç bölüm de
+  // başlangıçta gizli olmalı.
+  updateToolSectionVisibility(state.tool);
+
+  // ------------------------------------------------------------
+  // F0) GİZMO MOD SEÇİCİ (Taşı/Döndür/Ölçekle) + W/E/R kısayolları
+  //     + Shift ile "hassas mod" (hafif taşı/döndür/ölçekle)
+  // ------------------------------------------------------------
+  let shiftPrecisionActive = false;
+  const gizmoModeButtons = document.querySelectorAll(".bb-gizmo-mode-btn");
+  function setGizmoMode(mode){
+    transformControls.setMode(mode);
+    gizmoModeButtons.forEach(b => b.classList.toggle("is-active", b.getAttribute("data-gizmo") === mode));
+
+    // Mod değiştiğinde: önceki gizmo (translate/scale/rotate) tamamen
+    // ayrılır, yeni moda karşılık gelen gizmo bağlı küpe takılır. Bu
+    // sayede tek seferde ekranda YALNIZCA bir gizmo görünür.
+    const cube = state.cubes.find(c => c.id === state.selectedId);
+    if (state.tool === "select" && cube) {
+      attachGizmoTo(cube.mesh);
+    }
+  }
+  gizmoModeButtons.forEach(btn => {
+    btn.addEventListener("click", () => setGizmoMode(btn.getAttribute("data-gizmo")));
+  });
+
+  window.addEventListener("keydown", (e) => {
+    // Bir input/textarea içinde yazıyorsak kısayolları tetikleme.
+    const tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+
+    if (e.key === "w" || e.key === "W") setGizmoMode("translate");
+    else if (e.key === "e" || e.key === "E") setGizmoMode("rotate");
+    else if (e.key === "r" || e.key === "R") setGizmoMode("scale");
+    else if (e.key === "Shift" && !shiftPrecisionActive) {
+      // Shift basılı tutulduğunda "hassas mod": snap geçici kapanır ve
+      // gizmo büyütülür — böylece aynı fare hareketi daha küçük bir
+      // transform değişimine denk gelir (hafif taşıma/döndürme/ölçekleme).
+      shiftPrecisionActive = true;
+      transformControls.setTranslationSnap(null);
+      transformControls.setRotationSnap(null);
+      transformControls.setScaleSnap(null);
+      transformControls.setSize(2.2);
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.key === "Shift" && shiftPrecisionActive) {
+      shiftPrecisionActive = false;
+      transformControls.setSize(1.15);
+      applySnapSettings();
+    }
+  });
+
+  // ------------------------------------------------------------
+  // F1) GRID SNAP (Izgaraya Oturtma) — aç/kapat + adım seçimi
+  // ------------------------------------------------------------
+  const snapToggle = document.getElementById("bb-snap-toggle");
+  const snapStepRow = document.getElementById("bb-snap-step-row");
+  let snapStep = 0.5;
+
+  function applySnapSettings(){
+    if (shiftPrecisionActive) return; // Shift basılıyken snap kasıtlı olarak kapalı kalır
+    if (snapToggle.checked) {
+      transformControls.setTranslationSnap(snapStep);
+      transformControls.setRotationSnap(THREE.MathUtils.degToRad(15));
+      transformControls.setScaleSnap(snapStep);
+    } else {
+      transformControls.setTranslationSnap(null);
+      transformControls.setRotationSnap(null);
+      transformControls.setScaleSnap(null);
+    }
+  }
+  snapToggle.addEventListener("change", applySnapSettings);
+  snapStepRow.querySelectorAll(".bb-snap-step-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      snapStepRow.querySelectorAll(".bb-snap-step-btn").forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      snapStep = parseFloat(btn.getAttribute("data-step"));
+      applySnapSettings();
+    });
+  });
+  applySnapSettings();
+
+  const swatchGrid = document.getElementById("bb-swatch-grid");
+  const colorSwatchCurrent = document.getElementById("bb-color-swatch-current");
+  const colorHexLabel = document.getElementById("bb-color-hex-label");
+  const colorPickerNative = document.getElementById("bb-color-picker-native");
+
+  function setCurrentColor(hex){
+    state.currentColor = hex;
+    colorSwatchCurrent.style.background = hex;
+    colorHexLabel.textContent = hex.toUpperCase();
+    colorPickerNative.value = hex;
+    document.querySelectorAll(".bb-swatch").forEach(sw => {
+      sw.classList.toggle("is-selected", sw.getAttribute("data-color").toLowerCase() === hex.toLowerCase());
+    });
+    // "Boya" aracı aktifken ve bir küp seçiliyse, seçili küpü de anlık boyayabiliriz
+    // (isteğe bağlı ergonomi — sadece paint aracında ve seçim varsa).
+  }
+
+  PRESET_COLORS.forEach(hex => {
+    const sw = document.createElement("div");
+    sw.className = "bb-swatch";
+    sw.style.background = hex;
+    sw.setAttribute("data-color", hex);
+    sw.title = hex;
+    sw.addEventListener("click", () => setCurrentColor(hex));
+    swatchGrid.appendChild(sw);
+  });
+
+  colorPickerNative.addEventListener("input", (e) => setCurrentColor(e.target.value));
+  setCurrentColor(state.currentColor);
+
+  // ------------------------------------------------------------
+  // G) UI — SAĞ PANEL (Outliner & Inspector)
+  // ------------------------------------------------------------
+  const outlinerList = document.getElementById("bb-outliner-list");
+  const outlinerCount = document.getElementById("bb-outliner-count");
+  const inspectorContent = document.getElementById("bb-inspector-content");
+  const cubeCountBadge = document.getElementById("bb-cube-count-badge");
+
+  function updateCubeCountBadge(){
+    cubeCountBadge.textContent = state.cubes.length + (state.cubes.length === 1 ? " cube" : " cubes");
+  }
+
+  // ------------------------------------------------------------
+  // G0) OUTLINER — Ağaç (Tree) Render, Sürükle-Bırak, Rename,
+  //     Sağ Tık Bağlam Menüsü
+  // ------------------------------------------------------------
+  const INDENT_PX = 16;
+  let draggingRowInfo = null; // { kind: "cube"|"group", id } sürüklenen satır
+  let renamingRowKey = null;  // "cube:<id>" veya "group:<id>" — o an rename modunda olan satır
+
+  const GROUP_ICON_SVG = `<svg class="bb-outliner-group-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 7C3 5.9 3.9 5 5 5H9L11 7H19C20.1 7 21 7.9 21 9V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+  const CARET_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="10"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  function getChildGroups(parentId){
+    return state.groups.filter(g => (g.parentId || null) === (parentId || null));
+  }
+  function getChildCubes(parentId){
+    return state.cubes.filter(c => (c.parentId || null) === (parentId || null));
+  }
+
+  function refreshOutliner(){
+    outlinerCount.textContent = state.cubes.length;
+    closeOutlinerContextMenu();
+
+    if (state.cubes.length === 0 && state.groups.length === 0) {
+      outlinerList.innerHTML = '<div class="bb-outliner-empty">No cubes yet.<br>Click in the viewport to get started.</div>';
+      return;
+    }
+    outlinerList.innerHTML = "";
+
+    // Kök seviyeye bir "drop zone" (nesneleri gruptan dışarı çıkarmak için)
+    // outlinerList'in kendisi zaten bunu üstlenecek (bkz. aşağıdaki
+    // outlinerList dragover/drop dinleyicileri).
+
+    function renderGroupRow(group, depth){
+      const row = document.createElement("div");
+      const rowKey = "group:" + group.id;
+      row.className = "bb-outliner-row" + (group.id === state.selectedGroupId ? " is-selected" : "");
+      row.setAttribute("draggable", "true");
+      row.dataset.kind = "group";
+      row.dataset.id = group.id;
+
+      const childGroups = getChildGroups(group.id);
+      const childCubes = getChildCubes(group.id);
+      const hasChildren = (childGroups.length + childCubes.length) > 0;
+      const totalCount = childGroups.length + childCubes.length;
+
+      const indentHtml = `<span class="bb-outliner-indent" style="width:${depth * INDENT_PX}px; display:inline-block;"></span>`;
+      const caretHtml = hasChildren
+        ? `<span class="bb-outliner-caret${group.collapsed ? " is-collapsed" : ""}" data-caret-for="${group.id}">${CARET_SVG}</span>`
+        : `<span class="bb-outliner-caret-spacer"></span>`;
+
+      if (renamingRowKey === rowKey) {
+        row.innerHTML = `
+          ${indentHtml}${caretHtml}${GROUP_ICON_SVG}
+          <input type="text" class="bb-outliner-rename-input" value="${escapeAttr(group.name)}" data-rename-group="${group.id}">
+        `;
+      } else {
+        row.innerHTML = `
+          ${indentHtml}${caretHtml}${GROUP_ICON_SVG}
+          <span class="bb-outliner-item-name is-group-name">${escapeHtml(group.name)}</span>
+          <span class="bb-outliner-group-count">${totalCount}</span>
+          <button class="bb-outliner-row-del" title="Delete group" data-del-group="${group.id}">✕</button>
+        `;
+      }
+      outlinerList.appendChild(row);
+
+      if (renamingRowKey === rowKey) {
+        const input = row.querySelector(".bb-outliner-rename-input");
+        requestAnimationFrame(() => { input.focus(); input.select(); });
+        const commit = () => { renamingRowKey = null; renameGroup(group.id, input.value); };
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { commit(); }
+          else if (e.key === "Escape") { renamingRowKey = null; refreshOutliner(); }
+        });
+        input.addEventListener("blur", commit);
+        input.addEventListener("click", (e) => e.stopPropagation());
+      } else {
+        row.addEventListener("click", (e) => {
+          if (e.target.closest(".bb-outliner-row-del")) return;
+          if (e.target.closest("[data-caret-for]")) return;
+          selectGroup(group.id);
+        });
+        row.addEventListener("dblclick", (e) => {
+          if (e.target.closest(".bb-outliner-row-del")) return;
+          renamingRowKey = rowKey;
+          refreshOutliner();
+        });
+        const delBtn = row.querySelector("[data-del-group]");
+        if (delBtn) delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteGroup(group.id);
+        });
+        const caretEl = row.querySelector("[data-caret-for]");
+        if (caretEl) caretEl.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleGroupCollapsed(group.id);
+        });
+        row.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openOutlinerContextMenu(e.clientX, e.clientY, { kind: "group", id: group.id });
+        });
+      }
+
+      attachDragHandlers(row, { kind: "group", id: group.id }, group.id);
+
+      // Çocukları (alt-grup + küp) render et — grup kapalıysa (collapsed) gizle.
+      if (!group.collapsed) {
+        childGroups.forEach(cg => renderGroupRow(cg, depth + 1));
+        childCubes.forEach(cc => renderCubeRow(cc, depth + 1));
+      }
+    }
+
+    function renderCubeRow(cube, depth){
+      const row = document.createElement("div");
+      const rowKey = "cube:" + cube.id;
+      row.className = "bb-outliner-row" + (cube.id === state.selectedId ? " is-selected" : "");
+      row.setAttribute("draggable", "true");
+      row.dataset.kind = "cube";
+      row.dataset.id = cube.id;
+
+      const indentHtml = `<span class="bb-outliner-indent" style="width:${depth * INDENT_PX}px; display:inline-block;"></span>`;
+
+      if (renamingRowKey === rowKey) {
+        row.innerHTML = `
+          ${indentHtml}<span class="bb-outliner-caret-spacer"></span>
+          <span class="bb-outliner-item-swatch" style="background:${cube.color}"></span>
+          <input type="text" class="bb-outliner-rename-input" value="${escapeAttr(cube.name)}" data-rename-cube="${cube.id}">
+        `;
+      } else {
+        row.innerHTML = `
+          ${indentHtml}<span class="bb-outliner-caret-spacer"></span>
+          <span class="bb-outliner-item-swatch" style="background:${cube.color}"></span>
+          <span class="bb-outliner-item-name">${escapeHtml(cube.name)}</span>
+          <button class="bb-outliner-row-del" title="Delete cube" data-del-id="${cube.id}">✕</button>
+        `;
+      }
+      outlinerList.appendChild(row);
+
+      if (renamingRowKey === rowKey) {
+        const input = row.querySelector(".bb-outliner-rename-input");
+        requestAnimationFrame(() => { input.focus(); input.select(); });
+        const commit = () => {
+          renamingRowKey = null;
+          cube.name = (input.value || "").trim() || cube.name;
+          refreshOutliner();
+          if (state.selectedId === cube.id) refreshInspector();
+        };
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { commit(); }
+          else if (e.key === "Escape") { renamingRowKey = null; refreshOutliner(); }
+        });
+        input.addEventListener("blur", commit);
+        input.addEventListener("click", (e) => e.stopPropagation());
+      } else {
+        row.addEventListener("click", (e) => {
+          if (e.target.closest(".bb-outliner-row-del")) return;
+          selectCube(cube.id);
+        });
+        row.addEventListener("dblclick", (e) => {
+          if (e.target.closest(".bb-outliner-row-del")) return;
+          renamingRowKey = rowKey;
+          refreshOutliner();
+        });
+        const delBtn = row.querySelector("[data-del-id]");
+        if (delBtn) delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteCube(cube.id);
+        });
+        row.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openOutlinerContextMenu(e.clientX, e.clientY, { kind: "cube", id: cube.id });
+        });
+      }
+
+      attachDragHandlers(row, { kind: "cube", id: cube.id }, null);
+    }
+
+    // Kök seviyeden başlayarak ağacı render et: önce kök gruplar, sonra kök küpler.
+    getChildGroups(null).forEach(g => renderGroupRow(g, 0));
+    getChildCubes(null).forEach(c => renderCubeRow(c, 0));
+  }
+
+  // ---- Sürükle & Bırak (Drag & Drop) mantığı ----
+  function clearAllDropTargetClasses(){
+    outlinerList.querySelectorAll(".bb-outliner-row").forEach(r => {
+      r.classList.remove("is-drop-target-inside", "is-drop-target-before", "is-drop-target-after");
+    });
+  }
+
+  function attachDragHandlers(rowEl, selfRef, selfGroupIdIfGroup){
+    rowEl.addEventListener("dragstart", (e) => {
+      draggingRowInfo = selfRef;
+      rowEl.classList.add("is-dragging");
+      e.dataTransfer.effectAllowed = "move";
+      // Bazı tarayıcılar dataTransfer.setData çağrılmadan dragover'ı reddedebilir.
+      try { e.dataTransfer.setData("text/plain", selfRef.kind + ":" + selfRef.id); } catch(_) {}
+    });
+    rowEl.addEventListener("dragend", () => {
+      rowEl.classList.remove("is-dragging");
+      draggingRowInfo = null;
+      clearAllDropTargetClasses();
+    });
+    rowEl.addEventListener("dragover", (e) => {
+      if (!draggingRowInfo) return;
+      // Bir öğe kendi üzerine veya kendi alt-öğesinin üzerine bırakılamaz.
+      if (draggingRowInfo.kind === selfRef.kind && draggingRowInfo.id === selfRef.id) return;
+      if (selfRef.kind === "group" && draggingRowInfo.kind === "group" &&
+          isGroupDescendantOf(selfRef.id, draggingRowInfo.id)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      clearAllDropTargetClasses();
+      // Grup satırının üzerine bırakılırsa: "içine ekle" (inside).
+      // Küp satırının üzerine bırakılırsa: sadece görsel geri bildirim (inside gibi davranır,
+      // aynı gruba taşınır — küpler kendi başına konteyner olamaz).
+      rowEl.classList.add("is-drop-target-inside");
+    });
+    rowEl.addEventListener("dragleave", () => {
+      rowEl.classList.remove("is-drop-target-inside", "is-drop-target-before", "is-drop-target-after");
+    });
+    rowEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearAllDropTargetClasses();
+      if (!draggingRowInfo) return;
+      const dragged = draggingRowInfo;
+      draggingRowInfo = null;
+      if (dragged.kind === selfRef.kind && dragged.id === selfRef.id) return;
+
+      // Hedef grup: eğer bırakılan satır bir grupsa o grubun İÇİNE;
+      // eğer bir küpse, o küpün BULUNDUĞU gruba (kardeş olarak) taşı.
+      let targetGroupId;
+      if (selfRef.kind === "group") {
+        targetGroupId = selfRef.id;
+      } else {
+        const targetCube = state.cubes.find(c => c.id === selfRef.id);
+        targetGroupId = targetCube ? (targetCube.parentId || null) : null;
+      }
+
+      if (dragged.kind === "cube") {
+        moveCubeToGroup(dragged.id, targetGroupId);
+      } else {
+        moveGroupToGroup(dragged.id, targetGroupId);
+      }
+    });
+  }
+
+  // Outliner'ın boş alanına (liste dışına / kök seviyeye) bırakma —
+  // bu, gruba eklenen bir nesneyi gruptan DIŞARI çıkarmayı sağlar.
+  outlinerList.addEventListener("dragover", (e) => {
+    if (!draggingRowInfo) return;
+    if (e.target !== outlinerList) return; // sadece boş alan (satır değil)
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  });
+  outlinerList.addEventListener("drop", (e) => {
+    if (!draggingRowInfo) return;
+    if (e.target !== outlinerList) return;
+    e.preventDefault();
+    const dragged = draggingRowInfo;
+    draggingRowInfo = null;
+    if (dragged.kind === "cube") moveCubeToGroup(dragged.id, null);
+    else moveGroupToGroup(dragged.id, null);
+  });
+
+  // ---- Sağ Tık Bağlam Menüsü (Context Menu) ----
+  const outlinerContextMenu = document.getElementById("bb-outliner-context-menu");
+
+  function closeOutlinerContextMenu(){
+    outlinerContextMenu.classList.remove("is-open");
+    outlinerContextMenu.innerHTML = "";
+  }
+
+  function contextMenuItem(label, onClick, opts){
+    opts = opts || {};
+    const el = document.createElement("div");
+    el.className = "bb-context-menu-item" + (opts.danger ? " is-danger" : "");
+    el.textContent = label;
+    el.addEventListener("click", () => {
+      closeOutlinerContextMenu();
+      onClick();
+    });
+    return el;
+  }
+
+  function contextMenuSeparator(){
+    const el = document.createElement("div");
+    el.className = "bb-context-menu-sep";
+    return el;
+  }
+
+  /** target: null (boş alana sağ tık) veya { kind: "cube"|"group", id } */
+  function openOutlinerContextMenu(clientX, clientY, target){
+    outlinerContextMenu.innerHTML = "";
+
+    if (target && target.kind === "group") {
+      const group = state.groups.find(g => g.id === target.id);
+      if (group) {
+        outlinerContextMenu.appendChild(contextMenuItem("Rename", () => {
+          renamingRowKey = "group:" + group.id;
+          refreshOutliner();
+        }));
+        outlinerContextMenu.appendChild(contextMenuItem("Create New Subgroup", () => {
+          createGroup(group.id);
+        }));
+        outlinerContextMenu.appendChild(contextMenuSeparator());
+        outlinerContextMenu.appendChild(contextMenuItem("Delete Group", () => {
+          deleteGroup(group.id);
+        }, { danger: true }));
+      }
+    } else if (target && target.kind === "cube") {
+      const cube = state.cubes.find(c => c.id === target.id);
+      if (cube) {
+        outlinerContextMenu.appendChild(contextMenuItem("Rename", () => {
+          renamingRowKey = "cube:" + cube.id;
+          refreshOutliner();
+        }));
+        outlinerContextMenu.appendChild(contextMenuItem("Create New Group & Move", () => {
+          const g = createGroup(cube.parentId || null);
+          moveCubeToGroup(cube.id, g.id);
+        }));
+        if (cube.parentId) {
+          outlinerContextMenu.appendChild(contextMenuItem("Remove from Group", () => {
+            moveCubeToGroup(cube.id, null);
+          }));
+        }
+        outlinerContextMenu.appendChild(contextMenuSeparator());
+        outlinerContextMenu.appendChild(contextMenuItem("Delete Cube", () => {
+          deleteCube(cube.id);
+        }, { danger: true }));
+      }
+    } else {
+      // Boş alana sağ tıklama: sadece grup oluşturma seçeneği.
+      outlinerContextMenu.appendChild(contextMenuItem("Create New Group", () => {
+        createGroup(null);
+      }));
+    }
+
+    outlinerContextMenu.classList.add("is-open");
+    // Ekran sınırları dışına taşmayı önlemek için basit konumlandırma.
+    const menuWidth = 190, menuHeight = outlinerContextMenu.children.length * 32 + 10;
+    const maxX = window.innerWidth - menuWidth - 8;
+    const maxY = window.innerHeight - menuHeight - 8;
+    outlinerContextMenu.style.left = Math.min(clientX, Math.max(8, maxX)) + "px";
+    outlinerContextMenu.style.top = Math.min(clientY, Math.max(8, maxY)) + "px";
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!outlinerContextMenu.contains(e.target)) closeOutlinerContextMenu();
+  });
+  outlinerList.addEventListener("contextmenu", (e) => {
+    // Outliner listesinin boş alanına (bir satırın üzerine değil) sağ
+    // tıklanırsa, sadece "Create New Group" seçeneğini gösteren menü açılır.
+    // Satırların kendi contextmenu dinleyicileri zaten stopPropagation()
+    // çağırdığı için bu, yalnızca gerçekten boş alana tıklanınca tetiklenir.
+    e.preventDefault();
+    openOutlinerContextMenu(e.clientX, e.clientY, null);
+  });
+
+  document.getElementById("bb-btn-add-group").addEventListener("click", () => {
+    createGroup(null);
+  });
+
+  function refreshInspector(){
+    const cube = state.cubes.find(c => c.id === state.selectedId);
+    if (!cube) {
+      inspectorContent.innerHTML = '<div class="bb-inspector-empty">Select a cube to view and edit its position and size.</div>';
+      return;
+    }
+
+    inspectorContent.innerHTML = `
+      <div class="bb-field-group bb-name-input-wrap">
+        <div class="bb-field-group-label">Name</div>
+        <input type="text" id="bb-insp-name" value="${escapeAttr(cube.name)}" spellcheck="false">
+      </div>
+
+      <div class="bb-field-group">
+        <div class="bb-field-group-label">Position</div>
+        <div class="bb-vec3-row">
+          <div class="bb-vec3-input-wrap axis-x">
+            <span class="bb-vec3-axis-label">X</span>
+            <input type="number" step="1" id="bb-insp-pos-x" value="${cube.position.x}">
+          </div>
+          <div class="bb-vec3-input-wrap axis-y">
+            <span class="bb-vec3-axis-label">Y</span>
+            <input type="number" step="1" id="bb-insp-pos-y" value="${cube.position.y}">
+          </div>
+          <div class="bb-vec3-input-wrap axis-z">
+            <span class="bb-vec3-axis-label">Z</span>
+            <input type="number" step="1" id="bb-insp-pos-z" value="${cube.position.z}">
+          </div>
+        </div>
+      </div>
+
+      <div class="bb-field-group">
+        <div class="bb-field-group-label">Rotation (°)</div>
+        <div class="bb-vec3-row">
+          <div class="bb-vec3-input-wrap axis-x">
+            <span class="bb-vec3-axis-label">X</span>
+            <input type="number" step="1" id="bb-insp-rot-x" value="${Math.round(THREE.MathUtils.radToDeg((cube.rotation && cube.rotation.x) || 0))}">
+          </div>
+          <div class="bb-vec3-input-wrap axis-y">
+            <span class="bb-vec3-axis-label">Y</span>
+            <input type="number" step="1" id="bb-insp-rot-y" value="${Math.round(THREE.MathUtils.radToDeg((cube.rotation && cube.rotation.y) || 0))}">
+          </div>
+          <div class="bb-vec3-input-wrap axis-z">
+            <span class="bb-vec3-axis-label">Z</span>
+            <input type="number" step="1" id="bb-insp-rot-z" value="${Math.round(THREE.MathUtils.radToDeg((cube.rotation && cube.rotation.z) || 0))}">
+          </div>
+        </div>
+      </div>
+
+      <div class="bb-field-group">
+        <div class="bb-field-group-label">Scale / Size</div>
+        <div class="bb-vec3-row">
+          <div class="bb-vec3-input-wrap axis-x">
+            <span class="bb-vec3-axis-label">X</span>
+            <input type="number" step="0.1" min="0.1" id="bb-insp-scale-x" value="${cube.scale.x}">
+          </div>
+          <div class="bb-vec3-input-wrap axis-y">
+            <span class="bb-vec3-axis-label">Y</span>
+            <input type="number" step="0.1" min="0.1" id="bb-insp-scale-y" value="${cube.scale.y}">
+          </div>
+          <div class="bb-vec3-input-wrap axis-z">
+            <span class="bb-vec3-axis-label">Z</span>
+            <input type="number" step="0.1" min="0.1" id="bb-insp-scale-z" value="${cube.scale.z}">
+          </div>
+        </div>
+      </div>
+
+      <div class="bb-field-group">
+        <div class="bb-field-group-label">Color</div>
+        <div class="bb-color-current">
+          <div class="bb-color-swatch-current" style="background:${cube.color}; position:relative;">
+            <input type="color" id="bb-insp-color" value="${cube.color}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
+          </div>
+          <span style="font-family:var(--bb-font-mono);font-size:11px;color:var(--bb-text-dim);">${cube.color.toUpperCase()}</span>
+        </div>
+      </div>
+
+      <button class="bb-btn bb-btn-danger bb-inspector-delete-btn" id="bb-insp-delete">
+        Delete Cube
+      </button>
+    `;
+
+    // -- Olay bağlama --
+    document.getElementById("bb-insp-name").addEventListener("input", (e) => {
+      cube.name = e.target.value || cube.name;
+      refreshOutliner();
+    });
+
+    if (!cube.rotation) cube.rotation = { x: 0, y: 0, z: 0 };
+
+    ["x", "y", "z"].forEach(axis => {
+      document.getElementById(`bb-insp-pos-${axis}`).addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val)) {
+          cube.position[axis] = val;
+          applyCubeTransform(cube);
+        }
+      });
+      document.getElementById(`bb-insp-rot-${axis}`).addEventListener("input", (e) => {
+        const deg = parseFloat(e.target.value);
+        if (!isNaN(deg)) {
+          cube.rotation[axis] = THREE.MathUtils.degToRad(deg);
+          applyCubeTransform(cube);
+        }
+      });
+      document.getElementById(`bb-insp-scale-${axis}`).addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val) && val > 0) {
+          cube.scale[axis] = val;
+          applyCubeTransform(cube);
+        }
+      });
+    });
+
+    document.getElementById("bb-insp-color").addEventListener("input", (e) => {
+      paintCube(cube.id, e.target.value);
+    });
+
+    document.getElementById("bb-insp-delete").addEventListener("click", () => {
+      deleteCube(cube.id);
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function escapeAttr(str){
+    return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  }
+
+  // ------------------------------------------------------------
+  // H) TOAST BİLDİRİMİ
+  // ------------------------------------------------------------
+  let toastTimer = null;
+  function showToast(msg){
+    const toast = document.getElementById("bb-toast");
+    toast.textContent = msg;
+    toast.classList.add("is-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1800);
+  }
+
+  // ------------------------------------------------------------
+  // I) ÜST BAR — Temizle / Panele Dön
+  // ------------------------------------------------------------
+  document.getElementById("bb-btn-clear").addEventListener("click", clearAllCubes);
+
+  document.getElementById("bb-btn-back").addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+
+  // ------------------------------------------------------------
+  // I2) DIŞA AKTARMA — .GLTF / .GLB / .JSON (ham veri)
+  // ------------------------------------------------------------
+  function getSafeFileName(){
+    const modelName = document.getElementById("bb-model-name").value || "Untitled Model";
+    return modelName.trim().replace(/[^a-zA-Z0-9_\-ğüşıöçĞÜŞİÖÇ ]/g, "").replace(/\s+/g, "_") || "model";
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Sahnedeki tüm küp mesh'lerini GLTFExporter'a verilecek geçici bir
+   * THREE.Group içine toplar. Yardımcı elemanlar (grid, preview, seçim
+   * outline, gizmo) dahil edilmez — yalnızca gerçek model geometrisi.
+   */
+  function buildExportGroup(){
+    const group = new THREE.Group();
+    group.name = document.getElementById("bb-model-name").value || "Model";
+    state.cubes.forEach(c => {
+      // Export edilen mesh, sahnedeki orijinal mesh DEĞİL; edges (kenar
+      // çizgileri) olmadan sade bir kopyasıdır (edges LineSegments,
+      // GLTF'de gereksiz ekstra obje olarak görünmesin diye hariç tutulur).
+      const clone = new THREE.Mesh(c.mesh.geometry, c.mesh.material.clone());
+      clone.position.copy(c.mesh.position);
+      clone.rotation.copy(c.mesh.rotation);
+      clone.scale.copy(c.mesh.scale);
+      clone.name = c.name;
+      group.add(clone);
+    });
+    return group;
+  }
+
+  function exportGLTF(binary){
+    if (state.cubes.length === 0) {
+      showToast("No cubes to export.");
+      return;
+    }
+    const exporter = new THREE.GLTFExporter();
+    const group = buildExportGroup();
+    exporter.parse(
+      group,
+      (result) => {
+        if (binary) {
+          // GLB: ArrayBuffer olarak döner.
+          downloadBlob(new Blob([result], { type: "model/gltf-binary" }), getSafeFileName() + ".glb");
+          showToast(".GLB exported");
+        } else {
+          // GLTF: JSON objesi olarak döner.
+          const json = JSON.stringify(result, null, 2);
+          downloadBlob(new Blob([json], { type: "model/gltf+json" }), getSafeFileName() + ".gltf");
+          showToast(".GLTF exported");
+        }
+        closeExportMenu();
+      },
+      (err) => {
+        console.error("GLTF export error:", err);
+        showToast("Export failed.");
+      },
+      { binary: !!binary, onlyVisible: true }
+    );
+  }
+
+  function exportRawJSON(){
+    const modelName = document.getElementById("bb-model-name").value || "Untitled Model";
+    const exportData = {
+      name: modelName,
+      format: "bb-studio-voxel-v1",
+      exportedAt: new Date().toISOString(),
+      gridSize: GRID_SIZE,
+      cubeCount: state.cubes.length,
+      cubes: state.cubes.map(c => ({
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        position: { x: c.position.x, y: c.position.y, z: c.position.z },
+        rotation: c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 },
+        scale: { x: c.scale.x, y: c.scale.y, z: c.scale.z }
+      }))
+    };
+    downloadBlob(
+      new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" }),
+      getSafeFileName() + ".json"
+    );
+    showToast("JSON exported");
+    closeExportMenu();
+  }
+
+  const exportMenu = document.getElementById("bb-export-menu");
+  const exportToggleBtn = document.getElementById("bb-btn-export-toggle");
+  function closeExportMenu(){ exportMenu.classList.remove("is-open"); }
+  exportToggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exportMenu.classList.toggle("is-open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!exportMenu.contains(e.target) && e.target !== exportToggleBtn) closeExportMenu();
+  });
+  document.getElementById("bb-export-gltf").addEventListener("click", () => exportGLTF(false));
+  document.getElementById("bb-export-glb").addEventListener("click", () => exportGLTF(true));
+  document.getElementById("bb-export-json").addEventListener("click", exportRawJSON);
+
+  // ------------------------------------------------------------
+  // I3) KAYDET — localStorage üzerine yazar, Studio Dashboard'daki
+  //     model listesine (index.html) aktarılır. saveModel() dışa
+  //     açık bırakılmıştır; istenirse konsoldan da çağrılabilir.
+  // ------------------------------------------------------------
+  const STUDIO_MODELS_PREFIX = "pl3d_models_";
+
+  function currentUid(){
+    try {
+      if (window.opener && window.opener.CommunityAuth && window.opener.CommunityAuth.user) {
+        return window.opener.CommunityAuth.user.uid;
+      }
+    } catch (_) { /* cross-origin vs. erişilemezse yoksay */ }
+    // Aynı sekmede index.html'den geldiysek (SPA-benzeri yönlendirme),
+    // window.CommunityAuth doğrudan bu sayfada mevcut olmaz — bu yüzden
+    // localStorage'da hub tarafından bırakılmış bir uid referansı da
+    // ikinci bir kaynak olarak denenir. Hiçbiri yoksa "anon" kullanılır.
+    try {
+      const stored = localStorage.getItem("pl3d_active_uid");
+      if (stored) return stored;
+    } catch (_) {}
+    return "anon";
+  }
+
+  function loadModelsForCurrentUser(){
+    try {
+      const raw = localStorage.getItem(STUDIO_MODELS_PREFIX + currentUid());
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) { return []; }
+  }
+
+  function saveModelsForCurrentUser(list){
+    try {
+      localStorage.setItem(STUDIO_MODELS_PREFIX + currentUid(), JSON.stringify(list));
+    } catch (_) { /* quota vs. — sessizce geç */ }
+  }
+
+  function countTotalVertsTris(){
+    let verts = 0, tris = 0;
+    state.cubes.forEach(c => {
+      const posAttr = c.mesh.geometry.attributes.position;
+      verts += posAttr ? posAttr.count : 0;
+      tris += (c.mesh.geometry.index ? c.mesh.geometry.index.count : posAttr.count) / 3;
+    });
+    return { verts, tris: Math.round(tris) };
+  }
+
+  /**
+   * Sahneyi localStorage'a kaydeder. Mevcut ?modelId= parametresiyle
+   * açıldıysak (Studio Dashboard'dan "Düzenle" ile gelindiyse) o modelin
+   * üzerine yazılır; aksi halde yeni bir model kaydı oluşturulur.
+   * GLTF verisi de birlikte gömülür, böylece Dashboard'dan tek tıkla
+   * tekrar indirilebilir.
+   */
+  function saveModel(){
+    if (state.cubes.length === 0) {
+      showToast("No cubes to save — build something first.");
+      return;
+    }
+    const modelName = document.getElementById("bb-model-name").value.trim() || "Untitled Model";
+    const { verts, tris } = countTotalVertsTris();
+    const urlParams = new URLSearchParams(window.location.search);
+    const existingId = urlParams.get("modelId");
+
+    const models = loadModelsForCurrentUser();
+    const nowIso = new Date().toISOString();
+
+    const finalizeSave = (gltfJsonString) => {
+      let record = existingId ? models.find(m => m.id === existingId) : null;
+      if (!record) {
+        record = {
+          id: "model_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+          createdAt: nowIso
+        };
+        models.push(record);
+      }
+      record.name = modelName;
+      record.updatedAt = nowIso;
+      record.cubeCount = state.cubes.length;
+      record.vertexCount = verts;
+      record.triangleCount = tris;
+      record.thumbEmoji = "🧊";
+      record.gltf = gltfJsonString || null;
+      record.cubesRaw = state.cubes.map(c => ({
+        id: c.id, name: c.name, color: c.color,
+        position: { x: c.position.x, y: c.position.y, z: c.position.z },
+        rotation: c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 },
+        scale: { x: c.scale.x, y: c.scale.y, z: c.scale.z }
+      }));
+
+      saveModelsForCurrentUser(models);
+      showToast("\"" + modelName + "\" saved.");
+    };
+
+    // GLTF verisini de gömmeye çalış (Dashboard'dan tekrar indirilebilsin diye);
+    // başarısız olursa yine de ham küp verisiyle kaydet.
+    try {
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(
+        buildExportGroup(),
+        (result) => finalizeSave(JSON.stringify(result)),
+        () => finalizeSave(null),
+        { binary: false, onlyVisible: true }
+      );
+    } catch (_) {
+      finalizeSave(null);
+    }
+  }
+  window.saveModel = saveModel;
+
+  document.getElementById("bb-btn-save").addEventListener("click", saveModel);
+
+  // Sayfa ?modelId=... ile açıldıysa, o modeli sahneye geri yükle.
+  (function loadModelFromQueryIfPresent(){
+    const urlParams = new URLSearchParams(window.location.search);
+    const modelId = urlParams.get("modelId");
+    if (!modelId) return;
+    const models = loadModelsForCurrentUser();
+    const record = models.find(m => m.id === modelId);
+    if (!record || !record.cubesRaw) return;
+
+    document.getElementById("bb-model-name").value = record.name || "Untitled Model";
+    record.cubesRaw.forEach(c => {
+      addCube(c.position.x, c.position.y, c.position.z);
+      const added = state.cubes[state.cubes.length - 1];
+      added.name = c.name || added.name;
+      added.rotation = c.rotation ? { x: c.rotation.x, y: c.rotation.y, z: c.rotation.z } : { x: 0, y: 0, z: 0 };
+      added.scale = c.scale ? { x: c.scale.x, y: c.scale.y, z: c.scale.z } : { x: 1, y: 1, z: 1 };
+      paintCube(added.id, c.color || "#3a8ee6");
+      applyCubeTransform(added);
+    });
+    selectCube(null);
+    showToast("\"" + record.name + "\" loaded");
+  })();
+
+  // ------------------------------------------------------------
+  // I4) MOBİL SEKMELER (Responsive Tabs)
+  // ------------------------------------------------------------
+  const panelLeftEl = document.querySelector(".bb-panel-left");
+  const panelRightEl = document.querySelector(".bb-panel-right");
+  const mobileTabButtons = document.querySelectorAll(".bb-mobile-tab-btn");
+
+  function setMobileTab(tab){
+    mobileTabButtons.forEach(b => b.classList.toggle("is-active", b.getAttribute("data-mobile-tab") === tab));
+    panelLeftEl.classList.toggle("is-mobile-active", tab === "left");
+    panelRightEl.classList.toggle("is-mobile-active", tab === "right");
+    // "viewport" seçiliyken her iki panel de gizlenir; 3D sahne tam ekran görünür.
+    requestAnimationFrame(onResize);
+  }
+  mobileTabButtons.forEach(btn => {
+    btn.addEventListener("click", () => setMobileTab(btn.getAttribute("data-mobile-tab")));
+  });
+  setMobileTab("viewport"); // varsayılan: mobilde açılışta sahne tam ekran
+
+  // ------------------------------------------------------------
+  // J) PENCERE BOYUTU DEĞİŞİMİ
+  // ------------------------------------------------------------
+  function onResize(){
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (w === 0 || h === 0) return;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener("resize", onResize);
+  // İlk yüklemede panel boyutları henüz kesinleşmemiş olabilir; bir sonraki
+  // frame'de tekrar boyutlandır.
+  requestAnimationFrame(onResize);
+
+  // ------------------------------------------------------------
+  // K) RENDER DÖNGÜSÜ + CANLI SAHNE İSTATİSTİKLERİ (FPS/Obje/Poligon/Vertex)
+  // ------------------------------------------------------------
+  const fpsChip = document.getElementById("bb-stat-fps");
+  const fpsValEl = document.getElementById("bb-stat-fps-val");
+  const objValEl = document.getElementById("bb-stat-obj-val");
+  const triValEl = document.getElementById("bb-stat-tri-val");
+  const vertValEl = document.getElementById("bb-stat-vert-val");
+
+  let fpsFrameCount = 0;
+  let fpsLastSampleTime = performance.now();
+  let statsDirty = true; // küp eklenip/silinince true yapılır, poligon sayımını tetikler
+
+  function markStatsDirty(){ statsDirty = true; }
+
+  function refreshSceneStatChips(){
+    objValEl.textContent = state.cubes.length;
+    const { verts, tris } = countTotalVertsTris();
+    triValEl.textContent = tris.toLocaleString("en-US");
+    vertValEl.textContent = verts.toLocaleString("en-US");
+    statsDirty = false;
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+
+    // Gizmo tutamaçlarının EKRANDA sabit boyutta görünmesi için, kamera
+    // her karede hareket edebileceğinden (zoom/orbit), pozisyon/boyutları
+    // her karede yeniden hesaplanır — ama sadece ilgili gizmo görünürken
+    // (gereksiz hesaplama yapılmaz).
+    if (scaleGizmo.visible) syncScaleGizmoTransform();
+    if (translateGizmo.visible) syncTranslateGizmoTransform();
+
+    renderer.render(scene, camera);
+
+    // FPS: ~500ms'de bir örnekleyip yazıyoruz (her frame DOM yazmak
+    // gereksiz reflow'a yol açar).
+    fpsFrameCount++;
+    const now = performance.now();
+    const elapsed = now - fpsLastSampleTime;
+    if (elapsed >= 500) {
+      const fps = Math.round((fpsFrameCount * 1000) / elapsed);
+      fpsValEl.textContent = fps;
+      fpsChip.classList.remove("fps-good", "fps-warn", "fps-bad");
+      fpsChip.classList.add(fps >= 50 ? "fps-good" : fps >= 25 ? "fps-warn" : "fps-bad");
+      fpsFrameCount = 0;
+      fpsLastSampleTime = now;
+    }
+
+    if (statsDirty) refreshSceneStatChips();
+  }
+  animate();
+
+  // ------------------------------------------------------------
+  // L) BAŞLANGIÇ — örnek bir küp ekleyerek boş sahneyi tanıtır
+  // ------------------------------------------------------------
+  addCube(0, 0.5, 0);
+  selectCube(null); // başlangıçta seçili bırakma, sadece görünür olsun
+
+})();
+</script>
+</body>
+</html>
