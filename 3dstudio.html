@@ -3358,7 +3358,8 @@
   document.getElementById("bb-btn-clear").addEventListener("click", clearAllCubes);
 
   document.getElementById("bb-btn-back").addEventListener("click", () => {
-    window.location.href = "index.html";
+    // #studio hash'i ile dönüyoruz ki index.html otomatik studio sekmesini açsın.
+    window.location.href = "index.html#studio";
   });
 
   // ------------------------------------------------------------
