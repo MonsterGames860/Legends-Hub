@@ -2450,6 +2450,33 @@
         .msg-shell.is-conversation-open .msg-chat-list-panel { display: none; }
         .msg-shell:not(.is-conversation-open) .msg-conversation-panel { display: none; }
         .msg-back-btn { display: inline-flex !important; }
+
+        /* Bir sohbet açıkken (DM veya Grup) yazışma penceresi TAM EKRAN
+           olsun: sayfa başlığı/hamburger menü gizlenir, panel tüm görünür
+           alanı (dvh) kaplar, kenar boşlukları/köşe yuvarlama kalkar. */
+        body:has(.msg-shell.is-conversation-open) .hub-topbar,
+        body.msg-conversation-fullscreen .hub-topbar {
+            display: none;
+        }
+        body:has(.msg-shell.is-conversation-open) .hub-main,
+        body.msg-conversation-fullscreen .hub-main {
+            padding: 0;
+        }
+        .msg-shell.is-conversation-open {
+            height: 100vh;
+            height: 100dvh;
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            margin: 0;
+        }
+        .msg-shell.is-conversation-open .msg-conversation-panel {
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+            height: 100%;
+        }
     }
 
     .msg-chat-list-panel,
@@ -2874,6 +2901,112 @@
         text-align: right;
     }
     .msg-bubble-row.is-own .msg-bubble-time { color: rgba(102,252,241,0.6); }
+
+    /* ── WhatsApp tarzı tarih ayırıcı (Bugün / Dün / gün adı / tarih) ── */
+    .msg-date-divider {
+        display: flex;
+        justify-content: center;
+        margin: 6px 0 2px;
+    }
+    .msg-date-divider span {
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 12px;
+    }
+
+    /* ── Mesaj eylemleri (Yanıtla / Sil) — balona basılı tutunca/hover'da ── */
+    .msg-bubble-row { position: relative; }
+    .msg-bubble-wrap { display: flex; flex-direction: column; min-width: 0; }
+    .msg-bubble-row.is-own .msg-bubble-wrap { align-items: flex-end; }
+    .msg-bubble-actions {
+        display: flex;
+        gap: 4px;
+        margin-top: 3px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s ease;
+    }
+    .msg-bubble-row:hover .msg-bubble-actions,
+    .msg-bubble-row.is-actions-open .msg-bubble-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .msg-bubble-action-btn {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .msg-bubble-action-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .msg-bubble-action-btn.is-danger:hover { color: var(--danger); border-color: var(--danger); }
+
+    /* Yanıtlanan mesaj alıntısı: balonun içinde, metnin üstünde */
+    .msg-bubble-reply-quote {
+        display: flex;
+        flex-direction: column;
+        border-left: 2px solid var(--accent);
+        background: rgba(102,252,241,0.06);
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin-bottom: 6px;
+        font-size: 0.76rem;
+        cursor: pointer;
+    }
+    .msg-bubble-reply-quote .msg-reply-quote-name {
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 0.72rem;
+    }
+    .msg-bubble-reply-quote .msg-reply-quote-text {
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .msg-bubble-deleted {
+        font-style: italic;
+        color: var(--text-dim);
+        opacity: 0.75;
+    }
+
+    /* Composer üstünde "şuna yanıt veriyorsun" şeridi */
+    .msg-reply-banner {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 12px;
+        border-top: 1px solid var(--line);
+        background: var(--bg-panel-raised);
+        font-size: 0.78rem;
+    }
+    .msg-reply-banner.is-visible { display: flex; }
+    .msg-reply-banner-info { min-width: 0; }
+    .msg-reply-banner-name { color: var(--accent); font-weight: 700; }
+    .msg-reply-banner-text {
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+    .msg-reply-banner-close {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1rem;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .msg-reply-banner-close:hover { color: var(--danger); }
 
     /* ── Composer (metin girişi + görsel/GIF + Gönder) ───────────── */
     .msg-composer {
@@ -4917,6 +5050,14 @@
 
                             <div class="msg-bubble-list" id="dmMessageList"></div>
 
+                            <div class="msg-reply-banner" id="dmReplyBanner">
+                                <div class="msg-reply-banner-info">
+                                    <span class="msg-reply-banner-name" id="dmReplyBannerName">—</span>
+                                    <span class="msg-reply-banner-text" id="dmReplyBannerText">—</span>
+                                </div>
+                                <button type="button" class="msg-reply-banner-close" id="dmReplyBannerClose" title="Vazgeç">✕</button>
+                            </div>
+
                             <div class="msg-composer">
                                 <div class="forum-plus-btn" id="dmPlusBtn" title="Fotoğraf veya GIF ekle">
                                     +
@@ -5004,6 +5145,14 @@
                             </div>
 
                             <div class="msg-bubble-list" id="groupMessageList"></div>
+
+                            <div class="msg-reply-banner" id="groupReplyBanner">
+                                <div class="msg-reply-banner-info">
+                                    <span class="msg-reply-banner-name" id="groupReplyBannerName">—</span>
+                                    <span class="msg-reply-banner-text" id="groupReplyBannerText">—</span>
+                                </div>
+                                <button type="button" class="msg-reply-banner-close" id="groupReplyBannerClose" title="Vazgeç">✕</button>
+                            </div>
 
                             <div class="msg-composer">
                                 <div class="forum-plus-btn" id="groupPlusBtn" title="Fotoğraf veya GIF ekle">
@@ -9899,6 +10048,16 @@
         }
 
         function switchView(view) {
+            // Mesajlar/Gruplar dışında bir sekmeye geçiliyorsa, açık kalmış
+            // olabilecek tam ekran sohbet görünümünü güvenli şekilde kapat
+            // (aksi halde body class'ı takılı kalıp diğer sekmeleri de
+            // topbar'sız/tam ekran gösterebilir).
+            if (view !== "messages" && view !== "groups") {
+                document.getElementById("dmShell")?.classList.remove("is-conversation-open");
+                document.getElementById("groupShell")?.classList.remove("is-conversation-open");
+                document.body.classList.remove("msg-conversation-fullscreen");
+            }
+
             document.querySelectorAll(".hub-nav-item").forEach((el) => {
                 el.classList.toggle("is-active", el.getAttribute("data-view") === view);
             });
@@ -11393,6 +11552,12 @@
                 document.getElementById("dmConversationEmpty").style.display = "none";
                 document.getElementById("dmConversationActive").style.display = "flex";
                 document.getElementById("dmShell").classList.add("is-conversation-open");
+                document.body.classList.add("msg-conversation-fullscreen");
+                dmReplyBannerCtrl.clear();
+                bindBubbleActions(document.getElementById("dmMessageList"), {
+                    getReplyBanner: () => dmReplyBannerCtrl,
+                    sendFn: { deleteMessage: deleteDmMessage }
+                });
 
                 // Kullanıcı adı/avatar cache'i (mentionUserCache) henüz Firebase'den
                 // ilk kez dolmamış olabilir (özellikle sayfa yeni açıldıysa ve hemen
@@ -11437,8 +11602,10 @@
                 _activeDmOtherUid = null;
                 if (_dmMessagesRef) { _dmMessagesRef.off(); _dmMessagesRef = null; }
                 document.getElementById("dmShell").classList.remove("is-conversation-open");
+                document.body.classList.remove("msg-conversation-fullscreen");
                 document.getElementById("dmConversationEmpty").style.display = "flex";
                 document.getElementById("dmConversationActive").style.display = "none";
+                dmReplyBannerCtrl.clear();
                 renderDmChatList();
             }
 
@@ -11456,36 +11623,71 @@
 
                 const encoded = window.CommunityMentions.encodeForStorage(text.trim());
                 const now = firebase.database.ServerValue.TIMESTAMP;
+                const dmId = _activeDmId;
+                const otherUid = _activeDmOtherUid;
 
-                const msgRef = database.ref("dms/" + _activeDmId + "/messages").push();
-                await msgRef.set({ authorUid: _myUid, text: encoded, createdAt: now });
+                const payload = { authorUid: _myUid, text: encoded, createdAt: now };
+                const pendingReply = dmReplyBannerCtrl.get();
+                if (pendingReply) {
+                    payload.replyTo = {
+                        messageId: pendingReply.messageId,
+                        authorUid: pendingReply.authorUid,
+                        snippet: pendingReply.snippet || ""
+                    };
+                }
 
-                const preview = makePreviewSnippet(text.trim());
-                const clientNow = Date.now();
+                // ASIL İŞLEM: mesajı gönder. Bu adım başarılı olduğunda mesaj
+                // artık gerçekten gönderilmiş sayılır — kullanıcıya "gönderilemedi"
+                // hatası burada başarısız olmadıkça asla gösterilmemeli.
+                const msgRef = database.ref("dms/" + dmId + "/messages").push();
+                try {
+                    await msgRef.set(payload);
+                } catch (err) {
+                    console.error("[Messaging] DM mesajı yazılamadı:", err);
+                    throw err; // gerçek gönderme hatası — composer bunu yakalayıp mesajı geri koyacak
+                }
 
-                // Kendi inbox kaydımızı güncelle (okundu, çünkü zaten açığız).
-                await database.ref("dm_inbox/" + _myUid + "/" + _activeDmId).update({
-                    otherUid: _activeDmOtherUid,
-                    lastMessage: preview,
-                    lastSenderUid: _myUid,
-                    updatedAt: clientNow,
-                    unreadCount: 0
-                });
-                // Karşı tarafın inbox kaydını güncelle + okunmamışını artır.
-                const otherUnreadSnap = await database.ref("dm_inbox/" + _activeDmOtherUid + "/" + _activeDmId + "/unreadCount").once("value");
-                const otherUnread = (otherUnreadSnap.val() || 0) + 1;
-                await database.ref("dm_inbox/" + _activeDmOtherUid + "/" + _activeDmId).update({
-                    otherUid: _myUid,
-                    lastMessage: preview,
-                    lastSenderUid: _myUid,
-                    updatedAt: clientNow,
-                    unreadCount: otherUnread
-                });
-                // dms/{id}/meta -> her iki üyenin de bu dm'e sahip olduğunu
-                // garanti eder (ör. Security Rules üyelik kontrolü için).
-                await database.ref("dms/" + _activeDmId + "/meta").update({
-                    members: { [_myUid]: true, [_activeDmOtherUid]: true },
-                    updatedAt: clientNow
+                dmReplyBannerCtrl.clear();
+
+                // İKİNCİL İŞLEMLER: inbox önizlemesi/okunmamış sayaç güncellemeleri.
+                // Bunlar mesajın kendisinden SONRA yapılır ve başarısız olsalar
+                // bile mesaj zaten gönderilmiş olduğu için kullanıcıya "mesaj
+                // gönderilemedi" hatası GÖSTERİLMEZ — sadece konsola loglanır.
+                try {
+                    const preview = makePreviewSnippet(text.trim());
+                    const clientNow = Date.now();
+
+                    await database.ref("dm_inbox/" + _myUid + "/" + dmId).update({
+                        otherUid: otherUid,
+                        lastMessage: preview,
+                        lastSenderUid: _myUid,
+                        updatedAt: clientNow,
+                        unreadCount: 0
+                    });
+                    const otherUnreadSnap = await database.ref("dm_inbox/" + otherUid + "/" + dmId + "/unreadCount").once("value");
+                    const otherUnread = (otherUnreadSnap.val() || 0) + 1;
+                    await database.ref("dm_inbox/" + otherUid + "/" + dmId).update({
+                        otherUid: _myUid,
+                        lastMessage: preview,
+                        lastSenderUid: _myUid,
+                        updatedAt: clientNow,
+                        unreadCount: otherUnread
+                    });
+                    await database.ref("dms/" + dmId + "/meta").update({
+                        members: { [_myUid]: true, [otherUid]: true },
+                        updatedAt: clientNow
+                    });
+                } catch (err) {
+                    console.error("[Messaging] DM inbox güncellenemedi (mesaj yine de gönderildi):", err);
+                }
+            }
+
+            async function deleteDmMessage(messageId) {
+                if (!_activeDmId || !messageId) return;
+                await database.ref("dms/" + _activeDmId + "/messages/" + messageId).update({
+                    deleted: true,
+                    text: "",
+                    deletedAt: Date.now()
                 });
             }
 
@@ -11610,6 +11812,12 @@
                 document.getElementById("groupConversationEmpty").style.display = "none";
                 document.getElementById("groupConversationActive").style.display = "flex";
                 document.getElementById("groupShell").classList.add("is-conversation-open");
+                document.body.classList.add("msg-conversation-fullscreen");
+                groupReplyBannerCtrl.clear();
+                bindBubbleActions(document.getElementById("groupMessageList"), {
+                    getReplyBanner: () => groupReplyBannerCtrl,
+                    sendFn: { deleteMessage: deleteGroupMessage }
+                });
 
                 document.getElementById("groupHeaderName").textContent = meta.name || "İsimsiz Grup";
                 document.getElementById("groupHeaderSub").textContent = `${Object.keys(meta.members || {}).length} üye`;
@@ -11642,8 +11850,10 @@
                 _activeGroupId = null;
                 if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
                 document.getElementById("groupShell").classList.remove("is-conversation-open");
+                document.body.classList.remove("msg-conversation-fullscreen");
                 document.getElementById("groupConversationEmpty").style.display = "flex";
                 document.getElementById("groupConversationActive").style.display = "none";
+                groupReplyBannerCtrl.clear();
                 renderGroupChatList();
             }
 
@@ -11651,14 +11861,48 @@
                 if (!text || !text.trim() || !_activeGroupId) return;
                 const encoded = window.CommunityMentions.encodeForStorage(text.trim());
                 const now = firebase.database.ServerValue.TIMESTAMP;
+                const groupId = _activeGroupId;
 
-                const msgRef = database.ref("group_chats/" + _activeGroupId + "/messages").push();
-                await msgRef.set({ authorUid: _myUid, text: encoded, createdAt: now });
+                const payload = { authorUid: _myUid, text: encoded, createdAt: now };
+                const pendingReply = groupReplyBannerCtrl.get();
+                if (pendingReply) {
+                    payload.replyTo = {
+                        messageId: pendingReply.messageId,
+                        authorUid: pendingReply.authorUid,
+                        snippet: pendingReply.snippet || ""
+                    };
+                }
 
-                await database.ref("group_chats/" + _activeGroupId + "/meta").update({
-                    lastMessage: makePreviewSnippet(text.trim()),
-                    lastSenderUid: _myUid,
-                    updatedAt: Date.now()
+                // ASIL İŞLEM: mesajı gönder.
+                const msgRef = database.ref("group_chats/" + groupId + "/messages").push();
+                try {
+                    await msgRef.set(payload);
+                } catch (err) {
+                    console.error("[Messaging] Grup mesajı yazılamadı:", err);
+                    throw err;
+                }
+
+                groupReplyBannerCtrl.clear();
+
+                // İKİNCİL İŞLEM: grup meta önizlemesi — başarısız olursa mesaj
+                // yine de gönderilmiş sayılır, sahte hata gösterilmez.
+                try {
+                    await database.ref("group_chats/" + groupId + "/meta").update({
+                        lastMessage: makePreviewSnippet(text.trim()),
+                        lastSenderUid: _myUid,
+                        updatedAt: Date.now()
+                    });
+                } catch (err) {
+                    console.error("[Messaging] Grup meta güncellenemedi (mesaj yine de gönderildi):", err);
+                }
+            }
+
+            async function deleteGroupMessage(messageId) {
+                if (!_activeGroupId || !messageId) return;
+                await database.ref("group_chats/" + _activeGroupId + "/messages/" + messageId).update({
+                    deleted: true,
+                    text: "",
+                    deletedAt: Date.now()
                 });
             }
 
@@ -11889,6 +12133,35 @@
             // ══════════════════════════════════════════════════════════
             // ORTAK: mesaj baloncuğu render'ı (DM + Grup için tek fonksiyon)
             // ══════════════════════════════════════════════════════════
+            // WhatsApp tarzı gün etiketi: "Bugün" / "Dün" / haftaiçi günü / tarih.
+            function formatDateDividerLabel(ts) {
+                if (!ts) return "";
+                const d = new Date(ts);
+                const now = new Date();
+                const startOf = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+                const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
+                if (diffDays === 0) return "Bugün";
+                if (diffDays === 1) return "Dün";
+                if (diffDays > 1 && diffDays < 7) {
+                    return d.toLocaleDateString("tr-TR", { weekday: "long" });
+                }
+                return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
+            }
+
+            function dayKey(ts) {
+                const d = new Date(ts || 0);
+                return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+            }
+
+            // Bir mesajın sil/yanıtla için gösterileceği kısa alıntı metni
+            // (mention-encode edilmiş içeriği okunaklı hale getirir).
+            function bubbleQuoteText(m) {
+                if (m.deleted) return "Bu mesaj silindi";
+                // Ham depolanmış metindeki [mention:...] kodlarını sadeleştirip
+                // kısa bir önizleme çıkarıyoruz (zaten makePreviewSnippet bunu yapıyor).
+                return makePreviewSnippet(m.text || "");
+            }
+
             function renderBubbleList(listEl, messages, { isGroup }) {
                 if (!listEl) return;
                 if (messages.length === 0) {
@@ -11896,7 +12169,16 @@
                     return;
                 }
                 const RBAC = window.CommunityRBAC;
-                listEl.innerHTML = messages.map((m) => {
+                let lastDayKey = null;
+                const html = [];
+
+                messages.forEach((m) => {
+                    const dk = dayKey(m.createdAt);
+                    if (dk !== lastDayKey) {
+                        lastDayKey = dk;
+                        html.push(`<div class="msg-date-divider"><span>${escapeAttr(formatDateDividerLabel(m.createdAt))}</span></div>`);
+                    }
+
                     const isOwn = m.authorUid === _myUid;
                     const candidate = window.CommunityMentions.getByUid(m.authorUid);
                     const username = candidate ? candidate.username : "Kullanıcı";
@@ -11911,20 +12193,146 @@
                         ? `<div class="msg-bubble-sender">${RBAC.renderNameWithRank(username, role, isVerified)}</div>`
                         : "";
 
-                    return `
-                        <div class="msg-bubble-row${isOwn ? ' is-own' : ''}">
+                    const isDeleted = m.deleted === true;
+
+                    let replyHtml = "";
+                    if (m.replyTo && m.replyTo.messageId) {
+                        const rCandidate = window.CommunityMentions.getByUid(m.replyTo.authorUid);
+                        const rName = rCandidate ? rCandidate.username : "Kullanıcı";
+                        replyHtml = `
+                            <div class="msg-bubble-reply-quote" data-jump-to="${escapeAttr(m.replyTo.messageId)}">
+                                <span class="msg-reply-quote-name">${escapeAttr(rName)}</span>
+                                <span class="msg-reply-quote-text">${escapeAttr(m.replyTo.snippet || "")}</span>
+                            </div>
+                        `;
+                    }
+
+                    const bodyHtml = isDeleted
+                        ? `<div class="msg-bubble-text msg-bubble-deleted">🚫 Bu mesaj silindi</div>`
+                        : `<div class="msg-bubble-text">${renderRichContent(m.text)}</div>`;
+
+                    let actionsHtml = "";
+                    if (!isDeleted) {
+                        const replyBtn = `<button type="button" class="msg-bubble-action-btn" data-msg-action="reply" data-msg-id="${escapeAttr(m.id)}" data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}">↩ Yanıtla</button>`;
+                        const deleteBtn = isOwn
+                            ? `<button type="button" class="msg-bubble-action-btn is-danger" data-msg-action="delete" data-msg-id="${escapeAttr(m.id)}">🗑 Sil</button>`
+                            : "";
+                        actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${deleteBtn}</div>`;
+                    }
+
+                    html.push(`
+                        <div class="msg-bubble-row${isOwn ? ' is-own' : ''}" data-msg-id="${escapeAttr(m.id)}">
                             <img class="msg-bubble-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
-                            <div class="msg-bubble">
-                                ${senderHtml}
-                                <div class="msg-bubble-text">${renderRichContent(m.text)}</div>
-                                <div class="msg-bubble-time">${formatMessageTime(m.createdAt)}</div>
+                            <div class="msg-bubble-wrap">
+                                <div class="msg-bubble">
+                                    ${senderHtml}
+                                    ${replyHtml}
+                                    ${bodyHtml}
+                                    <div class="msg-bubble-time">${formatMessageTime(m.createdAt)}</div>
+                                </div>
+                                ${actionsHtml}
                             </div>
                         </div>
-                    `;
-                }).join("");
+                    `);
+                });
 
-                listEl.scrollTop = listEl.scrollHeight;
+                listEl.innerHTML = html.join("");
+                scrollBubbleListToBottom(listEl);
             }
+
+            // Mesaj listesini en alta kaydırır. İçerideki görsel/GIF/embed'ler
+            // asenkron yüklendiği için scrollHeight'ın geç büyümesi "sanki en
+            // üste atlıyormuş gibi" bir izlenim veriyordu — bunu önlemek için
+            // kaydırmayı hem hemen hem de görseller yüklendikçe tekrar uyguluyoruz.
+            function scrollBubbleListToBottom(listEl) {
+                if (!listEl) return;
+                listEl.scrollTop = listEl.scrollHeight;
+                requestAnimationFrame(() => { listEl.scrollTop = listEl.scrollHeight; });
+                listEl.querySelectorAll("img, video").forEach((el) => {
+                    const isLoaded = el.tagName === "IMG" ? el.complete : el.readyState >= 1;
+                    if (isLoaded) return;
+                    const evt = el.tagName === "IMG" ? "load" : "loadedmetadata";
+                    el.addEventListener(evt, () => { listEl.scrollTop = listEl.scrollHeight; }, { once: true });
+                    el.addEventListener("error", () => { listEl.scrollTop = listEl.scrollHeight; }, { once: true });
+                });
+            }
+
+            // ── Yanıtla / Sil aksiyon tıklamaları (event delegation) ────
+            function bindBubbleActions(listEl, { getReplyBanner, sendFn }) {
+                if (!listEl || listEl.dataset.actionsBound) return;
+                listEl.dataset.actionsBound = "1";
+
+                listEl.addEventListener("click", async (e) => {
+                    const replyBtn = e.target.closest('[data-msg-action="reply"]');
+                    if (replyBtn) {
+                        const banner = getReplyBanner();
+                        banner.set({
+                            messageId: replyBtn.getAttribute("data-msg-id"),
+                            authorUid: replyBtn.getAttribute("data-msg-author-uid"),
+                            snippet: replyBtn.getAttribute("data-msg-snippet") || ""
+                        });
+                        return;
+                    }
+                    const deleteBtn = e.target.closest('[data-msg-action="delete"]');
+                    if (deleteBtn) {
+                        if (!confirm("Bu mesajı silmek istediğine emin misin?")) return;
+                        try {
+                            await sendFn.deleteMessage(deleteBtn.getAttribute("data-msg-id"));
+                        } catch (err) {
+                            console.error("[Messaging] Mesaj silinemedi:", err);
+                            showToastGlobal("Mesaj silinemedi. Yetki sorunu olabilir.");
+                        }
+                        return;
+                    }
+                    const quote = e.target.closest("[data-jump-to]");
+                    if (quote) {
+                        const targetId = quote.getAttribute("data-jump-to");
+                        const targetEl = listEl.querySelector(`[data-msg-id="${CSS.escape(targetId)}"]`);
+                        if (targetEl) scrollAndHighlight2(targetEl);
+                    }
+                });
+            }
+
+            function scrollAndHighlight2(el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                el.classList.remove("msg-highlight");
+                void el.offsetWidth;
+                el.classList.add("msg-highlight");
+                setTimeout(() => el.classList.remove("msg-highlight"), 2600);
+            }
+
+            // ── Yanıt banner'ı (composer üstünde "şuna yanıt veriyorsun") ─
+            function createReplyBannerController(prefix) {
+                const banner = document.getElementById(prefix + "ReplyBanner");
+                const nameEl = document.getElementById(prefix + "ReplyBannerName");
+                const textEl = document.getElementById(prefix + "ReplyBannerText");
+                const closeBtn = document.getElementById(prefix + "ReplyBannerClose");
+                let current = null;
+
+                function set(replyInfo) {
+                    current = replyInfo;
+                    if (!banner) return;
+                    const candidate = window.CommunityMentions.getByUid(replyInfo.authorUid);
+                    if (nameEl) nameEl.textContent = candidate ? candidate.username : "Kullanıcı";
+                    if (textEl) textEl.textContent = replyInfo.snippet || "";
+                    banner.classList.add("is-visible");
+                }
+                function clear() {
+                    current = null;
+                    if (banner) banner.classList.remove("is-visible");
+                }
+                function get() { return current; }
+
+                if (closeBtn && !closeBtn.dataset.bound) {
+                    closeBtn.dataset.bound = "1";
+                    closeBtn.addEventListener("click", clear);
+                }
+
+                return { set, clear, get };
+            }
+
+            const dmReplyBannerCtrl = createReplyBannerController("dm");
+            const groupReplyBannerCtrl = createReplyBannerController("group");
 
             // ══════════════════════════════════════════════════════════
             // Composer kurulumu (DM ve Grup için ortak: metin + mention
