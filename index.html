@@ -11371,7 +11371,22 @@
                 updateDmHeaderBlockUi();
             }
 
-            function openDmConversation(dmId, otherUid) {
+            // dms/{id}/meta yoksa .read kuralı members üzerinden kontrol
+            // ettiği için TÜM okuma (mesajlar dahil) reddedilir. Bu yüzden
+            // bir DM'i ilk kez açarken meta'nın var olduğundan EMİN OLMAMIZ
+            // gerekiyor — aksi halde "isim/avatar gelmiyor, mesaj atamıyorum"
+            // sorunu tam burada oluşur (PERMISSION_DENIED, sessizce yutuluyordu).
+            async function ensureDmMetaExists(dmId, otherUid) {
+                const metaRef = database.ref("dms/" + dmId + "/meta");
+                const snap = await metaRef.once("value").catch(() => null);
+                if (snap && snap.exists()) return;
+                await metaRef.update({
+                    members: { [_myUid]: true, [otherUid]: true },
+                    updatedAt: Date.now()
+                });
+            }
+
+            async function openDmConversation(dmId, otherUid) {
                 _activeDmId = dmId;
                 _activeDmOtherUid = otherUid;
 
@@ -11389,6 +11404,16 @@
                 });
 
                 renderDmChatList(); // aktif satırı vurgulamak için yeniden çiz
+
+                try {
+                    await ensureDmMetaExists(dmId, otherUid);
+                } catch (err) {
+                    console.error("[Messaging] DM meta oluşturulamadı:", err);
+                    showToastGlobal("Sohbet açılamadı. Yetki sorunu olabilir.");
+                    return;
+                }
+
+                if (_activeDmId !== dmId) return; // bu sırada başka bir sohbete geçilmiş olabilir
 
                 if (_dmMessagesRef) _dmMessagesRef.off();
                 _dmMessagesRef = database.ref("dms/" + dmId + "/messages").orderByChild("createdAt").limitToLast(150);
