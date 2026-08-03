@@ -12205,6 +12205,27 @@
                             if (!meta) { delete _groupMetaCache[gid]; }
                             else { _groupMetaCache[gid] = meta; }
                             renderGroupChatList();
+
+                            // Grup detay paneli şu an bu grup için açıksa
+                            // (üye çıkarma / rol değişimi / foto-isim
+                            // güncelleme gibi işlemler sonrası) elle
+                            // "kapat-aç" yapmaya gerek kalmadan içeriği
+                            // canlı yenile.
+                            if (_activeGroupDetailId === gid) {
+                                if (!meta) closeGroupDetailPanel();
+                                else renderGroupDetailPanel(gid);
+                            }
+
+                            // Aktif sohbet ekranındaki başlık (isim/foto/üye
+                            // sayısı) ve composer kilidi (izin değişimi) de
+                            // aynı şekilde canlı güncellensin.
+                            if (_activeGroupId === gid) {
+                                if (!meta) closeGroupConversation();
+                                else {
+                                    updateGroupConversationHeader(meta);
+                                    updateGroupComposerLock(meta);
+                                }
+                            }
                         });
                     });
 
@@ -12304,22 +12325,7 @@
                     sendFn: { deleteMessage: deleteGroupMessage }
                 });
 
-                document.getElementById("groupHeaderName").textContent = meta.name || "İsimsiz Grup";
-                document.getElementById("groupHeaderSub").textContent = `${Object.keys(meta.members || {}).length} üye`;
-                updateGroupHeaderAvatar(meta);
-
-                const codeBadge = document.getElementById("groupCodeBadge");
-                if (codeBadge) {
-                    if (meta.joinCode) {
-                        codeBadge.textContent = "KOD: " + meta.joinCode;
-                        codeBadge.style.display = "inline-flex";
-                    } else {
-                        // Eski gruplarda (bu özellik eklenmeden önce oluşturulmuş) kod
-                        // yoktur — grup sahibiyse tıklayınca kod üretip atayabilsin.
-                        codeBadge.textContent = meta.ownerUid === _myUid ? "KOD OLUŞTUR" : "KOD YOK";
-                        codeBadge.style.display = "inline-flex";
-                    }
-                }
+                updateGroupConversationHeader(meta);
 
                 // Sadece-yöneticiler-mesaj-gönderebilir aktifken ve ben yönetici
                 // değilsem composer'ı devre dışı bırak (WhatsApp "duyuru grubu" gibi).
@@ -12339,6 +12345,31 @@
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
                 });
+            }
+
+            // Üst bilgi çubuğunu (isim, üye sayısı, avatar, davet kodu rozeti)
+            // günceller. Hem grup ilk açıldığında hem de meta canlı
+            // değiştiğinde (isim/foto/üye sayısı değişimi gibi) çağrılır,
+            // böylece kullanıcının ekranı elle yenilemesine gerek kalmaz.
+            function updateGroupConversationHeader(meta) {
+                const nameEl = document.getElementById("groupHeaderName");
+                const subEl = document.getElementById("groupHeaderSub");
+                if (nameEl) nameEl.textContent = meta.name || "İsimsiz Grup";
+                if (subEl) subEl.textContent = `${Object.keys(meta.members || {}).length} üye`;
+                updateGroupHeaderAvatar(meta);
+
+                const codeBadge = document.getElementById("groupCodeBadge");
+                if (codeBadge) {
+                    if (meta.joinCode) {
+                        codeBadge.textContent = "KOD: " + meta.joinCode;
+                        codeBadge.style.display = "inline-flex";
+                    } else {
+                        // Eski gruplarda (bu özellik eklenmeden önce oluşturulmuş) kod
+                        // yoktur — grup sahibiyse tıklayınca kod üretip atayabilsin.
+                        codeBadge.textContent = meta.ownerUid === _myUid ? "KOD OLUŞTUR" : "KOD YOK";
+                        codeBadge.style.display = "inline-flex";
+                    }
+                }
             }
 
             function updateGroupHeaderAvatar(meta) {
@@ -12460,21 +12491,42 @@
                 const memberUids = Object.keys((meta && meta.members) || {});
                 const remaining = memberUids.filter((uid) => uid !== _myUid);
 
-                if (remaining.length === 0) {
-                    // Grupta kalan tek kişi bendim: grubu tamamen kaldır.
-                    await database.ref("group_chats/" + gid).remove();
-                } else {
-                    // Sistem mesajı, ben hâlâ üyeyken (kural gereği) gönderilmeli --
-                    // bu yüzden ayrılma kayıtlarından ÖNCE atılır.
-                    const me = window.CommunityMentions.getByUid(_myUid);
-                    await postGroupSystemMessage(gid, `👋 ${me ? me.username : "Bir üye"} gruptan ayrıldı.`);
-                    await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
-                    await database.ref("group_chats/" + gid + "/meta/admins/" + _myUid).remove();
-                    await database.ref("group_chats/" + gid + "/meta/memberCount").set(remaining.length);
+                try {
+                    if (remaining.length === 0) {
+                        // Grupta kalan tek kişi bendim: grubu tamamen kaldır.
+                        await database.ref("group_chats/" + gid).remove();
+                    } else {
+                        // Sistem mesajı, ben hâlâ üyeyken (kural gereği) gönderilmeli --
+                        // bu yüzden ayrılma kayıtlarından ÖNCE atılır.
+                        const me = window.CommunityMentions.getByUid(_myUid);
+                        await postGroupSystemMessage(gid, `👋 ${me ? me.username : "Bir üye"} gruptan ayrıldı.`);
+                        // ÖNEMLİ: memberCount, members/{uid} silinmeden ÖNCE
+                        // güncellenmeli. Aksi halde "meta" kuralı
+                        // data.child('members').child(auth.uid) artık silinmiş
+                        // olduğu için yazmayı reddeder (auth.uid hâlâ üye
+                        // olmadığından) ve tüm işlem hata fırlatarak yarım
+                        // kalır (ayrılma "çalışmıyormuş" gibi görünür).
+                        await database.ref("group_chats/" + gid + "/meta/memberCount").set(remaining.length);
+                        await database.ref("group_chats/" + gid + "/meta/admins/" + _myUid).remove();
+                        await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
+                    }
+                    await database.ref("user_groups/" + _myUid + "/" + gid).remove();
+                } catch (err) {
+                    console.error("[Grup] Gruptan ayrılma hatası:", err);
+                    alert("Gruptan ayrılırken bir hata oluştu: " + (err && err.message ? err.message : err));
+                    return;
                 }
-                await database.ref("user_groups/" + _myUid + "/" + gid).remove();
+
+                // Yerel cache'i de hemen temizle: user_groups listener'ı
+                // gelene kadar UI'da grup görünmeye devam etmesin.
+                delete _groupMetaCache[gid];
+                delete _userGroupsCache[gid];
+                if (_activeGroupId === gid) _activeGroupId = null;
+                if (_activeGroupDetailId === gid) _activeGroupDetailId = null;
+
                 closeGroupDetailPanel();
                 closeGroupConversation();
+                renderGroupChatList();
             }
 
             // ══════════════════════════════════════════════════════════
@@ -12647,12 +12699,19 @@
                 const c = window.CommunityMentions.getByUid(targetUid);
                 if (!confirm(`${c ? c.username : "Bu kullanıcı"} gruptan çıkarılsın mı?`)) return;
 
-                await database.ref(`group_chats/${groupId}/meta/members/${targetUid}`).remove();
-                await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).remove();
-                const remaining = Object.keys(meta.members || {}).filter((uid) => uid !== targetUid).length;
-                await database.ref(`group_chats/${groupId}/meta/memberCount`).set(remaining);
-                await database.ref(`user_groups/${targetUid}/${groupId}`).remove();
-                await postGroupSystemMessage(groupId, `🚫 ${c ? c.username : "Bir üye"} gruptan çıkarıldı.`);
+                try {
+                    const remaining = Object.keys(meta.members || {}).filter((uid) => uid !== targetUid).length;
+                    // memberCount her zaman members/{targetUid} silinmeden ÖNCE
+                    // güncellenir (bkz. performLeaveGroup'taki aynı not).
+                    await database.ref(`group_chats/${groupId}/meta/memberCount`).set(remaining);
+                    await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).remove();
+                    await database.ref(`group_chats/${groupId}/meta/members/${targetUid}`).remove();
+                    await database.ref(`user_groups/${targetUid}/${groupId}`).remove();
+                    await postGroupSystemMessage(groupId, `🚫 ${c ? c.username : "Bir üye"} gruptan çıkarıldı.`);
+                } catch (err) {
+                    console.error("[Grup] Üye çıkarma hatası:", err);
+                    alert("Üye çıkarılırken bir hata oluştu: " + (err && err.message ? err.message : err));
+                }
             }
 
             // ── Kuruculuk devri ───────────────────────────────────────
