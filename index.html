@@ -2683,6 +2683,125 @@
     }
     .msg-group-leave-btn:hover { background: rgba(255,80,80,0.2); }
 
+    /* ── Konuşma başlığı: "…" menüsü (Engelle / Profili Gör / Kod) ── */
+    .msg-header-name-btn {
+        background: none;
+        border: none;
+        color: inherit;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        padding: 0;
+        text-align: left;
+    }
+    .msg-header-name-btn:hover { color: var(--accent); text-decoration: underline; }
+    .msg-header-menu-wrap { position: relative; flex-shrink: 0; }
+    .msg-header-menu-btn {
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        color: var(--text-primary);
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+    .msg-header-menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .msg-header-menu-popover {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        min-width: 190px;
+        overflow: hidden;
+        z-index: 40;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .msg-header-menu-popover.is-open { display: block; }
+    .msg-header-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        text-align: left;
+        cursor: pointer;
+    }
+    .msg-header-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
+    .msg-header-menu-item.is-danger { color: #ff6b6b; }
+    .msg-header-menu-item.is-danger:hover { background: rgba(255,80,80,0.12); }
+
+    /* ── Grup davet kodu rozeti ─────────────────────────────────── */
+    .msg-group-code-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        color: var(--accent);
+        font-family: var(--font-mono);
+        letter-spacing: 0.12em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 9px;
+        border-radius: 7px;
+        cursor: pointer;
+    }
+    .msg-group-code-badge:hover { border-color: var(--accent); }
+    .msg-join-code-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .msg-join-code-row .forum-text-input { flex: 1; text-transform: uppercase; }
+    .msg-tab-toggle {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+    .msg-tab-toggle button {
+        flex: 1;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .msg-tab-toggle button.is-active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+    /* ── Engellenenler listesi (profil kartı içinde) ────────────── */
+    .msg-blocked-list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 6px;
+    }
+    .msg-blocked-list-item img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .msg-blocked-list-item span { flex: 1; font-size: 0.85rem; }
+    .msg-blocked-list-item button {
+        background: rgba(255,80,80,0.1);
+        border: 1px solid rgba(255,80,80,0.4);
+        color: #ff6b6b;
+        border-radius: 6px;
+        padding: 5px 9px;
+        font-size: 0.72rem;
+        cursor: pointer;
+    }
+
     /* ── Mesaj baloncukları ─────────────────────────────────────── */
     .msg-bubble-list {
         flex: 1;
@@ -4782,8 +4901,17 @@
                                 <button type="button" class="msg-back-btn" id="dmBackBtn" title="Sohbet listesine dön">←</button>
                                 <img class="msg-conversation-avatar" id="dmHeaderAvatar" alt="">
                                 <div class="msg-conversation-header-info">
-                                    <span class="msg-conversation-header-name" id="dmHeaderName">—</span>
+                                    <button type="button" class="msg-header-name-btn" id="dmHeaderNameBtn">
+                                        <span class="msg-conversation-header-name" id="dmHeaderName">—</span>
+                                    </button>
                                     <span class="msg-conversation-header-sub" id="dmHeaderSub"></span>
+                                </div>
+                                <div class="msg-header-menu-wrap">
+                                    <button type="button" class="msg-header-menu-btn" id="dmHeaderMenuBtn" title="Seçenekler">⋮</button>
+                                    <div class="msg-header-menu-popover" id="dmHeaderMenuPopover">
+                                        <button type="button" class="msg-header-menu-item" id="dmMenuViewProfile">👤 Profili Gör</button>
+                                        <button type="button" class="msg-header-menu-item is-danger" id="dmMenuBlockToggle">🚫 Engelle</button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -4846,7 +4974,10 @@
                     <div class="msg-chat-list-panel" id="groupChatListPanel">
                         <div class="msg-panel-header">
                             <span>Gruplarım</span>
-                            <button type="button" class="msg-new-chat-btn" id="groupCreateBtn" title="Yeni grup oluştur">+ Yeni Grup</button>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="msg-new-chat-btn" id="groupJoinBtn" title="Davet koduyla katıl">🔑 Koda Katıl</button>
+                                <button type="button" class="msg-new-chat-btn" id="groupCreateBtn" title="Yeni grup oluştur">+ Yeni Grup</button>
+                            </div>
                         </div>
                         <input type="text" class="msg-search-input" id="groupChatSearchInput" placeholder="Grup ara…">
                         <div class="msg-chat-list" id="groupChatList">
@@ -4868,6 +4999,7 @@
                                     <span class="msg-conversation-header-name" id="groupHeaderName">—</span>
                                     <span class="msg-conversation-header-sub" id="groupHeaderSub">0 üye</span>
                                 </div>
+                                <button type="button" class="msg-group-code-badge" id="groupCodeBadge" title="Davet kodunu kopyala">KOD: ------</button>
                                 <button type="button" class="msg-group-leave-btn" id="groupLeaveBtn" title="Gruptan ayrıl">Ayrıl</button>
                             </div>
 
@@ -4933,6 +5065,27 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- KOD İLE GRUBA KATIL MODALI -->
+                <div class="forum-modal-backdrop" id="groupJoinModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span>Davet Koduyla Katıl</span>
+                            <button class="forum-modal-close" id="groupJoinModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">6 Haneli Grup Kodu</label>
+                            <div class="msg-join-code-row">
+                                <input type="text" class="forum-text-input" id="groupJoinCodeInput" maxlength="6" placeholder="Örn: A3F9K1" autocomplete="off">
+                            </div>
+                            <div class="forum-modal-error" id="groupJoinError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost" id="groupJoinCancelBtn">Vazgeç</button>
+                            <button class="forum-btn forum-btn-primary" id="groupJoinSubmitBtn">Gruba Katıl</button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
 
@@ -4978,6 +5131,11 @@
                             <div class="profile-role-chip" id="profileRoleChip">—</div>
                             <!-- Sosyal medya ikon çubuğu — kendi profilinde + diğer profillerinde -->
                             <div class="profile-social-icons" id="profileHeroSocialIcons"></div>
+                            <!-- Başkasının profilinde: DM gönder / Engelle — kendi profilinde gizli -->
+                            <div class="profile-other-actions" id="profileOtherUserActions" style="display:none; gap:8px; margin-top:10px;">
+                                <button type="button" class="forum-btn forum-btn-primary" id="profileSendDmBtn" style="padding:7px 14px; font-size:0.78rem;">✉️ Mesaj Gönder</button>
+                                <button type="button" class="forum-btn forum-btn-ghost" id="profileBlockBtn" style="padding:7px 14px; font-size:0.78rem; color:#ff6b6b; border-color:rgba(255,80,80,0.4);">🚫 Engelle</button>
+                            </div>
                         </div>
                     </div>
 
@@ -6240,6 +6398,34 @@
                 const toggle = document.getElementById("profileVerifiedToggle");
                 toggle.checked = profile.isVerified === true;
                 toggle.onchange = () => handleVerifiedToggle(uid, toggle.checked);
+            }
+
+            // --- Başkasının profilinde: Mesaj Gönder / Engelle ---
+            const otherActionsEl = document.getElementById("profileOtherUserActions");
+            if (otherActionsEl) {
+                if (isSelf || !uid) {
+                    otherActionsEl.style.display = "none";
+                } else {
+                    otherActionsEl.style.display = "flex";
+                    const dmBtn = document.getElementById("profileSendDmBtn");
+                    const blockBtn = document.getElementById("profileBlockBtn");
+                    if (dmBtn) {
+                        dmBtn.onclick = () => {
+                            switchView("messages");
+                            const myUid = window.CommunityAuth.user.uid;
+                            const dmId = [myUid, uid].sort().join("_");
+                            window.MessagingSystem.openDmConversation(dmId, uid);
+                        };
+                    }
+                    if (blockBtn) {
+                        const isBlocked = window.MessagingSystem.iBlocked(uid);
+                        blockBtn.textContent = isBlocked ? "✅ Engeli Kaldır" : "🚫 Engelle";
+                        blockBtn.onclick = async () => {
+                            await window.MessagingSystem.toggleBlockUser(uid);
+                            window.renderProfileView(profile, uid, isSelf);
+                        };
+                    }
+                }
             }
         };
 
@@ -7664,6 +7850,13 @@
                     showForumComposerError("Kendinize gizli mesaj gönderemezsiniz.");
                     return;
                 }
+                // Engelleme kontrolü: ben onu engellemişsem ya da o beni
+                // engellemişse, birbirimize /w ile gizli mesaj gidemez.
+                if (window.MessagingSystem && (window.MessagingSystem.iBlocked(targetCandidate.uid) || window.MessagingSystem.blockedMe(targetCandidate.uid))) {
+                    showForumComposerError("Bu kullanıcıya gizli mesaj gönderemezsiniz.");
+                    return;
+                }
+
                 whisperToUid = targetCandidate.uid;
                 bodyText = whisperMatch[2];
             }
@@ -10996,6 +11189,71 @@
             let _groupMetaCache = {};  // groupId -> meta (canlı dinlenir, liste render için)
             let _groupCreateSelected = {}; // uid -> {uid, username, avatarUrl} (Yeni Grup modalında seçilenler)
 
+            // ── ENGELLEME (BLOCK) ────────────────────────────────────
+            // blocks/{myUid}/{blockedUid} = true  → BEN onu engelledim.
+            // blocked_by/{targetUid}/{myUid} = true → aynı ilişkinin ters
+            // fan-out kopyası; "biri beni engellemiş mi" hızlı kontrolü
+            // ve engelleyenin DM/grup daveti göndermesini engellemek için.
+            let _blockedByMeCache = {};   // uid -> true (ben onu engelledim)
+            let _blockedMeCache = {};     // uid -> true (o beni engelledim)
+            let _blocksRef = null;
+            let _blockedByRef = null;
+
+            function iBlocked(uid) { return !!_blockedByMeCache[uid]; }
+            function blockedMe(uid) { return !!_blockedMeCache[uid]; }
+            // İki yönlü herhangi bir engel varsa true (mesajlaşma/davet engeli için kullanılır).
+            function isBlockedEitherWay(uid) { return iBlocked(uid) || blockedMe(uid); }
+
+            function attachBlockListeners() {
+                if (_blocksRef) _blocksRef.off();
+                if (_blockedByRef) _blockedByRef.off();
+                _blocksRef = database.ref("blocks/" + _myUid);
+                _blockedByRef = database.ref("blocked_by/" + _myUid);
+                _blocksRef.on("value", (snap) => {
+                    _blockedByMeCache = snap.val() || {};
+                    renderDmChatList();
+                    if (_activeDmOtherUid) updateDmHeaderBlockUi();
+                });
+                _blockedByRef.on("value", (snap) => {
+                    _blockedMeCache = snap.val() || {};
+                    if (_activeDmOtherUid) updateDmHeaderBlockUi();
+                });
+            }
+
+            async function toggleBlockUser(targetUid) {
+                if (!targetUid || targetUid === _myUid) return;
+                const updates = {};
+                if (iBlocked(targetUid)) {
+                    updates["blocks/" + _myUid + "/" + targetUid] = null;
+                    updates["blocked_by/" + targetUid + "/" + _myUid] = null;
+                } else {
+                    if (!confirm("Bu kullanıcıyı engellemek istediğine emin misin? Engellediğinde birbirinize mesaj gönderemez ve seni gruba davet edemez.")) return;
+                    updates["blocks/" + _myUid + "/" + targetUid] = true;
+                    updates["blocked_by/" + targetUid + "/" + _myUid] = true;
+                }
+                await database.ref().update(updates);
+            }
+
+            function updateDmHeaderBlockUi() {
+                const btn = document.getElementById("dmMenuBlockToggle");
+                if (!btn || !_activeDmOtherUid) return;
+                if (iBlocked(_activeDmOtherUid)) {
+                    btn.textContent = "✅ Engeli Kaldır";
+                    btn.classList.remove("is-danger");
+                } else {
+                    btn.textContent = "🚫 Engelle";
+                    btn.classList.add("is-danger");
+                }
+            }
+
+            // ── 6 HANELİ GRUP DAVET KODU ─────────────────────────────
+            const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 0/O, 1/I gibi karışabilecek karakterler çıkarıldı
+            function generateGroupCode() {
+                let code = "";
+                for (let i = 0; i < 6; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+                return code;
+            }
+
             // ── Yardımcılar ──────────────────────────────────────────
             function makeDmId(uidA, uidB) {
                 return [uidA, uidB].sort().join("_");
@@ -11102,6 +11360,17 @@
                 });
             }
 
+            function renderDmHeaderInfo(otherUid) {
+                const candidate = window.CommunityMentions.getByUid(otherUid);
+                const username = candidate ? candidate.username : "Kullanıcı";
+                const avatarUrl = candidate ? candidate.avatarUrl : "";
+                const RBAC = window.CommunityRBAC;
+                document.getElementById("dmHeaderName").innerHTML = escapeAttr(username) + RBAC.renderVerifiedBadge(candidate ? candidate.isVerified : false, "14px");
+                document.getElementById("dmHeaderSub").textContent = "Özel Mesaj";
+                RBAC.applyAvatarToImg(document.getElementById("dmHeaderAvatar"), avatarUrl);
+                updateDmHeaderBlockUi();
+            }
+
             function openDmConversation(dmId, otherUid) {
                 _activeDmId = dmId;
                 _activeDmOtherUid = otherUid;
@@ -11110,13 +11379,14 @@
                 document.getElementById("dmConversationActive").style.display = "flex";
                 document.getElementById("dmShell").classList.add("is-conversation-open");
 
-                const candidate = window.CommunityMentions.getByUid(otherUid);
-                const username = candidate ? candidate.username : "Kullanıcı";
-                const avatarUrl = candidate ? candidate.avatarUrl : "";
-                const RBAC = window.CommunityRBAC;
-                document.getElementById("dmHeaderName").innerHTML = escapeAttr(username) + RBAC.renderVerifiedBadge(candidate ? candidate.isVerified : false, "14px");
-                document.getElementById("dmHeaderSub").textContent = "Özel Mesaj";
-                RBAC.applyAvatarToImg(document.getElementById("dmHeaderAvatar"), avatarUrl);
+                // Kullanıcı adı/avatar cache'i (mentionUserCache) henüz Firebase'den
+                // ilk kez dolmamış olabilir (özellikle sayfa yeni açıldıysa ve hemen
+                // bir sohbete tıklandıysa) — bu durumda "Kullanıcı" yazıp kalmak yerine
+                // cache hazır olur olmaz başlığı yeniden çiziyoruz.
+                renderDmHeaderInfo(otherUid);
+                window.CommunityMentions.onReady(() => {
+                    if (_activeDmOtherUid === otherUid) renderDmHeaderInfo(otherUid);
+                });
 
                 renderDmChatList(); // aktif satırı vurgulamak için yeniden çiz
 
@@ -11126,10 +11396,15 @@
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     renderBubbleList(document.getElementById("dmMessageList"), arr, { isGroup: false });
+                }, (err) => {
+                    console.error("[Messaging] DM mesajları okunamadı:", err);
+                    showToastGlobal("Mesajlar yüklenemedi. Yetki sorunu olabilir.");
                 });
 
                 // Bu sohbeti açtık — okunmamış sayacı sıfırla.
-                database.ref("dm_inbox/" + _myUid + "/" + dmId + "/unreadCount").set(0);
+                database.ref("dm_inbox/" + _myUid + "/" + dmId + "/unreadCount").set(0).catch((err) => {
+                    console.error("[Messaging] unreadCount sıfırlanamadı:", err);
+                });
             }
 
             function closeDmConversation() {
@@ -11144,6 +11419,16 @@
 
             async function sendDmMessage(text) {
                 if (!text || !text.trim() || !_activeDmId || !_activeDmOtherUid) return;
+
+                if (iBlocked(_activeDmOtherUid)) {
+                    showToastGlobal("Bu kullanıcıyı engellediğin için mesaj gönderemezsin.");
+                    throw new Error("blocked-by-me");
+                }
+                if (blockedMe(_activeDmOtherUid)) {
+                    showToastGlobal("Bu kullanıcıya mesaj gönderemezsin.");
+                    throw new Error("blocked-me");
+                }
+
                 const encoded = window.CommunityMentions.encodeForStorage(text.trim());
                 const now = firebase.database.ServerValue.TIMESTAMP;
 
@@ -11304,6 +11589,19 @@
                 document.getElementById("groupHeaderName").textContent = meta.name || "İsimsiz Grup";
                 document.getElementById("groupHeaderSub").textContent = `${Object.keys(meta.members || {}).length} üye`;
 
+                const codeBadge = document.getElementById("groupCodeBadge");
+                if (codeBadge) {
+                    if (meta.joinCode) {
+                        codeBadge.textContent = "KOD: " + meta.joinCode;
+                        codeBadge.style.display = "inline-flex";
+                    } else {
+                        // Eski gruplarda (bu özellik eklenmeden önce oluşturulmuş) kod
+                        // yoktur — grup sahibiyse tıklayınca kod üretip atayabilsin.
+                        codeBadge.textContent = meta.ownerUid === _myUid ? "KOD OLUŞTUR" : "KOD YOK";
+                        codeBadge.style.display = "inline-flex";
+                    }
+                }
+
                 renderGroupChatList();
 
                 if (_groupMessagesRef) _groupMessagesRef.off();
@@ -11369,8 +11667,10 @@
             function renderCreateGroupMemberResults(query) {
                 const resultsEl = document.getElementById("groupCreateMemberResults");
                 if (!query || !query.trim()) { resultsEl.innerHTML = ""; return; }
+                // Beni engellemiş kişiler aramada hiç çıkmaz — zaten davet
+                // edemeyeceğimiz birini seçilebilir gibi göstermenin anlamı yok.
                 const candidates = window.CommunityMentions.search(query.trim())
-                    .filter((c) => c.uid !== _myUid && !_groupCreateSelected[c.uid]);
+                    .filter((c) => c.uid !== _myUid && !_groupCreateSelected[c.uid] && !blockedMe(c.uid));
                 if (candidates.length === 0) {
                     resultsEl.innerHTML = '<div class="hub-placeholder">Kimse bulunamadı.</div>';
                     return;
@@ -11425,12 +11725,22 @@
                 }
                 errorEl.style.display = "none";
 
+                // Seni engellemiş olan kişileri direkt davet listesinden çıkar
+                // (davete de gruba da zorla eklenmiş olmasınlar).
+                const blockedSelections = Object.keys(_groupCreateSelected).filter((uid) => blockedMe(uid));
+                if (blockedSelections.length > 0) {
+                    errorEl.textContent = "Seçtiğin bazı kullanıcılar seni engellemiş, onları gruba ekleyemezsin.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+
                 const members = { [_myUid]: true };
                 Object.keys(_groupCreateSelected).forEach((uid) => { members[uid] = true; });
 
                 const groupRef = database.ref("group_chats").push();
                 const groupId = groupRef.key;
                 const now = firebase.database.ServerValue.TIMESTAMP;
+                const joinCode = generateGroupCode();
 
                 await groupRef.child("meta").set({
                     name,
@@ -11440,8 +11750,13 @@
                     createdAt: now,
                     updatedAt: now,
                     lastMessage: "",
-                    lastSenderUid: ""
+                    lastSenderUid: "",
+                    joinCode
                 });
+                // group_codes/{KOD} -> groupId  (kodu bilen herkes gruba
+                // hızlıca ulaşabilsin diye ters-index; RTDB'de "WHERE" olmadığından
+                // gerekli).
+                await database.ref("group_codes/" + joinCode).set(groupId);
 
                 const updates = {};
                 Object.keys(members).forEach((uid) => { updates["user_groups/" + uid + "/" + groupId] = true; });
@@ -11449,6 +11764,101 @@
 
                 closeCreateGroupModal();
                 openGroupConversation(groupId);
+            }
+
+            // ── Var olan bir gruba 6 haneli kodla katılma ────────────
+            async function joinGroupByCode(rawCode) {
+                const errorEl = document.getElementById("groupJoinError");
+                const code = (rawCode || "").trim().toUpperCase();
+                if (!code || code.length !== 6) {
+                    errorEl.textContent = "Lütfen 6 haneli geçerli bir kod gir.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                errorEl.style.display = "none";
+
+                try {
+                    const codeSnap = await database.ref("group_codes/" + code).once("value");
+                    const groupId = codeSnap.val();
+                    if (!groupId) {
+                        errorEl.textContent = "Bu kodla eşleşen bir grup bulunamadı.";
+                        errorEl.style.display = "block";
+                        return;
+                    }
+
+                    const metaSnap = await database.ref("group_chats/" + groupId + "/meta").once("value");
+                    const meta = metaSnap.val();
+                    if (!meta) {
+                        errorEl.textContent = "Bu grup artık mevcut değil.";
+                        errorEl.style.display = "block";
+                        return;
+                    }
+
+                    if (meta.members && meta.members[_myUid]) {
+                        errorEl.textContent = "Zaten bu grubun üyesisin.";
+                        errorEl.style.display = "block";
+                        return;
+                    }
+
+                    // Grup sahibi seni engellemişse kod geçerli olsa bile katılamazsın.
+                    if (blockedMe(meta.ownerUid)) {
+                        errorEl.textContent = "Bu gruba katılamazsın.";
+                        errorEl.style.display = "block";
+                        return;
+                    }
+
+                    const updates = {};
+                    updates["group_chats/" + groupId + "/meta/members/" + _myUid] = true;
+                    updates["group_chats/" + groupId + "/meta/memberCount"] = Object.keys(meta.members || {}).length + 1;
+                    updates["user_groups/" + _myUid + "/" + groupId] = true;
+                    await database.ref().update(updates);
+
+                    closeGroupJoinModal();
+                    openGroupConversation(groupId);
+                } catch (err) {
+                    console.error("[Messaging] Koda katılma hatası:", err);
+                    errorEl.textContent = "Katılırken bir hata oluştu. Tekrar dene.";
+                    errorEl.style.display = "block";
+                }
+            }
+
+            function openGroupJoinModal() {
+                document.getElementById("groupJoinModalBackdrop").style.display = "flex";
+                document.getElementById("groupJoinCodeInput").value = "";
+                document.getElementById("groupJoinError").style.display = "none";
+                document.getElementById("groupJoinCodeInput").focus();
+            }
+            function closeGroupJoinModal() {
+                document.getElementById("groupJoinModalBackdrop").style.display = "none";
+            }
+
+            // Grup sahibi, kod atanmamış eski bir grup için header'daki
+            // rozete tıklayınca kod üretebilir; ayrıca herkes tıklayınca
+            // mevcut kodu panoya kopyalayabilir.
+            async function handleGroupCodeBadgeClick() {
+                if (!_activeGroupId) return;
+                const meta = _groupMetaCache[_activeGroupId];
+                if (!meta) return;
+
+                if (meta.joinCode) {
+                    try {
+                        await navigator.clipboard.writeText(meta.joinCode);
+                        showToastGlobal("Grup kodu kopyalandı: " + meta.joinCode);
+                    } catch (err) {
+                        showToastGlobal("Grup kodu: " + meta.joinCode);
+                    }
+                    return;
+                }
+
+                if (meta.ownerUid !== _myUid) {
+                    showToastGlobal("Bu grubun daha davet kodu yok. Sadece grup sahibi oluşturabilir.");
+                    return;
+                }
+
+                const newCode = generateGroupCode();
+                await database.ref("group_chats/" + _activeGroupId + "/meta/joinCode").set(newCode);
+                await database.ref("group_codes/" + newCode).set(_activeGroupId);
+                showToastGlobal("Yeni davet kodu oluşturuldu: " + newCode);
             }
 
             // ══════════════════════════════════════════════════════════
@@ -11517,6 +11927,11 @@
                         } catch (err) {
                             console.error("[Messaging] Gönderme hatası:", err);
                             textarea.value = val; // hata olursa metni geri koy
+                            // Engelleme sebebiyle atılan hatalar zaten kendi toast'ını
+                            // gösterdi (sendDmMessage/sendGroupMessage) — tekrar etmeyelim.
+                            if (err && err.message !== "blocked-by-me" && err.message !== "blocked-me") {
+                                showToastGlobal("Mesaj gönderilemedi. İnternet bağlantını veya izinlerini kontrol et.");
+                            }
                         }
                     };
                     sendBtn.addEventListener("click", doSend);
@@ -11546,6 +11961,7 @@
                 _myUid = uid;
                 attachDmInboxListener();
                 attachUserGroupsListener();
+                attachBlockListeners();
 
                 if (_initDone) return;
                 _initDone = true;
@@ -11566,6 +11982,26 @@
                 });
                 document.getElementById("dmNewChatSearchInput")?.addEventListener("input", (e) => renderNewChatResults(e.target.value));
 
+                // DM başlığı: isme tıklayınca profil, "⋮" ile Engelle/Profil menüsü
+                document.getElementById("dmHeaderNameBtn")?.addEventListener("click", () => {
+                    if (_activeDmOtherUid) openUserProfile(_activeDmOtherUid);
+                });
+                document.getElementById("dmHeaderMenuBtn")?.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    document.getElementById("dmHeaderMenuPopover")?.classList.toggle("is-open");
+                });
+                document.addEventListener("click", () => {
+                    document.getElementById("dmHeaderMenuPopover")?.classList.remove("is-open");
+                });
+                document.getElementById("dmMenuViewProfile")?.addEventListener("click", () => {
+                    if (_activeDmOtherUid) openUserProfile(_activeDmOtherUid);
+                });
+                document.getElementById("dmMenuBlockToggle")?.addEventListener("click", async () => {
+                    if (!_activeDmOtherUid) return;
+                    await toggleBlockUser(_activeDmOtherUid);
+                    document.getElementById("dmHeaderMenuPopover")?.classList.remove("is-open");
+                });
+
                 // Yeni Grup modalı
                 document.getElementById("groupCreateBtn")?.addEventListener("click", openCreateGroupModal);
                 document.getElementById("groupCreateModalClose")?.addEventListener("click", closeCreateGroupModal);
@@ -11576,6 +12012,21 @@
                 document.getElementById("groupCreateMemberSearchInput")?.addEventListener("input", (e) => renderCreateGroupMemberResults(e.target.value));
                 document.getElementById("groupCreateSubmitBtn")?.addEventListener("click", submitCreateGroup);
                 document.getElementById("groupLeaveBtn")?.addEventListener("click", leaveActiveGroup);
+
+                // Kodla gruba katılma modalı + davet kodu rozeti
+                document.getElementById("groupJoinBtn")?.addEventListener("click", openGroupJoinModal);
+                document.getElementById("groupJoinModalClose")?.addEventListener("click", closeGroupJoinModal);
+                document.getElementById("groupJoinCancelBtn")?.addEventListener("click", closeGroupJoinModal);
+                document.getElementById("groupJoinModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "groupJoinModalBackdrop") closeGroupJoinModal();
+                });
+                document.getElementById("groupJoinSubmitBtn")?.addEventListener("click", () => {
+                    joinGroupByCode(document.getElementById("groupJoinCodeInput").value);
+                });
+                document.getElementById("groupJoinCodeInput")?.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") joinGroupByCode(e.target.value);
+                });
+                document.getElementById("groupCodeBadge")?.addEventListener("click", handleGroupCodeBadgeClick);
 
                 // Composer'lar
                 wireComposer({
@@ -11592,8 +12043,12 @@
                 });
             }
 
-            return { init, renderDmChatList, renderGroupChatList };
+            return {
+                init, renderDmChatList, renderGroupChatList,
+                openDmConversation, iBlocked, blockedMe, toggleBlockUser
+            };
         })();
+        window.MessagingSystem = MessagingSystem;
 
         // ════════════════════════════════════════════════════════════════
         // BİLDİRİM SİSTEMİ (NotificationSystem)
