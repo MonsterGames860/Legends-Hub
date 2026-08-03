@@ -2710,6 +2710,13 @@
     }
     .msg-group-leave-btn:hover { background: rgba(255,80,80,0.2); }
 
+    .msg-group-delete-btn {
+        color: #ff6b6b;
+        border-color: rgba(255,80,80,0.4);
+        margin-right: auto;
+    }
+    .msg-group-delete-btn:hover { background: rgba(255,80,80,0.12); border-color: #ff6b6b; }
+
     /* ── Konuşma başlığı: "…" menüsü (Engelle / Profili Gör / Kod) ── */
     .msg-header-name-btn {
         background: none;
@@ -5652,6 +5659,7 @@
                             <div class="forum-modal-error" id="groupDetailGeneralError" style="display:none;"></div>
                         </div>
                         <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="groupDetailDeleteBtn" style="display:none;">🗑 Grubu Sil</button>
                             <button class="forum-btn forum-btn-ghost" id="groupDetailCloseBtn">Kapat</button>
                         </div>
                     </div>
@@ -12529,6 +12537,49 @@
                 renderGroupChatList();
             }
 
+            // Grubu (üye sayısına bakmaksızın) TAMAMEN siler. Kurucu
+            // istediği zaman kendi grubunu silebilir; Helper ve üzeri site
+            // yetkilileri de moderasyon amaçlı silebilir (bkz.
+            // database.rules.json -> group_chats/$groupId kök .write kuralı).
+            async function deleteGroupCompletely(gid) {
+                const meta = _groupMetaCache[gid];
+                if (!meta) return;
+                const iAmOwner = groupIsOwner(meta, _myUid);
+                const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+                if (!iAmOwner && !iAmStaff) {
+                    alert("Bu grubu silme yetkin yok.");
+                    return;
+                }
+
+                const memberCount = Object.keys(meta.members || {}).length;
+                const warnExtra = memberCount > 1 ? ` Grupta ${memberCount} üye var, hepsi için sohbet geçmişi silinecek.` : "";
+                if (!confirm(`"${meta.name || "Bu grup"}" grubunu KALICI olarak silmek istediğine emin misin?${warnExtra} Bu işlem geri alınamaz.`)) return;
+
+                try {
+                    const memberUids = Object.keys(meta.members || {});
+                    // Her üyenin kendi user_groups girdisini de temizle;
+                    // aksi halde silinen grup onların "Gruplarım"
+                    // listesinde kırık bir referans olarak kalır.
+                    await Promise.all(memberUids.map((uid) =>
+                        database.ref("user_groups/" + uid + "/" + gid).remove().catch(() => {})
+                    ));
+                    await database.ref("group_chats/" + gid).remove();
+                } catch (err) {
+                    console.error("[Grup] Grubu silme hatası:", err);
+                    alert("Grup silinirken bir hata oluştu: " + (err && err.message ? err.message : err));
+                    return;
+                }
+
+                delete _groupMetaCache[gid];
+                delete _userGroupsCache[gid];
+                if (_activeGroupId === gid) _activeGroupId = null;
+                if (_activeGroupDetailId === gid) _activeGroupDetailId = null;
+
+                closeGroupDetailPanel();
+                closeGroupConversation();
+                renderGroupChatList();
+            }
+
             // ══════════════════════════════════════════════════════════
             // B-2) GRUP DETAY / AYARLAR PANELİ (WhatsApp tarzı)
             // ══════════════════════════════════════════════════════════
@@ -12579,6 +12630,14 @@
                 document.getElementById("groupDetailDescInput").value = meta.description || "";
                 document.getElementById("groupDetailDescInput").disabled = !canEditInfo;
                 document.getElementById("groupDetailSaveDescBtn").style.display = canEditInfo ? "inline-flex" : "none";
+
+                // "Grubu Sil": kurucu her zaman görebilir; Helper ve üzeri
+                // site yetkilileri de moderasyon amaçlı silebilir.
+                const deleteBtn = document.getElementById("groupDetailDeleteBtn");
+                if (deleteBtn) {
+                    const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+                    deleteBtn.style.display = (iAmOwner || iAmStaff) ? "inline-flex" : "none";
+                }
 
                 renderGroupPinnedBanner(meta);
 
@@ -13004,6 +13063,9 @@
                 });
                 document.getElementById("groupDetailModalClose")?.addEventListener("click", closeGroupDetailPanel);
                 document.getElementById("groupDetailCloseBtn")?.addEventListener("click", closeGroupDetailPanel);
+                document.getElementById("groupDetailDeleteBtn")?.addEventListener("click", () => {
+                    if (_activeGroupDetailId) deleteGroupCompletely(_activeGroupDetailId);
+                });
                 document.getElementById("groupDetailModalBackdrop")?.addEventListener("click", (e) => {
                     if (e.target.id === "groupDetailModalBackdrop") closeGroupDetailPanel();
                 });
