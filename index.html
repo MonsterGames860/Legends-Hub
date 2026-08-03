@@ -2783,6 +2783,321 @@
         cursor: pointer;
     }
     .msg-group-code-badge:hover { border-color: var(--accent); }
+
+    /* ── Grup başlığı: tıklanabilir kimlik alanı (resim+isim+üye sayısı) ── */
+    .msg-group-header-identity {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: none;
+        border: none;
+        padding: 2px 4px;
+        margin: -2px -4px;
+        border-radius: 8px;
+        cursor: pointer;
+        min-width: 0;
+        flex: 1;
+        text-align: left;
+    }
+    .msg-group-header-identity:hover { background: var(--accent-soft); }
+    .msg-group-avatar-img {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+
+    /* ── Grup Detay / Ayarlar Paneli ─────────────────────────────── */
+    .msg-group-detail-modal { max-width: 480px; }
+    .msg-group-detail-body { gap: 18px; }
+    .msg-group-detail-identity {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+    }
+    .msg-group-detail-avatar-wrap {
+        position: relative;
+        width: 92px;
+        height: 92px;
+    }
+    .msg-group-detail-avatar-img,
+    .msg-group-detail-avatar-fallback {
+        width: 92px;
+        height: 92px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--bg-panel-raised);
+        border: 2px solid var(--line);
+    }
+    .msg-group-detail-avatar-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.1rem;
+    }
+    .msg-group-detail-avatar-edit-btn {
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--bg-panel);
+        color: #0b0c10;
+        cursor: pointer;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .msg-group-detail-avatar-edit-btn:hover { filter: brightness(1.1); }
+    .msg-group-detail-name-row,
+    .msg-group-detail-avatar-url-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+    .msg-group-detail-name-row .forum-text-input,
+    .msg-group-detail-avatar-url-row .forum-text-input { flex: 1; }
+    .msg-group-detail-avatar-url-row { margin-top: -2px; }
+    .msg-group-detail-save-btn { flex-shrink: 0; white-space: nowrap; }
+    .msg-group-detail-avatar-status {
+        font-size: 0.76rem;
+        color: var(--text-dim);
+        width: 100%;
+    }
+    .msg-group-detail-avatar-status.is-error { color: #ff6b6b; }
+
+    .msg-group-detail-desc-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        align-items: flex-start;
+        margin-top: -2px;
+    }
+    .msg-group-detail-desc-input {
+        flex: 1;
+        resize: vertical;
+        min-height: 44px;
+        font-family: inherit;
+        line-height: 1.4;
+    }
+    .msg-group-detail-desc-row .msg-group-detail-save-btn { flex-shrink: 0; }
+
+    .msg-group-pinned-section {
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        background: rgba(102, 252, 241, 0.06);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+    }
+    .msg-group-pinned-section .msg-group-detail-section-title { margin-bottom: 0; white-space: nowrap; }
+    .msg-group-pinned-preview {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.82rem;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .msg-group-pinned-unpin-btn { flex-shrink: 0; font-size: 0.74rem; padding: 6px 10px; }
+
+    .msg-group-detail-section { display: flex; flex-direction: column; gap: 4px; }
+    .msg-group-detail-section-title {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        margin-bottom: 6px;
+    }
+    .msg-group-detail-members-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .msg-group-detail-add-member-btn { font-size: 0.74rem; padding: 6px 10px; }
+
+    .msg-group-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 2px;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .msg-group-toggle-row:last-child { border-bottom: none; }
+    .msg-group-toggle-row input[type="checkbox"] { display: none; }
+    .msg-toggle-switch {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        border-radius: 999px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+        transition: background 0.15s;
+    }
+    .msg-toggle-switch::after {
+        content: "";
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        transition: transform 0.15s, background 0.15s;
+    }
+    .msg-group-toggle-row input:checked + .msg-toggle-switch { background: var(--accent-soft); border-color: var(--accent); }
+    .msg-group-toggle-row input:checked + .msg-toggle-switch::after { transform: translateX(18px); background: var(--accent); }
+    .msg-group-toggle-row input:disabled + .msg-toggle-switch { opacity: 0.4; cursor: not-allowed; }
+
+    .msg-group-detail-add-member-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+
+    .msg-group-detail-member-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+    .msg-group-member-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 6px;
+        border-radius: 8px;
+        position: relative;
+    }
+    .msg-group-member-row:hover { background: var(--accent-soft); }
+    .msg-group-member-row img {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .msg-group-member-info { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+    .msg-group-member-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .msg-group-role-badge {
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        padding: 2px 6px;
+        border-radius: 5px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .msg-group-role-badge.is-owner {
+        color: var(--gold);
+        background: rgba(245, 197, 66, 0.14);
+        border: 1px solid rgba(245, 197, 66, 0.4);
+    }
+    .msg-group-role-badge.is-admin {
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+    }
+    .msg-group-member-menu-btn {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+    .msg-group-member-menu-btn:hover { color: var(--accent); }
+    .msg-group-member-menu-popover {
+        display: none;
+        position: absolute;
+        right: 6px;
+        top: calc(100% - 4px);
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        min-width: 200px;
+        overflow: hidden;
+        z-index: 50;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    }
+    .msg-group-member-menu-popover.is-open { display: block; }
+    .msg-group-member-menu-item {
+        display: block;
+        width: 100%;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        padding: 10px 14px;
+        font-size: 0.8rem;
+        text-align: left;
+        cursor: pointer;
+    }
+    .msg-group-member-menu-item:hover { background: var(--accent-soft); color: var(--accent); }
+    .msg-group-member-menu-item.is-danger { color: #ff6b6b; }
+    .msg-group-member-menu-item.is-danger:hover { background: rgba(255,80,80,0.12); }
+
+    /* Mesaj baloncuğu içindeki grup rolü rozetleri */
+    .msg-bubble-role-badge {
+        font-family: var(--font-mono);
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        padding: 1px 5px;
+        border-radius: 4px;
+        margin-right: 5px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .msg-bubble-role-badge.is-owner { color: var(--gold); background: rgba(245, 197, 66, 0.14); border: 1px solid rgba(245, 197, 66, 0.4); }
+    .msg-bubble-role-badge.is-admin { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--line); }
+
+    .msg-group-transfer-note {
+        font-size: 0.84rem;
+        color: var(--text-dim);
+        line-height: 1.5;
+        margin-bottom: 4px;
+    }
+    .msg-group-transfer-note strong { color: var(--gold); }
+
     .msg-join-code-row {
         display: flex;
         gap: 8px;
@@ -2916,6 +3231,23 @@
         font-weight: 700;
         padding: 4px 12px;
         border-radius: 12px;
+    }
+
+    /* ── Sistem mesajları ("X grubu kurdu", "Y eklendi" vb.) ─────── */
+    .msg-system-pill {
+        display: flex;
+        justify-content: center;
+        margin: 4px 0;
+    }
+    .msg-system-pill span {
+        background: rgba(102, 252, 241, 0.06);
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        font-size: 0.74rem;
+        text-align: center;
+        padding: 5px 14px;
+        border-radius: 12px;
+        max-width: 80%;
     }
 
     /* ── Mesaj eylemleri (Yanıtla / Sil) — balona basılı tutunca/hover'da ── */
@@ -5135,11 +5467,14 @@
                         <div class="msg-conversation-active" id="groupConversationActive" style="display:none;">
                             <div class="msg-conversation-header" id="groupConversationHeader">
                                 <button type="button" class="msg-back-btn" id="groupBackBtn" title="Grup listesine dön">←</button>
-                                <div class="msg-group-avatar" id="groupHeaderAvatar">👥</div>
-                                <div class="msg-conversation-header-info">
-                                    <span class="msg-conversation-header-name" id="groupHeaderName">—</span>
-                                    <span class="msg-conversation-header-sub" id="groupHeaderSub">0 üye</span>
-                                </div>
+                                <button type="button" class="msg-group-header-identity" id="groupHeaderOpenSettingsBtn" title="Grup detayları">
+                                    <img class="msg-group-avatar-img" id="groupHeaderAvatarImg" alt="" style="display:none;">
+                                    <div class="msg-group-avatar" id="groupHeaderAvatar">👥</div>
+                                    <div class="msg-conversation-header-info">
+                                        <span class="msg-conversation-header-name" id="groupHeaderName">—</span>
+                                        <span class="msg-conversation-header-sub" id="groupHeaderSub">0 üye</span>
+                                    </div>
+                                </button>
                                 <button type="button" class="msg-group-code-badge" id="groupCodeBadge" title="Davet kodunu kopyala">KOD: ------</button>
                                 <button type="button" class="msg-group-leave-btn" id="groupLeaveBtn" title="Gruptan ayrıl">Ayrıl</button>
                             </div>
@@ -5232,6 +5567,114 @@
                         <div class="forum-modal-footer">
                             <button class="forum-btn forum-btn-ghost" id="groupJoinCancelBtn">Vazgeç</button>
                             <button class="forum-btn forum-btn-primary" id="groupJoinSubmitBtn">Gruba Katıl</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUP DETAY / AYARLAR PANELİ (WhatsApp tarzı) -->
+                <div class="forum-modal-backdrop" id="groupDetailModalBackdrop" style="display:none;">
+                    <div class="forum-modal msg-group-detail-modal">
+                        <div class="forum-modal-header">
+                            <span>Grup Detayları</span>
+                            <button class="forum-modal-close" id="groupDetailModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body msg-group-detail-body" id="groupDetailBody">
+
+                            <!-- Resim + isim -->
+                            <div class="msg-group-detail-identity">
+                                <div class="msg-group-detail-avatar-wrap">
+                                    <img class="msg-group-detail-avatar-img" id="groupDetailAvatarImg" alt="" style="display:none;">
+                                    <div class="msg-group-detail-avatar-fallback" id="groupDetailAvatarFallback">👥</div>
+                                    <button type="button" class="msg-group-detail-avatar-edit-btn" id="groupDetailAvatarEditBtn" title="Grup resmini değiştir">📷</button>
+                                    <input type="file" id="groupDetailAvatarFileInput" style="display:none;" accept="image/*">
+                                </div>
+                                <div class="msg-group-detail-name-row">
+                                    <input type="text" class="forum-text-input" id="groupDetailNameInput" maxlength="60" placeholder="Grup adı">
+                                    <button type="button" class="forum-btn forum-btn-primary msg-group-detail-save-btn" id="groupDetailSaveNameBtn">Kaydet</button>
+                                </div>
+                                <div class="msg-group-detail-avatar-url-row">
+                                    <input type="text" class="forum-text-input" id="groupDetailAvatarUrlInput" placeholder="veya bir ImgBB görsel linki yapıştır…">
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-save-btn" id="groupDetailApplyAvatarUrlBtn">Uygula</button>
+                                </div>
+                                <div class="msg-group-detail-avatar-status" id="groupDetailAvatarStatus" style="display:none;"></div>
+                                <div class="msg-group-detail-desc-row">
+                                    <textarea class="forum-text-input msg-group-detail-desc-input" id="groupDetailDescInput" maxlength="240" rows="2" placeholder="Grup açıklaması (isteğe bağlı)…"></textarea>
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-save-btn" id="groupDetailSaveDescBtn">Kaydet</button>
+                                </div>
+                                <div class="forum-modal-error" id="groupDetailIdentityError" style="display:none;"></div>
+                            </div>
+
+                            <!-- Sabitlenmiş mesaj -->
+                            <div class="msg-group-detail-section msg-group-pinned-section" id="groupDetailPinnedSection" style="display:none;">
+                                <div class="msg-group-detail-section-title">📌 Sabitlenmiş Mesaj</div>
+                                <div class="msg-group-pinned-preview" id="groupDetailPinnedPreview"></div>
+                                <button type="button" class="forum-btn forum-btn-ghost msg-group-pinned-unpin-btn" id="groupDetailUnpinBtn" style="display:none;">Sabitlemeyi Kaldır</button>
+                            </div>
+
+                            <!-- İzinler (sadece yönetici/kurucu görür) -->
+                            <div class="msg-group-detail-section" id="groupDetailPermissionsSection">
+                                <div class="msg-group-detail-section-title">Grup İzinleri</div>
+                                <label class="msg-group-toggle-row">
+                                    <span>Sadece Yöneticiler Üye Ekleyebilir</span>
+                                    <input type="checkbox" id="permOnlyAdminsAddMembers">
+                                    <span class="msg-toggle-switch"></span>
+                                </label>
+                                <label class="msg-group-toggle-row">
+                                    <span>Sadece Yöneticiler Mesaj Gönderebilir</span>
+                                    <input type="checkbox" id="permOnlyAdminsSendMessages">
+                                    <span class="msg-toggle-switch"></span>
+                                </label>
+                                <label class="msg-group-toggle-row">
+                                    <span>Sadece Yöneticiler Grup Bilgilerini Değiştirebilir</span>
+                                    <input type="checkbox" id="permOnlyAdminsEditInfo">
+                                    <span class="msg-toggle-switch"></span>
+                                </label>
+                            </div>
+
+                            <!-- Üye listesi -->
+                            <div class="msg-group-detail-section">
+                                <div class="msg-group-detail-section-title msg-group-detail-members-title">
+                                    <span id="groupDetailMembersHeading">Üyeler</span>
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-add-member-btn" id="groupDetailAddMemberBtn" style="display:none;">＋ Kişi Ekle</button>
+                                </div>
+
+                                <!-- Kişi ekleme arama alanı (aç/kapa) -->
+                                <div class="msg-group-detail-add-member-panel" id="groupDetailAddMemberPanel" style="display:none;">
+                                    <input type="text" class="forum-text-input" id="groupDetailAddMemberSearchInput" placeholder="Kullanıcı adı yaz…" autocomplete="off">
+                                    <div class="msg-user-picker-list" id="groupDetailAddMemberResults"></div>
+                                </div>
+
+                                <div class="msg-group-detail-member-list" id="groupDetailMemberList">
+                                    <div class="hub-placeholder">Yükleniyor…</div>
+                                </div>
+                            </div>
+
+                            <div class="forum-modal-error" id="groupDetailGeneralError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost" id="groupDetailCloseBtn">Kapat</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KURUCULUK DEVRİ MODALI (kurucu ayrılmadan önce zorunlu seçim) -->
+                <div class="forum-modal-backdrop" id="groupTransferOwnerModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span>Kuruculuğu Devret</span>
+                            <button class="forum-modal-close" id="groupTransferOwnerModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <p class="msg-group-transfer-note">
+                                Grup kurucususun. Gruptan ayrılabilmen için önce başka bir üyeyi
+                                <strong>Grup Kurucusu</strong> yapman gerekiyor.
+                            </p>
+                            <label class="forum-field-label">Yeni Kurucu Seç</label>
+                            <div class="msg-group-detail-member-list" id="groupTransferOwnerMemberList"></div>
+                            <div class="forum-modal-error" id="groupTransferOwnerError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost" id="groupTransferOwnerCancelBtn">Vazgeç</button>
                         </div>
                     </div>
                 </div>
@@ -11347,6 +11790,11 @@
             let _userGroupsCache = {}; // groupId -> true
             let _groupMetaCache = {};  // groupId -> meta (canlı dinlenir, liste render için)
             let _groupCreateSelected = {}; // uid -> {uid, username, avatarUrl} (Yeni Grup modalında seçilenler)
+            let _pendingLeaveAfterTransfer = false; // Kurucu devri tamamlandıktan sonra otomatik ayrılsın mı
+            let _activeGroupDetailId = null; // Detay/Ayarlar paneli hangi grup için açık
+            let _groupDetailUsersRef = null; // O panel için canlı dinlenen /users referansı (üye profilleri)
+            let _groupDetailUsersCache = {}; // uid -> {username, avatarUrl, isVerified}
+            let _groupAddMemberSearchTimer = null;
 
             // ── ENGELLEME (BLOCK) ────────────────────────────────────
             // blocks/{myUid}/{blockedUid} = true  → BEN onu engelledim.
@@ -11786,7 +12234,9 @@
 
                 listEl.innerHTML = entries.map((e) => `
                     <button type="button" class="msg-chat-item${e.groupId === _activeGroupId ? ' is-active' : ''}" data-group-id="${escapeAttr(e.groupId)}">
-                        <div class="msg-group-thumb">👥</div>
+                        ${e.groupPhoto
+                            ? `<img class="msg-group-thumb msg-group-thumb-img" src="${escapeAttr(e.groupPhoto)}" alt="">`
+                            : `<div class="msg-group-thumb">👥</div>`}
                         <div class="msg-chat-item-body">
                             <div class="msg-chat-item-top">
                                 <span class="msg-chat-item-name">${escapeAttr(e.name || "İsimsiz Grup")}</span>
@@ -11802,6 +12252,41 @@
                 listEl.querySelectorAll(".msg-chat-item").forEach((btn) => {
                     btn.addEventListener("click", () => openGroupConversation(btn.getAttribute("data-group-id")));
                 });
+            }
+
+            // ── Grup rolleri & izinleri: yardımcı fonksiyonlar ───────────
+            // meta.ownerUid       -> Grup Kurucusu (Owner), her zaman tek kişi.
+            // meta.admins[uid]    -> Grup Yöneticisi (Owner da bu kümede yer alır).
+            // meta.permissions.*  -> "sadece yöneticiler" kısıtlamaları.
+            function groupIsOwner(meta, uid) {
+                return !!meta && meta.ownerUid === uid;
+            }
+            function groupIsAdmin(meta, uid) {
+                if (!meta) return false;
+                if (meta.ownerUid === uid) return true;
+                return !!(meta.admins && meta.admins[uid]);
+            }
+            function groupPermission(meta, key) {
+                return !!(meta && meta.permissions && meta.permissions[key]);
+            }
+            function groupCanAddMembers(meta, uid) {
+                if (groupIsAdmin(meta, uid)) return true;
+                return !groupPermission(meta, "onlyAdminsCanAddMembers");
+            }
+            function groupCanSendMessages(meta, uid) {
+                if (groupIsAdmin(meta, uid)) return true;
+                return !groupPermission(meta, "onlyAdminsCanMessage");
+            }
+            function groupCanEditInfo(meta, uid) {
+                if (groupIsAdmin(meta, uid)) return true;
+                return !groupPermission(meta, "onlyAdminsCanEditInfo");
+            }
+            function groupRoleBadgeHtml(meta, uid, { forBubble } = {}) {
+                if (!meta || !uid) return "";
+                const cls = forBubble ? "msg-bubble-role-badge" : "msg-group-role-badge";
+                if (meta.ownerUid === uid) return `<span class="${cls} is-owner" title="Grup Kurucusu">👑 KURUCU</span>`;
+                if (meta.admins && meta.admins[uid]) return `<span class="${cls} is-admin" title="Grup Yöneticisi">🛡 YÖNETİCİ</span>`;
+                return "";
             }
 
             function openGroupConversation(groupId) {
@@ -11821,6 +12306,7 @@
 
                 document.getElementById("groupHeaderName").textContent = meta.name || "İsimsiz Grup";
                 document.getElementById("groupHeaderSub").textContent = `${Object.keys(meta.members || {}).length} üye`;
+                updateGroupHeaderAvatar(meta);
 
                 const codeBadge = document.getElementById("groupCodeBadge");
                 if (codeBadge) {
@@ -11835,7 +12321,16 @@
                     }
                 }
 
+                // Sadece-yöneticiler-mesaj-gönderebilir aktifken ve ben yönetici
+                // değilsem composer'ı devre dışı bırak (WhatsApp "duyuru grubu" gibi).
+                updateGroupComposerLock(meta);
+
                 renderGroupChatList();
+
+                // Detay paneli o an bu grup için açıksa canlı güncelle.
+                if (_activeGroupDetailId === groupId) {
+                    renderGroupDetailPanel(groupId);
+                }
 
                 if (_groupMessagesRef) _groupMessagesRef.off();
                 _groupMessagesRef = database.ref("group_chats/" + groupId + "/messages").orderByChild("createdAt").limitToLast(150);
@@ -11844,6 +12339,32 @@
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
                 });
+            }
+
+            function updateGroupHeaderAvatar(meta) {
+                const img = document.getElementById("groupHeaderAvatarImg");
+                const fallback = document.getElementById("groupHeaderAvatar");
+                if (!img || !fallback) return;
+                if (meta && meta.groupPhoto) {
+                    img.src = meta.groupPhoto;
+                    img.style.display = "block";
+                    fallback.style.display = "none";
+                } else {
+                    img.style.display = "none";
+                    fallback.style.display = "flex";
+                }
+            }
+
+            function updateGroupComposerLock(meta) {
+                const textarea = document.getElementById("groupComposerInput");
+                const sendBtn = document.getElementById("groupSendBtn");
+                if (!textarea || !sendBtn) return;
+                const canSend = groupCanSendMessages(meta, _myUid);
+                textarea.disabled = !canSend;
+                sendBtn.disabled = !canSend;
+                textarea.placeholder = canSend
+                    ? "Gruba bir mesaj yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
+                    : "Bu grupta sadece yöneticiler mesaj gönderebilir.";
             }
 
             function closeGroupConversation() {
@@ -11859,6 +12380,11 @@
 
             async function sendGroupMessage(text) {
                 if (!text || !text.trim() || !_activeGroupId) return;
+                const activeMeta = _groupMetaCache[_activeGroupId];
+                if (!groupCanSendMessages(activeMeta, _myUid)) {
+                    alert("Bu grupta sadece yöneticiler mesaj gönderebilir.");
+                    return;
+                }
                 const encoded = window.CommunityMentions.encodeForStorage(text.trim());
                 const now = firebase.database.ServerValue.TIMESTAMP;
                 const groupId = _activeGroupId;
@@ -11908,16 +12434,541 @@
 
             async function leaveActiveGroup() {
                 if (!_activeGroupId) return;
-                const meta = _groupMetaCache[_activeGroupId];
-                if (!confirm(`"${meta ? meta.name : "Bu grup"}" gruptan ayrılmak istediğine emin misin?`)) return;
-
                 const gid = _activeGroupId;
-                await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
-                await database.ref("group_chats/" + gid + "/meta/memberCount").set(
-                    Math.max(0, ((_groupMetaCache[gid] && Object.keys(_groupMetaCache[gid].members || {}).length) || 1) - 1)
-                );
+                const meta = _groupMetaCache[gid];
+                if (!meta) return;
+
+                const memberUids = Object.keys(meta.members || {});
+                const isOwner = groupIsOwner(meta, _myUid);
+                const otherMembers = memberUids.filter((uid) => uid !== _myUid);
+
+                // Kurucu, kendisinden başka üye varken kuruculuğu devretmeden
+                // ayrılamaz. Grupta başka kimse kalmadıysa bu kural es geçilir.
+                if (isOwner && otherMembers.length > 0) {
+                    openTransferOwnerModal(gid, { thenLeave: true });
+                    return;
+                }
+
+                if (!confirm(`"${meta.name || "Bu grup"}" gruptan ayrılmak istediğine emin misin?`)) return;
+                await performLeaveGroup(gid);
+            }
+
+            // Ayrılma işlemini gerçekten uygular (devir tamamlandıktan sonra
+            // veya devre gerek olmadığında çağrılır).
+            async function performLeaveGroup(gid) {
+                const meta = _groupMetaCache[gid];
+                const memberUids = Object.keys((meta && meta.members) || {});
+                const remaining = memberUids.filter((uid) => uid !== _myUid);
+
+                if (remaining.length === 0) {
+                    // Grupta kalan tek kişi bendim: grubu tamamen kaldır.
+                    await database.ref("group_chats/" + gid).remove();
+                } else {
+                    // Sistem mesajı, ben hâlâ üyeyken (kural gereği) gönderilmeli --
+                    // bu yüzden ayrılma kayıtlarından ÖNCE atılır.
+                    const me = window.CommunityMentions.getByUid(_myUid);
+                    await postGroupSystemMessage(gid, `👋 ${me ? me.username : "Bir üye"} gruptan ayrıldı.`);
+                    await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
+                    await database.ref("group_chats/" + gid + "/meta/admins/" + _myUid).remove();
+                    await database.ref("group_chats/" + gid + "/meta/memberCount").set(remaining.length);
+                }
                 await database.ref("user_groups/" + _myUid + "/" + gid).remove();
+                closeGroupDetailPanel();
                 closeGroupConversation();
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // B-2) GRUP DETAY / AYARLAR PANELİ (WhatsApp tarzı)
+            // ══════════════════════════════════════════════════════════
+
+            function openGroupDetailPanel(groupId) {
+                const meta = _groupMetaCache[groupId];
+                if (!meta) return;
+                _activeGroupDetailId = groupId;
+                document.getElementById("groupDetailModalBackdrop").style.display = "flex";
+                document.getElementById("groupDetailAddMemberPanel").style.display = "none";
+                document.getElementById("groupDetailAddMemberSearchInput").value = "";
+                document.getElementById("groupDetailAvatarUrlInput").value = "";
+                document.getElementById("groupDetailIdentityError").style.display = "none";
+                document.getElementById("groupDetailGeneralError").style.display = "none";
+                renderGroupDetailPanel(groupId);
+            }
+
+            function closeGroupDetailPanel() {
+                _activeGroupDetailId = null;
+                const backdrop = document.getElementById("groupDetailModalBackdrop");
+                if (backdrop) backdrop.style.display = "none";
+            }
+
+            function renderGroupDetailPanel(groupId) {
+                const meta = _groupMetaCache[groupId];
+                if (!meta) return;
+                const iAmAdmin = groupIsAdmin(meta, _myUid);
+                const iAmOwner = groupIsOwner(meta, _myUid);
+                const canEditInfo = groupCanEditInfo(meta, _myUid);
+
+                // Kimlik (resim + isim)
+                const avatarImg = document.getElementById("groupDetailAvatarImg");
+                const avatarFallback = document.getElementById("groupDetailAvatarFallback");
+                if (meta.groupPhoto) {
+                    avatarImg.src = meta.groupPhoto;
+                    avatarImg.style.display = "block";
+                    avatarFallback.style.display = "none";
+                } else {
+                    avatarImg.style.display = "none";
+                    avatarFallback.style.display = "flex";
+                }
+                document.getElementById("groupDetailNameInput").value = meta.name || "";
+                document.getElementById("groupDetailNameInput").disabled = !canEditInfo;
+                document.getElementById("groupDetailSaveNameBtn").style.display = canEditInfo ? "inline-flex" : "none";
+                document.getElementById("groupDetailAvatarEditBtn").style.display = canEditInfo ? "flex" : "none";
+                document.getElementById("groupDetailAvatarUrlInput").style.display = canEditInfo ? "block" : "none";
+                document.getElementById("groupDetailApplyAvatarUrlBtn").style.display = canEditInfo ? "inline-flex" : "none";
+                document.getElementById("groupDetailDescInput").value = meta.description || "";
+                document.getElementById("groupDetailDescInput").disabled = !canEditInfo;
+                document.getElementById("groupDetailSaveDescBtn").style.display = canEditInfo ? "inline-flex" : "none";
+
+                renderGroupPinnedBanner(meta);
+
+                // İzinler: sadece yöneticiler/kurucu bu bölümü görür ve değiştirebilir.
+                const permSection = document.getElementById("groupDetailPermissionsSection");
+                permSection.style.display = iAmAdmin ? "flex" : "none";
+                if (iAmAdmin) {
+                    const perms = meta.permissions || {};
+                    document.getElementById("permOnlyAdminsAddMembers").checked = !!perms.onlyAdminsCanAddMembers;
+                    document.getElementById("permOnlyAdminsSendMessages").checked = !!perms.onlyAdminsCanMessage;
+                    document.getElementById("permOnlyAdminsEditInfo").checked = !!perms.onlyAdminsCanEditInfo;
+                }
+
+                // Üye başlığı + "Kişi Ekle" butonu
+                const memberUids = Object.keys(meta.members || {});
+                document.getElementById("groupDetailMembersHeading").textContent = `Üyeler (${memberUids.length})`;
+                document.getElementById("groupDetailAddMemberBtn").style.display = groupCanAddMembers(meta, _myUid) ? "inline-flex" : "none";
+
+                renderGroupMemberList(groupId);
+            }
+
+            function renderGroupMemberList(groupId) {
+                const meta = _groupMetaCache[groupId];
+                const listEl = document.getElementById("groupDetailMemberList");
+                if (!meta || !listEl) return;
+                const memberUids = Object.keys(meta.members || {});
+                const iAmAdmin = groupIsAdmin(meta, _myUid);
+                const RBAC = window.CommunityRBAC;
+
+                // Kurucu en üstte, sonra yöneticiler, sonra diğerleri (isme göre).
+                const sorted = memberUids.slice().sort((a, b) => {
+                    const rank = (uid) => (meta.ownerUid === uid ? 0 : (meta.admins && meta.admins[uid]) ? 1 : 2);
+                    const ra = rank(a), rb = rank(b);
+                    if (ra !== rb) return ra - rb;
+                    const ca = window.CommunityMentions.getByUid(a);
+                    const cb = window.CommunityMentions.getByUid(b);
+                    return (ca ? ca.username : "").localeCompare(cb ? cb.username : "");
+                });
+
+                listEl.innerHTML = sorted.map((uid) => {
+                    const c = window.CommunityMentions.getByUid(uid);
+                    const username = c ? c.username : "Kullanıcı";
+                    const avatarUrl = c ? c.avatarUrl : "";
+                    const isTargetOwner = meta.ownerUid === uid;
+                    const isTargetAdmin = !!(meta.admins && meta.admins[uid]);
+                    const showMenu = iAmAdmin && uid !== _myUid; // Kendine işlem yapamazsın
+                    return `
+                        <div class="msg-group-member-row" data-uid="${escapeAttr(uid)}">
+                            <img ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
+                            <div class="msg-group-member-info">
+                                <span class="msg-group-member-name">
+                                    ${escapeAttr(username)}${RBAC.renderVerifiedBadge(c ? c.isVerified : false, "13px")}
+                                    ${groupRoleBadgeHtml(meta, uid)}
+                                </span>
+                            </div>
+                            ${showMenu ? `
+                                <button type="button" class="msg-group-member-menu-btn" data-menu-toggle="${escapeAttr(uid)}" title="İşlemler">⋮</button>
+                                <div class="msg-group-member-menu-popover" data-menu-for="${escapeAttr(uid)}">
+                                    ${isTargetOwner ? "" : (isTargetAdmin
+                                        ? `<button type="button" class="msg-group-member-menu-item" data-action="demote" data-uid="${escapeAttr(uid)}">🛡 Yöneticilikten Çıkar</button>`
+                                        : `<button type="button" class="msg-group-member-menu-item" data-action="promote" data-uid="${escapeAttr(uid)}">🛡 Yönetici Yap</button>`
+                                    )}
+                                    ${(!isTargetOwner) ? `<button type="button" class="msg-group-member-menu-item is-danger" data-action="remove" data-uid="${escapeAttr(uid)}">🚫 Gruptan Çıkar</button>` : ""}
+                                </div>
+                            ` : ""}
+                        </div>
+                    `;
+                }).join("");
+
+                // Menü aç/kapa
+                listEl.querySelectorAll("[data-menu-toggle]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        const uid = btn.getAttribute("data-menu-toggle");
+                        listEl.querySelectorAll(".msg-group-member-menu-popover").forEach((p) => {
+                            p.classList.toggle("is-open", p.getAttribute("data-menu-for") === uid && !p.classList.contains("is-open"));
+                        });
+                    });
+                });
+                listEl.querySelectorAll("[data-action]").forEach((btn) => {
+                    btn.addEventListener("click", async (e) => {
+                        e.stopPropagation();
+                        const action = btn.getAttribute("data-action");
+                        const uid = btn.getAttribute("data-uid");
+                        listEl.querySelectorAll(".msg-group-member-menu-popover").forEach((p) => p.classList.remove("is-open"));
+                        if (action === "promote") await setGroupMemberAdmin(groupId, uid, true);
+                        else if (action === "demote") await setGroupMemberAdmin(groupId, uid, false);
+                        else if (action === "remove") await removeGroupMember(groupId, uid);
+                    });
+                });
+            }
+
+            // Popover dışına tıklanınca kapansın
+            document.addEventListener("click", () => {
+                document.querySelectorAll(".msg-group-member-menu-popover.is-open").forEach((p) => p.classList.remove("is-open"));
+            });
+
+            async function setGroupMemberAdmin(groupId, targetUid, makeAdmin) {
+                const meta = _groupMetaCache[groupId];
+                if (!groupIsAdmin(meta, _myUid)) { alert("Bu işlem için yönetici olman gerekiyor."); return; }
+                if (meta.ownerUid === targetUid) return; // Kurucunun rolü buradan değişmez
+                if (makeAdmin) {
+                    await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).set(true);
+                } else {
+                    await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).remove();
+                }
+                const target = window.CommunityMentions.getByUid(targetUid);
+                const targetName = target ? target.username : "Bir üye";
+                await postGroupSystemMessage(groupId, makeAdmin
+                    ? `🛡 ${targetName} artık grup yöneticisi.`
+                    : `${targetName} yöneticilikten çıkarıldı.`);
+            }
+
+            async function removeGroupMember(groupId, targetUid) {
+                const meta = _groupMetaCache[groupId];
+                if (!groupIsAdmin(meta, _myUid)) { alert("Bu işlem için yönetici olman gerekiyor."); return; }
+                if (meta.ownerUid === targetUid) return; // Kurucu buradan çıkarılamaz
+                const c = window.CommunityMentions.getByUid(targetUid);
+                if (!confirm(`${c ? c.username : "Bu kullanıcı"} gruptan çıkarılsın mı?`)) return;
+
+                await database.ref(`group_chats/${groupId}/meta/members/${targetUid}`).remove();
+                await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).remove();
+                const remaining = Object.keys(meta.members || {}).filter((uid) => uid !== targetUid).length;
+                await database.ref(`group_chats/${groupId}/meta/memberCount`).set(remaining);
+                await database.ref(`user_groups/${targetUid}/${groupId}`).remove();
+                await postGroupSystemMessage(groupId, `🚫 ${c ? c.username : "Bir üye"} gruptan çıkarıldı.`);
+            }
+
+            // ── Kuruculuk devri ───────────────────────────────────────
+            function openTransferOwnerModal(groupId, { thenLeave } = {}) {
+                _pendingLeaveAfterTransfer = !!thenLeave;
+                const meta = _groupMetaCache[groupId];
+                if (!meta) return;
+                document.getElementById("groupTransferOwnerModalBackdrop").style.display = "flex";
+                document.getElementById("groupTransferOwnerError").style.display = "none";
+
+                const otherUids = Object.keys(meta.members || {}).filter((uid) => uid !== _myUid);
+                const listEl = document.getElementById("groupTransferOwnerMemberList");
+                const RBAC = window.CommunityRBAC;
+                if (otherUids.length === 0) {
+                    listEl.innerHTML = '<div class="hub-placeholder">Devredilecek başka üye yok.</div>';
+                    return;
+                }
+                listEl.innerHTML = otherUids.map((uid) => {
+                    const c = window.CommunityMentions.getByUid(uid);
+                    return `
+                        <div class="msg-group-member-row" data-uid="${escapeAttr(uid)}" style="cursor:pointer;">
+                            <img ${RBAC.renderAvatarAttrs(c ? c.avatarUrl : "")} alt="">
+                            <div class="msg-group-member-info">
+                                <span class="msg-group-member-name">${escapeAttr(c ? c.username : "Kullanıcı")}${groupRoleBadgeHtml(meta, uid)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+                listEl.querySelectorAll(".msg-group-member-row").forEach((row) => {
+                    row.addEventListener("click", async () => {
+                        const newOwnerUid = row.getAttribute("data-uid");
+                        const c = window.CommunityMentions.getByUid(newOwnerUid);
+                        if (!confirm(`${c ? c.username : "Bu kullanıcı"} yeni Grup Kurucusu olsun mu? Bu işlem geri alınamaz.`)) return;
+                        try {
+                            await database.ref(`group_chats/${groupId}/meta/ownerUid`).set(newOwnerUid);
+                            await database.ref(`group_chats/${groupId}/meta/admins/${newOwnerUid}`).set(true);
+                            await postGroupSystemMessage(groupId, `👑 Grup kuruculuğu ${c ? c.username : "yeni bir üyeye"} devredildi.`);
+                            document.getElementById("groupTransferOwnerModalBackdrop").style.display = "none";
+                            if (_pendingLeaveAfterTransfer) {
+                                _pendingLeaveAfterTransfer = false;
+                                await performLeaveGroup(groupId);
+                            } else {
+                                renderGroupDetailPanel(groupId);
+                            }
+                        } catch (err) {
+                            console.error("[Grup] Kuruculuk devri hatası:", err);
+                            document.getElementById("groupTransferOwnerError").textContent = "Devir başarısız oldu, tekrar dene.";
+                            document.getElementById("groupTransferOwnerError").style.display = "block";
+                        }
+                    });
+                });
+            }
+
+            // ── İsim / resim güncelleme ────────────────────────────────
+            async function saveGroupName() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !meta) return;
+                if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
+                const name = document.getElementById("groupDetailNameInput").value.trim();
+                const errEl = document.getElementById("groupDetailIdentityError");
+                if (!name) {
+                    errEl.textContent = "Grup adı boş olamaz.";
+                    errEl.style.display = "block";
+                    return;
+                }
+                errEl.style.display = "none";
+                await database.ref(`group_chats/${groupId}/meta`).update({ name, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+            }
+
+            async function saveGroupName() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !meta) return;
+                if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
+                const name = document.getElementById("groupDetailNameInput").value.trim();
+                const errEl = document.getElementById("groupDetailIdentityError");
+                if (!name) {
+                    errEl.textContent = "Grup adı boş olamaz.";
+                    errEl.style.display = "block";
+                    return;
+                }
+                errEl.style.display = "none";
+                await database.ref(`group_chats/${groupId}/meta`).update({ name, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+            }
+
+            async function saveGroupDescription() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !meta) return;
+                if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
+                const description = document.getElementById("groupDetailDescInput").value.trim().slice(0, 240);
+                await database.ref(`group_chats/${groupId}/meta`).update({ description, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+                showToastGlobal("Grup açıklaması güncellendi.");
+            }
+
+            // ── Mesaj sabitleme (sadece yönetici/kurucu) ─────────────────
+            // meta.pinnedMessageId + meta.pinnedMessageSnippet: paneldeki
+            // önizleme için mesajın tamamını tekrar okumaya gerek kalmadan
+            // hızlıca gösterilebilsin diye küçük bir kopya tutulur.
+            async function pinGroupMessage(messageId) {
+                const groupId = _activeGroupId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !groupIsAdmin(meta, _myUid)) { alert("Mesaj sabitlemek için yönetici olman gerekiyor."); return; }
+                const msgSnap = await database.ref(`group_chats/${groupId}/messages/${messageId}`).once("value");
+                const msg = msgSnap.val();
+                if (!msg || msg.deleted) return;
+                const authorCandidate = window.CommunityMentions.getByUid(msg.authorUid);
+                await database.ref(`group_chats/${groupId}/meta`).update({
+                    pinnedMessageId: messageId,
+                    pinnedMessageSnippet: makePreviewSnippet(msg.text) || "",
+                    pinnedMessageAuthor: authorCandidate ? authorCandidate.username : "Kullanıcı",
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+                showToastGlobal("Mesaj sabitlendi.");
+            }
+
+            async function unpinGroupMessage() {
+                const groupId = _activeGroupId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !groupIsAdmin(meta, _myUid)) { alert("Sabitlemeyi kaldırmak için yönetici olman gerekiyor."); return; }
+                await database.ref(`group_chats/${groupId}/meta`).update({
+                    pinnedMessageId: null,
+                    pinnedMessageSnippet: null,
+                    pinnedMessageAuthor: null,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+
+            function renderGroupPinnedBanner(meta) {
+                const section = document.getElementById("groupDetailPinnedSection");
+                if (!section) return;
+                if (meta && meta.pinnedMessageId) {
+                    section.style.display = "flex";
+                    document.getElementById("groupDetailPinnedPreview").textContent =
+                        `${meta.pinnedMessageAuthor || "Kullanıcı"}: ${meta.pinnedMessageSnippet || ""}`;
+                    document.getElementById("groupDetailUnpinBtn").style.display = groupIsAdmin(meta, _myUid) ? "inline-flex" : "none";
+                } else {
+                    section.style.display = "none";
+                }
+            }
+
+            // ── Sistem mesajları ("X grubu kurdu", "Y'yi ekledi" vb.) ───
+            // Bunlar normal mesaj kayıtları gibi group_chats/{id}/messages
+            // altına yazılır (isSystem: true), böylece ayrı bir RTDB kuralı
+            // gerekmez -- authorUid her zaman işlemi yapan kişi olur.
+            // Başarısız olursa (izin, ağ vb.) sohbeti bozmaması için hatayı
+            // yutar; bu tamamen kozmetik bir özelliktir.
+            async function postGroupSystemMessage(groupId, text) {
+                try {
+                    await database.ref(`group_chats/${groupId}/messages`).push({
+                        authorUid: _myUid,
+                        text: window.CommunityMentions.encodeForStorage(text),
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        isSystem: true
+                    });
+                } catch (err) {
+                    console.warn("[Grup] Sistem mesajı gönderilemedi (göz ardı edildi):", err);
+                }
+            }
+
+            async function applyGroupAvatarUrl() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !meta) return;
+                if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
+                const url = document.getElementById("groupDetailAvatarUrlInput").value.trim();
+                if (!url) return;
+                await database.ref(`group_chats/${groupId}/meta`).update({ groupPhoto: url, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+                document.getElementById("groupDetailAvatarUrlInput").value = "";
+            }
+
+            function wireGroupAvatarFileUpload() {
+                const btn = document.getElementById("groupDetailAvatarEditBtn");
+                const fileInput = document.getElementById("groupDetailAvatarFileInput");
+                const statusEl = document.getElementById("groupDetailAvatarStatus");
+                if (!btn || !fileInput) return;
+
+                btn.addEventListener("click", () => fileInput.click());
+                fileInput.addEventListener("change", async () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    fileInput.value = "";
+                    if (!file) return;
+                    const groupId = _activeGroupDetailId;
+                    const meta = _groupMetaCache[groupId];
+                    if (!groupId || !groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
+
+                    const setStatus = (msg, isError) => {
+                        if (!statusEl) return;
+                        if (!msg) { statusEl.style.display = "none"; return; }
+                        statusEl.textContent = msg;
+                        statusEl.style.display = "block";
+                        statusEl.classList.toggle("is-error", !!isError);
+                    };
+
+                    btn.disabled = true;
+                    setStatus(`"${file.name}" ImgBB'ye yükleniyor...`, false);
+                    try {
+                        const link = await uploadFileToImgBB(file, (pct) => {
+                            if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
+                        });
+                        await database.ref(`group_chats/${groupId}/meta`).update({ groupPhoto: link, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+                        setStatus("Grup resmi güncellendi.", false);
+                        setTimeout(() => setStatus(null), 2000);
+                    } catch (err) {
+                        console.error("[Grup] Resim yükleme hatası:", err);
+                        setStatus("Yükleme başarısız: " + (err && err.message ? err.message : "bilinmeyen hata"), true);
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+            }
+
+            // ── İzin toggle'ları ─────────────────────────────────────────
+            function wireGroupPermissionToggles() {
+                const map = {
+                    permOnlyAdminsAddMembers: "onlyAdminsCanAddMembers",
+                    permOnlyAdminsSendMessages: "onlyAdminsCanMessage",
+                    permOnlyAdminsEditInfo: "onlyAdminsCanEditInfo"
+                };
+                Object.keys(map).forEach((elId) => {
+                    document.getElementById(elId)?.addEventListener("change", async (e) => {
+                        const groupId = _activeGroupDetailId;
+                        const meta = _groupMetaCache[groupId];
+                        if (!groupId || !groupIsAdmin(meta, _myUid)) {
+                            e.target.checked = !e.target.checked; // yetkisiz değişikliği geri al
+                            return;
+                        }
+                        await database.ref(`group_chats/${groupId}/meta/permissions/${map[elId]}`).set(e.target.checked);
+                    });
+                });
+            }
+
+            // ── Kişi ekle paneli ─────────────────────────────────────────
+            function toggleAddMemberPanel() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !groupCanAddMembers(meta, _myUid)) { alert("Bu grupta sadece yöneticiler üye ekleyebilir."); return; }
+                const panel = document.getElementById("groupDetailAddMemberPanel");
+                const isOpen = panel.style.display !== "none";
+                panel.style.display = isOpen ? "none" : "flex";
+                if (!isOpen) document.getElementById("groupDetailAddMemberSearchInput").focus();
+            }
+
+            function renderAddMemberResults(query) {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                const resultsEl = document.getElementById("groupDetailAddMemberResults");
+                if (!groupId || !meta || !resultsEl) return;
+                if (!query || !query.trim()) { resultsEl.innerHTML = ""; return; }
+
+                const existing = meta.members || {};
+                const candidates = window.CommunityMentions.search(query.trim())
+                    .filter((c) => !existing[c.uid] && !blockedMe(c.uid));
+                if (candidates.length === 0) {
+                    resultsEl.innerHTML = '<div class="hub-placeholder">Kimse bulunamadı.</div>';
+                    return;
+                }
+                const RBAC = window.CommunityRBAC;
+                resultsEl.innerHTML = candidates.map((c) => `
+                    <div class="msg-user-picker-item" data-uid="${escapeAttr(c.uid)}">
+                        <img ${RBAC.renderAvatarAttrs(c.avatarUrl)} alt="">
+                        <span>${escapeAttr(c.username)}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
+                    </div>
+                `).join("");
+                resultsEl.querySelectorAll(".msg-user-picker-item").forEach((item) => {
+                    item.addEventListener("click", async () => {
+                        const uid = item.getAttribute("data-uid");
+                        await addGroupMember(groupId, uid);
+                        document.getElementById("groupDetailAddMemberSearchInput").value = "";
+                        resultsEl.innerHTML = "";
+                    });
+                });
+            }
+
+            async function addGroupMember(groupId, uid) {
+                const meta = _groupMetaCache[groupId];
+                if (!groupId || !groupCanAddMembers(meta, _myUid)) { alert("Bu grupta sadece yöneticiler üye ekleyebilir."); return; }
+                await database.ref(`group_chats/${groupId}/meta/members/${uid}`).set(true);
+                const newCount = Object.keys(meta.members || {}).length + (meta.members && meta.members[uid] ? 0 : 1);
+                await database.ref(`group_chats/${groupId}/meta/memberCount`).set(newCount);
+                await database.ref(`user_groups/${uid}/${groupId}`).set(true);
+                const added = window.CommunityMentions.getByUid(uid);
+                await postGroupSystemMessage(groupId, `➕ ${added ? added.username : "Yeni bir üye"} gruba eklendi.`);
+            }
+
+            function wireGroupDetailPanelEvents() {
+                document.getElementById("groupHeaderOpenSettingsBtn")?.addEventListener("click", () => {
+                    if (_activeGroupId) openGroupDetailPanel(_activeGroupId);
+                });
+                document.getElementById("groupDetailModalClose")?.addEventListener("click", closeGroupDetailPanel);
+                document.getElementById("groupDetailCloseBtn")?.addEventListener("click", closeGroupDetailPanel);
+                document.getElementById("groupDetailModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "groupDetailModalBackdrop") closeGroupDetailPanel();
+                });
+                document.getElementById("groupDetailSaveNameBtn")?.addEventListener("click", saveGroupName);
+                document.getElementById("groupDetailSaveDescBtn")?.addEventListener("click", saveGroupDescription);
+                document.getElementById("groupDetailApplyAvatarUrlBtn")?.addEventListener("click", applyGroupAvatarUrl);
+                document.getElementById("groupDetailUnpinBtn")?.addEventListener("click", unpinGroupMessage);
+                document.getElementById("groupDetailAddMemberBtn")?.addEventListener("click", toggleAddMemberPanel);
+                document.getElementById("groupDetailAddMemberSearchInput")?.addEventListener("input", (e) => {
+                    clearTimeout(_groupAddMemberSearchTimer);
+                    const val = e.target.value;
+                    _groupAddMemberSearchTimer = setTimeout(() => renderAddMemberResults(val), 200);
+                });
+                wireGroupAvatarFileUpload();
+                wireGroupPermissionToggles();
+
+                document.getElementById("groupTransferOwnerModalClose")?.addEventListener("click", () => {
+                    _pendingLeaveAfterTransfer = false;
+                    document.getElementById("groupTransferOwnerModalBackdrop").style.display = "none";
+                });
+                document.getElementById("groupTransferOwnerCancelBtn")?.addEventListener("click", () => {
+                    _pendingLeaveAfterTransfer = false;
+                    document.getElementById("groupTransferOwnerModalBackdrop").style.display = "none";
+                });
             }
 
             // ── "Yeni Grup Oluştur" modalı ───────────────────────────────
@@ -12013,14 +13064,22 @@
 
                 await groupRef.child("meta").set({
                     name,
+                    description: "",
+                    groupPhoto: "",
                     ownerUid: _myUid,
                     members,
+                    admins: { [_myUid]: true }, // Kurucu her zaman aynı zamanda yöneticidir
                     memberCount: Object.keys(members).length,
                     createdAt: now,
                     updatedAt: now,
                     lastMessage: "",
                     lastSenderUid: "",
-                    joinCode
+                    joinCode,
+                    permissions: {
+                        onlyAdminsCanAddMembers: false,
+                        onlyAdminsCanMessage: false,
+                        onlyAdminsCanEditInfo: false
+                    }
                 });
                 // group_codes/{KOD} -> groupId  (kodu bilen herkes gruba
                 // hızlıca ulaşabilsin diye ters-index; RTDB'de "WHERE" olmadığından
@@ -12030,6 +13089,9 @@
                 const updates = {};
                 Object.keys(members).forEach((uid) => { updates["user_groups/" + uid + "/" + groupId] = true; });
                 await database.ref().update(updates);
+
+                const me = window.CommunityMentions.getByUid(_myUid);
+                await postGroupSystemMessage(groupId, `🎉 ${me ? me.username : "Kurucu"} grubu oluşturdu.`);
 
                 closeCreateGroupModal();
                 openGroupConversation(groupId);
@@ -12081,6 +13143,9 @@
                     updates["group_chats/" + groupId + "/meta/memberCount"] = Object.keys(meta.members || {}).length + 1;
                     updates["user_groups/" + _myUid + "/" + groupId] = true;
                     await database.ref().update(updates);
+
+                    const me = window.CommunityMentions.getByUid(_myUid);
+                    await postGroupSystemMessage(groupId, `📨 ${me ? me.username : "Bir üye"} davet koduyla gruba katıldı.`);
 
                     closeGroupJoinModal();
                     openGroupConversation(groupId);
@@ -12179,6 +13244,14 @@
                         html.push(`<div class="msg-date-divider"><span>${escapeAttr(formatDateDividerLabel(m.createdAt))}</span></div>`);
                     }
 
+                    // Sistem mesajları ("X grubu kurdu" vb.) normal baloncuk değil,
+                    // ortalanmış küçük bir etiket olarak gösterilir. Diğer mesajlarla
+                    // aynı çözümleme yolunu (renderRichContent) kullanır.
+                    if (m.isSystem) {
+                        html.push(`<div class="msg-system-pill"><span>${renderRichContent(m.text)}</span></div>`);
+                        return;
+                    }
+
                     const isOwn = m.authorUid === _myUid;
                     const candidate = window.CommunityMentions.getByUid(m.authorUid);
                     const username = candidate ? candidate.username : "Kullanıcı";
@@ -12189,8 +13262,13 @@
                     // Grup sohbetinde, KENDİ mesajlarımız hariç, gönderenin
                     // kullanıcı adı + rütbe rozeti baloncuğun içinde üstte
                     // gösterilir (istenen davranış).
+                    // Grup sohbetinde, KENDİ mesajlarımız hariç, gönderenin
+                    // kullanıcı adı + rütbe rozeti baloncuğun içinde üstte
+                    // gösterilir (istenen davranış). Grup Kurucusu/Yöneticisi
+                    // rozeti de aynı satırda eklenir.
+                    const groupRoleHtml = isGroup ? groupRoleBadgeHtml(_groupMetaCache[_activeGroupId], m.authorUid, { forBubble: true }) : "";
                     const senderHtml = (isGroup && !isOwn)
-                        ? `<div class="msg-bubble-sender">${RBAC.renderNameWithRank(username, role, isVerified)}</div>`
+                        ? `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified)}</div>`
                         : "";
 
                     const isDeleted = m.deleted === true;
@@ -12217,7 +13295,13 @@
                         const deleteBtn = isOwn
                             ? `<button type="button" class="msg-bubble-action-btn is-danger" data-msg-action="delete" data-msg-id="${escapeAttr(m.id)}">🗑 Sil</button>`
                             : "";
-                        actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${deleteBtn}</div>`;
+                        // Sabitleme: sadece grup sohbetinde ve sadece yönetici/kurucu görür.
+                        const groupMetaForPin = isGroup ? _groupMetaCache[_activeGroupId] : null;
+                        const isPinned = groupMetaForPin && groupMetaForPin.pinnedMessageId === m.id;
+                        const pinBtn = (isGroup && groupIsAdmin(groupMetaForPin, _myUid))
+                            ? `<button type="button" class="msg-bubble-action-btn" data-msg-action="${isPinned ? 'unpin' : 'pin'}" data-msg-id="${escapeAttr(m.id)}">${isPinned ? '📌 Kaldır' : '📌 Sabitle'}</button>`
+                            : "";
+                        actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${pinBtn}${deleteBtn}</div>`;
                     }
 
                     html.push(`
@@ -12282,6 +13366,16 @@
                             console.error("[Messaging] Mesaj silinemedi:", err);
                             showToastGlobal("Mesaj silinemedi. Yetki sorunu olabilir.");
                         }
+                        return;
+                    }
+                    const pinBtn = e.target.closest('[data-msg-action="pin"]');
+                    if (pinBtn) {
+                        await pinGroupMessage(pinBtn.getAttribute("data-msg-id"));
+                        return;
+                    }
+                    const unpinBtn = e.target.closest('[data-msg-action="unpin"]');
+                    if (unpinBtn) {
+                        await unpinGroupMessage();
                         return;
                     }
                     const quote = e.target.closest("[data-jump-to]");
@@ -12445,6 +13539,7 @@
                 document.getElementById("groupCreateMemberSearchInput")?.addEventListener("input", (e) => renderCreateGroupMemberResults(e.target.value));
                 document.getElementById("groupCreateSubmitBtn")?.addEventListener("click", submitCreateGroup);
                 document.getElementById("groupLeaveBtn")?.addEventListener("click", leaveActiveGroup);
+                wireGroupDetailPanelEvents();
 
                 // Kodla gruba katılma modalı + davet kodu rozeti
                 document.getElementById("groupJoinBtn")?.addEventListener("click", openGroupJoinModal);
