@@ -5091,6 +5091,13 @@
                     </svg>
                     Grup Sohbetleri
                 </div>
+                <div class="hub-nav-item" data-view="communities">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                        <path d="M2 8h12M8 2c1.8 1.7 2.8 3.8 2.8 6s-1 4.3-2.8 6c-1.8-1.7-2.8-3.8-2.8-6s1-4.3 2.8-6z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+                    </svg>
+                    Topluluklar
+                </div>
                 <div class="hub-nav-item" data-view="inbox">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="1" y="3" width="14" height="9" rx="1" fill="currentColor" opacity="0.85"/>
@@ -5659,41 +5666,18 @@
                  ════════════════════════════════════════════════════════════ -->
             <section class="hub-view" data-view="groups">
                 <div class="msg-shell" id="groupShell">
-                    <!-- SOL/ÜST: Katılınan gruplar / Topluluklar listesi -->
+                    <!-- SOL/ÜST: Katılınan gruplar listesi -->
                     <div class="msg-chat-list-panel" id="groupChatListPanel">
-
-                        <!-- Gruplarım / Topluluklar sekmeleri -->
-                        <div class="grp-tab-bar">
-                            <button type="button" class="grp-tab-btn is-active" id="grpTabMyGroupsBtn" data-tab="my-groups">Gruplarım</button>
-                            <button type="button" class="grp-tab-btn" id="grpTabCommunitiesBtn" data-tab="communities">🌐 Topluluklar</button>
-                        </div>
-
-                        <!-- ── SEKME: GRUPLARIM ── -->
-                        <div class="grp-tab-panel is-active" id="grpTabPanelMyGroups">
-                            <div class="msg-panel-header">
-                                <span>Gruplarım</span>
-                                <div style="display:flex; gap:6px;">
-                                    <button type="button" class="msg-new-chat-btn" id="groupJoinBtn" title="Davet koduyla katıl">🔑 Koda Katıl</button>
-                                    <button type="button" class="msg-new-chat-btn" id="groupCreateBtn" title="Yeni grup oluştur">+ Yeni Grup</button>
-                                </div>
-                            </div>
-                            <input type="text" class="msg-search-input" id="groupChatSearchInput" placeholder="Grup ara…">
-                            <div class="msg-chat-list" id="groupChatList">
-                                <div class="hub-placeholder">Yükleniyor…</div>
+                        <div class="msg-panel-header">
+                            <span>Gruplarım</span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="msg-new-chat-btn" id="groupJoinBtn" title="Davet koduyla katıl">🔑 Koda Katıl</button>
+                                <button type="button" class="msg-new-chat-btn" id="groupCreateBtn" title="Yeni grup oluştur">+ Yeni Grup</button>
                             </div>
                         </div>
-
-                        <!-- ── SEKME: TOPLULUKLAR (herkese açık, keşfedilebilir) ── -->
-                        <div class="grp-tab-panel" id="grpTabPanelCommunities">
-                            <div class="msg-panel-header">
-                                <span>Topluluklar</span>
-                                <button type="button" class="msg-new-chat-btn" id="communityCreateBtn" title="Yeni topluluk oluştur">+ Yeni Topluluk</button>
-                            </div>
-                            <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
-                            <div class="grp-community-limit-note" id="communityLimitNote"></div>
-                            <div class="msg-chat-list" id="communityList">
-                                <div class="hub-placeholder">Yükleniyor…</div>
-                            </div>
+                        <input type="text" class="msg-search-input" id="groupChatSearchInput" placeholder="Grup ara…">
+                        <div class="msg-chat-list" id="groupChatList">
+                            <div class="hub-placeholder">Yükleniyor…</div>
                         </div>
                     </div>
 
@@ -6005,6 +5989,29 @@
                         <div class="forum-modal-footer">
                             <button class="forum-btn forum-btn-ghost" id="communityReportCancelBtn">Vazgeç</button>
                             <button class="forum-btn forum-btn-primary" id="communityReportSubmitBtn">Gönder</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ════════════════════════════════════════════════════════════
+                 MODÜL 5-B — TOPLULUKLAR (herkese açık, keşfedilebilir gruplar)
+                 Not: modalleri (Oluştur / Önizle / Şikâyet Et) bir üstteki
+                 "groups" section'ının içinde tanımlı; burada sadece liste
+                 UI'ı var. ID'ler doğrudan aynı isimlerle kullanılıyor.
+                 ════════════════════════════════════════════════════════════ -->
+            <section class="hub-view" data-view="communities">
+                <div class="msg-shell" id="communityShell">
+                    <div class="msg-chat-list-panel" id="communityListPanel" style="max-width:none; border-right:none;">
+                        <div class="msg-panel-header">
+                            <span>🌐 Topluluklar</span>
+                            <button type="button" class="msg-new-chat-btn" id="communityCreateBtn" title="Yeni topluluk oluştur">+ Yeni Topluluk</button>
+                        </div>
+                        <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
+                        <div class="grp-community-limit-note" id="communityLimitNote"></div>
+                        <div class="msg-chat-list" id="communityList">
+                            <div class="hub-placeholder">Yükleniyor…</div>
                         </div>
                     </div>
                 </div>
@@ -8507,7 +8514,7 @@
             // 3dstudio.html'den "index.html#studio" ile dönüldüğünde
             // otomatik olarak studio sekmesini aç.
             const hashView = window.location.hash.replace("#", "").trim();
-            const validViews = ["forum","marketplace","studio","messages","groups","inbox","profile","admin"];
+            const validViews = ["forum","marketplace","studio","messages","groups","communities","inbox","profile","admin"];
             if (hashView && validViews.includes(hashView)) {
                 // Auth hazır olduktan sonra geçiş yapabilmek için kısa gecikme.
                 setTimeout(() => switchView(hashView), 300);
@@ -10843,6 +10850,7 @@
                 studio:      ["Community",   "3D Studio Editör"],
                 messages:    ["Community",   "Mesajlar"],
                 groups:      ["Community",   "Grup Sohbetleri"],
+                communities: ["Community",   "Topluluklar"],
                 inbox:       ["Community",   "Mentions & Replies"],
                 profile:     ["Community",   "Profilim"],
                 admin:       ["Yönetim",     "Panel"]
