@@ -3246,6 +3246,140 @@
         background: rgba(245, 197, 66, 0.14);
         border: 1px solid rgba(245, 197, 66, 0.4);
     }
+    /* ==========================================================
+       MODÜL 5 — EKLENTİ 1: TOPLULUK KANALLARI & YEREL RÜTBELER
+       Sadece isCommunity=true olan topluluklarda görünen ek UI.
+       Discord tarzı: sol tarafta kanal listesi, sağda aktif
+       kanalın mesaj akışı. Grup Detay panelinde de "Kanallar" ve
+       "Rütbeler" adlı iki yeni yönetim bölümü eklenir.
+       ========================================================== */
+    .cch-channel-sidebar {
+        display: none;
+        flex-direction: column;
+        width: 220px;
+        min-width: 220px;
+        border-right: 1px solid var(--line);
+        background: var(--bg-panel);
+        overflow-y: auto;
+    }
+    .msg-shell.is-community .cch-channel-sidebar { display: flex; }
+
+    .cch-channel-sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+    }
+    .cch-channel-add-btn {
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--accent);
+        width: 22px;
+        height: 22px;
+        font-size: 0.9rem;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cch-channel-add-btn:hover { background: var(--accent-soft); }
+
+    .cch-channel-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 6px;
+    }
+    .cch-channel-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--text-dim);
+        font-size: 0.87rem;
+        position: relative;
+    }
+    .cch-channel-item:hover { background: var(--bg-panel-raised); color: var(--text-primary); }
+    .cch-channel-item.is-active { background: var(--accent-soft); color: var(--accent); }
+    .cch-channel-item-icon { opacity: 0.75; font-size: 0.8rem; }
+    .cch-channel-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cch-channel-item-lock { font-size: 0.75rem; opacity: 0.65; }
+    .cch-channel-item-menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0 2px;
+    }
+    .cch-channel-item:hover .cch-channel-item-menu-btn { display: inline-flex; }
+
+    /* Grup Detay paneli — Kanallar / Rütbeler bölümleri */
+    .cch-manage-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .cch-manage-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg-panel-raised);
+    }
+    .cch-manage-row-name { flex: 1; font-size: 0.88rem; }
+    .cch-manage-row-meta { font-size: 0.72rem; color: var(--text-dim); }
+    .cch-manage-row-actions { display: flex; gap: 6px; }
+    .cch-icon-btn {
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--text-dim);
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cch-icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .cch-icon-btn.is-danger:hover { color: var(--danger); border-color: var(--danger); }
+
+    .cch-role-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .cch-perm-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 12px;
+    }
+    @media (max-width: 560px) { .cch-perm-grid { grid-template-columns: 1fr; } }
+
+    .cch-empty-note {
+        font-size: 0.82rem;
+        color: var(--text-dim);
+        padding: 6px 2px;
+    }
+
     .msg-group-role-badge.is-admin {
         color: var(--accent);
         background: var(--accent-soft);
@@ -5687,7 +5821,18 @@
                             👥 Bir gruba tıkla, ya da "+ Yeni Grup" ile kendi grubunu oluştur.
                         </div>
 
-                        <div class="msg-conversation-active" id="groupConversationActive" style="display:none;">
+                        <div class="msg-conversation-active" id="groupConversationActive" style="display:none; flex-direction: row;">
+                            <!-- MODÜL 5 EKLENTİ 1: Topluluk kanal sidebar'ı (sadece isCommunity=true iken görünür) -->
+                            <div class="cch-channel-sidebar" id="cchChannelSidebar">
+                                <div class="cch-channel-sidebar-header">
+                                    <span>Kanallar</span>
+                                    <button type="button" class="cch-channel-add-btn" id="cchAddChannelBtn" title="Kanal oluştur">＋</button>
+                                </div>
+                                <div class="cch-channel-list" id="cchChannelList">
+                                    <div class="hub-placeholder">Yükleniyor…</div>
+                                </div>
+                            </div>
+                            <div class="msg-conversation-active-main" id="groupConversationActiveMain" style="display:flex; flex-direction:column; flex:1; min-width:0;">
                             <div class="msg-conversation-header" id="groupConversationHeader">
                                 <button type="button" class="msg-back-btn" id="groupBackBtn" title="Grup listesine dön">←</button>
                                 <button type="button" class="msg-group-header-identity" id="groupHeaderOpenSettingsBtn" title="Grup detayları">
@@ -5740,6 +5885,7 @@
                                 <button type="button" class="forum-send-btn" id="groupSendBtn">Gönder</button>
                             </div>
                             <div class="forum-composer-upload-status" id="groupAttachStatus" style="display:none;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5854,6 +6000,30 @@
                                 </label>
                             </div>
 
+                            <!-- MODÜL 5 EKLENTİ 1: Topluluk Kanalları (sadece isCommunity=true, manage_channels izni olanlar) -->
+                            <div class="msg-group-detail-section" id="cchManageChannelsSection" style="display:none;">
+                                <div class="msg-group-detail-section-title msg-group-detail-members-title">
+                                    <span id="cchManageChannelsHeading">Kanallar</span>
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-add-member-btn" id="cchManageAddChannelBtn">＋ Kanal Ekle</button>
+                                </div>
+                                <div class="cch-manage-list" id="cchManageChannelList">
+                                    <div class="hub-placeholder">Yükleniyor…</div>
+                                </div>
+                                <div class="forum-modal-error" id="cchChannelsError" style="display:none;"></div>
+                            </div>
+
+                            <!-- MODÜL 5 EKLENTİ 1: Topluluğa Özel Rütbeler (sadece isCommunity=true, manage_roles izni olanlar) -->
+                            <div class="msg-group-detail-section" id="cchManageRolesSection" style="display:none;">
+                                <div class="msg-group-detail-section-title msg-group-detail-members-title">
+                                    <span id="cchManageRolesHeading">Topluluk Rütbeleri</span>
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-add-member-btn" id="cchManageAddRoleBtn">＋ Rütbe Ekle</button>
+                                </div>
+                                <div class="cch-manage-list" id="cchManageRoleList">
+                                    <div class="hub-placeholder">Yükleniyor…</div>
+                                </div>
+                                <div class="forum-modal-error" id="cchRolesError" style="display:none;"></div>
+                            </div>
+
                             <!-- Üye listesi -->
                             <div class="msg-group-detail-section">
                                 <div class="msg-group-detail-section-title msg-group-detail-members-title">
@@ -5899,6 +6069,110 @@
                         </div>
                         <div class="forum-modal-footer">
                             <button class="forum-btn forum-btn-ghost" id="groupTransferOwnerCancelBtn">Vazgeç</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODÜL 5 EKLENTİ 1: KANAL OLUŞTUR / DÜZENLE MODALI -->
+                <div class="forum-modal-backdrop" id="cchChannelEditModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span id="cchChannelEditModalTitle">Kanal Oluştur</span>
+                            <button class="forum-modal-close" id="cchChannelEditModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">Kanal Adı</label>
+                            <input type="text" class="forum-text-input" id="cchChannelNameInput" maxlength="60" placeholder="Örn: genel-sohbet">
+
+                            <label class="forum-field-label">Tür</label>
+                            <select class="forum-text-input" id="cchChannelTypeSelect">
+                                <option value="text">Metin Kanalı</option>
+                                <option value="announcement">Duyuru Kanalı</option>
+                            </select>
+
+                            <label class="forum-field-label">Sıra (Pozisyon)</label>
+                            <input type="number" class="forum-text-input" id="cchChannelPositionInput" min="0" step="1" placeholder="0">
+
+                            <div class="msg-group-detail-section" style="margin-top:8px;">
+                                <div class="msg-group-detail-section-title">Kanal Ayarları</div>
+                                <label class="msg-group-toggle-row">
+                                    <span>Yavaş Mod (saniye, 0 = kapalı)</span>
+                                    <input type="number" class="forum-text-input" id="cchChannelSlowmodeInput" min="0" step="1" style="max-width:90px;" placeholder="0">
+                                </label>
+                                <label class="msg-group-toggle-row">
+                                    <span>Hassas İçerik (NSFW)</span>
+                                    <input type="checkbox" id="cchChannelNsfwInput">
+                                    <span class="msg-toggle-switch"></span>
+                                </label>
+                                <label class="msg-group-toggle-row">
+                                    <span>Salt Okunur (sadece izinli rütbeler yazabilir)</span>
+                                    <input type="checkbox" id="cchChannelReadOnlyInput">
+                                    <span class="msg-toggle-switch"></span>
+                                </label>
+                            </div>
+
+                            <label class="forum-field-label">İzinli Rütbeler (Salt Okunur iken kimler yazabilir)</label>
+                            <div class="cch-manage-list" id="cchChannelAllowedRolesList">
+                                <div class="hub-placeholder">Bu toplulukta henüz özel rütbe yok.</div>
+                            </div>
+
+                            <div class="forum-modal-error" id="cchChannelEditError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="cchChannelDeleteBtn" style="display:none;">🗑 Kanalı Sil</button>
+                            <button class="forum-btn forum-btn-ghost" id="cchChannelEditCancelBtn">Vazgeç</button>
+                            <button class="forum-btn forum-btn-primary" id="cchChannelEditSaveBtn">Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODÜL 5 EKLENTİ 1: RÜTBE OLUŞTUR / DÜZENLE MODALI -->
+                <div class="forum-modal-backdrop" id="cchRoleEditModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span id="cchRoleEditModalTitle">Rütbe Oluştur</span>
+                            <button class="forum-modal-close" id="cchRoleEditModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">Rütbe Adı</label>
+                            <input type="text" class="forum-text-input" id="cchRoleNameInput" maxlength="40" placeholder="Örn: Moderatör">
+
+                            <label class="forum-field-label">Renk</label>
+                            <input type="color" class="forum-text-input" id="cchRoleColorInput" value="#66fcf1" style="height:40px; padding:4px; cursor:pointer;">
+
+                            <label class="forum-field-label">Sıra (Pozisyon)</label>
+                            <input type="number" class="forum-text-input" id="cchRolePositionInput" min="0" step="1" placeholder="0">
+
+                            <div class="msg-group-detail-section" style="margin-top:8px;">
+                                <div class="msg-group-detail-section-title">İzinler</div>
+                                <div class="cch-perm-grid" id="cchRolePermGrid"></div>
+                            </div>
+
+                            <div class="forum-modal-error" id="cchRoleEditError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="cchRoleDeleteBtn" style="display:none;">🗑 Rütbeyi Sil</button>
+                            <button class="forum-btn forum-btn-ghost" id="cchRoleEditCancelBtn">Vazgeç</button>
+                            <button class="forum-btn forum-btn-primary" id="cchRoleEditSaveBtn">Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODÜL 5 EKLENTİ 1: ÜYEYE RÜTBE ATAMA MODALI -->
+                <div class="forum-modal-backdrop" id="cchAssignRoleModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span id="cchAssignRoleModalTitle">Rütbeleri Yönet</span>
+                            <button class="forum-modal-close" id="cchAssignRoleModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <div class="cch-manage-list" id="cchAssignRoleList">
+                                <div class="hub-placeholder">Bu toplulukta henüz özel rütbe yok.</div>
+                            </div>
+                            <div class="forum-modal-error" id="cchAssignRoleError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost" id="cchAssignRoleCloseBtn">Kapat</button>
                         </div>
                     </div>
                 </div>
@@ -12082,6 +12356,755 @@
         })();
 
         // ════════════════════════════════════════════════════════════════
+        // 🏘️ MODÜL 5 EKLENTİ 1 — TOPLULUK KANALLARI & YEREL RÜTBE SİSTEMİ
+        // ════════════════════════════════════════════════════════════════
+        // Firebase Realtime Database yapısı (bu proje Firestore DEĞİL,
+        // Realtime Database kullanıyor; "tablo" burada bir RTDB path'idir):
+        //
+        //   group_chats/{gid}/meta.isCommunity === true olan gruplar için:
+        //
+        //   group_chats/{gid}/channels/{channelId}
+        //       -> { name, type ("text"|"announcement"), position,
+        //            settings: { slowmode, is_nsfw, read_only, allowed_roles: {roleId:true,...} },
+        //            createdAt, createdBy }
+        //   group_chats/{gid}/channels/{channelId}/messages/{msgId}
+        //       -> { authorUid, text, createdAt }   (mevcut grup mesaj formatıyla birebir aynı)
+        //
+        //   group_chats/{gid}/roles/{roleId}
+        //       -> { role_name, color_hex, permissions: { manage_channels,
+        //            manage_roles, manage_messages, kick_members,
+        //            ban_members, assign_roles, mention_everyone }, position, createdAt }
+        //   group_chats/{gid}/memberRoles/{uid}/{roleId} -> true
+        //       (community_member_roles karşılığı — kullanıcı ↔ rütbe eşleşmesi)
+        //
+        // YETKİLENDİRME MODELİ:
+        //   - Topluluk kurucusu (meta.ownerUid) HER ZAMAN tam yetkilidir.
+        //   - Diğer herkes için yetki, o kullanıcının sahip olduğu yerel
+        //     rütbelerin (memberRoles) permission bayraklarının OR'lanmasıyla
+        //     hesaplanır (hasPermission). Global admin/owner (meta.admins)
+        //     olmak local rütbe yetkisi VERMEZ — bilinçli bir ayrım: grup
+        //     yöneticiliği ile topluluk-rütbe yetkisi ayrı katmanlardır,
+        //     ancak owner her ikisini de kapsar.
+        //   - Kanal bazlı: read_only açık bir kanalda, sadece o kanalın
+        //     settings.allowed_roles listesindeki rütbelerden birine sahip
+        //     üyeler (+ owner + manage_channels yetkisi olanlar) yazabilir.
+        //
+        // NOT: Diğer modüllerle tutarlı olsun diye tamamen client-side
+        // yazılmıştır; gerçek üretimde bu kontroller ayrıca RTDB Security
+        // Rules ile sunucu tarafında da zorunlu kılınmalıdır.
+        window.CommunityChannels = (() => {
+            const PERMISSION_DEFS = [
+                { key: "manage_channels", label: "Kanalları Yönet" },
+                { key: "manage_roles", label: "Rütbeleri Yönet" },
+                { key: "manage_messages", label: "Mesajları Yönet (Silme)" },
+                { key: "kick_members", label: "Üyeleri At" },
+                { key: "ban_members", label: "Üyeleri Yasakla" },
+                { key: "assign_roles", label: "Rütbe Ata" },
+                { key: "mention_everyone", label: "@herkes Etiketleyebilir" }
+            ];
+
+            // groupId -> { channels: {id:{...}}, roles: {id:{...}}, memberRoles: {uid:{roleId:true}} }
+            const _cache = {};
+            // groupId -> aktif seçili kanal id
+            const _activeChannelByGroup = {};
+            let _myUid = null;
+            let _openGroupId = null;
+            let _channelsRef = null, _rolesRef = null, _memberRolesRef = null;
+            let _activeMessagesRef = null;
+            let _assignRoleTargetUid = null;
+            let _editingChannelId = null;
+            let _editingRoleId = null;
+
+            firebase.auth().onAuthStateChanged((user) => { _myUid = user ? user.uid : null; });
+
+            function escAttr(str) {
+                return String(str == null ? "" : str).replace(/[&<>"']/g, (c) => ({
+                    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+                }[c]));
+            }
+
+            function isCommunityMeta(meta) {
+                return !!(meta && meta.isCommunity === true);
+            }
+
+            function ensureGroupCache(groupId) {
+                if (!_cache[groupId]) _cache[groupId] = { channels: {}, roles: {}, memberRoles: {} };
+                return _cache[groupId];
+            }
+
+            // ── Varsayılan "genel" kanalı — topluluk oluşturulduğunda çağrılır ──
+            async function createDefaultChannel(groupId, now) {
+                const ref = firebase.database().ref("group_chats/" + groupId + "/channels").push();
+                await ref.set({
+                    name: "genel",
+                    type: "text",
+                    position: 0,
+                    settings: { slowmode: 0, is_nsfw: false, read_only: false, allowed_roles: {} },
+                    createdAt: now || firebase.database.ServerValue.TIMESTAMP,
+                    createdBy: _myUid
+                });
+                return ref.key;
+            }
+
+            // ══ YETKİ KONTROLÜ ══════════════════════════════════════════
+            function hasPermission(groupId, uid, permKey) {
+                if (!uid) return false;
+                const meta = (window.MessagingSystem && window.MessagingSystem._groupMetaCache && window.MessagingSystem._groupMetaCache[groupId]) || null;
+                if (meta && meta.ownerUid === uid) return true; // kurucu her zaman tam yetkili
+                const g = ensureGroupCache(groupId);
+                const myRoleIds = Object.keys(g.memberRoles[uid] || {});
+                for (const rid of myRoleIds) {
+                    const role = g.roles[rid];
+                    if (role && role.permissions && role.permissions[permKey]) return true;
+                }
+                return false;
+            }
+
+            function canSendInActiveChannel(groupId, uid) {
+                const chId = getActiveChannelId(groupId);
+                if (!chId) return { allowed: false, reason: "Önce bir kanal seç." };
+                const g = ensureGroupCache(groupId);
+                const ch = g.channels[chId];
+                if (!ch) return { allowed: false, reason: "Kanal bulunamadı." };
+                if (!ch.settings || !ch.settings.read_only) return { allowed: true };
+                // Salt okunur kanal: owner + manage_channels + izinli rütbeler yazabilir.
+                if (hasPermission(groupId, uid, "manage_channels")) return { allowed: true };
+                const allowed = (ch.settings.allowed_roles) || {};
+                const myRoleIds = Object.keys(g.memberRoles[uid] || {});
+                if (myRoleIds.some((rid) => allowed[rid])) return { allowed: true };
+                return { allowed: false, reason: "Bu kanal salt okunur — sadece yetkili rütbeler yazabilir." };
+            }
+
+            function getActiveChannelId(groupId) {
+                return _activeChannelByGroup[groupId] || null;
+            }
+
+            function setActiveChannelId(groupId, channelId) {
+                _activeChannelByGroup[groupId] = channelId;
+            }
+
+            // ══ TOPLULUK AÇILDIĞINDA / KAPANDIĞINDA ═════════════════════
+            function onOpenCommunity(groupId) {
+                onCloseCommunity(); // önceki dinleyicileri kapat
+                _openGroupId = groupId;
+                ensureGroupCache(groupId);
+
+                _channelsRef = firebase.database().ref("group_chats/" + groupId + "/channels");
+                _channelsRef.on("value", (snap) => {
+                    _cache[groupId].channels = snap.val() || {};
+                    renderChannelSidebar(groupId);
+                    renderManagePanel(groupId);
+                    // Aktif kanal silindiyse ya da hiç seçim yoksa ilk kanala geç.
+                    const ids = Object.keys(_cache[groupId].channels).sort(byPosition(_cache[groupId].channels));
+                    const active = getActiveChannelId(groupId);
+                    if (!active || !_cache[groupId].channels[active]) {
+                        if (ids.length) selectChannel(groupId, ids[0]);
+                    }
+                });
+
+                _rolesRef = firebase.database().ref("group_chats/" + groupId + "/roles");
+                _rolesRef.on("value", (snap) => {
+                    _cache[groupId].roles = snap.val() || {};
+                    renderManagePanel(groupId);
+                    renderGroupMemberListSafe(groupId);
+                });
+
+                _memberRolesRef = firebase.database().ref("group_chats/" + groupId + "/memberRoles");
+                _memberRolesRef.on("value", (snap) => {
+                    _cache[groupId].memberRoles = snap.val() || {};
+                    renderGroupMemberListSafe(groupId);
+                    updateComposerLockSafe(groupId);
+                });
+            }
+
+            function onCloseCommunity() {
+                if (_channelsRef) { _channelsRef.off(); _channelsRef = null; }
+                if (_rolesRef) { _rolesRef.off(); _rolesRef = null; }
+                if (_memberRolesRef) { _memberRolesRef.off(); _memberRolesRef = null; }
+                if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
+                _openGroupId = null;
+            }
+
+            function byPosition(channels) {
+                return (a, b) => (((channels[a] || {}).position || 0) - ((channels[b] || {}).position || 0));
+            }
+
+            // ══ KANAL SEÇİMİ + MESAJ AKIŞI ══════════════════════════════
+            function selectChannel(groupId, channelId) {
+                setActiveChannelId(groupId, channelId);
+                if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
+                _activeMessagesRef = firebase.database()
+                    .ref("group_chats/" + groupId + "/channels/" + channelId + "/messages")
+                    .orderByChild("createdAt").limitToLast(150);
+                _activeMessagesRef.on("value", (snap) => {
+                    const all = snap.val() || {};
+                    const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    if (window.renderBubbleList) {
+                        window.renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
+                    }
+                });
+                renderChannelSidebar(groupId);
+                updateComposerLockSafe(groupId);
+
+                // Kanal başlığını üst bara yansıt.
+                const ch = ensureGroupCache(groupId).channels[channelId];
+                const subEl = document.getElementById("groupHeaderSub");
+                if (subEl && ch) {
+                    const memberCount = ((window.MessagingSystem && window.MessagingSystem._groupMetaCache && window.MessagingSystem._groupMetaCache[groupId] && Object.keys(window.MessagingSystem._groupMetaCache[groupId].members || {}).length) || 0);
+                    subEl.textContent = `# ${ch.name}` + (memberCount ? ` · ${memberCount} üye` : "");
+                }
+            }
+
+            function updateComposerLockSafe(groupId) {
+                if (groupId !== _openGroupId) return;
+                const textarea = document.getElementById("groupComposerInput");
+                const sendBtn = document.getElementById("groupSendBtn");
+                if (!textarea || !sendBtn) return;
+                const perm = canSendInActiveChannel(groupId, _myUid);
+                textarea.disabled = !perm.allowed;
+                sendBtn.disabled = !perm.allowed;
+                textarea.placeholder = perm.allowed
+                    ? "Bir mesaj yaz… (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
+                    : (perm.reason || "Bu kanalda mesaj gönderemezsin.");
+            }
+
+            function renderGroupMemberListSafe(groupId) {
+                // Üye listesi zaten açıksa (detay paneli), rütbe rozetlerini
+                // yeniden çizmek için mevcut render fonksiyonunu tetikle.
+                if (window.MessagingSystem && typeof window.MessagingSystem.refreshMemberList === "function" && window.MessagingSystem._activeGroupDetailId === groupId) {
+                    window.MessagingSystem.refreshMemberList(groupId);
+                }
+            }
+
+            // ══ SOL SIDEBAR: KANAL LİSTESİ ══════════════════════════════
+            function renderChannelSidebar(groupId) {
+                const listEl = document.getElementById("cchChannelList");
+                if (!listEl || groupId !== _openGroupId) return;
+                const g = ensureGroupCache(groupId);
+                const ids = Object.keys(g.channels).sort(byPosition(g.channels));
+                const activeId = getActiveChannelId(groupId);
+                const canManage = hasPermission(groupId, _myUid, "manage_channels");
+
+                if (!ids.length) {
+                    listEl.innerHTML = `<div class="cch-empty-note">Henüz kanal yok.</div>`;
+                    return;
+                }
+
+                listEl.innerHTML = ids.map((id) => {
+                    const ch = g.channels[id];
+                    const icon = ch.type === "announcement" ? "📢" : "#";
+                    const locked = ch.settings && ch.settings.read_only ? `<span class="cch-channel-item-lock">🔒</span>` : "";
+                    return `
+                        <div class="cch-channel-item ${id === activeId ? "is-active" : ""}" data-cch-channel="${escAttr(id)}">
+                            <span class="cch-channel-item-icon">${icon}</span>
+                            <span class="cch-channel-item-name">${escAttr(ch.name || "kanal")}</span>
+                            ${locked}
+                            ${canManage ? `<button type="button" class="cch-channel-item-menu-btn" data-cch-edit-channel="${escAttr(id)}" title="Düzenle">⚙</button>` : ""}
+                        </div>
+                    `;
+                }).join("");
+
+                listEl.querySelectorAll("[data-cch-channel]").forEach((el) => {
+                    el.addEventListener("click", () => selectChannel(groupId, el.getAttribute("data-cch-channel")));
+                });
+                listEl.querySelectorAll("[data-cch-edit-channel]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        openChannelEditModal(groupId, btn.getAttribute("data-cch-edit-channel"));
+                    });
+                });
+
+                const addBtn = document.getElementById("cchAddChannelBtn");
+                if (addBtn) addBtn.style.display = canManage ? "flex" : "none";
+            }
+
+            // ══ GRUP DETAY PANELİ: KANALLAR + RÜTBELER BÖLÜMLERİ ════════
+            function renderManagePanel(groupId) {
+                if (groupId !== _openGroupId && !ensureGroupCache(groupId)) return;
+                const g = ensureGroupCache(groupId);
+                const canManageChannels = hasPermission(groupId, _myUid, "manage_channels");
+                const canManageRoles = hasPermission(groupId, _myUid, "manage_roles");
+
+                const chSec = document.getElementById("cchManageChannelsSection");
+                const roSec = document.getElementById("cchManageRolesSection");
+                if (chSec) chSec.style.display = canManageChannels ? "flex" : "none";
+                if (roSec) roSec.style.display = canManageRoles ? "flex" : "none";
+
+                if (canManageChannels) {
+                    const ids = Object.keys(g.channels).sort(byPosition(g.channels));
+                    document.getElementById("cchManageChannelsHeading").textContent = `Kanallar (${ids.length})`;
+                    const listEl = document.getElementById("cchManageChannelList");
+                    listEl.innerHTML = ids.length ? ids.map((id) => {
+                        const ch = g.channels[id];
+                        const metaBits = [ch.type === "announcement" ? "Duyuru" : "Metin"];
+                        if (ch.settings && ch.settings.read_only) metaBits.push("Salt Okunur");
+                        if (ch.settings && ch.settings.is_nsfw) metaBits.push("NSFW");
+                        if (ch.settings && ch.settings.slowmode) metaBits.push(`Yavaş Mod ${ch.settings.slowmode}s`);
+                        return `
+                            <div class="cch-manage-row">
+                                <span class="cch-manage-row-name">#${escAttr(ch.name)}</span>
+                                <span class="cch-manage-row-meta">${escAttr(metaBits.join(" · "))}</span>
+                                <div class="cch-manage-row-actions">
+                                    <button type="button" class="cch-icon-btn" data-cch-mng-edit-ch="${escAttr(id)}" title="Düzenle">✎</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join("") : `<div class="cch-empty-note">Henüz kanal yok.</div>`;
+                    listEl.querySelectorAll("[data-cch-mng-edit-ch]").forEach((btn) => {
+                        btn.addEventListener("click", () => openChannelEditModal(groupId, btn.getAttribute("data-cch-mng-edit-ch")));
+                    });
+                }
+
+                if (canManageRoles) {
+                    const ids = Object.keys(g.roles).sort((a, b) => ((g.roles[a].position || 0) - (g.roles[b].position || 0)));
+                    document.getElementById("cchManageRolesHeading").textContent = `Topluluk Rütbeleri (${ids.length})`;
+                    const listEl = document.getElementById("cchManageRoleList");
+                    listEl.innerHTML = ids.length ? ids.map((id) => {
+                        const role = g.roles[id];
+                        const memberCount = Object.values(g.memberRoles).filter((rs) => rs && rs[id]).length;
+                        return `
+                            <div class="cch-manage-row">
+                                <span class="cch-role-swatch" style="background:${escAttr(role.color_hex || "#66fcf1")};"></span>
+                                <span class="cch-manage-row-name">${escAttr(role.role_name)}</span>
+                                <span class="cch-manage-row-meta">${memberCount} üye</span>
+                                <div class="cch-manage-row-actions">
+                                    <button type="button" class="cch-icon-btn" data-cch-mng-edit-role="${escAttr(id)}" title="Düzenle">✎</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join("") : `<div class="cch-empty-note">Henüz rütbe yok.</div>`;
+                    listEl.querySelectorAll("[data-cch-mng-edit-role]").forEach((btn) => {
+                        btn.addEventListener("click", () => openRoleEditModal(groupId, btn.getAttribute("data-cch-mng-edit-role")));
+                    });
+                }
+            }
+
+            // ══ ÜYE RÜTBE ROZETLERİ (üye listesinde gösterim) ═══════════
+            function memberLocalRolesBadgeHtml(groupId, uid) {
+                const g = ensureGroupCache(groupId);
+                const roleIds = Object.keys(g.memberRoles[uid] || {});
+                if (!roleIds.length) return "";
+                return roleIds.map((rid) => {
+                    const role = g.roles[rid];
+                    if (!role) return "";
+                    return `<span class="msg-group-role-badge" style="background:${escAttr(role.color_hex || "#66fcf1")}22; color:${escAttr(role.color_hex || "#66fcf1")}; border:1px solid ${escAttr(role.color_hex || "#66fcf1")}55;">${escAttr(role.role_name)}</span>`;
+                }).join("");
+            }
+
+            // ══════════════════ KANAL OLUŞTUR / DÜZENLE ══════════════════
+            function openChannelEditModal(groupId, channelId) {
+                if (!hasPermission(groupId, _myUid, "manage_channels")) return;
+                _editingChannelId = channelId || null;
+                const g = ensureGroupCache(groupId);
+                const ch = channelId ? g.channels[channelId] : null;
+
+                document.getElementById("cchChannelEditModalTitle").textContent = channelId ? "Kanalı Düzenle" : "Kanal Oluştur";
+                document.getElementById("cchChannelNameInput").value = ch ? ch.name : "";
+                document.getElementById("cchChannelTypeSelect").value = ch ? (ch.type || "text") : "text";
+                document.getElementById("cchChannelPositionInput").value = ch ? (ch.position || 0) : Object.keys(g.channels).length;
+                document.getElementById("cchChannelSlowmodeInput").value = ch && ch.settings ? (ch.settings.slowmode || 0) : 0;
+                document.getElementById("cchChannelNsfwInput").checked = !!(ch && ch.settings && ch.settings.is_nsfw);
+                document.getElementById("cchChannelReadOnlyInput").checked = !!(ch && ch.settings && ch.settings.read_only);
+                document.getElementById("cchChannelDeleteBtn").style.display = channelId ? "inline-flex" : "none";
+                document.getElementById("cchChannelEditError").style.display = "none";
+
+                // İzinli rütbeler checkbox listesi
+                const allowedRoles = (ch && ch.settings && ch.settings.allowed_roles) || {};
+                const roleIds = Object.keys(g.roles).sort((a, b) => ((g.roles[a].position || 0) - (g.roles[b].position || 0)));
+                const rolesListEl = document.getElementById("cchChannelAllowedRolesList");
+                rolesListEl.innerHTML = roleIds.length ? roleIds.map((rid) => {
+                    const role = g.roles[rid];
+                    return `
+                        <label class="msg-group-toggle-row">
+                            <span><span class="cch-role-swatch" style="display:inline-block; vertical-align:middle; margin-right:6px; background:${escAttr(role.color_hex || "#66fcf1")};"></span>${escAttr(role.role_name)}</span>
+                            <input type="checkbox" data-cch-allowed-role="${escAttr(rid)}" ${allowedRoles[rid] ? "checked" : ""}>
+                            <span class="msg-toggle-switch"></span>
+                        </label>
+                    `;
+                }).join("") : `<div class="cch-empty-note">Bu toplulukta henüz özel rütbe yok.</div>`;
+
+                document.getElementById("cchChannelEditModalBackdrop").dataset.groupId = groupId;
+                document.getElementById("cchChannelEditModalBackdrop").style.display = "flex";
+            }
+
+            function closeChannelEditModal() {
+                document.getElementById("cchChannelEditModalBackdrop").style.display = "none";
+                _editingChannelId = null;
+            }
+
+            async function saveChannelEdit() {
+                const groupId = document.getElementById("cchChannelEditModalBackdrop").dataset.groupId;
+                const errorEl = document.getElementById("cchChannelEditError");
+                const name = document.getElementById("cchChannelNameInput").value.trim().toLowerCase().replace(/\s+/g, "-");
+                if (!name) {
+                    errorEl.textContent = "Kanal adı boş olamaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                if (!hasPermission(groupId, _myUid, "manage_channels")) {
+                    errorEl.textContent = "Bu işlem için yetkin yok.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                const allowedRoles = {};
+                document.querySelectorAll("[data-cch-allowed-role]").forEach((el) => {
+                    if (el.checked) allowedRoles[el.getAttribute("data-cch-allowed-role")] = true;
+                });
+                const payload = {
+                    name,
+                    type: document.getElementById("cchChannelTypeSelect").value,
+                    position: parseInt(document.getElementById("cchChannelPositionInput").value, 10) || 0,
+                    settings: {
+                        slowmode: parseInt(document.getElementById("cchChannelSlowmodeInput").value, 10) || 0,
+                        is_nsfw: document.getElementById("cchChannelNsfwInput").checked,
+                        read_only: document.getElementById("cchChannelReadOnlyInput").checked,
+                        allowed_roles: allowedRoles
+                    }
+                };
+                try {
+                    let channelId = _editingChannelId;
+                    if (channelId) {
+                        await firebase.database().ref("group_chats/" + groupId + "/channels/" + channelId).update(payload);
+                    } else {
+                        payload.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                        payload.createdBy = _myUid;
+                        const ref = firebase.database().ref("group_chats/" + groupId + "/channels").push();
+                        channelId = ref.key;
+                        await ref.set(payload);
+                    }
+                    // Yerel cache'i hemen güncelleyip izinli-rütbe yazma
+                    // cache'ini (memberEffectiveChannelWrite) tazele — read_only
+                    // kanallarda server-side kontrolün doğru üyeleri görmesi için.
+                    const g = ensureGroupCache(groupId);
+                    g.channels[channelId] = { ...(g.channels[channelId] || {}), ...payload };
+                    await recomputeChannelEffectiveWrite(groupId, channelId);
+                    closeChannelEditModal();
+                } catch (err) {
+                    console.error("[CommunityChannels] Kanal kaydedilemedi:", err);
+                    errorEl.textContent = "Kanal kaydedilemedi. Tekrar dene.";
+                    errorEl.style.display = "block";
+                }
+            }
+
+            async function deleteChannel() {
+                const groupId = document.getElementById("cchChannelEditModalBackdrop").dataset.groupId;
+                if (!_editingChannelId || !hasPermission(groupId, _myUid, "manage_channels")) return;
+                const g = ensureGroupCache(groupId);
+                if (Object.keys(g.channels).length <= 1) {
+                    alert("Bir topluluğun en az bir kanalı olmalı.");
+                    return;
+                }
+                if (!confirm("Bu kanalı ve tüm mesajlarını silmek istediğine emin misin?")) return;
+                try {
+                    await firebase.database().ref("group_chats/" + groupId + "/channels/" + _editingChannelId).remove();
+                    closeChannelEditModal();
+                } catch (err) {
+                    console.error("[CommunityChannels] Kanal silinemedi:", err);
+                }
+            }
+
+            // ══════════════════ RÜTBE OLUŞTUR / DÜZENLE ══════════════════
+            function openRoleEditModal(groupId, roleId) {
+                if (!hasPermission(groupId, _myUid, "manage_roles")) return;
+                _editingRoleId = roleId || null;
+                const g = ensureGroupCache(groupId);
+                const role = roleId ? g.roles[roleId] : null;
+
+                document.getElementById("cchRoleEditModalTitle").textContent = roleId ? "Rütbeyi Düzenle" : "Rütbe Oluştur";
+                document.getElementById("cchRoleNameInput").value = role ? role.role_name : "";
+                document.getElementById("cchRoleColorInput").value = role ? (role.color_hex || "#66fcf1") : "#66fcf1";
+                document.getElementById("cchRolePositionInput").value = role ? (role.position || 0) : Object.keys(g.roles).length;
+                document.getElementById("cchRoleDeleteBtn").style.display = roleId ? "inline-flex" : "none";
+                document.getElementById("cchRoleEditError").style.display = "none";
+
+                const perms = (role && role.permissions) || {};
+                const gridEl = document.getElementById("cchRolePermGrid");
+                gridEl.innerHTML = PERMISSION_DEFS.map((p) => `
+                    <label class="msg-group-toggle-row">
+                        <span>${escAttr(p.label)}</span>
+                        <input type="checkbox" data-cch-perm="${escAttr(p.key)}" ${perms[p.key] ? "checked" : ""}>
+                        <span class="msg-toggle-switch"></span>
+                    </label>
+                `).join("");
+
+                document.getElementById("cchRoleEditModalBackdrop").dataset.groupId = groupId;
+                document.getElementById("cchRoleEditModalBackdrop").style.display = "flex";
+            }
+
+            function closeRoleEditModal() {
+                document.getElementById("cchRoleEditModalBackdrop").style.display = "none";
+                _editingRoleId = null;
+            }
+
+            // ══ DENORMALİZE İZİN CACHE'İ (RTDB rules server-side kontrol edebilsin diye) ══
+            // rules.json döngü/iterasyon yapamadığından "üyenin sahip olduğu
+            // rollerden biri X iznine sahip mi" sorgusu doğrudan yazılamıyor.
+            // Bu yüzden bir üyenin rolleri her değiştiğinde (atama/kaldırma,
+            // rol izinleri düzenlenmesi, rol silinmesi) o üyenin TÜM
+            // rollerinin izinlerini OR'layıp group_chats/{gid}/memberPermissions/{uid}
+            // altına düz bir boolean objesi olarak yazıyoruz. Bu node'a yazma
+            // yetkisi SADECE owner/staff/manage_roles sahiplerine ait (bkz.
+            // rules.json) — sıradan üye kendi iznini sahtekârlıkla yükseltemez.
+            function computeEffectivePermissions(groupId, uid) {
+                const g = ensureGroupCache(groupId);
+                const out = {};
+                PERMISSION_DEFS.forEach((p) => { out[p.key] = false; });
+                const myRoleIds = Object.keys(g.memberRoles[uid] || {});
+                myRoleIds.forEach((rid) => {
+                    const role = g.roles[rid];
+                    if (!role || !role.permissions) return;
+                    PERMISSION_DEFS.forEach((p) => {
+                        if (role.permissions[p.key]) out[p.key] = true;
+                    });
+                });
+                return out;
+            }
+
+            async function recomputeMemberPermissions(groupId, uid) {
+                if (!groupId || !uid) return;
+                try {
+                    await firebase.database()
+                        .ref("group_chats/" + groupId + "/memberPermissions/" + uid)
+                        .set(computeEffectivePermissions(groupId, uid));
+                } catch (err) {
+                    console.error("[CommunityChannels] memberPermissions güncellenemedi:", err);
+                }
+            }
+
+            // Bir rolün izinleri değiştiğinde/rol silindiğinde, o role sahip
+            // TÜM üyelerin cache'i yeniden hesaplanmalı.
+            async function recomputeAllMembersWithRole(groupId, roleId) {
+                const g = ensureGroupCache(groupId);
+                const affectedUids = Object.keys(g.memberRoles).filter(
+                    (uid) => g.memberRoles[uid] && g.memberRoles[uid][roleId]
+                );
+                await Promise.all(affectedUids.map((uid) => recomputeMemberPermissions(groupId, uid)));
+            }
+
+            // Bir kanalın salt-okunur + izinli-rütbe ayarları değiştiğinde,
+            // o toplulukta izinli rütbelerden en az birine sahip her üye için
+            // "bu kanala yazabilir mi" bayrağını yeniden hesapla (server-side
+            // read_only kontrolü bunu okuyor — bkz. rules.json memberEffectiveChannelWrite).
+            async function recomputeChannelEffectiveWrite(groupId, channelId) {
+                const g = ensureGroupCache(groupId);
+                const ch = g.channels[channelId];
+                const allowedRoleIds = Object.keys((ch && ch.settings && ch.settings.allowed_roles) || {});
+                const updates = {};
+                // Önce bu kanal için var olan tüm eski bayrakları temizlemeye gerek yok
+                // (Firebase set() zaten tam objeyi değiştirir); doğrudan izinli
+                // rollerden birine sahip her üyeyi true olarak işaretliyoruz.
+                const uidsToFlag = new Set();
+                allowedRoleIds.forEach((rid) => {
+                    Object.keys(g.memberRoles).forEach((uid) => {
+                        if (g.memberRoles[uid] && g.memberRoles[uid][rid]) uidsToFlag.add(uid);
+                    });
+                });
+                const payload = {};
+                uidsToFlag.forEach((uid) => { payload[uid] = true; });
+                try {
+                    await firebase.database()
+                        .ref("group_chats/" + groupId + "/memberEffectiveChannelWrite/" + channelId)
+                        .set(Object.keys(payload).length ? payload : null);
+                } catch (err) {
+                    console.error("[CommunityChannels] memberEffectiveChannelWrite güncellenemedi:", err);
+                }
+            }
+
+            async function saveRoleEdit() {
+                const groupId = document.getElementById("cchRoleEditModalBackdrop").dataset.groupId;
+                const errorEl = document.getElementById("cchRoleEditError");
+                const roleName = document.getElementById("cchRoleNameInput").value.trim();
+                if (!roleName) {
+                    errorEl.textContent = "Rütbe adı boş olamaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                if (!hasPermission(groupId, _myUid, "manage_roles")) {
+                    errorEl.textContent = "Bu işlem için yetkin yok.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                const permissions = {};
+                document.querySelectorAll("[data-cch-perm]").forEach((el) => {
+                    permissions[el.getAttribute("data-cch-perm")] = el.checked;
+                });
+                const payload = {
+                    role_name: roleName,
+                    color_hex: document.getElementById("cchRoleColorInput").value || "#66fcf1",
+                    position: parseInt(document.getElementById("cchRolePositionInput").value, 10) || 0,
+                    permissions
+                };
+                try {
+                    if (_editingRoleId) {
+                        await firebase.database().ref("group_chats/" + groupId + "/roles/" + _editingRoleId).update(payload);
+                    } else {
+                        payload.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                        payload.createdBy = _myUid;
+                        await firebase.database().ref("group_chats/" + groupId + "/roles").push(payload);
+                    }
+                    // İzinler değiştiyse (veya yeni rol oluştuysa -- henüz kimsede
+                    // olmadığından bu adım yeni rollerde no-op'tur), bu role sahip
+                    // üyelerin izin cache'ini güncel tut.
+                    if (_editingRoleId) {
+                        await recomputeAllMembersWithRole(groupId, _editingRoleId);
+                    }
+                    closeRoleEditModal();
+                } catch (err) {
+                    console.error("[CommunityChannels] Rütbe kaydedilemedi:", err);
+                    errorEl.textContent = "Rütbe kaydedilemedi. Tekrar dene.";
+                    errorEl.style.display = "block";
+                }
+            }
+
+            async function deleteRole() {
+                const groupId = document.getElementById("cchRoleEditModalBackdrop").dataset.groupId;
+                if (!_editingRoleId || !hasPermission(groupId, _myUid, "manage_roles")) return;
+                if (!confirm("Bu rütbeyi silmek istediğine emin misin? Tüm üyelerden kaldırılacak.")) return;
+                try {
+                    // Rütbeyi sil + tüm üyelerden bu rütbe atamasını temizle.
+                    const updates = {};
+                    updates["group_chats/" + groupId + "/roles/" + _editingRoleId] = null;
+                    const g = ensureGroupCache(groupId);
+                    const affectedUids = Object.keys(g.memberRoles).filter(
+                        (uid) => g.memberRoles[uid] && g.memberRoles[uid][_editingRoleId]
+                    );
+                    affectedUids.forEach((uid) => {
+                        updates["group_chats/" + groupId + "/memberRoles/" + uid + "/" + _editingRoleId] = null;
+                    });
+                    await firebase.database().ref().update(updates);
+                    // Bu rolü kaybeden üyelerin izin cache'ini yeniden hesapla
+                    // (local cache henüz eski hâliyle olduğundan, roleId'yi
+                    // memberRoles'tan manuel çıkararak hesaplıyoruz).
+                    await Promise.all(affectedUids.map(async (uid) => {
+                        const roleIdsWithout = Object.keys(g.memberRoles[uid] || {}).filter((rid) => rid !== _editingRoleId);
+                        const out = {};
+                        PERMISSION_DEFS.forEach((p) => { out[p.key] = false; });
+                        roleIdsWithout.forEach((rid) => {
+                            const role = g.roles[rid];
+                            if (!role || !role.permissions) return;
+                            PERMISSION_DEFS.forEach((p) => { if (role.permissions[p.key]) out[p.key] = true; });
+                        });
+                        try {
+                            await firebase.database().ref("group_chats/" + groupId + "/memberPermissions/" + uid).set(out);
+                        } catch (err) {
+                            console.error("[CommunityChannels] Rol silme sonrası memberPermissions güncellenemedi:", err);
+                        }
+                    }));
+                    closeRoleEditModal();
+                } catch (err) {
+                    console.error("[CommunityChannels] Rütbe silinemedi:", err);
+                }
+            }
+
+            // ══════════════════ ÜYEYE RÜTBE ATAMA ══════════════════
+            function openAssignRoleModal(groupId, targetUid) {
+                if (!hasPermission(groupId, _myUid, "assign_roles") && !hasPermission(groupId, _myUid, "manage_roles")) return;
+                _assignRoleTargetUid = targetUid;
+                const g = ensureGroupCache(groupId);
+                const roleIds = Object.keys(g.roles).sort((a, b) => ((g.roles[a].position || 0) - (g.roles[b].position || 0)));
+                const myRoles = g.memberRoles[targetUid] || {};
+
+                const listEl = document.getElementById("cchAssignRoleList");
+                listEl.innerHTML = roleIds.length ? roleIds.map((rid) => {
+                    const role = g.roles[rid];
+                    return `
+                        <label class="msg-group-toggle-row">
+                            <span><span class="cch-role-swatch" style="display:inline-block; vertical-align:middle; margin-right:6px; background:${escAttr(role.color_hex || "#66fcf1")};"></span>${escAttr(role.role_name)}</span>
+                            <input type="checkbox" data-cch-assign="${escAttr(rid)}" ${myRoles[rid] ? "checked" : ""}>
+                            <span class="msg-toggle-switch"></span>
+                        </label>
+                    `;
+                }).join("") : `<div class="cch-empty-note">Bu toplulukta henüz özel rütbe yok. Önce Grup Detayı → Rütbeler bölümünden bir rütbe oluştur.</div>`;
+
+                document.getElementById("cchAssignRoleModalBackdrop").dataset.groupId = groupId;
+                document.getElementById("cchAssignRoleModalBackdrop").style.display = "flex";
+            }
+
+            function closeAssignRoleModal() {
+                document.getElementById("cchAssignRoleModalBackdrop").style.display = "none";
+                _assignRoleTargetUid = null;
+            }
+
+            async function applyAssignRoleChange(roleId, checked) {
+                const groupId = document.getElementById("cchAssignRoleModalBackdrop").dataset.groupId;
+                const errorEl = document.getElementById("cchAssignRoleError");
+                if (!hasPermission(groupId, _myUid, "assign_roles") && !hasPermission(groupId, _myUid, "manage_roles")) {
+                    errorEl.textContent = "Bu işlem için yetkin yok.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                try {
+                    await firebase.database()
+                        .ref("group_chats/" + groupId + "/memberRoles/" + _assignRoleTargetUid + "/" + roleId)
+                        .set(checked ? true : null);
+                    // Yerel cache'i hemen güncelleyip (listener zaten kısa
+                    // sürede aynısını yapacak ama arayüz gecikmesiz tepki versin),
+                    // ardından bu üyenin izin cache'ini yeniden hesapla.
+                    const g = ensureGroupCache(groupId);
+                    if (!g.memberRoles[_assignRoleTargetUid]) g.memberRoles[_assignRoleTargetUid] = {};
+                    if (checked) g.memberRoles[_assignRoleTargetUid][roleId] = true;
+                    else delete g.memberRoles[_assignRoleTargetUid][roleId];
+                    await recomputeMemberPermissions(groupId, _assignRoleTargetUid);
+                    errorEl.style.display = "none";
+                } catch (err) {
+                    console.error("[CommunityChannels] Rütbe ataması güncellenemedi:", err);
+                    errorEl.textContent = "Rütbe ataması kaydedilemedi.";
+                    errorEl.style.display = "block";
+                }
+            }
+
+            // ══ Olay bağlamaları (statik DOM elemanları — bir kere bağlanır) ══
+            function bindStaticEvents() {
+                document.getElementById("cchAddChannelBtn")?.addEventListener("click", () => {
+                    if (_openGroupId) openChannelEditModal(_openGroupId, null);
+                });
+                document.getElementById("cchManageAddChannelBtn")?.addEventListener("click", () => {
+                    if (_openGroupId) openChannelEditModal(_openGroupId, null);
+                });
+                document.getElementById("cchChannelEditModalClose")?.addEventListener("click", closeChannelEditModal);
+                document.getElementById("cchChannelEditCancelBtn")?.addEventListener("click", closeChannelEditModal);
+                document.getElementById("cchChannelEditSaveBtn")?.addEventListener("click", saveChannelEdit);
+                document.getElementById("cchChannelDeleteBtn")?.addEventListener("click", deleteChannel);
+
+                document.getElementById("cchManageAddRoleBtn")?.addEventListener("click", () => {
+                    if (_openGroupId) openRoleEditModal(_openGroupId, null);
+                });
+                document.getElementById("cchRoleEditModalClose")?.addEventListener("click", closeRoleEditModal);
+                document.getElementById("cchRoleEditCancelBtn")?.addEventListener("click", closeRoleEditModal);
+                document.getElementById("cchRoleEditSaveBtn")?.addEventListener("click", saveRoleEdit);
+                document.getElementById("cchRoleDeleteBtn")?.addEventListener("click", deleteRole);
+
+                document.getElementById("cchAssignRoleModalClose")?.addEventListener("click", closeAssignRoleModal);
+                document.getElementById("cchAssignRoleCloseBtn")?.addEventListener("click", closeAssignRoleModal);
+                document.getElementById("cchAssignRoleList")?.addEventListener("change", (e) => {
+                    const target = e.target;
+                    if (target && target.matches("[data-cch-assign]")) {
+                        applyAssignRoleChange(target.getAttribute("data-cch-assign"), target.checked);
+                    }
+                });
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", bindStaticEvents);
+            } else {
+                bindStaticEvents();
+            }
+
+            return {
+                isCommunityMeta,
+                createDefaultChannel,
+                onOpenCommunity,
+                onCloseCommunity,
+                getActiveChannelId,
+                canSendInActiveChannel,
+                hasPermission,
+                renderManagePanel,
+                memberLocalRolesBadgeHtml,
+                openAssignRoleModal
+            };
+        })();
+
+        // ════════════════════════════════════════════════════════════════
         // 🗨️ MODÜL 5 — MESAJLAR (DM) & GRUP SOHBETLERİ (MessagingSystem)
         // ════════════════════════════════════════════════════════════════
         // Firebase Realtime Database yapısı (projedeki tüm diğer modüllerle
@@ -12713,6 +13736,18 @@
                     renderGroupDetailPanel(groupId);
                 }
 
+                // MODÜL 5 EKLENTİ 1: topluluksa kanal sidebar'ını aç ve kanal
+                // sistemine devret (mesaj dinleyicisini o kurar); değilse
+                // eski sıradan grup mesaj akışına devam et.
+                const isCommunity = window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta);
+                document.getElementById("groupShell").classList.toggle("is-community", !!isCommunity);
+                if (isCommunity) {
+                    if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
+                    window.CommunityChannels.onOpenCommunity(groupId);
+                    return;
+                }
+                window.CommunityChannels && window.CommunityChannels.onCloseCommunity();
+
                 if (_groupMessagesRef) _groupMessagesRef.off();
                 _groupMessagesRef = database.ref("group_chats/" + groupId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _groupMessagesRef.on("value", (snap) => {
@@ -12776,7 +13811,9 @@
             function closeGroupConversation() {
                 _activeGroupId = null;
                 if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
+                window.CommunityChannels && window.CommunityChannels.onCloseCommunity();
                 document.getElementById("groupShell").classList.remove("is-conversation-open");
+                document.getElementById("groupShell").classList.remove("is-community");
                 document.body.classList.remove("msg-conversation-fullscreen");
                 document.getElementById("groupConversationEmpty").style.display = "flex";
                 document.getElementById("groupConversationActive").style.display = "none";
@@ -12784,16 +13821,37 @@
                 renderGroupChatList();
             }
 
+            // Aktif konuşma bir topluluksa ve bir kanal seçiliyse, mesajların
+            // yazılacağı/okunacağı RTDB path'i normal grup path'inden farklıdır
+            // (bkz. MODÜL 5 EKLENTİ 1 — window.CommunityChannels).
+            function _activeMessagesBasePath(groupId) {
+                if (window.CommunityChannels && window.CommunityChannels.isCommunityMeta(_groupMetaCache[groupId])) {
+                    const chId = window.CommunityChannels.getActiveChannelId(groupId);
+                    if (chId) return "group_chats/" + groupId + "/channels/" + chId + "/messages";
+                    return null; // topluluk ama henüz kanal seçilmedi/yok
+                }
+                return "group_chats/" + groupId + "/messages";
+            }
+
             async function sendGroupMessage(text) {
                 if (!text || !text.trim() || !_activeGroupId) return;
                 const activeMeta = _groupMetaCache[_activeGroupId];
-                if (!groupCanSendMessages(activeMeta, _myUid)) {
+                const groupId = _activeGroupId;
+                const isCommunity = window.CommunityChannels && window.CommunityChannels.isCommunityMeta(activeMeta);
+
+                if (isCommunity) {
+                    const perm = window.CommunityChannels.canSendInActiveChannel(groupId, _myUid);
+                    if (!perm.allowed) { alert(perm.reason || "Bu kanalda mesaj gönderemezsin."); return; }
+                } else if (!groupCanSendMessages(activeMeta, _myUid)) {
                     alert("Bu grupta sadece yöneticiler mesaj gönderebilir.");
                     return;
                 }
+
+                const basePath = _activeMessagesBasePath(groupId);
+                if (!basePath) { alert("Önce bir kanal seç."); return; }
+
                 const encoded = window.CommunityMentions.encodeForStorage(text.trim());
                 const now = firebase.database.ServerValue.TIMESTAMP;
-                const groupId = _activeGroupId;
 
                 const payload = { authorUid: _myUid, text: encoded, createdAt: now };
                 const pendingReply = groupReplyBannerCtrl.get();
@@ -12806,7 +13864,7 @@
                 }
 
                 // ASIL İŞLEM: mesajı gönder.
-                const msgRef = database.ref("group_chats/" + groupId + "/messages").push();
+                const msgRef = database.ref(basePath).push();
                 try {
                     await msgRef.set(payload);
                 } catch (err) {
@@ -12831,7 +13889,9 @@
 
             async function deleteGroupMessage(messageId) {
                 if (!_activeGroupId || !messageId) return;
-                await database.ref("group_chats/" + _activeGroupId + "/messages/" + messageId).update({
+                const basePath = _activeMessagesBasePath(_activeGroupId);
+                if (!basePath) return;
+                await database.ref(basePath + "/" + messageId).update({
                     deleted: true,
                     text: "",
                     deletedAt: Date.now()
@@ -13024,6 +14084,16 @@
                 document.getElementById("groupDetailAddMemberBtn").style.display = groupCanAddMembers(meta, _myUid) ? "inline-flex" : "none";
 
                 renderGroupMemberList(groupId);
+
+                // MODÜL 5 EKLENTİ 1: topluluk ise kanal/rütbe yönetim bölümlerini render et.
+                if (window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta)) {
+                    window.CommunityChannels.renderManagePanel(groupId);
+                } else {
+                    const chSec = document.getElementById("cchManageChannelsSection");
+                    const roSec = document.getElementById("cchManageRolesSection");
+                    if (chSec) chSec.style.display = "none";
+                    if (roSec) roSec.style.display = "none";
+                }
             }
 
             function renderGroupMemberList(groupId) {
@@ -13051,15 +14121,19 @@
                     const isTargetOwner = meta.ownerUid === uid;
                     const isTargetAdmin = !!(meta.admins && meta.admins[uid]);
                     const showMenu = iAmAdmin && uid !== _myUid; // Kendine işlem yapamazsın
+                    const isCommunity = window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta);
+                    const canAssignRoles = isCommunity && window.CommunityChannels.hasPermission(groupId, _myUid, "manage_roles");
+                    const localRolesBadge = isCommunity ? window.CommunityChannels.memberLocalRolesBadgeHtml(groupId, uid) : "";
                     return `
                         <div class="msg-group-member-row" data-uid="${escapeAttr(uid)}">
                             <img ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                             <div class="msg-group-member-info">
                                 <span class="msg-group-member-name">
                                     ${escapeAttr(username)}${RBAC.renderVerifiedBadge(c ? c.isVerified : false, "13px")}
-                                    ${groupRoleBadgeHtml(meta, uid)}
+                                    ${groupRoleBadgeHtml(meta, uid)}${localRolesBadge}
                                 </span>
                             </div>
+                            ${canAssignRoles ? `<button type="button" class="cch-icon-btn" data-cch-assign-roles="${escapeAttr(uid)}" title="Topluluk rütbelerini yönet">🏷</button>` : ""}
                             ${showMenu ? `
                                 <button type="button" class="msg-group-member-menu-btn" data-menu-toggle="${escapeAttr(uid)}" title="İşlemler">⋮</button>
                                 <div class="msg-group-member-menu-popover" data-menu-for="${escapeAttr(uid)}">
@@ -13073,6 +14147,13 @@
                         </div>
                     `;
                 }).join("");
+
+                listEl.querySelectorAll("[data-cch-assign-roles]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        window.CommunityChannels.openAssignRoleModal(groupId, btn.getAttribute("data-cch-assign-roles"));
+                    });
+                });
 
                 // Menü aç/kapa
                 listEl.querySelectorAll("[data-menu-toggle]").forEach((btn) => {
@@ -13766,6 +14847,12 @@
                 });
 
                 await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
+
+                // MODÜL 5 EKLENTİ 1: her yeni topluluk varsayılan "genel"
+                // metin kanalıyla doğar, aksi hâlde girecek kanal olmaz.
+                if (window.CommunityChannels) {
+                    await window.CommunityChannels.createDefaultChannel(groupId, now);
+                }
 
                 // Keşif kaydı (community_directory) -- üye olmayanların da
                 // görebildiği hafif özet.
@@ -14469,10 +15556,16 @@
 
             return {
                 init, renderDmChatList, renderGroupChatList,
-                openDmConversation, iBlocked, blockedMe, toggleBlockUser
+                openDmConversation, iBlocked, blockedMe, toggleBlockUser,
+                // MODÜL 5 EKLENTİ 1 (CommunityChannels) için dışa açılan köprüler:
+                get _groupMetaCache() { return _groupMetaCache; },
+                get _activeGroupDetailId() { return _activeGroupDetailId; },
+                refreshMemberList: (groupId) => renderGroupMemberList(groupId),
+                renderBubbleList
             };
         })();
         window.MessagingSystem = MessagingSystem;
+        window.renderBubbleList = MessagingSystem.renderBubbleList;
 
         // ════════════════════════════════════════════════════════════════
         // BİLDİRİM SİSTEMİ (NotificationSystem)
