@@ -5902,6 +5902,26 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+
+            <!-- ════════════════════════════════════════════════════════════
+                 MODÜL 5-B — TOPLULUKLAR (herkese açık, keşfedilebilir gruplar)
+                 ════════════════════════════════════════════════════════════ -->
+            <section class="hub-view" data-view="communities">
+                <div class="msg-shell" id="communityShell">
+                    <div class="msg-chat-list-panel" id="communityListPanel" style="max-width:none; border-right:none;">
+                        <div class="msg-panel-header">
+                            <span>🌐 Topluluklar</span>
+                            <button type="button" class="msg-new-chat-btn" id="communityCreateBtn" title="Yeni topluluk oluştur">+ Yeni Topluluk</button>
+                        </div>
+                        <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
+                        <div class="grp-community-limit-note" id="communityLimitNote"></div>
+                        <div class="msg-chat-list" id="communityList">
+                            <div class="hub-placeholder">Yükleniyor…</div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- ════════════════════════════════════════════════════
                      TOPLULUK OLUŞTUR MODALI
@@ -5989,29 +6009,6 @@
                         <div class="forum-modal-footer">
                             <button class="forum-btn forum-btn-ghost" id="communityReportCancelBtn">Vazgeç</button>
                             <button class="forum-btn forum-btn-primary" id="communityReportSubmitBtn">Gönder</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-
-            <!-- ════════════════════════════════════════════════════════════
-                 MODÜL 5-B — TOPLULUKLAR (herkese açık, keşfedilebilir gruplar)
-                 Not: modalleri (Oluştur / Önizle / Şikâyet Et) bir üstteki
-                 "groups" section'ının içinde tanımlı; burada sadece liste
-                 UI'ı var. ID'ler doğrudan aynı isimlerle kullanılıyor.
-                 ════════════════════════════════════════════════════════════ -->
-            <section class="hub-view" data-view="communities">
-                <div class="msg-shell" id="communityShell">
-                    <div class="msg-chat-list-panel" id="communityListPanel" style="max-width:none; border-right:none;">
-                        <div class="msg-panel-header">
-                            <span>🌐 Topluluklar</span>
-                            <button type="button" class="msg-new-chat-btn" id="communityCreateBtn" title="Yeni topluluk oluştur">+ Yeni Topluluk</button>
-                        </div>
-                        <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
-                        <div class="grp-community-limit-note" id="communityLimitNote"></div>
-                        <div class="msg-chat-list" id="communityList">
-                            <div class="hub-placeholder">Yükleniyor…</div>
                         </div>
                     </div>
                 </div>
