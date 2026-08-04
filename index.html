@@ -12130,6 +12130,41 @@
             let _groupCreateSelected = {}; // uid -> {uid, username, avatarUrl} (Yeni Grup modalında seçilenler)
             let _pendingLeaveAfterTransfer = false; // Kurucu devri tamamlandıktan sonra otomatik ayrılsın mı
             let _activeGroupDetailId = null; // Detay/Ayarlar paneli hangi grup için açık
+
+            // ── TOPLULUKLAR (herkese açık, keşfedilebilir gruplar) ──────
+            let _communityDirectoryRef = null;
+            let _communityDirectoryCache = {}; // groupId -> {name, description, groupPhoto, memberCount, isVerified, isSuspended, ownerUid}
+            let _activeCommunityPreviewId = null; // Önizleme modalı hangi topluluk için açık
+
+            // Rütbeye göre bir kullanıcının kurabileceği MAKSİMUM topluluk
+            // sayısı. Bir kullanıcının tek bir "role" alanı olduğundan
+            // (çoklu rütbe sistemi yok) doğrudan role string'ine göre
+            // eşleniyor. Yönetim/moderasyon rolleri sınırsızdır.
+            const COMMUNITY_LIMIT_BY_ROLE = {
+                "Owner / Developer": Infinity,
+                "Admin / Developer": Infinity,
+                "Developer": Infinity,
+                "Admin": Infinity,
+                "Mod": 50,
+                "Helper": 50,
+                "Beta Tester": 6,
+                "YouTube": 5,
+                "Twitch": 5,
+                "Tiktoker": 5,
+                "OG": 4,
+                "MVP": 3,
+                "Champion": 3,
+                "VIP": 3,
+                "Veteran": 3,
+                "Player": 2
+            };
+            const COMMUNITY_LIMIT_DEFAULT = 2; // Rütbesiz / tanınmayan rol
+
+            function getCommunityLimitForProfile(profile) {
+                if (!profile) return COMMUNITY_LIMIT_DEFAULT;
+                const limit = COMMUNITY_LIMIT_BY_ROLE[profile.role];
+                return typeof limit === "number" ? limit : COMMUNITY_LIMIT_DEFAULT;
+            }
             let _groupDetailUsersRef = null; // O panel için canlı dinlenen /users referansı (üye profilleri)
             let _groupDetailUsersCache = {}; // uid -> {username, avatarUrl, isVerified}
             let _groupAddMemberSearchTimer = null;
@@ -12529,6 +12564,11 @@
                 _userGroupsRef.on("value", (snap) => {
                     _userGroupsCache = snap.val() || {};
                     const groupIds = Object.keys(_userGroupsCache);
+
+                    // Topluluklar listesindeki "Üyesin / Görüntüle" durumu
+                    // da bu cache'e bağlı olduğundan, üyelik her
+                    // değiştiğinde onu da tazeliyoruz.
+                    renderCommunityList();
 
                     // Artık üyesi olmadığımız grupların meta dinleyicilerini
                     // temizle (basit yaklaşım: cache'i filtrele, render'da
@@ -13548,6 +13588,407 @@
                 openGroupConversation(groupId);
             }
 
+            // ══════════════════════════════════════════════════════════
+            // C) TOPLULUKLAR (herkese açık, keşfedilebilir gruplar)
+            // ══════════════════════════════════════════════════════════
+            //
+            // Mimari: bir topluluk teknik olarak sıradan bir group_chats
+            // kaydıdır (meta.isCommunity = true). Mesajlaşma, rozetler,
+            // izinler, kuruculuk devri gibi tüm grup altyapısı olduğu gibi
+            // çalışır. Ek olarak community_directory/{groupId} altında
+            // hafif bir "keşif kaydı" tutulur -- çünkü sıradan grup üyeleri
+            // kendi group_chats/{id}/meta'sını okuyabilirken, ÜYE OLMAYAN
+            // bir kullanıcı sadece bu directory kaydını okuyabilir (bkz.
+            // database.rules.json). Bu sayede "herkes gözatabilir ama
+            // içeriğine giremez" davranışı sağlanıyor.
+
+            // ── C-1) Topluluk listesini canlı dinle ve render et ────────
+            function startCommunityDirectoryListener() {
+                if (_communityDirectoryRef) _communityDirectoryRef.off();
+                _communityDirectoryRef = database.ref("community_directory");
+                _communityDirectoryRef.on("value", (snap) => {
+                    _communityDirectoryCache = snap.val() || {};
+                    renderCommunityList();
+                    // Önizleme modalı açıkken directory güncellenirse
+                    // (askıya alma, mavi tik, üye sayısı vb.) canlı yenile.
+                    if (_activeCommunityPreviewId && _communityDirectoryCache[_activeCommunityPreviewId]) {
+                        renderCommunityPreviewModal(_activeCommunityPreviewId);
+                    } else if (_activeCommunityPreviewId && !_communityDirectoryCache[_activeCommunityPreviewId]) {
+                        // Topluluk silindi, önizleme açıksa kapat.
+                        closeCommunityPreviewModal();
+                    }
+                });
+            }
+
+            function renderCommunityList() {
+                const listEl = document.getElementById("communityList");
+                if (!listEl) return;
+
+                const searchTerm = (document.getElementById("communitySearchInput")?.value || "").trim().toLocaleLowerCase("tr");
+                const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+
+                let entries = Object.keys(_communityDirectoryCache).map((gid) => ({ gid, ...( _communityDirectoryCache[gid] || {}) }));
+
+                // Staff olmayan kullanıcılar askıya alınmış toplulukları
+                // listede görmesin (staff moderasyon için görebilmeli).
+                if (!iAmStaff) entries = entries.filter((c) => !c.isSuspended);
+
+                if (searchTerm) {
+                    entries = entries.filter((c) => (c.name || "").toLocaleLowerCase("tr").includes(searchTerm));
+                }
+
+                entries.sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0));
+
+                if (entries.length === 0) {
+                    listEl.innerHTML = `<div class="hub-placeholder">${searchTerm ? "Aramanla eşleşen topluluk yok." : "Henüz hiç topluluk oluşturulmamış. İlk topluluğu sen kur!"}</div>`;
+                    return;
+                }
+
+                listEl.innerHTML = entries.map((c) => {
+                    const avatarHtml = c.groupPhoto
+                        ? `<img src="${escapeAttr(c.groupPhoto)}" alt="">`
+                        : "🌐";
+                    const verifiedHtml = c.isVerified ? window.CommunityRBAC.renderVerifiedBadge(true, "15px") : "";
+                    const suspendedHtml = c.isSuspended ? `<span class="grp-community-suspended-tag">ASKIYA ALINDI</span>` : "";
+                    const iAmMember = !!(_userGroupsCache[c.gid]);
+                    const actionHtml = iAmMember
+                        ? `<span class="grp-community-joined-tag">✓ Üyesin</span>`
+                        : `<button type="button" class="grp-community-join-btn" data-preview-gid="${escapeAttr(c.gid)}">Görüntüle</button>`;
+
+                    return `
+                        <div class="grp-community-card" data-preview-gid="${escapeAttr(c.gid)}">
+                            <div class="grp-community-avatar">${avatarHtml}</div>
+                            <div class="grp-community-info">
+                                <div class="grp-community-name-row">
+                                    <span>${escapeHtml(c.name || "İsimsiz Topluluk")}</span>
+                                    ${verifiedHtml}
+                                </div>
+                                <div class="grp-community-desc">${escapeHtml(c.description || "")}</div>
+                                <div class="grp-community-meta-row">
+                                    <span>${c.memberCount || 0} üye</span>
+                                    ${suspendedHtml}
+                                </div>
+                            </div>
+                            ${actionHtml}
+                        </div>
+                    `;
+                }).join("");
+
+                // Kart tıklamaları (avatar dahil tüm satır) önizlemeyi açsın;
+                // "Görüntüle" butonu da aynı işi yapar (event bubbling zaten
+                // kartın kendisine ulaşır, ayrıca dinleyiciye gerek yok).
+                listEl.querySelectorAll("[data-preview-gid]").forEach((el) => {
+                    el.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        openCommunityPreviewModal(el.getAttribute("data-preview-gid"));
+                    });
+                });
+            }
+
+            document.getElementById("communitySearchInput")?.addEventListener("input", renderCommunityList);
+
+            // ── C-2) Topluluk Oluştur modalı ────────────────────────────
+            function openCreateCommunityModal() {
+                document.getElementById("communityCreateNameInput").value = "";
+                document.getElementById("communityCreateDescInput").value = "";
+                document.getElementById("communityCreateError").style.display = "none";
+
+                const profile = window.CommunityAuth.profile;
+                const limit = getCommunityLimitForProfile(profile);
+                const ownedCount = Object.values(_communityDirectoryCache).filter((c) => c.ownerUid === _myUid).length;
+                const limitText = limit === Infinity
+                    ? "Rütbenle sınırsız topluluk kurabilirsin."
+                    : `Rütbenle en fazla ${limit} topluluk kurabilirsin. Şu an: ${ownedCount}/${limit}.`;
+                document.getElementById("communityCreateLimitNote").textContent = limitText;
+
+                const submitBtn = document.getElementById("communityCreateSubmitBtn");
+                if (submitBtn) submitBtn.disabled = ownedCount >= limit;
+
+                document.getElementById("communityCreateModalBackdrop").style.display = "flex";
+            }
+
+            function closeCreateCommunityModal() {
+                document.getElementById("communityCreateModalBackdrop").style.display = "none";
+            }
+
+            async function submitCreateCommunity() {
+                const nameInput = document.getElementById("communityCreateNameInput");
+                const descInput = document.getElementById("communityCreateDescInput");
+                const errorEl = document.getElementById("communityCreateError");
+                const name = nameInput.value.trim();
+                const description = descInput.value.trim();
+
+                if (!name) {
+                    errorEl.textContent = "Lütfen bir topluluk adı yaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+
+                // Limit kontrolü (client-side; RTDB kuralları bunu bir
+                // güvenlik sınırı olarak değil, kullanım kolaylığı katmanı
+                // olarak uyguluyor -- bkz. database.rules.json notları).
+                const profile = window.CommunityAuth.profile;
+                const limit = getCommunityLimitForProfile(profile);
+                const ownedCount = Object.values(_communityDirectoryCache).filter((c) => c.ownerUid === _myUid).length;
+                if (ownedCount >= limit) {
+                    errorEl.textContent = `Topluluk oluşturma limitine ulaştın (${ownedCount}/${limit}). Rütbeni yükselterek limitini artırabilirsin.`;
+                    errorEl.style.display = "block";
+                    return;
+                }
+                errorEl.style.display = "none";
+
+                const groupRef = database.ref("group_chats").push();
+                const groupId = groupRef.key;
+                const now = firebase.database.ServerValue.TIMESTAMP;
+
+                // NOT: isCommunity, ownerUid, members, admins hepsi AYNI
+                // set() çağrısında gönderiliyor -- rules.json'daki meta
+                // create kuralı newData üzerinden bunları tek seferde
+                // doğruluyor, ayrı bir sonraki yazma olarak GÖNDERİLMEMELİ.
+                await groupRef.child("meta").set({
+                    name,
+                    description,
+                    groupPhoto: "",
+                    ownerUid: _myUid,
+                    members: { [_myUid]: true },
+                    admins: { [_myUid]: true },
+                    memberCount: 1,
+                    createdAt: now,
+                    updatedAt: now,
+                    lastMessage: "",
+                    lastSenderUid: "",
+                    isCommunity: true,
+                    isVerified: false,
+                    permissions: {
+                        // Topluluklar herkese açık katılım için var; üye
+                        // ekleme kısıtı anlamsız (herkes Katıl ile girer)
+                        // ama mesaj/izin ayarları kurucuya bırakılıyor.
+                        onlyAdminsCanAddMembers: false,
+                        onlyAdminsCanMessage: false,
+                        onlyAdminsCanEditInfo: true
+                    }
+                });
+
+                await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
+
+                // Keşif kaydı (community_directory) -- üye olmayanların da
+                // görebildiği hafif özet.
+                await database.ref("community_directory/" + groupId).set({
+                    name,
+                    description,
+                    groupPhoto: "",
+                    ownerUid: _myUid,
+                    memberCount: 1,
+                    isVerified: false,
+                    isSuspended: false,
+                    createdAt: now
+                });
+
+                closeCreateCommunityModal();
+                openCommunityPreviewModal(groupId);
+            }
+
+            document.getElementById("communityCreateBtn")?.addEventListener("click", openCreateCommunityModal);
+            document.getElementById("communityCreateCancelBtn")?.addEventListener("click", closeCreateCommunityModal);
+            document.getElementById("communityCreateModalClose")?.addEventListener("click", closeCreateCommunityModal);
+            document.getElementById("communityCreateSubmitBtn")?.addEventListener("click", submitCreateCommunity);
+            document.getElementById("communityCreateModalBackdrop")?.addEventListener("click", (e) => {
+                if (e.target.id === "communityCreateModalBackdrop") closeCreateCommunityModal();
+            });
+
+            // ── C-3) Topluluk Önizleme modalı (katılmadan önce gözden geçir) ──
+            function openCommunityPreviewModal(groupId) {
+                _activeCommunityPreviewId = groupId;
+                renderCommunityPreviewModal(groupId);
+                document.getElementById("communityPreviewModalBackdrop").style.display = "flex";
+            }
+
+            function closeCommunityPreviewModal() {
+                _activeCommunityPreviewId = null;
+                document.getElementById("communityPreviewModalBackdrop").style.display = "none";
+            }
+
+            function renderCommunityPreviewModal(groupId) {
+                const c = _communityDirectoryCache[groupId];
+                if (!c) return;
+
+                const avatarEl = document.getElementById("communityPreviewAvatar");
+                avatarEl.innerHTML = c.groupPhoto ? `<img src="${escapeAttr(c.groupPhoto)}" alt="">` : "🌐";
+
+                document.getElementById("communityPreviewName").textContent = c.name || "İsimsiz Topluluk";
+                document.getElementById("communityPreviewVerifiedSlot").innerHTML =
+                    c.isVerified ? window.CommunityRBAC.renderVerifiedBadge(true, "18px") : "";
+                document.getElementById("communityPreviewMeta").textContent =
+                    `${c.memberCount || 0} üye${c.isSuspended ? " · ⏸ Askıya alınmış" : ""}`;
+                document.getElementById("communityPreviewDesc").textContent = c.description || "";
+
+                const errorEl = document.getElementById("communityPreviewError");
+                errorEl.style.display = "none";
+
+                const iAmMember = !!(_userGroupsCache[groupId]);
+                const joinBtn = document.getElementById("communityPreviewJoinBtn");
+                if (iAmMember) {
+                    joinBtn.textContent = "Sohbete Git →";
+                    joinBtn.disabled = false;
+                } else if (c.isSuspended) {
+                    joinBtn.textContent = "Askıya Alınmış";
+                    joinBtn.disabled = true;
+                } else {
+                    joinBtn.textContent = "Katıl";
+                    joinBtn.disabled = false;
+                }
+
+                // Helper ve üzeri roller için moderasyon aksiyonlarını göster.
+                const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+                const staffRow = document.getElementById("communityPreviewStaffRow");
+                if (staffRow) staffRow.style.display = iAmStaff ? "flex" : "none";
+                const suspendBtn = document.getElementById("communityPreviewSuspendBtn");
+                if (suspendBtn) suspendBtn.textContent = c.isSuspended ? "▶ Askıyı Kaldır" : "⏸ Askıya Al";
+            }
+
+            async function joinCommunityFromPreview(groupId) {
+                const c = _communityDirectoryCache[groupId];
+                if (!c) return;
+                const errorEl = document.getElementById("communityPreviewError");
+
+                // Zaten üyeysek doğrudan sohbete gönder (buton "Sohbete Git" olur).
+                if (_userGroupsCache[groupId]) {
+                    closeCommunityPreviewModal();
+                    switchView("groups");
+                    openGroupConversation(groupId);
+                    return;
+                }
+
+                try {
+                    await database.ref(`group_chats/${groupId}/meta/members/${_myUid}`).set(true);
+                    const newCount = Object.keys((_groupMetaCache[groupId] || c).members || {}).length + 1;
+                    await database.ref(`group_chats/${groupId}/meta/memberCount`).set(newCount);
+                    await database.ref(`community_directory/${groupId}/memberCount`).set(newCount);
+                    await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
+
+                    const me = window.CommunityMentions.getByUid(_myUid);
+                    await postGroupSystemMessage(groupId, `🎉 ${me ? me.username : "Yeni bir üye"} topluluğa katıldı.`);
+                } catch (err) {
+                    console.error("[Topluluk] Katılma hatası:", err);
+                    errorEl.textContent = "Katılırken bir hata oluştu: " + (err && err.message ? err.message : err);
+                    errorEl.style.display = "block";
+                    return;
+                }
+
+                closeCommunityPreviewModal();
+                switchView("groups");
+                openGroupConversation(groupId);
+            }
+
+            document.getElementById("communityPreviewModalClose")?.addEventListener("click", closeCommunityPreviewModal);
+            document.getElementById("communityPreviewModalBackdrop")?.addEventListener("click", (e) => {
+                if (e.target.id === "communityPreviewModalBackdrop") closeCommunityPreviewModal();
+            });
+            document.getElementById("communityPreviewJoinBtn")?.addEventListener("click", () => {
+                if (_activeCommunityPreviewId) joinCommunityFromPreview(_activeCommunityPreviewId);
+            });
+
+            // ── C-4) Şikâyet formu ───────────────────────────────────────
+            function openCommunityReportModal() {
+                document.getElementById("communityReportReasonSelect").value = "spam";
+                document.getElementById("communityReportDetailInput").value = "";
+                document.getElementById("communityReportError").style.display = "none";
+                document.getElementById("communityReportModalBackdrop").style.display = "flex";
+            }
+
+            function closeCommunityReportModal() {
+                document.getElementById("communityReportModalBackdrop").style.display = "none";
+            }
+
+            async function submitCommunityReport() {
+                if (!_activeCommunityPreviewId) return;
+                const groupId = _activeCommunityPreviewId;
+                const reason = document.getElementById("communityReportReasonSelect").value;
+                const detail = document.getElementById("communityReportDetailInput").value.trim();
+                const errorEl = document.getElementById("communityReportError");
+
+                try {
+                    const reportRef = database.ref("community_reports").push();
+                    await reportRef.set({
+                        groupId,
+                        reporterUid: _myUid,
+                        reason,
+                        detail,
+                        status: "open",
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } catch (err) {
+                    console.error("[Topluluk] Şikâyet gönderme hatası:", err);
+                    errorEl.textContent = "Şikâyet gönderilirken bir hata oluştu: " + (err && err.message ? err.message : err);
+                    errorEl.style.display = "block";
+                    return;
+                }
+
+                closeCommunityReportModal();
+                alert("Şikâyetin alındı. Ekibimiz en kısa sürede inceleyecek.");
+            }
+
+            document.getElementById("communityPreviewReportBtn")?.addEventListener("click", openCommunityReportModal);
+            document.getElementById("communityReportModalClose")?.addEventListener("click", closeCommunityReportModal);
+            document.getElementById("communityReportCancelBtn")?.addEventListener("click", closeCommunityReportModal);
+            document.getElementById("communityReportModalBackdrop")?.addEventListener("click", (e) => {
+                if (e.target.id === "communityReportModalBackdrop") closeCommunityReportModal();
+            });
+            document.getElementById("communityReportSubmitBtn")?.addEventListener("click", submitCommunityReport);
+
+            // ── C-5) Helper+ moderasyon: askıya alma / kaldırma / silme ──
+            async function toggleCommunitySuspension(groupId) {
+                const c = _communityDirectoryCache[groupId];
+                if (!c) return;
+                const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+                if (!iAmStaff) { alert("Bu işlem için Helper ve üzeri yetki gerekiyor."); return; }
+
+                const nextState = !c.isSuspended;
+                const label = nextState ? "askıya alınsın" : "askıdan kaldırılsın";
+                if (!confirm(`"${c.name || "Bu topluluk"}" ${label} mı?`)) return;
+
+                try {
+                    await database.ref(`group_chats/${groupId}/meta/isSuspended`).set(nextState);
+                    await database.ref(`community_directory/${groupId}/isSuspended`).set(nextState);
+                } catch (err) {
+                    console.error("[Topluluk] Askıya alma hatası:", err);
+                    alert("İşlem sırasında bir hata oluştu: " + (err && err.message ? err.message : err));
+                }
+            }
+
+            async function deleteCommunityCompletely(groupId) {
+                const c = _communityDirectoryCache[groupId];
+                if (!c) return;
+                const iAmOwner = c.ownerUid === _myUid;
+                const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
+                if (!iAmOwner && !iAmStaff) { alert("Bu topluluğu silme yetkin yok."); return; }
+
+                if (!confirm(`"${c.name || "Bu topluluk"}" KALICI olarak silinecek. Bu işlem geri alınamaz. Emin misin?`)) return;
+
+                try {
+                    const meta = _groupMetaCache[groupId];
+                    const memberUids = meta ? Object.keys(meta.members || {}) : [];
+                    await Promise.all(memberUids.map((uid) =>
+                        database.ref("user_groups/" + uid + "/" + groupId).remove().catch(() => {})
+                    ));
+                    await database.ref("community_directory/" + groupId).remove();
+                    await database.ref("group_chats/" + groupId).remove();
+                } catch (err) {
+                    console.error("[Topluluk] Silme hatası:", err);
+                    alert("Silinirken bir hata oluştu: " + (err && err.message ? err.message : err));
+                    return;
+                }
+
+                closeCommunityPreviewModal();
+            }
+
+            document.getElementById("communityPreviewSuspendBtn")?.addEventListener("click", () => {
+                if (_activeCommunityPreviewId) toggleCommunitySuspension(_activeCommunityPreviewId);
+            });
+            document.getElementById("communityPreviewDeleteBtn")?.addEventListener("click", () => {
+                if (_activeCommunityPreviewId) deleteCommunityCompletely(_activeCommunityPreviewId);
+            });
+
             // ── Var olan bir gruba 6 haneli kodla katılma ────────────
             async function joinGroupByCode(rawCode) {
                 const errorEl = document.getElementById("groupJoinError");
@@ -13940,6 +14381,7 @@
                 attachDmInboxListener();
                 attachUserGroupsListener();
                 attachBlockListeners();
+                startCommunityDirectoryListener();
 
                 if (_initDone) return;
                 _initDone = true;
