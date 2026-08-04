@@ -13685,7 +13685,6 @@
                 });
             }
 
-            document.getElementById("communitySearchInput")?.addEventListener("input", renderCommunityList);
 
             // ── C-2) Topluluk Oluştur modalı ────────────────────────────
             function openCreateCommunityModal() {
@@ -13788,13 +13787,6 @@
                 openCommunityPreviewModal(groupId);
             }
 
-            document.getElementById("communityCreateBtn")?.addEventListener("click", openCreateCommunityModal);
-            document.getElementById("communityCreateCancelBtn")?.addEventListener("click", closeCreateCommunityModal);
-            document.getElementById("communityCreateModalClose")?.addEventListener("click", closeCreateCommunityModal);
-            document.getElementById("communityCreateSubmitBtn")?.addEventListener("click", submitCreateCommunity);
-            document.getElementById("communityCreateModalBackdrop")?.addEventListener("click", (e) => {
-                if (e.target.id === "communityCreateModalBackdrop") closeCreateCommunityModal();
-            });
 
             // ── C-3) Topluluk Önizleme modalı (katılmadan önce gözden geçir) ──
             function openCommunityPreviewModal(groupId) {
@@ -13880,13 +13872,6 @@
                 openGroupConversation(groupId);
             }
 
-            document.getElementById("communityPreviewModalClose")?.addEventListener("click", closeCommunityPreviewModal);
-            document.getElementById("communityPreviewModalBackdrop")?.addEventListener("click", (e) => {
-                if (e.target.id === "communityPreviewModalBackdrop") closeCommunityPreviewModal();
-            });
-            document.getElementById("communityPreviewJoinBtn")?.addEventListener("click", () => {
-                if (_activeCommunityPreviewId) joinCommunityFromPreview(_activeCommunityPreviewId);
-            });
 
             // ── C-4) Şikâyet formu ───────────────────────────────────────
             function openCommunityReportModal() {
@@ -13928,13 +13913,6 @@
                 alert("Şikâyetin alındı. Ekibimiz en kısa sürede inceleyecek.");
             }
 
-            document.getElementById("communityPreviewReportBtn")?.addEventListener("click", openCommunityReportModal);
-            document.getElementById("communityReportModalClose")?.addEventListener("click", closeCommunityReportModal);
-            document.getElementById("communityReportCancelBtn")?.addEventListener("click", closeCommunityReportModal);
-            document.getElementById("communityReportModalBackdrop")?.addEventListener("click", (e) => {
-                if (e.target.id === "communityReportModalBackdrop") closeCommunityReportModal();
-            });
-            document.getElementById("communityReportSubmitBtn")?.addEventListener("click", submitCommunityReport);
 
             // ── C-5) Helper+ moderasyon: askıya alma / kaldırma / silme ──
             async function toggleCommunitySuspension(groupId) {
@@ -13982,12 +13960,6 @@
                 closeCommunityPreviewModal();
             }
 
-            document.getElementById("communityPreviewSuspendBtn")?.addEventListener("click", () => {
-                if (_activeCommunityPreviewId) toggleCommunitySuspension(_activeCommunityPreviewId);
-            });
-            document.getElementById("communityPreviewDeleteBtn")?.addEventListener("click", () => {
-                if (_activeCommunityPreviewId) deleteCommunityCompletely(_activeCommunityPreviewId);
-            });
 
             // ── Var olan bir gruba 6 haneli kodla katılma ────────────
             async function joinGroupByCode(rawCode) {
@@ -14433,6 +14405,40 @@
                 document.getElementById("groupCreateSubmitBtn")?.addEventListener("click", submitCreateGroup);
                 document.getElementById("groupLeaveBtn")?.addEventListener("click", leaveActiveGroup);
                 wireGroupDetailPanelEvents();
+
+                // ── Topluluklar: arama, oluşturma, önizleme, şikâyet, moderasyon ──
+                document.getElementById("communitySearchInput")?.addEventListener("input", renderCommunityList);
+
+                document.getElementById("communityCreateBtn")?.addEventListener("click", openCreateCommunityModal);
+                document.getElementById("communityCreateCancelBtn")?.addEventListener("click", closeCreateCommunityModal);
+                document.getElementById("communityCreateModalClose")?.addEventListener("click", closeCreateCommunityModal);
+                document.getElementById("communityCreateSubmitBtn")?.addEventListener("click", submitCreateCommunity);
+                document.getElementById("communityCreateModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "communityCreateModalBackdrop") closeCreateCommunityModal();
+                });
+
+                document.getElementById("communityPreviewModalClose")?.addEventListener("click", closeCommunityPreviewModal);
+                document.getElementById("communityPreviewModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "communityPreviewModalBackdrop") closeCommunityPreviewModal();
+                });
+                document.getElementById("communityPreviewJoinBtn")?.addEventListener("click", () => {
+                    if (_activeCommunityPreviewId) joinCommunityFromPreview(_activeCommunityPreviewId);
+                });
+
+                document.getElementById("communityPreviewReportBtn")?.addEventListener("click", openCommunityReportModal);
+                document.getElementById("communityReportModalClose")?.addEventListener("click", closeCommunityReportModal);
+                document.getElementById("communityReportCancelBtn")?.addEventListener("click", closeCommunityReportModal);
+                document.getElementById("communityReportModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "communityReportModalBackdrop") closeCommunityReportModal();
+                });
+                document.getElementById("communityReportSubmitBtn")?.addEventListener("click", submitCommunityReport);
+
+                document.getElementById("communityPreviewSuspendBtn")?.addEventListener("click", () => {
+                    if (_activeCommunityPreviewId) toggleCommunitySuspension(_activeCommunityPreviewId);
+                });
+                document.getElementById("communityPreviewDeleteBtn")?.addEventListener("click", () => {
+                    if (_activeCommunityPreviewId) deleteCommunityCompletely(_activeCommunityPreviewId);
+                });
 
                 // Kodla gruba katılma modalı + davet kodu rozeti
                 document.getElementById("groupJoinBtn")?.addEventListener("click", openGroupJoinModal);
