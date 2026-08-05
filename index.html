@@ -2477,6 +2477,29 @@
             border-bottom: none;
             height: 100%;
         }
+
+        /* MODÜL 5 EKLENTİ 1: mobilde konuşma başlığı çok kalabalıklaşıyordu
+           (geri + ☰ + avatar/isim + KOD rozeti + Ayrıl butonu aynı satırda
+           sığmıyor, üst üste biniyordu). Topluluk modundayken kod rozetini
+           gizleyip (davet kodu Grup Detayı panelinden hâlâ erişilebilir),
+           padding/boşlukları daraltıyoruz.*/
+        .msg-shell.is-community .msg-conversation-header {
+            padding: 8px 8px;
+            gap: 6px;
+        }
+        .msg-shell.is-community #groupCodeBadge {
+            display: none;
+        }
+        .msg-shell.is-community .msg-group-leave-btn {
+            padding: 6px 8px;
+            font-size: 0.68rem;
+        }
+        .msg-shell.is-community .msg-conversation-header-name {
+            font-size: 0.85rem;
+        }
+        .msg-shell.is-community .msg-conversation-header-sub {
+            font-size: 0.66rem;
+        }
     }
 
     .msg-chat-list-panel,
@@ -2635,6 +2658,7 @@
         flex-direction: column;
         min-height: 0;
         height: 100%;
+        position: relative; /* .cch-channel-sidebar'ın mobil drawer'ı buna göre konumlanır */
     }
     .msg-conversation-header {
         display: flex;
@@ -3263,6 +3287,58 @@
         overflow-y: auto;
     }
     .msg-shell.is-community .cch-channel-sidebar { display: flex; }
+
+    /* Mobilde sidebar'ı sabit dar sütun olarak göstermek header'ı
+       sıkıştırıp üst üste bindiriyordu. Bunun yerine mobilde sidebar'ı
+       kaydırılabilir bir açılır panel (drawer) yapıyoruz: varsayılan
+       kapalı, header'daki ☰ butonuyla soldan kayarak açılır/kapanır. */
+    @media (max-width: 780px) {
+        .cch-channel-sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 78%;
+            max-width: 280px;
+            z-index: 20;
+            transform: translateX(-100%);
+            transition: transform .2s ease;
+            box-shadow: 4px 0 18px rgba(0,0,0,0.35);
+        }
+        .msg-shell.is-community .cch-channel-sidebar { display: flex; } /* hâlâ DOM'da flex, ama translate ile ekran dışında */
+        .msg-shell.is-community.cch-sidebar-open .cch-channel-sidebar {
+            transform: translateX(0);
+        }
+        .cch-channel-sidebar-backdrop {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 19;
+        }
+        .msg-shell.is-community.cch-sidebar-open .cch-channel-sidebar-backdrop {
+            display: block;
+        }
+        .cch-channel-toggle-btn {
+            display: inline-flex !important;
+        }
+    }
+
+    .cch-channel-toggle-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--accent);
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .cch-channel-toggle-btn:hover { background: var(--accent-soft); }
 
     .cch-channel-sidebar-header {
         display: flex;
@@ -5832,9 +5908,11 @@
                                     <div class="hub-placeholder">Yükleniyor…</div>
                                 </div>
                             </div>
+                            <div class="cch-channel-sidebar-backdrop" id="cchChannelSidebarBackdrop"></div>
                             <div class="msg-conversation-active-main" id="groupConversationActiveMain" style="display:flex; flex-direction:column; flex:1; min-width:0;">
                             <div class="msg-conversation-header" id="groupConversationHeader">
                                 <button type="button" class="msg-back-btn" id="groupBackBtn" title="Grup listesine dön">←</button>
+                                <button type="button" class="cch-channel-toggle-btn" id="cchChannelToggleBtn" title="Kanal listesini aç/kapat">☰</button>
                                 <button type="button" class="msg-group-header-identity" id="groupHeaderOpenSettingsBtn" title="Grup detayları">
                                     <img class="msg-group-avatar-img" id="groupHeaderAvatarImg" alt="" style="display:none;">
                                     <div class="msg-group-avatar" id="groupHeaderAvatar">👥</div>
@@ -12523,6 +12601,7 @@
                 if (_memberRolesRef) { _memberRolesRef.off(); _memberRolesRef = null; }
                 if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
                 _openGroupId = null;
+                closeSidebarDrawer();
             }
 
             function byPosition(channels) {
@@ -12545,6 +12624,7 @@
                 });
                 renderChannelSidebar(groupId);
                 updateComposerLockSafe(groupId);
+                closeSidebarDrawer(); // mobilde bir kanal seçilince drawer otomatik kapansın
 
                 // Kanal başlığını üst bara yansıt.
                 const ch = ensureGroupCache(groupId).channels[channelId];
@@ -12553,6 +12633,14 @@
                     const memberCount = ((window.MessagingSystem && window.MessagingSystem._groupMetaCache && window.MessagingSystem._groupMetaCache[groupId] && Object.keys(window.MessagingSystem._groupMetaCache[groupId].members || {}).length) || 0);
                     subEl.textContent = `# ${ch.name}` + (memberCount ? ` · ${memberCount} üye` : "");
                 }
+            }
+
+            // ══ MOBİL KANAL DRAWER'I (☰ ile açılıp kapanan kaydırılabilir panel) ══
+            function toggleSidebarDrawer() {
+                document.getElementById("groupShell")?.classList.toggle("cch-sidebar-open");
+            }
+            function closeSidebarDrawer() {
+                document.getElementById("groupShell")?.classList.remove("cch-sidebar-open");
             }
 
             function updateComposerLockSafe(groupId) {
@@ -13082,6 +13170,10 @@
                         applyAssignRoleChange(target.getAttribute("data-cch-assign"), target.checked);
                     }
                 });
+
+                // Mobil kanal drawer'ı: ☰ ile aç/kapat, arkaplana (backdrop) tıklayınca kapat.
+                document.getElementById("cchChannelToggleBtn")?.addEventListener("click", toggleSidebarDrawer);
+                document.getElementById("cchChannelSidebarBackdrop")?.addEventListener("click", closeSidebarDrawer);
             }
 
             if (document.readyState === "loading") {
@@ -13635,7 +13727,12 @@
                 const listEl = document.getElementById("groupChatList");
                 if (!listEl) return;
 
-                let entries = Object.keys(_groupMetaCache).map((gid) => ({ groupId: gid, ..._groupMetaCache[gid] }));
+                // MODÜL 5 EKLENTİ 1: topluluklar (isCommunity=true) burada
+                // DEĞİL, ayrı "Topluluklar" sekmesinde listelenir -- normal
+                // "Gruplarım" listesine karışmasınlar.
+                let entries = Object.keys(_groupMetaCache)
+                    .map((gid) => ({ groupId: gid, ..._groupMetaCache[gid] }))
+                    .filter((e) => e.isCommunity !== true);
 
                 if (filterText) {
                     const q = filterText.trim().toLowerCase();
