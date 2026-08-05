@@ -595,6 +595,16 @@
         overflow-y: auto;
     }
 
+    /* Mobilde placeholder metni (uzun olabiliyor, "@isim ile etiketle..."
+       gibi) 2 satıra yayılıp tek satırlık min-height'ı taşırıyor ve içeride
+       gereksiz bir scrollbar tetikliyordu. Mobilde minimum yüksekliği biraz
+       daha ferah tutuyoruz, placeholder rahatça sığsın diye. */
+    @media (max-width: 560px) {
+        .forum-composer-input {
+            min-height: 60px;
+        }
+    }
+
     /* Masaüstünde daha ferah bir yazma alanı. */
     @media (min-width: 861px) {
         .forum-composer-input {
@@ -13980,6 +13990,11 @@
             }
 
             function closeGroupConversation() {
+                // Kapatılan konuşma bir topluluksa, kullanıcıyı "Grup
+                // Sohbetleri" sekmesinde bırakmak yerine geldiği yer olan
+                // "Topluluklar" sekmesine geri döndürüyoruz.
+                const meta = _activeGroupId ? _groupMetaCache[_activeGroupId] : null;
+                const wasCommunity = !!(meta && meta.isCommunity === true);
                 _activeGroupId = null;
                 if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
                 window.CommunityChannels && window.CommunityChannels.onCloseCommunity();
@@ -13990,6 +14005,9 @@
                 document.getElementById("groupConversationActive").style.display = "none";
                 groupReplyBannerCtrl.clear();
                 renderGroupChatList();
+                if (wasCommunity && typeof switchView === "function") {
+                    switchView("communities");
+                }
             }
 
             // Aktif konuşma bir topluluksa ve bir kanal seçiliyse, mesajların
@@ -14060,15 +14078,27 @@
                 }
             }
 
+            // NOT: Normal gruplarda mesaj silme "soft delete" (metin
+            // boşaltılır, "Bu mesaj silindi" placeholder'ı gösterilir) --
+            // bu WhatsApp tarzı bir şeffaflık: diğer üyeler bir mesajın
+            // silindiğini görebilir. Topluluklarda ise davranış farklı:
+            // mesaj DB'den tamamen kaldırılır (hard delete), hiçbir
+            // placeholder gösterilmez -- sanki hiç yazılmamış gibi kaybolur.
             async function deleteGroupMessage(messageId) {
                 if (!_activeGroupId || !messageId) return;
                 const basePath = _activeMessagesBasePath(_activeGroupId);
                 if (!basePath) return;
-                await database.ref(basePath + "/" + messageId).update({
-                    deleted: true,
-                    text: "",
-                    deletedAt: Date.now()
-                });
+                const meta = _groupMetaCache[_activeGroupId];
+                const isCommunity = !!(meta && meta.isCommunity === true);
+                if (isCommunity) {
+                    await database.ref(basePath + "/" + messageId).remove();
+                } else {
+                    await database.ref(basePath + "/" + messageId).update({
+                        deleted: true,
+                        text: "",
+                        deletedAt: Date.now()
+                    });
+                }
             }
 
             async function leaveActiveGroup() {
@@ -14155,13 +14185,15 @@
                 const iAmOwner = groupIsOwner(meta, _myUid);
                 const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
                 if (!iAmOwner && !iAmStaff) {
-                    alert("Bu grubu silme yetkin yok.");
+                    alert(meta.isCommunity === true ? "Bu topluluğu silme yetkin yok." : "Bu grubu silme yetkin yok.");
                     return;
                 }
 
                 const memberCount = Object.keys(meta.members || {}).length;
-                const warnExtra = memberCount > 1 ? ` Grupta ${memberCount} üye var, hepsi için sohbet geçmişi silinecek.` : "";
-                if (!confirm(`"${meta.name || "Bu grup"}" grubunu KALICI olarak silmek istediğine emin misin?${warnExtra} Bu işlem geri alınamaz.`)) return;
+                const isCommunity = meta.isCommunity === true;
+                const noun = isCommunity ? "topluluğunu" : "grubunu";
+                const warnExtra = memberCount > 1 ? ` ${isCommunity ? "Toplulukta" : "Grupta"} ${memberCount} üye var, hepsi için sohbet geçmişi silinecek.` : "";
+                if (!confirm(`"${meta.name || (isCommunity ? "Bu topluluk" : "Bu grup")}" ${noun} KALICI olarak silmek istediğine emin misin?${warnExtra} Bu işlem geri alınamaz.`)) return;
 
                 try {
                     const memberUids = Object.keys(meta.members || {});
@@ -14249,12 +14281,14 @@
                 document.getElementById("groupDetailDescInput").disabled = !canEditInfo;
                 document.getElementById("groupDetailSaveDescBtn").style.display = canEditInfo ? "inline-flex" : "none";
 
-                // "Grubu Sil": kurucu her zaman görebilir; Helper ve üzeri
-                // site yetkilileri de moderasyon amaçlı silebilir.
+                // "Grubu Sil" / "Topluluğu Sil": kurucu her zaman görebilir;
+                // Helper ve üzeri site yetkilileri de moderasyon amaçlı silebilir.
+                // Buton metni topluluk/grup ayrımına göre değişir.
                 const deleteBtn = document.getElementById("groupDetailDeleteBtn");
                 if (deleteBtn) {
                     const iAmStaff = window.CommunityRBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
                     deleteBtn.style.display = (iAmOwner || iAmStaff) ? "inline-flex" : "none";
+                    deleteBtn.textContent = meta.isCommunity === true ? "🗑 Topluluğu Sil" : "🗑 Grubu Sil";
                 }
 
                 renderGroupPinnedBanner(meta);
@@ -14464,6 +14498,12 @@
             }
 
             // ── İsim / resim güncelleme ────────────────────────────────
+            // NOT: Grup bir topluluksa (isCommunity === true), isim/açıklama/
+            // resim değişiklikleri hem group_chats/{id}/meta hem de
+            // community_directory/{id} altına aynı anda yazılmalı --
+            // aksi halde Topluluklar sekmesindeki keşif kartı (isim, resim,
+            // açıklama) eski/bayat kalır, çünkü o liste community_directory'den
+            // besleniyor, group_chats/meta'dan değil.
             async function saveGroupName() {
                 const groupId = _activeGroupDetailId;
                 const meta = _groupMetaCache[groupId];
@@ -14477,23 +14517,11 @@
                     return;
                 }
                 errEl.style.display = "none";
-                await database.ref(`group_chats/${groupId}/meta`).update({ name, updatedAt: firebase.database.ServerValue.TIMESTAMP });
-            }
-
-            async function saveGroupName() {
-                const groupId = _activeGroupDetailId;
-                const meta = _groupMetaCache[groupId];
-                if (!groupId || !meta) return;
-                if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
-                const name = document.getElementById("groupDetailNameInput").value.trim();
-                const errEl = document.getElementById("groupDetailIdentityError");
-                if (!name) {
-                    errEl.textContent = "Grup adı boş olamaz.";
-                    errEl.style.display = "block";
-                    return;
+                const now = firebase.database.ServerValue.TIMESTAMP;
+                await database.ref(`group_chats/${groupId}/meta`).update({ name, updatedAt: now });
+                if (meta.isCommunity === true) {
+                    await database.ref(`community_directory/${groupId}`).update({ name }).catch(() => {});
                 }
-                errEl.style.display = "none";
-                await database.ref(`group_chats/${groupId}/meta`).update({ name, updatedAt: firebase.database.ServerValue.TIMESTAMP });
             }
 
             async function saveGroupDescription() {
@@ -14502,7 +14530,11 @@
                 if (!groupId || !meta) return;
                 if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
                 const description = document.getElementById("groupDetailDescInput").value.trim().slice(0, 240);
-                await database.ref(`group_chats/${groupId}/meta`).update({ description, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+                const now = firebase.database.ServerValue.TIMESTAMP;
+                await database.ref(`group_chats/${groupId}/meta`).update({ description, updatedAt: now });
+                if (meta.isCommunity === true) {
+                    await database.ref(`community_directory/${groupId}`).update({ description }).catch(() => {});
+                }
                 showToastGlobal("Grup açıklaması güncellendi.");
             }
 
@@ -14578,7 +14610,11 @@
                 if (!groupCanEditInfo(meta, _myUid)) { alert("Bu grupta bilgileri sadece yöneticiler değiştirebilir."); return; }
                 const url = document.getElementById("groupDetailAvatarUrlInput").value.trim();
                 if (!url) return;
-                await database.ref(`group_chats/${groupId}/meta`).update({ groupPhoto: url, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+                const now = firebase.database.ServerValue.TIMESTAMP;
+                await database.ref(`group_chats/${groupId}/meta`).update({ groupPhoto: url, updatedAt: now });
+                if (meta.isCommunity === true) {
+                    await database.ref(`community_directory/${groupId}`).update({ groupPhoto: url }).catch(() => {});
+                }
                 document.getElementById("groupDetailAvatarUrlInput").value = "";
             }
 
@@ -14668,7 +14704,11 @@
                         const link = await uploadFileToImgBB(file, (pct) => {
                             if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
                         });
-                        await database.ref(`group_chats/${groupId}/meta`).update({ groupPhoto: link, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+                        const now = firebase.database.ServerValue.TIMESTAMP;
+                        await database.ref(`group_chats/${groupId}/meta`).update({ groupPhoto: link, updatedAt: now });
+                        if (meta.isCommunity === true) {
+                            await database.ref(`community_directory/${groupId}`).update({ groupPhoto: link }).catch(() => {});
+                        }
                         setStatus("Grup resmi güncellendi.", false);
                         setTimeout(() => setStatus(null), 2000);
                     } catch (err) {
