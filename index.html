@@ -3376,6 +3376,9 @@
             display: block;
         }
         .cch-channel-toggle-btn {
+            display: none;
+        }
+        .msg-shell.is-community .cch-channel-toggle-btn {
             display: inline-flex !important;
         }
     }
@@ -6089,7 +6092,7 @@
                 <div class="forum-modal-backdrop" id="groupDetailModalBackdrop" style="display:none;">
                     <div class="forum-modal msg-group-detail-modal">
                         <div class="forum-modal-header">
-                            <span>Grup Detayları</span>
+                            <span id="groupDetailModalTitle">Grup Detayları</span>
                             <button class="forum-modal-close" id="groupDetailModalClose">✕</button>
                         </div>
                         <div class="forum-modal-body msg-group-detail-body" id="groupDetailBody">
@@ -6099,7 +6102,7 @@
                                 <div class="msg-group-detail-avatar-wrap">
                                     <img class="msg-group-detail-avatar-img" id="groupDetailAvatarImg" alt="" style="display:none;">
                                     <div class="msg-group-detail-avatar-fallback" id="groupDetailAvatarFallback">👥</div>
-                                    <button type="button" class="msg-group-detail-avatar-edit-btn" id="groupDetailAvatarEditBtn" title="Grup resmini değiştir">📷</button>
+                                    <button type="button" class="msg-group-detail-avatar-edit-btn" id="groupDetailAvatarEditBtn" title="Resmi değiştir">📷</button>
                                     <input type="file" id="groupDetailAvatarFileInput" style="display:none;" accept="image/*">
                                 </div>
                                 <div class="msg-group-detail-name-row">
@@ -6127,19 +6130,19 @@
 
                             <!-- İzinler (sadece yönetici/kurucu görür) -->
                             <div class="msg-group-detail-section" id="groupDetailPermissionsSection">
-                                <div class="msg-group-detail-section-title">Grup İzinleri</div>
+                                <div class="msg-group-detail-section-title" id="groupDetailPermissionsHeading">Grup İzinleri</div>
                                 <label class="msg-group-toggle-row">
                                     <span>Sadece Yöneticiler Üye Ekleyebilir</span>
                                     <input type="checkbox" id="permOnlyAdminsAddMembers">
                                     <span class="msg-toggle-switch"></span>
                                 </label>
-                                <label class="msg-group-toggle-row">
+                                <label class="msg-group-toggle-row" id="permOnlyAdminsSendMessagesRow">
                                     <span>Sadece Yöneticiler Mesaj Gönderebilir</span>
                                     <input type="checkbox" id="permOnlyAdminsSendMessages">
                                     <span class="msg-toggle-switch"></span>
                                 </label>
                                 <label class="msg-group-toggle-row">
-                                    <span>Sadece Yöneticiler Grup Bilgilerini Değiştirebilir</span>
+                                    <span id="permOnlyAdminsEditInfoLabel">Sadece Yöneticiler Grup Bilgilerini Değiştirebilir</span>
                                     <input type="checkbox" id="permOnlyAdminsEditInfo">
                                     <span class="msg-toggle-switch"></span>
                                 </label>
@@ -14208,6 +14211,13 @@
                     // Topluluklar sekmesinde görünmeye devam eder.
                     if (meta.isCommunity === true) {
                         await database.ref("community_directory/" + gid).remove().catch(() => {});
+                        // İsim rezervasyonunu da bırak -- aksi halde bu isim
+                        // bir daha asla kullanılamaz hâle gelirdi.
+                        const normalizedName = (meta.name || "").toLowerCase().replace(/\s+/g, " ").trim();
+                        const nameKey = normalizedName.replace(/[.#$\[\]\/]/g, "_").slice(0, 200);
+                        if (nameKey) {
+                            await database.ref("community_names/" + nameKey).remove().catch(() => {});
+                        }
                     }
                     await database.ref("group_chats/" + gid).remove();
                 } catch (err) {
@@ -14259,6 +14269,28 @@
                 const iAmAdmin = groupIsAdmin(meta, _myUid);
                 const iAmOwner = groupIsOwner(meta, _myUid);
                 const canEditInfo = groupCanEditInfo(meta, _myUid);
+                const isCommunity = meta.isCommunity === true;
+
+                // MODÜL 5 EKLENTİ 1: bu panel hem normal gruplar hem
+                // topluluklar için kullanılıyor -- topluluk olduğunda
+                // "Grup" yerine "Topluluk" terminolojisi göster, kanal
+                // bazlı izin sistemiyle çakışan "Sadece Yöneticiler Mesaj
+                // Gönderebilir" satırını gizle (topluluklarda mesaj izni
+                // kanal/rütbe sistemi üzerinden yönetiliyor).
+                const titleEl = document.getElementById("groupDetailModalTitle");
+                if (titleEl) titleEl.textContent = isCommunity ? "Topluluk Detayları" : "Grup Detayları";
+                const nameInput0 = document.getElementById("groupDetailNameInput");
+                if (nameInput0) nameInput0.placeholder = isCommunity ? "Topluluk adı" : "Grup adı";
+                const descInput0 = document.getElementById("groupDetailDescInput");
+                if (descInput0) descInput0.placeholder = isCommunity ? "Topluluk açıklaması (isteğe bağlı)…" : "Grup açıklaması (isteğe bağlı)…";
+                const avatarEditBtn0 = document.getElementById("groupDetailAvatarEditBtn");
+                if (avatarEditBtn0) avatarEditBtn0.title = isCommunity ? "Topluluk resmini değiştir" : "Grup resmini değiştir";
+                const permHeading = document.getElementById("groupDetailPermissionsHeading");
+                if (permHeading) permHeading.textContent = isCommunity ? "Topluluk İzinleri" : "Grup İzinleri";
+                const editInfoLabel = document.getElementById("permOnlyAdminsEditInfoLabel");
+                if (editInfoLabel) editInfoLabel.textContent = isCommunity ? "Sadece Yöneticiler Topluluk Bilgilerini Değiştirebilir" : "Sadece Yöneticiler Grup Bilgilerini Değiştirebilir";
+                const sendMsgRow = document.getElementById("permOnlyAdminsSendMessagesRow");
+                if (sendMsgRow) sendMsgRow.style.display = isCommunity ? "none" : "flex";
 
                 // Kimlik (resim + isim)
                 const avatarImg = document.getElementById("groupDetailAvatarImg");
@@ -15093,6 +15125,41 @@
                     return;
                 }
 
+                // GÜVENLİK: aynı isimde birden fazla topluluk oluşturulmasını
+                // engelle. "community_names/{normalizedName}" bir tekillik
+                // index'i olarak kullanılıyor -- transaction ile atomik
+                // şekilde rezerve ediliyor, böylece iki kullanıcı aynı anda
+                // aynı ismi denese bile sadece biri başarılı olur (race
+                // condition korumalı). Normalizasyon: küçük harf + fazla
+                // boşlukları tek boşluğa indirme, böylece "Test", "test",
+                // "  Test  " hepsi aynı isim sayılır.
+                const normalizedName = name.toLowerCase().replace(/\s+/g, " ").trim();
+                if (!normalizedName) {
+                    errorEl.textContent = "Lütfen geçerli bir topluluk adı yaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                const nameKey = normalizedName.replace(/[.#$\[\]\/]/g, "_").slice(0, 200);
+                const nameRef = database.ref("community_names/" + nameKey);
+                let nameReserved = false;
+                try {
+                    const txResult = await nameRef.transaction((current) => {
+                        if (current === null) return _myUid; // boşsa rezerve et
+                        return; // dolu ise dokunma -> commit=false, işlem iptal
+                    });
+                    nameReserved = txResult.committed;
+                } catch (err) {
+                    console.error("[Topluluk] İsim rezervasyonu başarısız:", err);
+                    errorEl.textContent = "Bir hata oluştu, tekrar dene.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                if (!nameReserved) {
+                    errorEl.textContent = "Bu isimde bir topluluk zaten var. Lütfen başka bir isim seç.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+
                 // Limit kontrolü (client-side; RTDB kuralları bunu bir
                 // güvenlik sınırı olarak değil, kullanım kolaylığı katmanı
                 // olarak uyguluyor -- bkz. database.rules.json notları).
@@ -15102,6 +15169,10 @@
                 if (ownedCount >= limit) {
                     errorEl.textContent = `Topluluk oluşturma limitine ulaştın (${ownedCount}/${limit}). Rütbeni yükselterek limitini artırabilirsin.`;
                     errorEl.style.display = "block";
+                    // Limit aşıldığı için topluluk oluşturulmayacak -- az
+                    // önce rezerve ettiğimiz ismi geri bırak, aksi halde
+                    // isim gerçek bir topluluk olmadan "yanmış" olur.
+                    nameRef.remove().catch(() => {});
                     return;
                 }
                 errorEl.style.display = "none";
@@ -15110,54 +15181,79 @@
                 const groupId = groupRef.key;
                 const now = firebase.database.ServerValue.TIMESTAMP;
 
+                // MODÜL 5 EKLENTİ 1: kurucu site genelinde "Owner / Developer"
+                // rütbesindeyse (topluluğa özel rütbe DEĞİL, gerçek/global
+                // rol), topluluk otomatik olarak doğrulanmış (mavi tik)
+                // başlar -- oyunculardaki resmi doğrulama rozetiyle aynı
+                // mantık. Diğer tüm rütbeler (Admin, Mod, Helper dahil)
+                // bunu tetiklemez; sadece en üst rütbe otomatik doğrular.
+                const creatorIsOwnerDev = profile && profile.role === "Owner / Developer";
+
                 // NOT: isCommunity, ownerUid, members, admins hepsi AYNI
                 // set() çağrısında gönderiliyor -- rules.json'daki meta
                 // create kuralı newData üzerinden bunları tek seferde
                 // doğruluyor, ayrı bir sonraki yazma olarak GÖNDERİLMEMELİ.
-                await groupRef.child("meta").set({
-                    name,
-                    description,
-                    groupPhoto: _communityCreateAvatarUrl || "",
-                    ownerUid: _myUid,
-                    members: { [_myUid]: true },
-                    admins: { [_myUid]: true },
-                    memberCount: 1,
-                    createdAt: now,
-                    updatedAt: now,
-                    lastMessage: "",
-                    lastSenderUid: "",
-                    isCommunity: true,
-                    isVerified: false,
-                    permissions: {
-                        // Topluluklar herkese açık katılım için var; üye
-                        // ekleme kısıtı anlamsız (herkes Katıl ile girer)
-                        // ama mesaj/izin ayarları kurucuya bırakılıyor.
-                        onlyAdminsCanAddMembers: false,
-                        onlyAdminsCanMessage: false,
-                        onlyAdminsCanEditInfo: true
+                try {
+                    await groupRef.child("meta").set({
+                        name,
+                        description,
+                        groupPhoto: _communityCreateAvatarUrl || "",
+                        ownerUid: _myUid,
+                        members: { [_myUid]: true },
+                        admins: { [_myUid]: true },
+                        memberCount: 1,
+                        createdAt: now,
+                        updatedAt: now,
+                        lastMessage: "",
+                        lastSenderUid: "",
+                        isCommunity: true,
+                        isVerified: creatorIsOwnerDev,
+                        permissions: {
+                            // Topluluklar herkese açık katılım için var; üye
+                            // ekleme kısıtı anlamsız (herkes Katıl ile girer)
+                            // ama mesaj/izin ayarları kurucuya bırakılıyor.
+                            onlyAdminsCanAddMembers: false,
+                            onlyAdminsCanMessage: false,
+                            onlyAdminsCanEditInfo: true
+                        }
+                    });
+
+                    // İsim rezervasyonunu geçici sahiplikten (uid) kalıcı
+                    // groupId referansına çevir -- topluluk silinirse bu
+                    // node da temizlenip isim tekrar kullanılabilir olacak
+                    // (bkz. performLeaveGroup/deleteGroupCompletely).
+                    await nameRef.set(groupId);
+
+                    await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
+
+                    // MODÜL 5 EKLENTİ 1: her yeni topluluk varsayılan "genel"
+                    // metin kanalıyla doğar, aksi hâlde girecek kanal olmaz.
+                    if (window.CommunityChannels) {
+                        await window.CommunityChannels.createDefaultChannel(groupId, now);
                     }
-                });
 
-                await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
-
-                // MODÜL 5 EKLENTİ 1: her yeni topluluk varsayılan "genel"
-                // metin kanalıyla doğar, aksi hâlde girecek kanal olmaz.
-                if (window.CommunityChannels) {
-                    await window.CommunityChannels.createDefaultChannel(groupId, now);
+                    // Keşif kaydı (community_directory) -- üye olmayanların da
+                    // görebildiği hafif özet.
+                    await database.ref("community_directory/" + groupId).set({
+                        name,
+                        description,
+                        groupPhoto: _communityCreateAvatarUrl || "",
+                        ownerUid: _myUid,
+                        memberCount: 1,
+                        isVerified: creatorIsOwnerDev,
+                        isSuspended: false,
+                        createdAt: now
+                    });
+                } catch (err) {
+                    console.error("[Topluluk] Oluşturma hatası:", err);
+                    // Yarım kalan oluşturmada rezerve edilen ismi serbest
+                    // bırak, aksi halde isim gerçek bir topluluk olmadan
+                    // "yanmış" (kullanılamaz) kalır.
+                    nameRef.remove().catch(() => {});
+                    errorEl.textContent = "Topluluk oluşturulurken bir hata oluştu. Tekrar dene.";
+                    errorEl.style.display = "block";
+                    return;
                 }
-
-                // Keşif kaydı (community_directory) -- üye olmayanların da
-                // görebildiği hafif özet.
-                await database.ref("community_directory/" + groupId).set({
-                    name,
-                    description,
-                    groupPhoto: _communityCreateAvatarUrl || "",
-                    ownerUid: _myUid,
-                    memberCount: 1,
-                    isVerified: false,
-                    isSuspended: false,
-                    createdAt: now
-                });
 
                 closeCreateCommunityModal();
                 openCommunityPreviewModal(groupId);
