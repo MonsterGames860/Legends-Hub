@@ -48,6 +48,40 @@
         overflow-x: hidden;
     }
 
+    /* ==========================================================
+       KÜRESEL SCROLLBAR TEMASI — kaba varsayılan (beyaz/gri) tarayıcı
+       scrollbar'ları yerine ince, koyu temaya uygun bir görünüm.
+       Hem Firefox (scrollbar-width/scrollbar-color) hem de
+       WebKit/Blink (::-webkit-scrollbar-*) tarayıcılar için tanımlı.
+       Tüm kaydırılabilir alanlara (mesaj listesi, kanal sidebar'ı,
+       sohbet listesi vb.) otomatik uygulanır — ayrı ayrı class
+       eklemeye gerek kalmasın diye * seçicisiyle küresel tanımlandı. */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(102, 252, 241, 0.35) transparent;
+    }
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+        background-color: rgba(102, 252, 241, 0.28);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(102, 252, 241, 0.5);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+    }
+    *::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
     /* ---------- AUTH GATE (yükleme / erişim reddi ekranı) ---------- */
     #authGate {
         position: fixed;
@@ -519,7 +553,7 @@
     .forum-composer {
         display: flex;
         gap: 10px;
-        align-items: flex-end;
+        align-items: center;
     }
 
     /* Mobilde textarea + buton yan yana sıkışıp taşmasın diye
@@ -541,9 +575,10 @@
     }
 
     .forum-composer-input {
+        display: block;
         width: 100%;
-        resize: vertical;
-        min-height: 52px;
+        resize: none;
+        min-height: 44px;
         max-height: 160px;
         background: var(--bg-panel);
         border: 1px solid var(--line);
@@ -553,15 +588,20 @@
         font-family: var(--font-display);
         font-size: 0.92rem;
         line-height: 1.5;
+        /* İçerik taşana kadar dikey scrollbar tetiklenmesin diye satır
+           yüksekliğine göre otomatik büyür (JS tarafında input event'i ile
+           height ayarlanır); taştığında da artık global ince scrollbar
+           temasını kullanır, kaba beyaz çubuk göstermez. */
+        overflow-y: auto;
     }
 
     /* Masaüstünde daha ferah bir yazma alanı. */
     @media (min-width: 861px) {
         .forum-composer-input {
-            min-height: 76px;
+            min-height: 52px;
             max-height: 240px;
             font-size: 0.98rem;
-            padding: 15px 17px;
+            padding: 14px 17px;
         }
     }
 
@@ -571,6 +611,7 @@
     }
 
     .forum-send-btn {
+        align-self: center;
         padding: 11px 20px;
         border-radius: 8px;
         border: none;
@@ -1125,8 +1166,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        align-self: flex-end;
-        margin-bottom: 1px;
+        align-self: center;
         position: relative;
         transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
     }
@@ -3098,6 +3138,12 @@
         justify-content: center;
     }
     .msg-group-detail-avatar-edit-btn:hover { filter: brightness(1.1); }
+
+    /* Oluşturma modallarında (Yeni Grup / Yeni Topluluk) avatar alanı
+       dikey bir form içinde tek başına durduğu için ortalanır. */
+    .msg-create-avatar-wrap {
+        margin: 4px auto 6px;
+    }
     .msg-group-detail-name-row,
     .msg-group-detail-avatar-url-row {
         display: flex;
@@ -3581,8 +3627,10 @@
     }
     .msg-bubble-row {
         display: flex;
+        align-self: flex-start;
         gap: 8px;
         max-width: 78%;
+        width: fit-content;
     }
     .msg-bubble-row.is-own {
         align-self: flex-end;
@@ -3770,7 +3818,7 @@
     .msg-composer {
         display: flex;
         gap: 8px;
-        align-items: flex-end;
+        align-items: center;
         padding: 10px 12px;
         border-top: 1px solid var(--line);
         flex-shrink: 0;
@@ -5976,6 +6024,15 @@
                             <button class="forum-modal-close" id="groupCreateModalClose">✕</button>
                         </div>
                         <div class="forum-modal-body">
+                            <label class="forum-field-label">Grup Resmi (isteğe bağlı)</label>
+                            <div class="msg-group-detail-avatar-wrap msg-create-avatar-wrap">
+                                <img class="msg-group-detail-avatar-img" id="groupCreateAvatarImg" alt="" style="display:none;">
+                                <div class="msg-group-detail-avatar-fallback" id="groupCreateAvatarFallback">👥</div>
+                                <button type="button" class="msg-group-detail-avatar-edit-btn" id="groupCreateAvatarEditBtn" title="Grup resmi yükle">📷</button>
+                                <input type="file" id="groupCreateAvatarFileInput" style="display:none;" accept="image/*">
+                            </div>
+                            <div class="msg-group-detail-avatar-status" id="groupCreateAvatarStatus" style="display:none;"></div>
+
                             <label class="forum-field-label">Grup Adı</label>
                             <input type="text" class="forum-text-input" id="groupCreateNameInput" maxlength="60" placeholder="Örn: Efsane Avcıları">
 
@@ -6285,6 +6342,15 @@
                             <button class="forum-modal-close" id="communityCreateModalClose">✕</button>
                         </div>
                         <div class="forum-modal-body">
+                            <label class="forum-field-label">Topluluk Resmi (isteğe bağlı)</label>
+                            <div class="msg-group-detail-avatar-wrap msg-create-avatar-wrap">
+                                <img class="msg-group-detail-avatar-img" id="communityCreateAvatarImg" alt="" style="display:none;">
+                                <div class="msg-group-detail-avatar-fallback" id="communityCreateAvatarFallback">🌐</div>
+                                <button type="button" class="msg-group-detail-avatar-edit-btn" id="communityCreateAvatarEditBtn" title="Topluluk resmi yükle">📷</button>
+                                <input type="file" id="communityCreateAvatarFileInput" style="display:none;" accept="image/*">
+                            </div>
+                            <div class="msg-group-detail-avatar-status" id="communityCreateAvatarStatus" style="display:none;"></div>
+
                             <label class="forum-field-label">Topluluk Adı</label>
                             <input type="text" class="forum-text-input" id="communityCreateNameInput" maxlength="60" placeholder="Örn. Legends Türkiye">
                             <label class="forum-field-label" style="margin-top:10px;">Açıklama (isteğe bağlı)</label>
@@ -14516,6 +14582,63 @@
                 document.getElementById("groupDetailAvatarUrlInput").value = "";
             }
 
+            // ── Oluşturma modallarında (Yeni Grup / Yeni Topluluk) avatar
+            //    yükleme — grup/topluluk henüz veritabanında yokken resmi
+            //    önceden ImgBB'ye yükleyip linkini _groupCreateAvatarUrl /
+            //    _communityCreateAvatarUrl değişkeninde tutuyoruz; asıl
+            //    meta.set() çağrısı bu URL'yi groupPhoto alanına yazar. ──
+            let _groupCreateAvatarUrl = "";
+            let _communityCreateAvatarUrl = "";
+
+            function wireCreateAvatarFileUpload({ btnId, fileInputId, statusId, imgId, fallbackId, onUploaded, fallbackEmoji }) {
+                const btn = document.getElementById(btnId);
+                const fileInput = document.getElementById(fileInputId);
+                const statusEl = document.getElementById(statusId);
+                const imgEl = document.getElementById(imgId);
+                const fallbackEl = document.getElementById(fallbackId);
+                if (!btn || !fileInput) return;
+
+                btn.addEventListener("click", () => fileInput.click());
+                fileInput.addEventListener("change", async () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    fileInput.value = "";
+                    if (!file) return;
+
+                    const setStatus = (msg, isError) => {
+                        if (!statusEl) return;
+                        if (!msg) { statusEl.style.display = "none"; return; }
+                        statusEl.textContent = msg;
+                        statusEl.style.display = "block";
+                        statusEl.classList.toggle("is-error", !!isError);
+                    };
+
+                    btn.disabled = true;
+                    setStatus(`"${file.name}" yükleniyor...`, false);
+                    try {
+                        const link = await uploadFileToImgBB(file, (pct) => {
+                            if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
+                        });
+                        onUploaded(link);
+                        if (imgEl) { imgEl.src = link; imgEl.style.display = "block"; }
+                        if (fallbackEl) fallbackEl.style.display = "none";
+                        setStatus("Resim yüklendi.", false);
+                        setTimeout(() => setStatus(null), 1800);
+                    } catch (err) {
+                        console.error("[Oluştur] Resim yükleme hatası:", err);
+                        setStatus("Yükleme başarısız: " + (err && err.message ? err.message : "bilinmeyen hata"), true);
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+            }
+
+            function resetCreateAvatarPicker({ imgId, fallbackId, fallbackEmoji }) {
+                const imgEl = document.getElementById(imgId);
+                const fallbackEl = document.getElementById(fallbackId);
+                if (imgEl) { imgEl.src = ""; imgEl.style.display = "none"; }
+                if (fallbackEl) { fallbackEl.textContent = fallbackEmoji; fallbackEl.style.display = "flex"; }
+            }
+
             function wireGroupAvatarFileUpload() {
                 const btn = document.getElementById("groupDetailAvatarEditBtn");
                 const fileInput = document.getElementById("groupDetailAvatarFileInput");
@@ -14668,11 +14791,13 @@
             // ── "Yeni Grup Oluştur" modalı ───────────────────────────────
             function openCreateGroupModal() {
                 _groupCreateSelected = {};
+                _groupCreateAvatarUrl = "";
                 document.getElementById("groupCreateModalBackdrop").style.display = "flex";
                 document.getElementById("groupCreateNameInput").value = "";
                 document.getElementById("groupCreateMemberSearchInput").value = "";
                 document.getElementById("groupCreateMemberResults").innerHTML = "";
                 document.getElementById("groupCreateError").style.display = "none";
+                resetCreateAvatarPicker({ imgId: "groupCreateAvatarImg", fallbackId: "groupCreateAvatarFallback", fallbackEmoji: "👥" });
                 renderSelectedMembersChips();
             }
             function closeCreateGroupModal() {
@@ -14759,7 +14884,7 @@
                 await groupRef.child("meta").set({
                     name,
                     description: "",
-                    groupPhoto: "",
+                    groupPhoto: _groupCreateAvatarUrl || "",
                     ownerUid: _myUid,
                     members,
                     admins: { [_myUid]: true }, // Kurucu her zaman aynı zamanda yöneticidir
@@ -14894,6 +15019,8 @@
                 document.getElementById("communityCreateNameInput").value = "";
                 document.getElementById("communityCreateDescInput").value = "";
                 document.getElementById("communityCreateError").style.display = "none";
+                _communityCreateAvatarUrl = "";
+                resetCreateAvatarPicker({ imgId: "communityCreateAvatarImg", fallbackId: "communityCreateAvatarFallback", fallbackEmoji: "🌐" });
 
                 const profile = window.CommunityAuth.profile;
                 const limit = getCommunityLimitForProfile(profile);
@@ -14950,7 +15077,7 @@
                 await groupRef.child("meta").set({
                     name,
                     description,
-                    groupPhoto: "",
+                    groupPhoto: _communityCreateAvatarUrl || "",
                     ownerUid: _myUid,
                     members: { [_myUid]: true },
                     admins: { [_myUid]: true },
@@ -14984,7 +15111,7 @@
                 await database.ref("community_directory/" + groupId).set({
                     name,
                     description,
-                    groupPhoto: "",
+                    groupPhoto: _communityCreateAvatarUrl || "",
                     ownerUid: _myUid,
                     memberCount: 1,
                     isVerified: false,
@@ -15515,6 +15642,22 @@
                     window.CommunityMentions.attachAutocomplete(textarea, mentionDropdown);
                 }
 
+                // Otomatik yükseklik: textarea artık manuel resize (sürükle)
+                // tutamacı göstermiyor (resize:none) — bunun yerine yazılan
+                // satır sayısına göre kendini büyütüp küçültüyor. Bu, composer
+                // satırının dikey hizasının bozulmasına ve çift scrollbar
+                // görünmesine sebep olan eski davranışı ortadan kaldırır.
+                if (textarea && !textarea.dataset.autogrowBound) {
+                    textarea.dataset.autogrowBound = "1";
+                    const autoGrow = () => {
+                        textarea.style.height = "auto";
+                        const maxHeight = parseFloat(getComputedStyle(textarea).maxHeight) || 240;
+                        textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + "px";
+                    };
+                    textarea.addEventListener("input", autoGrow);
+                    autoGrow();
+                }
+
                 if (sendBtn && !sendBtn.dataset.bound) {
                     sendBtn.dataset.bound = "1";
                     const doSend = async () => {
@@ -15614,6 +15757,11 @@
                 document.getElementById("groupCreateSubmitBtn")?.addEventListener("click", submitCreateGroup);
                 document.getElementById("groupLeaveBtn")?.addEventListener("click", leaveActiveGroup);
                 wireGroupDetailPanelEvents();
+                wireCreateAvatarFileUpload({
+                    btnId: "groupCreateAvatarEditBtn", fileInputId: "groupCreateAvatarFileInput", statusId: "groupCreateAvatarStatus",
+                    imgId: "groupCreateAvatarImg", fallbackId: "groupCreateAvatarFallback", fallbackEmoji: "👥",
+                    onUploaded: (link) => { _groupCreateAvatarUrl = link; }
+                });
 
                 // ── Topluluklar: arama, oluşturma, önizleme, şikâyet, moderasyon ──
                 document.getElementById("communitySearchInput")?.addEventListener("input", renderCommunityList);
@@ -15624,6 +15772,11 @@
                 document.getElementById("communityCreateSubmitBtn")?.addEventListener("click", submitCreateCommunity);
                 document.getElementById("communityCreateModalBackdrop")?.addEventListener("click", (e) => {
                     if (e.target.id === "communityCreateModalBackdrop") closeCreateCommunityModal();
+                });
+                wireCreateAvatarFileUpload({
+                    btnId: "communityCreateAvatarEditBtn", fileInputId: "communityCreateAvatarFileInput", statusId: "communityCreateAvatarStatus",
+                    imgId: "communityCreateAvatarImg", fallbackId: "communityCreateAvatarFallback", fallbackEmoji: "🌐",
+                    onUploaded: (link) => { _communityCreateAvatarUrl = link; }
                 });
 
                 document.getElementById("communityPreviewModalClose")?.addEventListener("click", closeCommunityPreviewModal);
