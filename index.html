@@ -13867,7 +13867,15 @@
 
                 const codeBadge = document.getElementById("groupCodeBadge");
                 if (codeBadge) {
-                    if (meta.joinCode) {
+                    // MODÜL 5 EKLENTİ 1: topluluklarda mobil header çok dar
+                    // olduğundan davet-kodu rozetini burada hiç göstermiyoruz
+                    // (Grup Detayı panelinden hâlâ erişilebilir). İnline
+                    // style burada belirlendiği için CSS display:none kuralı
+                    // bunu ezemiyordu -- bu yüzden kontrolü JS'e taşıdık.
+                    const isCommunity = window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta);
+                    if (isCommunity) {
+                        codeBadge.style.display = "none";
+                    } else if (meta.joinCode) {
                         codeBadge.textContent = "KOD: " + meta.joinCode;
                         codeBadge.style.display = "inline-flex";
                     } else {
@@ -13938,6 +13946,7 @@
 
                 if (isCommunity) {
                     const perm = window.CommunityChannels.canSendInActiveChannel(groupId, _myUid);
+                    console.log("[CCH-DEBUG] canSendInActiveChannel:", perm, "activeChannelId:", window.CommunityChannels.getActiveChannelId(groupId), "myUid:", _myUid);
                     if (!perm.allowed) { alert(perm.reason || "Bu kanalda mesaj gönderemezsin."); return; }
                 } else if (!groupCanSendMessages(activeMeta, _myUid)) {
                     alert("Bu grupta sadece yöneticiler mesaj gönderebilir.");
@@ -13945,6 +13954,7 @@
                 }
 
                 const basePath = _activeMessagesBasePath(groupId);
+                console.log("[CCH-DEBUG] basePath:", basePath);
                 if (!basePath) { alert("Önce bir kanal seç."); return; }
 
                 const encoded = window.CommunityMentions.encodeForStorage(text.trim());
@@ -13965,7 +13975,7 @@
                 try {
                     await msgRef.set(payload);
                 } catch (err) {
-                    console.error("[Messaging] Grup mesajı yazılamadı:", err);
+                    console.error("[Messaging] Grup mesajı yazılamadı:", err, "path:", basePath, "payload:", payload);
                     throw err;
                 }
 
@@ -14051,6 +14061,7 @@
 
                 // Yerel cache'i de hemen temizle: user_groups listener'ı
                 // gelene kadar UI'da grup görünmeye devam etmesin.
+                const wasCommunity = !!(meta && meta.isCommunity === true);
                 delete _groupMetaCache[gid];
                 delete _userGroupsCache[gid];
                 if (_activeGroupId === gid) _activeGroupId = null;
@@ -14059,6 +14070,13 @@
                 closeGroupDetailPanel();
                 closeGroupConversation();
                 renderGroupChatList();
+                // MODÜL 5 EKLENTİ 1: bir topluluktan ayrılınca "Gruplarım"
+                // sekmesine değil, kendi "Topluluklar" sekmesine dön --
+                // topluluklar zaten o listede görünmüyor, dolayısıyla
+                // "Gruplarım"da kalmak kafa karıştırıcı olurdu.
+                if (wasCommunity && typeof switchView === "function") {
+                    switchView("communities");
+                }
             }
 
             // Grubu (üye sayısına bakmaksızın) TAMAMEN siler. Kurucu
@@ -14087,6 +14105,12 @@
                     await Promise.all(memberUids.map((uid) =>
                         database.ref("user_groups/" + uid + "/" + gid).remove().catch(() => {})
                     ));
+                    // Topluluksa, herkese açık keşif kaydını (community_directory)
+                    // da temizle -- aksi halde "hayalet" bir topluluk kartı
+                    // Topluluklar sekmesinde görünmeye devam eder.
+                    if (meta.isCommunity === true) {
+                        await database.ref("community_directory/" + gid).remove().catch(() => {});
+                    }
                     await database.ref("group_chats/" + gid).remove();
                 } catch (err) {
                     console.error("[Grup] Grubu silme hatası:", err);
@@ -14094,6 +14118,7 @@
                     return;
                 }
 
+                const wasCommunity = meta.isCommunity === true;
                 delete _groupMetaCache[gid];
                 delete _userGroupsCache[gid];
                 if (_activeGroupId === gid) _activeGroupId = null;
@@ -14102,6 +14127,9 @@
                 closeGroupDetailPanel();
                 closeGroupConversation();
                 renderGroupChatList();
+                if (wasCommunity && typeof switchView === "function") {
+                    switchView("communities");
+                }
             }
 
             // ══════════════════════════════════════════════════════════
