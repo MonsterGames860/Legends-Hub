@@ -6128,6 +6128,19 @@
                                 <button type="button" class="forum-btn forum-btn-ghost msg-group-pinned-unpin-btn" id="groupDetailUnpinBtn" style="display:none;">Sabitlemeyi Kaldır</button>
                             </div>
 
+                            <!-- MODÜL 5 EKLENTİ 1: Doğrulama Rozeti (mavi tik) -- sadece
+                                 site genelinde "Owner / Developer" rütbesindeki
+                                 kullanıcı görür/değiştirebilir, sadece topluluklarda. -->
+                            <div class="msg-group-detail-section" id="groupDetailVerifiedSection" style="display:none;">
+                                <div class="msg-group-detail-section-title">✔️ Doğrulama Rozeti</div>
+                                <label class="msg-group-toggle-row">
+                                    <span>Bu Topluluğu Doğrula (mavi tik)</span>
+                                    <input type="checkbox" id="groupDetailVerifiedToggle">
+                                    <span class="msg-toggle-switch"></span>
+                                </label>
+                                <div class="forum-modal-error" id="groupDetailVerifiedError" style="display:none;"></div>
+                            </div>
+
                             <!-- İzinler (sadece yönetici/kurucu görür) -->
                             <div class="msg-group-detail-section" id="groupDetailPermissionsSection">
                                 <div class="msg-group-detail-section-title" id="groupDetailPermissionsHeading">Grup İzinleri</div>
@@ -14292,6 +14305,22 @@
                 const sendMsgRow = document.getElementById("permOnlyAdminsSendMessagesRow");
                 if (sendMsgRow) sendMsgRow.style.display = isCommunity ? "none" : "flex";
 
+                // MODÜL 5 EKLENTİ 1: Doğrulama rozeti (mavi tik) -- sadece
+                // site genelinde "Owner / Developer" rütbesindeki kullanıcı
+                // görür, ve sadece topluluklarda (normal gruplarda anlamsız).
+                // Yeni oluşturulan topluluklar otomatik doğrulanıyor zaten;
+                // bu anahtar öncesi (eski) toplulukları geriye dönük
+                // doğrulamak/doğrulamayı kaldırmak için var.
+                const verifiedSection = document.getElementById("groupDetailVerifiedSection");
+                const iAmOwnerDev = window.CommunityAuth.profile && window.CommunityAuth.profile.role === "Owner / Developer";
+                if (verifiedSection) {
+                    verifiedSection.style.display = (isCommunity && iAmOwnerDev) ? "flex" : "none";
+                    if (isCommunity && iAmOwnerDev) {
+                        const verifiedToggle = document.getElementById("groupDetailVerifiedToggle");
+                        if (verifiedToggle) verifiedToggle.checked = meta.isVerified === true;
+                    }
+                }
+
                 // Kimlik (resim + isim)
                 const avatarImg = document.getElementById("groupDetailAvatarImg");
                 const avatarFallback = document.getElementById("groupDetailAvatarFallback");
@@ -14570,6 +14599,35 @@
                 showToastGlobal("Grup açıklaması güncellendi.");
             }
 
+            // ── MODÜL 5 EKLENTİ 1: Doğrulama rozeti (mavi tik) aç/kapa ──
+            // Sadece site genelinde "Owner / Developer" rütbesindeki kullanıcı
+            // çağırabilir (rules.json bunu sunucu tarafında da zorunlu kılar).
+            // Hem group_chats/meta/isVerified hem community_directory/isVerified
+            // aynı anda güncellenir, ikisi arasında tutarsızlık oluşmasın diye.
+            async function toggleCommunityVerified(checked) {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                const errorEl = document.getElementById("groupDetailVerifiedError");
+                if (!groupId || !meta || meta.isCommunity !== true) return;
+                const iAmOwnerDev = window.CommunityAuth.profile && window.CommunityAuth.profile.role === "Owner / Developer";
+                if (!iAmOwnerDev) {
+                    if (errorEl) { errorEl.textContent = "Bu işlem için yetkin yok."; errorEl.style.display = "block"; }
+                    return;
+                }
+                try {
+                    await database.ref(`group_chats/${groupId}/meta/isVerified`).set(checked);
+                    await database.ref(`community_directory/${groupId}/isVerified`).set(checked);
+                    if (errorEl) errorEl.style.display = "none";
+                    showToastGlobal(checked ? "Topluluk doğrulandı (mavi tik eklendi)." : "Doğrulama kaldırıldı.");
+                } catch (err) {
+                    console.error("[Topluluk] Doğrulama güncellenemedi:", err);
+                    if (errorEl) { errorEl.textContent = "Doğrulama güncellenemedi. Tekrar dene."; errorEl.style.display = "block"; }
+                    // Checkbox'ı eski hâline geri al (başarısız oldu).
+                    const toggle = document.getElementById("groupDetailVerifiedToggle");
+                    if (toggle) toggle.checked = !checked;
+                }
+            }
+
             // ── Mesaj sabitleme (sadece yönetici/kurucu) ─────────────────
             // meta.pinnedMessageId + meta.pinnedMessageSnippet: paneldeki
             // önizleme için mesajın tamamını tekrar okumaya gerek kalmadan
@@ -14840,6 +14898,9 @@
                 document.getElementById("groupDetailSaveNameBtn")?.addEventListener("click", saveGroupName);
                 document.getElementById("groupDetailSaveDescBtn")?.addEventListener("click", saveGroupDescription);
                 document.getElementById("groupDetailApplyAvatarUrlBtn")?.addEventListener("click", applyGroupAvatarUrl);
+                document.getElementById("groupDetailVerifiedToggle")?.addEventListener("change", (e) => {
+                    toggleCommunityVerified(e.target.checked);
+                });
                 document.getElementById("groupDetailUnpinBtn")?.addEventListener("click", unpinGroupMessage);
                 document.getElementById("groupDetailAddMemberBtn")?.addEventListener("click", toggleAddMemberPanel);
                 document.getElementById("groupDetailAddMemberSearchInput")?.addEventListener("input", (e) => {
