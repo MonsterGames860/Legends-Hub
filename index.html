@@ -3460,6 +3460,39 @@
     }
     .cch-channel-item:hover .cch-channel-item-menu-btn { display: inline-flex; }
 
+    /* Kanal sidebar'ında kategori başlığı ve altındaki kanal grubu
+       (Discord tarzı katlanabilir kategori). */
+    .cch-category-header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 6px 4px;
+        margin-top: 6px;
+        cursor: pointer;
+        color: var(--text-dim);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        user-select: none;
+    }
+    .cch-category-header:first-child { margin-top: 0; }
+    .cch-category-header:hover { color: var(--text-primary); }
+    .cch-category-caret { font-size: 0.65rem; flex-shrink: 0; }
+    .cch-category-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cch-category-header .cch-channel-item-menu-btn { display: none; }
+    .cch-category-header:hover .cch-channel-item-menu-btn { display: inline-flex; }
+    .cch-category-channels {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+    .cch-category-empty {
+        padding: 4px 8px 4px 22px;
+        font-size: 0.76rem;
+        opacity: 0.6;
+    }
+
     /* Grup Detay paneli — Kanallar / Rütbeler bölümleri */
     .cch-manage-list {
         display: flex;
@@ -4804,6 +4837,24 @@
         font-weight: 700;
         background: rgba(255, 180, 84, 0.14);
         border: 1px solid rgba(255, 180, 84, 0.35);
+        border-radius: 5px;
+        padding: 0 4px;
+        cursor: default;
+    }
+    /* @here: @everyone ile aynı temel görünüm, sadece hafif saydamlık
+       farkıyla ayrışır -- "sadece bu kanal" anlamını görsel olarak
+       hafifçe hissettirmek için (aynı megafon rengi, biraz daha az yoğun). */
+    .mention-chip-here { opacity: 0.92; }
+
+    /* MODÜL 5 EKLENTİ 2: @RolAdı (örn. @Owner) -- rengi rolün kendi
+       color_hex değerinden gelir (inline style ile ayarlanır), burada
+       sadece ortak kutu/tipografi tanımlanır. cursor:default çünkü bir
+       kullanıcı profiline değil, bir rütbeye işaret eder. */
+    .mention-chip-role {
+        display: inline-flex;
+        align-items: center;
+        font-weight: 700;
+        border: 1px solid;
         border-radius: 5px;
         padding: 0 4px;
         cursor: default;
@@ -6196,6 +6247,17 @@
                             </div>
 
                             <!-- MODÜL 5 EKLENTİ 1: Topluluk Kanalları (sadece isCommunity=true, manage_channels izni olanlar) -->
+                            <div class="msg-group-detail-section" id="cchManageCategoriesSection" style="display:none;">
+                                <div class="msg-group-detail-section-title msg-group-detail-members-title">
+                                    <span id="cchManageCategoriesHeading">Kategoriler</span>
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-add-member-btn" id="cchManageAddCategoryBtn">＋ Kategori Ekle</button>
+                                </div>
+                                <div class="cch-manage-list" id="cchManageCategoryList">
+                                    <div class="hub-placeholder">Yükleniyor…</div>
+                                </div>
+                                <div class="forum-modal-error" id="cchCategoriesError" style="display:none;"></div>
+                            </div>
+
                             <div class="msg-group-detail-section" id="cchManageChannelsSection" style="display:none;">
                                 <div class="msg-group-detail-section-title msg-group-detail-members-title">
                                     <span id="cchManageChannelsHeading">Kanallar</span>
@@ -6285,6 +6347,11 @@
                                 <option value="announcement">Duyuru Kanalı</option>
                             </select>
 
+                            <label class="forum-field-label">Kategori</label>
+                            <select class="forum-text-input" id="cchChannelCategorySelect">
+                                <option value="">— Kategorisiz —</option>
+                            </select>
+
                             <label class="forum-field-label">Sıra (Pozisyon)</label>
                             <input type="number" class="forum-text-input" id="cchChannelPositionInput" min="0" step="1" placeholder="0">
 
@@ -6317,6 +6384,30 @@
                             <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="cchChannelDeleteBtn" style="display:none;">🗑 Kanalı Sil</button>
                             <button class="forum-btn forum-btn-ghost" id="cchChannelEditCancelBtn">Vazgeç</button>
                             <button class="forum-btn forum-btn-primary" id="cchChannelEditSaveBtn">Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODÜL 5 EKLENTİ 2: KATEGORİ OLUŞTUR / DÜZENLE MODALI -->
+                <div class="forum-modal-backdrop" id="cchCategoryEditModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span id="cchCategoryEditModalTitle">Kategori Oluştur</span>
+                            <button class="forum-modal-close" id="cchCategoryEditModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">Kategori Adı</label>
+                            <input type="text" class="forum-text-input" id="cchCategoryNameInput" maxlength="60" placeholder="Örn: OYUN İÇİ">
+
+                            <label class="forum-field-label">Sıra (Pozisyon)</label>
+                            <input type="number" class="forum-text-input" id="cchCategoryPositionInput" min="0" step="1" placeholder="0">
+
+                            <div class="forum-modal-error" id="cchCategoryEditError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="cchCategoryDeleteBtn" style="display:none;">🗑 Kategoriyi Sil</button>
+                            <button class="forum-btn forum-btn-ghost" id="cchCategoryEditCancelBtn">Vazgeç</button>
+                            <button class="forum-btn forum-btn-primary" id="cchCategoryEditSaveBtn">Kaydet</button>
                         </div>
                     </div>
                 </div>
@@ -7066,7 +7157,28 @@
             return rawText.replace(/@everyone(?=[\s.,!?;:)\]]|$)/gi, "[mention:everyone]");
         }
 
-        function encodeMentionsForStorage(rawText) {
+        // MODÜL 5 EKLENTİ 2: @here -- @everyone'ın kanal-kapsamlı versiyonu.
+        // @everyone tüm topluluğu etiketlerken, @here SADECE o an mesajın
+        // gönderildiği kanalda bulunanları (aktif kanalı açık olanları)
+        // hedefler -- Discord'daki @here ile aynı mantık. Depolama biçimi
+        // olarak [mention:here] kullanılır; hangi kanalda gönderildiği zaten
+        // mesajın kendi konumundan (channels/{channelId}/messages) bellidir,
+        // bu yüzden token'a ayrıca kanal id'si gömülmesine gerek yoktur.
+        function encodeHereMention(rawText) {
+            if (!rawText) return rawText;
+            return rawText.replace(/@here(?=[\s.,!?;:)\]]|$)/gi, "[mention:here]");
+        }
+
+        // MODÜL 5 EKLENTİ 2: @RolAdı -- bir topluluğun kendi rütbelerini
+        // (örn. @Owner, @Moderatör) etiketlemek için. Global GROUP_MENTIONS
+        // listesinden farklı olarak bu roller TOPLULUĞA ÖZELDİR, bu yüzden
+        // sabit bir listede tutulamaz -- çağıran taraf (sendGroupMessage)
+        // o an açık olan topluluğun rol listesini roleResolver olarak
+        // geçirmelidir. roleResolver(name) -> {id, name, color} | null.
+        // Token formatı: [mention:role:ROLEID] -- renk, GÖSTERİM ANINDAKİ
+        // güncel rol rengini kullanacağı için burada saklanmaz (bkz.
+        // renderMentionsForDisplay'deki roleLookupResolver).
+        function encodeMentionsForStorage(rawText, roleResolver) {
             if (!rawText) return "";
             // Önce grup mention'larını tokenize et (@LegendsSupport → [mention:group:support])
             for (const g of GROUP_MENTIONS) {
@@ -7084,11 +7196,17 @@
             return rawText.replace(/@([^\s@\[\](){}<>|\\]+)/g, (match, rawName) => {
                 // Cümle sonu noktalama işaretlerini kırp
                 const name = rawName.replace(/[.!?,]+$/, "");
-                const candidate = getMentionCandidateByUsername(name);
-                if (!candidate) return match;
-                // Kırpılan son noktalamayı düz metin olarak koru
                 const suffix = rawName.slice(name.length);
-                return `[mention:${candidate.uid}]${suffix}`;
+                // Önce rol adlarını dene (topluluk bağlamı varsa) -- bir
+                // kullanıcı adıyla bir rol adı çakışırsa kullanıcı önceliklidir
+                // (kişiyi etiketlemek genelde daha spesifik bir niyettir).
+                const candidate = getMentionCandidateByUsername(name);
+                if (candidate) return `[mention:${candidate.uid}]${suffix}`;
+                if (roleResolver) {
+                    const role = roleResolver(name);
+                    if (role) return `[mention:role:${role.id}]${suffix}`;
+                }
+                return match;
             });
         }
 
@@ -7105,14 +7223,20 @@
          *   null döndüren fonksiyon. Verilirse, @mention chip'leri o renkle
          *   boyanır -- topluluk dışı bağlamlarda (DM, forum) verilmez ve
          *   eski (renksiz) davranış sürer.
+         * @param roleLookupResolver (opsiyonel) MODÜL 5 EKLENTİ 2: bir
+         *   roleId alıp GÖSTERİM ANINDAKİ {name, color} bilgisini (ya da
+         *   null, rol silinmişse) döndüren fonksiyon. [mention:role:ID]
+         *   token'larını @RolAdı chip'ine, rolün KENDİ rengiyle boyanmış
+         *   olarak çevirmek için kullanılır -- verilmezse bu token'lar
+         *   "@bilinmeyen-rütbe" olarak gösterilir.
          */
-        function renderMentionsForDisplay(storedText, roleColorResolver) {
+        function renderMentionsForDisplay(storedText, roleColorResolver, roleLookupResolver) {
             if (!storedText) return "";
             const escaped = escapeHtml(storedText);
-            // ── 0) @everyone token'ı (MODÜL 5 EKLENTİ 1) ────────────────────
-            const withEveryone = escaped.replace(/\[mention:everyone\]/g, () => {
-                return `<span class="mention-chip mention-chip-everyone">@everyone</span>`;
-            });
+            // ── 0) @everyone / @here token'ları (MODÜL 5 EKLENTİ 1/2) ───────
+            const withEveryone = escaped
+                .replace(/\[mention:everyone\]/g, () => `<span class="mention-chip mention-chip-everyone">@everyone</span>`)
+                .replace(/\[mention:here\]/g, () => `<span class="mention-chip mention-chip-everyone mention-chip-here">@here</span>`);
             // ── 1) Grup mention tokenları: [mention:group:XXX] ──────────────
             const GROUP_SHIELD_INLINE = `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>`;
             const withGroups = withEveryone.replace(/\[mention:group:([A-Za-z0-9_-]+)\]/g, (match, groupId) => {
@@ -7123,8 +7247,20 @@
                     GROUP_SHIELD_INLINE + ` @${escapeHtml(label)}` +
                 `</span>`;
             });
+            // ── 1.5) Rütbe mention tokenları: [mention:role:ROLEID] ─────────
+            // MODÜL 5 EKLENTİ 2: gösterim anındaki GÜNCEL rol adı/rengiyle
+            // render edilir -- rol adı/rengi sonradan değişse bile geçmiş
+            // mesajlar otomatik güncel görünür (tıpkı kullanıcı mention'ları gibi).
+            const withRoles = withGroups.replace(/\[mention:role:([A-Za-z0-9_-]+)\]/g, (match, roleId) => {
+                const role = roleLookupResolver ? roleLookupResolver(roleId) : null;
+                if (!role) {
+                    return `<span class="mention-chip mention-chip-unknown">@bilinmeyen-rütbe</span>`;
+                }
+                const color = role.color || "#66fcf1";
+                return `<span class="mention-chip mention-chip-role" style="color:${escapeHtml(color)}; border-color:${escapeHtml(color)}55; background:${escapeHtml(color)}1a;" data-mention-role="${escapeHtml(roleId)}">@${escapeHtml(role.name)}</span>`;
+            });
             // ── 2) Bireysel kullanıcı mention tokenları: [mention:UID] ──────
-            return withGroups.replace(/\[mention:([A-Za-z0-9_-]+)\]/g, (match, uid) => {
+            return withRoles.replace(/\[mention:([A-Za-z0-9_-]+)\]/g, (match, uid) => {
                 const candidate = getMentionCandidateByUid(uid);
                 if (!candidate) {
                     return `<span class="mention-chip mention-chip-unknown">@bilinmeyen-kullanıcı</span>`;
@@ -7165,8 +7301,14 @@
          *   site kullanıcıları) döndüren fonksiyon. Verilirse, öneriler SADECE
          *   bu uid'lerle sınırlanır -- "sadece bu grup/topluluk/DM'deki
          *   kişileri etiketleyebil" davranışı için kullanılır.
+         * @param specialTokensResolver (opsiyonel) MODÜL 5 EKLENTİ 2: çağrıldığında
+         *   {username:"everyone"|"here", label} şeklinde ekstra sanal
+         *   adaylardan oluşan bir dizi (ya da boş dizi) döndüren fonksiyon.
+         *   Sadece topluluk kanalı bağlamında ve mention_everyone izni olan
+         *   kullanıcılar için @everyone/@here'i autocomplete'e eklemek üzere
+         *   kullanılır -- DM/forum gibi bağlamlarda hiç çağrılmaz/boş döner.
          */
-        function attachMentionAutocomplete(inputEl, dropdownEl, allowedUidsResolver) {
+        function attachMentionAutocomplete(inputEl, dropdownEl, allowedUidsResolver, specialTokensResolver) {
             if (!inputEl || !dropdownEl) return;
 
             let activeIndex = -1;
@@ -7197,6 +7339,29 @@
 
                 const GROUP_SHIELD = `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>`;
                 dropdownEl.innerHTML = matches.map((c, i) => {
+                    if (c.isRole) {
+                        // MODÜL 5 EKLENTİ 2: topluluk rütbeleri (örn. @Owner) --
+                        // rütbenin KENDİ rengiyle boyanmış bir yuvarlak nokta +
+                        // isim olarak gösterilir, tıpkı yönetim panelindeki
+                        // renk göstergesi (cch-role-swatch) gibi.
+                        const roleColor = c.color || "#66fcf1";
+                        return `<div class="mention-suggestion${i === 0 ? ' is-active' : ''}" data-index="${i}">
+                            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${escapeHtml(roleColor)};flex-shrink:0;"></span>
+                            <span class="mention-suggestion-name" style="color:${escapeHtml(roleColor)};">@${escapeHtml(c.username)}</span>
+                        </div>`;
+                    }
+                    if (c.isSpecial) {
+                        // @everyone / @here: megafon ikonuyla, sarı/altın
+                        // vurgu -- grup mention'larından (kalkan ikonu)
+                        // görsel olarak ayrışsın diye farklı bir simge kullanılır.
+                        return `<div class="mention-suggestion${i === 0 ? ' is-active' : ''}" data-index="${i}" style="align-items:flex-start;flex-direction:column;gap:1px;">
+                            <div style="display:flex;align-items:center;gap:5px;">
+                                <span style="color:var(--gold);">📣</span>
+                                <span class="mention-suggestion-name" style="color:var(--gold);">@${escapeHtml(c.username)}</span>
+                            </div>
+                            <span style="font-size:0.72rem;color:var(--text-dim);padding-left:19px;">${escapeHtml(c.label || "")}</span>
+                        </div>`;
+                    }
                     if (c.isGroup) {
                         return `<div class="mention-suggestion${i === 0 ? ' is-active' : ''}" data-index="${i}" style="align-items:flex-start;flex-direction:column;gap:1px;">
                             <div style="display:flex;align-items:center;gap:5px;">
@@ -7240,6 +7405,7 @@
             inputEl.addEventListener("input", () => {
                 const ctx = getCaretMentionQuery();
                 if (!ctx || !ctx.query) { closeDropdown(); return; }
+                const q = ctx.query.toLowerCase();
                 let matches = searchMentionCandidates(ctx.query, allowedUidsResolver ? 50 : 5);
                 // MODÜL 5 EKLENTİ 1: bağlam kısıtı varsa (grup/topluluk/DM),
                 // sadece o bağlamdaki kişilere daralt. Grup mention'ları
@@ -7252,6 +7418,15 @@
                         matches = matches.filter((c) => c.isGroup || allowed.has(c.uid));
                     }
                     matches = matches.slice(0, 5);
+                }
+                // MODÜL 5 EKLENTİ 2: @everyone / @here -- sadece izinli
+                // bağlamlarda (specialTokensResolver verilmişse ve mention_everyone
+                // izni varsa) ve yazılan harflerle eşleşiyorsa öneri listesinin
+                // BAŞINA eklenir (Discord'da da bu ikisi listenin üstünde çıkar).
+                if (specialTokensResolver) {
+                    const specials = specialTokensResolver() || [];
+                    const specialMatches = specials.filter((s) => s.username.toLowerCase().startsWith(q));
+                    if (specialMatches.length) matches = [...specialMatches, ...matches].slice(0, 6);
                 }
                 renderDropdown(matches, ctx.startIndex);
             });
@@ -7299,6 +7474,7 @@
             getByUsername: getMentionCandidateByUsername,
             encodeForStorage: encodeMentionsForStorage,
             encodeEveryone: encodeEveryoneMention,
+            encodeHere: encodeHereMention,
             renderForDisplay: renderMentionsForDisplay,
             attachAutocomplete: attachMentionAutocomplete
         };
@@ -11056,9 +11232,9 @@
         // Metin önce escapeHtml'den, SONRA mention render'dan geçer, EN SON
         // bu token'lar/URL'ler HTML'e çevrilir — böylece XSS riski oluşmaz
         // (URL'ler de escape edilmiş haliyle attribute'a yazılır).
-        function renderRichContent(storedText, roleColorResolver) {
+        function renderRichContent(storedText, roleColorResolver, roleLookupResolver) {
             if (!storedText) return "";
-            let html = window.CommunityMentions.renderForDisplay(storedText, roleColorResolver);
+            let html = window.CommunityMentions.renderForDisplay(storedText, roleColorResolver, roleLookupResolver);
 
             // ---- 1) Elle BBCode etiketleri (öncelikli, geriye dönük uyum) ----
             html = html.replace(/\[img\](.*?)\[\/img\]/gi, (match, url) => {
@@ -12676,16 +12852,42 @@
             const PERMISSION_DEFS = [
                 // ── Genel Yönetim ──
                 { key: "manage_channels", label: "Kanalları Yönet", category: "Genel Yönetim" },
+                { key: "manage_categories", label: "Kategorileri Yönet", category: "Genel Yönetim" },
                 { key: "manage_roles", label: "Rütbeleri Yönet", category: "Genel Yönetim" },
                 { key: "assign_roles", label: "Rütbe Ata", category: "Genel Yönetim" },
                 { key: "create_invite", label: "Yeni Davet Kodu Oluştur", category: "Genel Yönetim" },
                 // ── Üyelik ──
                 { key: "kick_members", label: "Üyeleri Topluluktan At", category: "Üyelik" },
                 // ── Metin Kanalları ──
+                // NOT: aşağıdaki dört izin (send_messages, embed_links,
+                // attach_files, add_reactions) Discord'daki gibi TEMEL
+                // kanal-kullanım izinleridir -- moderasyon/operatörlük değil.
+                // "@everyone" rolüne (bkz. ROLE seçilmediğinde uygulanan
+                // varsayılan) bunlar açık atanır; bir üye kanalda mesaj
+                // yazabiliyorsa bunun sebebi ya kendi rolünde bu izin true
+                // ya da hiç rolü yoksa topluluğun "varsayılan izinler"i
+                // (bkz. computeEffectivePermissions'taki @everyone tabanı).
+                { key: "send_messages", label: "Mesaj Gönder", category: "Metin Kanalları" },
+                { key: "embed_links", label: "Bağlantı Ekle", category: "Metin Kanalları" },
+                { key: "attach_files", label: "Dosya/Görsel Ekle", category: "Metin Kanalları" },
+                { key: "add_reactions", label: "Tepki Ekle", category: "Metin Kanalları" },
                 { key: "manage_messages", label: "Mesajları Yönet (Başkalarının Mesajını Sil)", category: "Metin Kanalları" },
                 { key: "pin_messages", label: "Mesaj Sabitle", category: "Metin Kanalları" },
-                { key: "mention_everyone", label: "@everyone Etiketleme", category: "Metin Kanalları" }
+                { key: "mention_everyone", label: "@everyone / @here Etiketleme", category: "Metin Kanalları" }
             ];
+
+            // Bu izinler "varsayılan üye" (herhangi bir rolü olmayan/hiçbir
+            // rolünde izin true olmayan kullanıcı) için TABAN olarak kabul
+            // edilir -- Discord'daki @everyone rolüne karşılık gelir.
+            // computeEffectivePermissions bu tabanla başlar, sonra üyenin
+            // sahip olduğu rollerin izinleri OR'lanır (bir rolde false olsa
+            // bile başka bir rolde/tabanda true ise sonuç true'dur).
+            const DEFAULT_BASE_PERMISSIONS = {
+                send_messages: true,
+                embed_links: true,
+                attach_files: true,
+                add_reactions: true
+            };
 
             // groupId -> { channels: {id:{...}}, roles: {id:{...}}, memberRoles: {uid:{roleId:true}} }
             const _cache = {};
@@ -12693,11 +12895,12 @@
             const _activeChannelByGroup = {};
             let _myUid = null;
             let _openGroupId = null;
-            let _channelsRef = null, _rolesRef = null, _memberRolesRef = null;
+            let _channelsRef = null, _rolesRef = null, _memberRolesRef = null, _categoriesRef = null;
             let _activeMessagesRef = null;
             let _assignRoleTargetUid = null;
             let _editingChannelId = null;
             let _editingRoleId = null;
+            let _editingCategoryId = null;
 
             firebase.auth().onAuthStateChanged((user) => { _myUid = user ? user.uid : null; });
 
@@ -12712,7 +12915,8 @@
             }
 
             function ensureGroupCache(groupId) {
-                if (!_cache[groupId]) _cache[groupId] = { channels: {}, roles: {}, memberRoles: {} };
+                if (!_cache[groupId]) _cache[groupId] = { channels: {}, roles: {}, memberRoles: {}, categories: {} };
+                if (!_cache[groupId].categories) _cache[groupId].categories = {};
                 return _cache[groupId];
             }
 
@@ -12741,6 +12945,13 @@
                     const role = g.roles[rid];
                     if (role && role.permissions && role.permissions[permKey]) return true;
                 }
+                // Hiçbir rolü bu izni açıkça vermiyorsa: üyenin HİÇ rolü
+                // yoksa taban (varsayılan üye / @everyone) izinlerine bakılır
+                // -- Discord'da olduğu gibi. Ama üyenin en az bir rolü VARSA
+                // ve o roller bu izni vermiyorsa, taban izne dönülmez; çünkü
+                // bir yönetici o üyeye özel olarak kısıtlı bir rol vermiş
+                // olabilir ve bu iradeyi taban izinle ezmek istenmez.
+                if (!myRoleIds.length && DEFAULT_BASE_PERMISSIONS[permKey] === true) return true;
                 return false;
             }
 
@@ -12750,6 +12961,13 @@
                 const g = ensureGroupCache(groupId);
                 const ch = g.channels[chId];
                 if (!ch) return { allowed: false, reason: "Kanal bulunamadı." };
+                // Discord tarzı temel "Mesaj Gönder" izni: bir rol bu izni
+                // AÇIKÇA false yapmışsa (ve üyenin bu izni true yapan başka
+                // bir rolü yoksa, owner/manage_channels de değilse) mesaj
+                // gönderemez -- read_only kanal ayarından BAĞIMSIZ bir kontrol.
+                if (!hasPermission(groupId, uid, "send_messages") && !hasPermission(groupId, uid, "manage_channels")) {
+                    return { allowed: false, reason: "Bu kanalda mesaj gönderme iznin yok." };
+                }
                 if (!ch.settings || !ch.settings.read_only) return { allowed: true };
                 // Salt okunur kanal: owner + manage_channels + izinli rütbeler yazabilir.
                 if (hasPermission(groupId, uid, "manage_channels")) return { allowed: true };
@@ -12793,6 +13011,13 @@
                     renderGroupMemberListSafe(groupId);
                 });
 
+                _categoriesRef = firebase.database().ref("group_chats/" + groupId + "/categories");
+                _categoriesRef.on("value", (snap) => {
+                    _cache[groupId].categories = snap.val() || {};
+                    renderChannelSidebar(groupId);
+                    renderManagePanel(groupId);
+                });
+
                 _memberRolesRef = firebase.database().ref("group_chats/" + groupId + "/memberRoles");
                 _memberRolesRef.on("value", (snap) => {
                     _cache[groupId].memberRoles = snap.val() || {};
@@ -12804,6 +13029,7 @@
             function onCloseCommunity() {
                 if (_channelsRef) { _channelsRef.off(); _channelsRef = null; }
                 if (_rolesRef) { _rolesRef.off(); _rolesRef = null; }
+                if (_categoriesRef) { _categoriesRef.off(); _categoriesRef = null; }
                 if (_memberRolesRef) { _memberRolesRef.off(); _memberRolesRef = null; }
                 if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
                 _openGroupId = null;
@@ -12876,21 +13102,27 @@
                 }
             }
 
-            // ══ SOL SIDEBAR: KANAL LİSTESİ ══════════════════════════════
+            // ══ SOL SIDEBAR: KANAL LİSTESİ (kategorilere göre gruplu) ═══
+            function byCategoryPosition(categories) {
+                return (a, b) => (((categories[a] || {}).position || 0) - ((categories[b] || {}).position || 0));
+            }
+
             function renderChannelSidebar(groupId) {
                 const listEl = document.getElementById("cchChannelList");
                 if (!listEl || groupId !== _openGroupId) return;
                 const g = ensureGroupCache(groupId);
-                const ids = Object.keys(g.channels).sort(byPosition(g.channels));
                 const activeId = getActiveChannelId(groupId);
                 const canManage = hasPermission(groupId, _myUid, "manage_channels");
 
-                if (!ids.length) {
+                const channelIds = Object.keys(g.channels).sort(byPosition(g.channels));
+                if (!channelIds.length) {
                     listEl.innerHTML = `<div class="cch-empty-note">Henüz kanal yok.</div>`;
+                    const addBtnEmpty = document.getElementById("cchAddChannelBtn");
+                    if (addBtnEmpty) addBtnEmpty.style.display = canManage ? "flex" : "none";
                     return;
                 }
 
-                listEl.innerHTML = ids.map((id) => {
+                const renderChannelRow = (id) => {
                     const ch = g.channels[id];
                     const icon = ch.type === "announcement" ? "📢" : "#";
                     const locked = ch.settings && ch.settings.read_only ? `<span class="cch-channel-item-lock">🔒</span>` : "";
@@ -12902,7 +13134,38 @@
                             ${canManage ? `<button type="button" class="cch-channel-item-menu-btn" data-cch-edit-channel="${escAttr(id)}" title="Düzenle">⚙</button>` : ""}
                         </div>
                     `;
-                }).join("");
+                };
+
+                // Kanalları kategoriye göre grupla. categoryId olmayan
+                // (ya da geçersiz bir kategoriye işaret eden) kanallar
+                // "Kategorisiz" başlığı altında en üstte gösterilir.
+                const categoryIds = Object.keys(g.categories).sort(byCategoryPosition(g.categories));
+                const uncategorized = channelIds.filter((id) => !g.channels[id].categoryId || !g.categories[g.channels[id].categoryId]);
+                const byCategory = {};
+                categoryIds.forEach((cid) => { byCategory[cid] = channelIds.filter((id) => g.channels[id].categoryId === cid); });
+
+                let html = "";
+                if (uncategorized.length) {
+                    html += uncategorized.map(renderChannelRow).join("");
+                }
+                categoryIds.forEach((cid) => {
+                    const cat = g.categories[cid];
+                    const chIds = byCategory[cid] || [];
+                    // Boş kategoriler de gösterilir -- yönetici kanal
+                    // taşımak/eklemek için kategoriyi görebilmeli.
+                    html += `
+                        <div class="cch-category-header" data-cch-category="${escAttr(cid)}">
+                            <span class="cch-category-caret">▾</span>
+                            <span class="cch-category-name">${escAttr(cat.name || "kategori")}</span>
+                            ${canManage ? `<button type="button" class="cch-channel-item-menu-btn" data-cch-edit-category="${escAttr(cid)}" title="Kategoriyi düzenle">⚙</button>` : ""}
+                        </div>
+                        <div class="cch-category-channels" data-cch-category-body="${escAttr(cid)}">
+                            ${chIds.length ? chIds.map(renderChannelRow).join("") : `<div class="cch-empty-note cch-category-empty">Bu kategoride kanal yok.</div>`}
+                        </div>
+                    `;
+                });
+
+                listEl.innerHTML = html;
 
                 listEl.querySelectorAll("[data-cch-channel]").forEach((el) => {
                     el.addEventListener("click", () => selectChannel(groupId, el.getAttribute("data-cch-channel")));
@@ -12911,6 +13174,24 @@
                     btn.addEventListener("click", (e) => {
                         e.stopPropagation();
                         openChannelEditModal(groupId, btn.getAttribute("data-cch-edit-channel"));
+                    });
+                });
+                listEl.querySelectorAll("[data-cch-edit-category]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        openCategoryEditModal(groupId, btn.getAttribute("data-cch-edit-category"));
+                    });
+                });
+                // Kategori başlığına tıklayınca aç/kapa (katlanabilir liste).
+                listEl.querySelectorAll("[data-cch-category]").forEach((headerEl) => {
+                    headerEl.addEventListener("click", (e) => {
+                        if (e.target.closest("[data-cch-edit-category]")) return;
+                        const cid = headerEl.getAttribute("data-cch-category");
+                        const body = listEl.querySelector(`[data-cch-category-body="${CSS.escape(cid)}"]`);
+                        if (!body) return;
+                        const collapsed = body.style.display === "none";
+                        body.style.display = collapsed ? "flex" : "none";
+                        headerEl.querySelector(".cch-category-caret").textContent = collapsed ? "▾" : "▸";
                     });
                 });
 
@@ -12923,12 +13204,37 @@
                 if (groupId !== _openGroupId && !ensureGroupCache(groupId)) return;
                 const g = ensureGroupCache(groupId);
                 const canManageChannels = hasPermission(groupId, _myUid, "manage_channels");
+                const canManageCategories = hasPermission(groupId, _myUid, "manage_categories");
                 const canManageRoles = hasPermission(groupId, _myUid, "manage_roles");
 
+                const catSec = document.getElementById("cchManageCategoriesSection");
                 const chSec = document.getElementById("cchManageChannelsSection");
                 const roSec = document.getElementById("cchManageRolesSection");
+                if (catSec) catSec.style.display = canManageCategories ? "flex" : "none";
                 if (chSec) chSec.style.display = canManageChannels ? "flex" : "none";
                 if (roSec) roSec.style.display = canManageRoles ? "flex" : "none";
+
+                if (canManageCategories) {
+                    const catIds = Object.keys(g.categories).sort(byCategoryPosition(g.categories));
+                    document.getElementById("cchManageCategoriesHeading").textContent = `Kategoriler (${catIds.length})`;
+                    const catListEl = document.getElementById("cchManageCategoryList");
+                    catListEl.innerHTML = catIds.length ? catIds.map((cid) => {
+                        const cat = g.categories[cid];
+                        const chCount = Object.values(g.channels).filter((ch) => ch.categoryId === cid).length;
+                        return `
+                            <div class="cch-manage-row">
+                                <span class="cch-manage-row-name">📁 ${escAttr(cat.name)}</span>
+                                <span class="cch-manage-row-meta">${chCount} kanal</span>
+                                <div class="cch-manage-row-actions">
+                                    <button type="button" class="cch-icon-btn" data-cch-mng-edit-cat="${escAttr(cid)}" title="Düzenle">✎</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join("") : `<div class="cch-empty-note">Henüz kategori yok. Kanalları gruplamak için bir kategori oluştur.</div>`;
+                    catListEl.querySelectorAll("[data-cch-mng-edit-cat]").forEach((btn) => {
+                        btn.addEventListener("click", () => openCategoryEditModal(groupId, btn.getAttribute("data-cch-mng-edit-cat")));
+                    });
+                }
 
                 if (canManageChannels) {
                     const ids = Object.keys(g.channels).sort(byPosition(g.channels));
@@ -12937,6 +13243,8 @@
                     listEl.innerHTML = ids.length ? ids.map((id) => {
                         const ch = g.channels[id];
                         const metaBits = [ch.type === "announcement" ? "Duyuru" : "Metin"];
+                        const cat = ch.categoryId && g.categories[ch.categoryId];
+                        if (cat) metaBits.push(`📁 ${cat.name}`);
                         if (ch.settings && ch.settings.read_only) metaBits.push("Salt Okunur");
                         if (ch.settings && ch.settings.is_nsfw) metaBits.push("NSFW");
                         if (ch.settings && ch.settings.slowmode) metaBits.push(`Yavaş Mod ${ch.settings.slowmode}s`);
@@ -13012,6 +13320,40 @@
                 return best;
             }
 
+            // MODÜL 5 EKLENTİ 2: bir roleId'den {name, color} döndürür (rol
+            // mention chip'lerini render etmek için) -- rol silinmişse null.
+            function getRoleById(groupId, roleId) {
+                const g = ensureGroupCache(groupId);
+                const role = g.roles[roleId];
+                if (!role) return null;
+                return { name: role.role_name, color: role.color_hex || "#66fcf1" };
+            }
+
+            // MODÜL 5 EKLENTİ 2: bir topluluğun tüm rütbelerini, @mention
+            // autocomplete'inde önerilecek {id, name, color} biçiminde
+            // dizi olarak döndürür (pozisyona göre sıralı, en üst rütbe önce).
+            function listRolesForMention(groupId) {
+                const g = ensureGroupCache(groupId);
+                return Object.keys(g.roles)
+                    .sort((a, b) => ((g.roles[b].position || 0) - (g.roles[a].position || 0)))
+                    .map((rid) => ({ id: rid, name: g.roles[rid].role_name, color: g.roles[rid].color_hex || "#66fcf1" }));
+            }
+
+            // MODÜL 5 EKLENTİ 2: encodeMentionsForStorage'a geçirilecek
+            // roleResolver -- rol ADINDAN (case-insensitive) {id,name,color}
+            // bulur. sendGroupMessage tarafından @RolAdı yazımlarını
+            // [mention:role:ID] token'ına çevirmek için kullanılır.
+            function resolveRoleByName(groupId, name) {
+                const g = ensureGroupCache(groupId);
+                const q = (name || "").toLowerCase();
+                for (const rid in g.roles) {
+                    if ((g.roles[rid].role_name || "").toLowerCase() === q) {
+                        return { id: rid, name: g.roles[rid].role_name, color: g.roles[rid].color_hex || "#66fcf1" };
+                    }
+                }
+                return null;
+            }
+
             // ══════════════════ KANAL OLUŞTUR / DÜZENLE ══════════════════
             function openChannelEditModal(groupId, channelId) {
                 if (!hasPermission(groupId, _myUid, "manage_channels")) return;
@@ -13022,6 +13364,14 @@
                 document.getElementById("cchChannelEditModalTitle").textContent = channelId ? "Kanalı Düzenle" : "Kanal Oluştur";
                 document.getElementById("cchChannelNameInput").value = ch ? ch.name : "";
                 document.getElementById("cchChannelTypeSelect").value = ch ? (ch.type || "text") : "text";
+
+                // Kategori dropdown'ını doldur (kategorisiz seçeneği + tüm kategoriler, pozisyona göre sıralı).
+                const catSelect = document.getElementById("cchChannelCategorySelect");
+                const catIds = Object.keys(g.categories).sort(byCategoryPosition(g.categories));
+                catSelect.innerHTML = `<option value="">— Kategorisiz —</option>` +
+                    catIds.map((cid) => `<option value="${escAttr(cid)}">${escAttr(g.categories[cid].name)}</option>`).join("");
+                catSelect.value = (ch && ch.categoryId && g.categories[ch.categoryId]) ? ch.categoryId : "";
+
                 document.getElementById("cchChannelPositionInput").value = ch ? (ch.position || 0) : Object.keys(g.channels).length;
                 document.getElementById("cchChannelSlowmodeInput").value = ch && ch.settings ? (ch.settings.slowmode || 0) : 0;
                 document.getElementById("cchChannelNsfwInput").checked = !!(ch && ch.settings && ch.settings.is_nsfw);
@@ -13074,6 +13424,7 @@
                 const payload = {
                     name,
                     type: document.getElementById("cchChannelTypeSelect").value,
+                    categoryId: document.getElementById("cchChannelCategorySelect").value || null,
                     position: parseInt(document.getElementById("cchChannelPositionInput").value, 10) || 0,
                     settings: {
                         slowmode: parseInt(document.getElementById("cchChannelSlowmodeInput").value, 10) || 0,
@@ -13121,6 +13472,92 @@
                     closeChannelEditModal();
                 } catch (err) {
                     console.error("[CommunityChannels] Kanal silinemedi:", err);
+                }
+            }
+
+            // ══════════════════ KATEGORİ OLUŞTUR / DÜZENLE ══════════════════
+            // Kategoriler, kanal sidebar'ında kanalları gruplamak için
+            // kullanılan salt-organizasyonel bir üst-düzey node'dur
+            // (group_chats/{gid}/categories/{cid}: {name, position}).
+            // Kendi başına izin/mesaj taşımaz -- kanal içindeki
+            // allowed_roles/read_only ayarları geçerliliğini korur.
+            function openCategoryEditModal(groupId, categoryId) {
+                if (!hasPermission(groupId, _myUid, "manage_categories")) return;
+                _editingCategoryId = categoryId || null;
+                const g = ensureGroupCache(groupId);
+                const cat = categoryId ? g.categories[categoryId] : null;
+
+                document.getElementById("cchCategoryEditModalTitle").textContent = categoryId ? "Kategoriyi Düzenle" : "Kategori Oluştur";
+                document.getElementById("cchCategoryNameInput").value = cat ? cat.name : "";
+                document.getElementById("cchCategoryPositionInput").value = cat ? (cat.position || 0) : Object.keys(g.categories).length;
+                document.getElementById("cchCategoryDeleteBtn").style.display = categoryId ? "inline-flex" : "none";
+                document.getElementById("cchCategoryEditError").style.display = "none";
+
+                document.getElementById("cchCategoryEditModalBackdrop").dataset.groupId = groupId;
+                document.getElementById("cchCategoryEditModalBackdrop").style.display = "flex";
+            }
+
+            function closeCategoryEditModal() {
+                document.getElementById("cchCategoryEditModalBackdrop").style.display = "none";
+                _editingCategoryId = null;
+            }
+
+            async function saveCategoryEdit() {
+                const groupId = document.getElementById("cchCategoryEditModalBackdrop").dataset.groupId;
+                const errorEl = document.getElementById("cchCategoryEditError");
+                const name = document.getElementById("cchCategoryNameInput").value.trim();
+                if (!name) {
+                    errorEl.textContent = "Kategori adı boş olamaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                if (!hasPermission(groupId, _myUid, "manage_categories")) {
+                    errorEl.textContent = "Bu işlem için yetkin yok.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                const payload = {
+                    name,
+                    position: parseInt(document.getElementById("cchCategoryPositionInput").value, 10) || 0
+                };
+                try {
+                    if (_editingCategoryId) {
+                        await firebase.database().ref("group_chats/" + groupId + "/categories/" + _editingCategoryId).update(payload);
+                    } else {
+                        payload.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                        payload.createdBy = _myUid;
+                        await firebase.database().ref("group_chats/" + groupId + "/categories").push(payload);
+                    }
+                    closeCategoryEditModal();
+                } catch (err) {
+                    console.error("[CommunityChannels] Kategori kaydedilemedi:", err);
+                    errorEl.textContent = "Kategori kaydedilemedi. Tekrar dene.";
+                    errorEl.style.display = "block";
+                }
+            }
+
+            async function deleteCategory() {
+                const groupId = document.getElementById("cchCategoryEditModalBackdrop").dataset.groupId;
+                if (!_editingCategoryId || !hasPermission(groupId, _myUid, "manage_categories")) return;
+                if (!confirm("Bu kategoriyi silmek istediğine emin misin? İçindeki kanallar silinmez, sadece kategorisiz kalır.")) return;
+                try {
+                    const g = ensureGroupCache(groupId);
+                    // Kategori silinince içindeki kanalların categoryId'sini
+                    // temizlemezsek, kanallar var olmayan bir kategoriye
+                    // işaret eder kalır -- renderChannelSidebar bunu zaten
+                    // "kategorisiz" olarak ele alıyor (bkz. uncategorized
+                    // filtresi), ama tutarlılık için burada da temizliyoruz.
+                    const updates = {};
+                    Object.keys(g.channels).forEach((chId) => {
+                        if (g.channels[chId].categoryId === _editingCategoryId) {
+                            updates["group_chats/" + groupId + "/channels/" + chId + "/categoryId"] = null;
+                        }
+                    });
+                    updates["group_chats/" + groupId + "/categories/" + _editingCategoryId] = null;
+                    await firebase.database().ref().update(updates);
+                    closeCategoryEditModal();
+                } catch (err) {
+                    console.error("[CommunityChannels] Kategori silinemedi:", err);
                 }
             }
 
@@ -13186,14 +13623,22 @@
             // rules.json) — sıradan üye kendi iznini sahtekârlıkla yükseltemez.
             function computeEffectivePermissions(groupId, uid) {
                 const g = ensureGroupCache(groupId);
+                const myRoleIds = Object.keys(g.memberRoles[uid] || {});
                 const out = {};
                 PERMISSION_DEFS.forEach((p) => { out[p.key] = false; });
-                const myRoleIds = Object.keys(g.memberRoles[uid] || {});
+                // hasPermission ile aynı mantık: üyenin hiç rolü yoksa taban
+                // (varsayılan üye / @everyone) izinlerinden başlanır; en az
+                // bir rolü varsa taban yok sayılır, sadece rollerin OR'u
+                // geçerli olur (bir yönetici o üyeye kısıtlı bir rol vermiş
+                // olabilir, bu iradeyi taban izinle ezmeyelim).
+                if (!myRoleIds.length) {
+                    Object.assign(out, DEFAULT_BASE_PERMISSIONS);
+                }
                 myRoleIds.forEach((rid) => {
                     const role = g.roles[rid];
                     if (!role || !role.permissions) return;
                     PERMISSION_DEFS.forEach((p) => {
-                        if (role.permissions[p.key]) out[p.key] = true;
+                        if (role.permissions[p.key] === true) out[p.key] = true;
                     });
                 });
                 return out;
@@ -13255,6 +13700,19 @@
                 const roleName = document.getElementById("cchRoleNameInput").value.trim();
                 if (!roleName) {
                     errorEl.textContent = "Rütbe adı boş olamaz.";
+                    errorEl.style.display = "block";
+                    return;
+                }
+                // MODÜL 5 EKLENTİ 2: rütbe adında boşluk YASAK. Sebep: @mention
+                // yakalama regex'i (hem yazarken autocomplete'te hem de
+                // encodeMentionsForStorage'da) "@" işaretinden sonraki İLK
+                // boşluğa kadar olan kısmı isim sayar -- "@Baş Moderatör"
+                // yazılırsa sadece "@Baş" kısmı mention adayı olarak aranır,
+                // "Moderatör" kelimesi düz metin kalır. Kullanıcı adlarında
+                // zaten boşluk yasak olduğu için bu kısıt rütbeler için de
+                // aynı tutarlılığı sağlar. Boşluk yerine tire/alt çizgi önerilir.
+                if (/\s/.test(roleName)) {
+                    errorEl.textContent = "Rütbe adında boşluk kullanılamaz (@mention ile etiketlenebilmesi için) -- tire veya alt çizgi kullan, örn. \"Baş-Moderatör\".";
                     errorEl.style.display = "block";
                     return;
                 }
@@ -13471,6 +13929,14 @@
                 document.getElementById("cchChannelEditSaveBtn")?.addEventListener("click", saveChannelEdit);
                 document.getElementById("cchChannelDeleteBtn")?.addEventListener("click", deleteChannel);
 
+                document.getElementById("cchManageAddCategoryBtn")?.addEventListener("click", () => {
+                    if (_openGroupId) openCategoryEditModal(_openGroupId, null);
+                });
+                document.getElementById("cchCategoryEditModalClose")?.addEventListener("click", closeCategoryEditModal);
+                document.getElementById("cchCategoryEditCancelBtn")?.addEventListener("click", closeCategoryEditModal);
+                document.getElementById("cchCategoryEditSaveBtn")?.addEventListener("click", saveCategoryEdit);
+                document.getElementById("cchCategoryDeleteBtn")?.addEventListener("click", deleteCategory);
+
                 document.getElementById("cchManageAddRoleBtn")?.addEventListener("click", () => {
                     if (_openGroupId) openRoleEditModal(_openGroupId, null);
                 });
@@ -13510,6 +13976,9 @@
                 renderManagePanel,
                 memberLocalRolesBadgeHtml,
                 getHighestRoleForMember,
+                getRoleById,
+                listRolesForMention,
+                resolveRoleByName,
                 openAssignRoleModal,
                 getDefaultRoleId,
                 assignDefaultRoleIfAny
@@ -14286,17 +14755,28 @@
                 if (!basePath) { alert("Önce bir kanal seç."); return; }
 
                 let workingText = text.trim();
-                // MODÜL 5 EKLENTİ 1: @everyone -- sadece mention_everyone izni
-                // olan (veya owner) topluluk üyelerinde gerçek bir etikete
-                // dönüşür. İzni olmayan kullanıcıda "@everyone" düz metin
-                // olarak kalır (bildirim/vurgu tetiklemez).
-                if (isCommunity && /@everyone(?=[\s.,!?;:)\]]|$)/i.test(workingText)) {
+                // MODÜL 5 EKLENTİ 1/2: @everyone / @here -- sadece
+                // mention_everyone izni olan (veya owner) topluluk
+                // üyelerinde gerçek bir etikete dönüşür. İzni olmayan
+                // kullanıcıda ikisi de düz metin olarak kalır (bildirim/
+                // vurgu tetiklemez). @here, @everyone'ın SADECE o an
+                // gönderildiği kanaldaki üyeleri hedefleyen versiyonudur.
+                const hasEveryoneWord = /@everyone(?=[\s.,!?;:)\]]|$)/i.test(workingText);
+                const hasHereWord = /@here(?=[\s.,!?;:)\]]|$)/i.test(workingText);
+                if (isCommunity && (hasEveryoneWord || hasHereWord)) {
                     if (window.CommunityChannels.hasPermission(groupId, _myUid, "mention_everyone")) {
-                        workingText = window.CommunityMentions.encodeEveryone(workingText);
+                        if (hasEveryoneWord) workingText = window.CommunityMentions.encodeEveryone(workingText);
+                        if (hasHereWord) workingText = window.CommunityMentions.encodeHere(workingText);
                     }
                 }
 
-                const encoded = window.CommunityMentions.encodeForStorage(workingText);
+                const encoded = window.CommunityMentions.encodeForStorage(
+                    workingText,
+                    // MODÜL 5 EKLENTİ 2: @RolAdı yazımlarını topluluğun kendi
+                    // rütbe listesinden çözer (örn. @Owner). Sadece topluluk
+                    // bağlamında -- DM ve normal gruplarda rol sistemi yok.
+                    isCommunity ? (name) => window.CommunityChannels.resolveRoleByName(groupId, name) : null
+                );
                 const now = firebase.database.ServerValue.TIMESTAMP;
 
                 const payload = { authorUid: _myUid, text: encoded, createdAt: now };
@@ -16002,9 +16482,15 @@
                         }
                         : null;
 
+                    // MODÜL 5 EKLENTİ 2: @RolAdı mention'ları (örn. @Owner)
+                    // GÖSTERİM ANINDAKİ rol adı/rengiyle çözülür.
+                    const roleLookupResolver = isCommunityBubble
+                        ? (roleId) => window.CommunityChannels.getRoleById(_activeGroupId, roleId)
+                        : null;
+
                     const bodyHtml = isDeleted
                         ? `<div class="msg-bubble-text msg-bubble-deleted">🚫 Bu mesaj silindi</div>`
-                        : `<div class="msg-bubble-text">${renderRichContent(m.text, mentionColorResolver)}</div>`;
+                        : `<div class="msg-bubble-text">${renderRichContent(m.text, mentionColorResolver, roleLookupResolver)}</div>`;
 
                     let actionsHtml = "";
                     if (!isDeleted) {
@@ -16155,14 +16641,14 @@
             // Composer kurulumu (DM ve Grup için ortak: metin + mention
             // autocomplete + 📎/GIF + "+" popover + Gönder butonu).
             // ══════════════════════════════════════════════════════════
-            function wireComposer({ textareaId, sendBtnId, mentionDropdownId, attachBtnId, fileInputId, statusId, gifBtnId, plusBtnId, plusPopoverId, onSend, allowedMentionUidsResolver }) {
+            function wireComposer({ textareaId, sendBtnId, mentionDropdownId, attachBtnId, fileInputId, statusId, gifBtnId, plusBtnId, plusPopoverId, onSend, allowedMentionUidsResolver, specialMentionTokensResolver }) {
                 const textarea = document.getElementById(textareaId);
                 const sendBtn = document.getElementById(sendBtnId);
                 const mentionDropdown = document.getElementById(mentionDropdownId);
 
                 if (textarea && mentionDropdown && !textarea.dataset.mentionBound) {
                     textarea.dataset.mentionBound = "1";
-                    window.CommunityMentions.attachAutocomplete(textarea, mentionDropdown, allowedMentionUidsResolver);
+                    window.CommunityMentions.attachAutocomplete(textarea, mentionDropdown, allowedMentionUidsResolver, specialMentionTokensResolver);
                 }
 
                 // Otomatik yükseklik: textarea artık manuel resize (sürükle)
@@ -16366,6 +16852,30 @@
                         const meta = _groupMetaCache[_activeGroupId];
                         if (!meta || !meta.members) return null;
                         return new Set(Object.keys(meta.members));
+                    },
+                    // MODÜL 5 EKLENTİ 1/2: @everyone / @here / @RolAdı
+                    // önerileri -- @everyone ve @here SADECE topluluklarda
+                    // ve mention_everyone iznine sahip (ya da owner olan)
+                    // kullanıcılara gösterilir. @RolAdı önerileri ise (örn.
+                    // @Owner) topluluğun TÜM üyelerine gösterilir -- bir
+                    // rütbeyi etiketlemek, herkese bildirim göndermekten
+                    // farklı bir şey, kısıtlamaya gerek yok; renk her rütbenin
+                    // kendi color_hex değerinden gelir (bkz. renderDropdown
+                    // içindeki isRole dalı).
+                    specialMentionTokensResolver: () => {
+                        const meta = _groupMetaCache[_activeGroupId];
+                        if (!meta || meta.isCommunity !== true || !window.CommunityChannels) return [];
+                        const out = [];
+                        if (window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "mention_everyone")) {
+                            out.push(
+                                { username: "everyone", isSpecial: true, label: "Topluluktaki herkesi etiketle" },
+                                { username: "here", isSpecial: true, label: "Sadece bu kanalda olanları etiketle" }
+                            );
+                        }
+                        window.CommunityChannels.listRolesForMention(_activeGroupId).forEach((r) => {
+                            out.push({ username: r.name, isRole: true, color: r.color });
+                        });
+                        return out;
                     }
                 });
             }
