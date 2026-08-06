@@ -4794,6 +4794,21 @@
         font-style: italic;
     }
 
+    /* MODÜL 5 EKLENTİ 1: @everyone -- diğer mention'lardan görsel olarak
+       ayrışsın diye uyarı/turuncu tonunda, cursor:default (tıklanabilir
+       bir profil değil). */
+    .mention-chip-everyone {
+        display: inline-flex;
+        align-items: center;
+        color: #ffb454;
+        font-weight: 700;
+        background: rgba(255, 180, 84, 0.14);
+        border: 1px solid rgba(255, 180, 84, 0.35);
+        border-radius: 5px;
+        padding: 0 4px;
+        cursor: default;
+    }
+
 
     /* ═══════════════════════════════════════════════════════════════
        BİLDİRİM İZİN KARTI (notif-prompt)
@@ -6323,6 +6338,13 @@
                             <label class="forum-field-label">Sıra (Pozisyon)</label>
                             <input type="number" class="forum-text-input" id="cchRolePositionInput" min="0" step="1" placeholder="0">
 
+                            <!-- MODÜL 5 EKLENTİ 1: Başlangıç Rütbesi (varsayılan rol) -->
+                            <label class="msg-group-toggle-row" style="margin-top:8px;">
+                                <span>Başlangıç Rütbesi Yap<br><small style="opacity:.65; font-weight:400;">Topluluğa yeni katılan herkese otomatik verilir. Aynı anda sadece 1 rütbe varsayılan olabilir.</small></span>
+                                <input type="checkbox" id="cchRoleDefaultInput">
+                                <span class="msg-toggle-switch"></span>
+                            </label>
+
                             <div class="msg-group-detail-section" style="margin-top:8px;">
                                 <div class="msg-group-detail-section-title">İzinler</div>
                                 <div class="cch-perm-grid" id="cchRolePermGrid"></div>
@@ -7033,6 +7055,17 @@
          * Eşleşmeyen @isimler (gerçek bir kullanıcıya karşılık gelmeyen)
          * düz metin olarak bırakılır, dönüştürülmez.
          */
+        // MODÜL 5 EKLENTİ 1: @everyone -- topluluk geneline vurgu/etiket.
+        // Bireysel [mention:UID] token'larından ayrı, tek bir özel token:
+        // [mention:everyone]. İzin kontrolü burada YAPILMAZ (bu fonksiyonun
+        // grup/topluluk bağlamından haberi yok) -- çağıran taraf (sendGroupMessage)
+        // encodeEveryoneMention'ı SADECE mention_everyone izni olan gönderenler
+        // için çağırmalı; izni olmayanlar için @everyone düz metin olarak kalır.
+        function encodeEveryoneMention(rawText) {
+            if (!rawText) return rawText;
+            return rawText.replace(/@everyone(?=[\s.,!?;:)\]]|$)/gi, "[mention:everyone]");
+        }
+
         function encodeMentionsForStorage(rawText) {
             if (!rawText) return "";
             // Önce grup mention'larını tokenize et (@LegendsSupport → [mention:group:support])
@@ -7076,9 +7109,13 @@
         function renderMentionsForDisplay(storedText, roleColorResolver) {
             if (!storedText) return "";
             const escaped = escapeHtml(storedText);
+            // ── 0) @everyone token'ı (MODÜL 5 EKLENTİ 1) ────────────────────
+            const withEveryone = escaped.replace(/\[mention:everyone\]/g, () => {
+                return `<span class="mention-chip mention-chip-everyone">@everyone</span>`;
+            });
             // ── 1) Grup mention tokenları: [mention:group:XXX] ──────────────
             const GROUP_SHIELD_INLINE = `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>`;
-            const withGroups = escaped.replace(/\[mention:group:([A-Za-z0-9_-]+)\]/g, (match, groupId) => {
+            const withGroups = withEveryone.replace(/\[mention:group:([A-Za-z0-9_-]+)\]/g, (match, groupId) => {
                 const g = GROUP_MENTIONS.find(x => x.groupId === groupId);
                 const label = g ? g.username : groupId;
                 const sublabel = g ? g.label : "Grup";
@@ -7261,6 +7298,7 @@
             getByUid: getMentionCandidateByUid,
             getByUsername: getMentionCandidateByUsername,
             encodeForStorage: encodeMentionsForStorage,
+            encodeEveryone: encodeEveryoneMention,
             renderForDisplay: renderMentionsForDisplay,
             attachAutocomplete: attachMentionAutocomplete
         };
@@ -12640,11 +12678,13 @@
                 { key: "manage_channels", label: "Kanalları Yönet", category: "Genel Yönetim" },
                 { key: "manage_roles", label: "Rütbeleri Yönet", category: "Genel Yönetim" },
                 { key: "assign_roles", label: "Rütbe Ata", category: "Genel Yönetim" },
+                { key: "create_invite", label: "Yeni Davet Kodu Oluştur", category: "Genel Yönetim" },
                 // ── Üyelik ──
                 { key: "kick_members", label: "Üyeleri Topluluktan At", category: "Üyelik" },
                 // ── Metin Kanalları ──
                 { key: "manage_messages", label: "Mesajları Yönet (Başkalarının Mesajını Sil)", category: "Metin Kanalları" },
-                { key: "pin_messages", label: "Mesaj Sabitle", category: "Metin Kanalları" }
+                { key: "pin_messages", label: "Mesaj Sabitle", category: "Metin Kanalları" },
+                { key: "mention_everyone", label: "@everyone Etiketleme", category: "Metin Kanalları" }
             ];
 
             // groupId -> { channels: {id:{...}}, roles: {id:{...}}, memberRoles: {uid:{roleId:true}} }
@@ -12922,10 +12962,14 @@
                     listEl.innerHTML = ids.length ? ids.map((id) => {
                         const role = g.roles[id];
                         const memberCount = Object.values(g.memberRoles).filter((rs) => rs && rs[id]).length;
+                        const defaultBadge = role.is_default
+                            ? `<span class="cch-manage-row-meta" style="color:var(--accent);">★ Başlangıç</span>`
+                            : "";
                         return `
                             <div class="cch-manage-row">
                                 <span class="cch-role-swatch" style="background:${escAttr(role.color_hex || "#66fcf1")};"></span>
                                 <span class="cch-manage-row-name">${escAttr(role.role_name)}</span>
+                                ${defaultBadge}
                                 <span class="cch-manage-row-meta">${memberCount} üye</span>
                                 <div class="cch-manage-row-actions">
                                     <button type="button" class="cch-icon-btn" data-cch-mng-edit-role="${escAttr(id)}" title="Düzenle">✎</button>
@@ -13093,6 +13137,7 @@
                 document.getElementById("cchRolePositionInput").value = role ? (role.position || 0) : Object.keys(g.roles).length;
                 document.getElementById("cchRoleDeleteBtn").style.display = roleId ? "inline-flex" : "none";
                 document.getElementById("cchRoleEditError").style.display = "none";
+                document.getElementById("cchRoleDefaultInput").checked = !!(role && role.is_default);
 
                 const perms = (role && role.permissions) || {};
                 const gridEl = document.getElementById("cchRolePermGrid");
@@ -13222,20 +13267,41 @@
                 document.querySelectorAll("[data-cch-perm]").forEach((el) => {
                     permissions[el.getAttribute("data-cch-perm")] = el.checked;
                 });
+                const wantsDefault = !!document.getElementById("cchRoleDefaultInput").checked;
                 const payload = {
                     role_name: roleName,
                     color_hex: document.getElementById("cchRoleColorInput").value || "#66fcf1",
                     position: parseInt(document.getElementById("cchRolePositionInput").value, 10) || 0,
-                    permissions
+                    permissions,
+                    is_default: wantsDefault
                 };
                 try {
-                    if (_editingRoleId) {
-                        await firebase.database().ref("group_chats/" + groupId + "/roles/" + _editingRoleId).update(payload);
-                    } else {
+                    const updates = {};
+                    let newRoleId = _editingRoleId;
+                    if (!_editingRoleId) {
                         payload.createdAt = firebase.database.ServerValue.TIMESTAMP;
                         payload.createdBy = _myUid;
-                        await firebase.database().ref("group_chats/" + groupId + "/roles").push(payload);
+                        const pushRef = firebase.database().ref("group_chats/" + groupId + "/roles").push();
+                        newRoleId = pushRef.key;
                     }
+                    // MODÜL 5 EKLENTİ 1: Başlangıç Rütbesi -- sistemde aynı anda
+                    // sadece 1 varsayılan rol olabilir. Bu rol varsayılan
+                    // işaretlendiyse, ondan farklı eski varsayılan rol(ler)in
+                    // is_default bayrağını aynı atomik update içinde false'a
+                    // çek (yarış durumu / tutarsız çift-varsayılan önlenir).
+                    if (wantsDefault) {
+                        const g = ensureGroupCache(groupId);
+                        Object.keys(g.roles).forEach((rid) => {
+                            if (rid !== newRoleId && g.roles[rid] && g.roles[rid].is_default) {
+                                updates["group_chats/" + groupId + "/roles/" + rid + "/is_default"] = false;
+                            }
+                        });
+                    }
+                    updates["group_chats/" + groupId + "/roles/" + newRoleId] = _editingRoleId
+                        ? Object.assign({}, ensureGroupCache(groupId).roles[_editingRoleId], payload)
+                        : payload;
+                    await firebase.database().ref().update(updates);
+
                     // İzinler değiştiyse (veya yeni rol oluştuysa -- henüz kimsede
                     // olmadığından bu adım yeni rollerde no-op'tur), bu role sahip
                     // üyelerin izin cache'ini güncel tut.
@@ -13247,6 +13313,51 @@
                     console.error("[CommunityChannels] Rütbe kaydedilemedi:", err);
                     errorEl.textContent = "Rütbe kaydedilemedi. Tekrar dene.";
                     errorEl.style.display = "block";
+                }
+            }
+
+            // MODÜL 5 EKLENTİ 1: bu topluluğun mevcut varsayılan (başlangıç)
+            // rütbesinin id'sini döndürür, yoksa null.
+            function getDefaultRoleId(groupId) {
+                const g = ensureGroupCache(groupId);
+                const rid = Object.keys(g.roles).find((id) => g.roles[id] && g.roles[id].is_default);
+                return rid || null;
+            }
+
+            // Yeni bir üye topluluğa katıldığında (davetle, kodla veya yönetici
+            // eklemesiyle) varsayılan rütbe varsa otomatik ata + izin cache'ini
+            // hesapla. Var olan bir üyeye tekrar uygulanırsa no-op'tur.
+            //
+            // NOT: bu fonksiyon, çağrıldığı an topluluk ekranı AÇIK OLMAYABİLİR
+            // (örn. davet koduyla, hiç girilmemiş bir topluluğa katılma) --
+            // bu durumda local roller cache'i (ensureGroupCache) boş olabilir.
+            // O yüzden cache boşsa rolleri RTDB'den bir kerelik taze okuruz.
+            async function assignDefaultRoleIfAny(groupId, uid) {
+                try {
+                    let g = ensureGroupCache(groupId);
+                    let roles = g.roles;
+                    if (!Object.keys(roles).length) {
+                        const snap = await firebase.database().ref("group_chats/" + groupId + "/roles").once("value");
+                        roles = snap.val() || {};
+                    }
+                    const roleId = Object.keys(roles).find((id) => roles[id] && roles[id].is_default);
+                    if (!roleId) return;
+                    if (g.memberRoles[uid] && g.memberRoles[uid][roleId]) return; // zaten var
+
+                    await firebase.database().ref("group_chats/" + groupId + "/memberRoles/" + uid + "/" + roleId).set(true);
+
+                    // İzin cache'i (memberPermissions) için de aynı taze-okuma
+                    // güvencesi gerekir: local cache boşsa OR'lama yanlış (boş)
+                    // sonuç üretir. Bu yüzden burada roller taze okunmuşsa onu kullan.
+                    const out = {};
+                    PERMISSION_DEFS.forEach((p) => { out[p.key] = false; });
+                    const role = roles[roleId];
+                    if (role && role.permissions) {
+                        PERMISSION_DEFS.forEach((p) => { if (role.permissions[p.key]) out[p.key] = true; });
+                    }
+                    await firebase.database().ref("group_chats/" + groupId + "/memberPermissions/" + uid).set(out);
+                } catch (err) {
+                    console.error("[CommunityChannels] Başlangıç rütbesi atanamadı:", err);
                 }
             }
 
@@ -13399,7 +13510,9 @@
                 renderManagePanel,
                 memberLocalRolesBadgeHtml,
                 getHighestRoleForMember,
-                openAssignRoleModal
+                openAssignRoleModal,
+                getDefaultRoleId,
+                assignDefaultRoleIfAny
             };
         })();
 
@@ -14172,7 +14285,18 @@
                 console.log("[CCH-DEBUG] basePath:", basePath);
                 if (!basePath) { alert("Önce bir kanal seç."); return; }
 
-                const encoded = window.CommunityMentions.encodeForStorage(text.trim());
+                let workingText = text.trim();
+                // MODÜL 5 EKLENTİ 1: @everyone -- sadece mention_everyone izni
+                // olan (veya owner) topluluk üyelerinde gerçek bir etikete
+                // dönüşür. İzni olmayan kullanıcıda "@everyone" düz metin
+                // olarak kalır (bildirim/vurgu tetiklemez).
+                if (isCommunity && /@everyone(?=[\s.,!?;:)\]]|$)/i.test(workingText)) {
+                    if (window.CommunityChannels.hasPermission(groupId, _myUid, "mention_everyone")) {
+                        workingText = window.CommunityMentions.encodeEveryone(workingText);
+                    }
+                }
+
+                const encoded = window.CommunityMentions.encodeForStorage(workingText);
                 const now = firebase.database.ServerValue.TIMESTAMP;
 
                 const payload = { authorUid: _myUid, text: encoded, createdAt: now };
@@ -15027,6 +15151,11 @@
                 // de eşitle.
                 if (meta && meta.isCommunity) {
                     await database.ref(`community_directory/${groupId}/memberCount`).set(newCount);
+                    // MODÜL 5 EKLENTİ 1: yönetici üyeyi doğrudan eklediğinde de
+                    // varsayılan (başlangıç) rütbe otomatik atansın.
+                    if (window.CommunityChannels) {
+                        await window.CommunityChannels.assignDefaultRoleIfAny(groupId, uid);
+                    }
                 }
                 await database.ref(`user_groups/${uid}/${groupId}`).set(true);
                 const added = window.CommunityMentions.getByUid(uid);
@@ -15540,6 +15669,11 @@
                     await database.ref(`group_chats/${groupId}/meta/memberCount`).set(newCount);
                     await database.ref(`community_directory/${groupId}/memberCount`).set(newCount);
                     await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
+                    // MODÜL 5 EKLENTİ 1: topluluğa "Katıl" ile giren yeni üyeye
+                    // varsayılan (başlangıç) rütbe otomatik atansın.
+                    if (window.CommunityChannels) {
+                        await window.CommunityChannels.assignDefaultRoleIfAny(groupId, _myUid);
+                    }
 
                     const me = window.CommunityMentions.getByUid(_myUid);
                     await postGroupSystemMessage(groupId, `🎉 ${me ? me.username : "Yeni bir üye"} topluluğa katıldı.`);
@@ -15696,6 +15830,11 @@
                         updates["community_directory/" + groupId + "/memberCount"] = newMemberCount;
                     }
                     await database.ref().update(updates);
+                    // MODÜL 5 EKLENTİ 1: davet koduyla katılan yeni üyeye de
+                    // varsayılan (başlangıç) rütbe otomatik atansın.
+                    if (meta.isCommunity && window.CommunityChannels) {
+                        await window.CommunityChannels.assignDefaultRoleIfAny(groupId, _myUid);
+                    }
 
                     const me = window.CommunityMentions.getByUid(_myUid);
                     await postGroupSystemMessage(groupId, `📨 ${me ? me.username : "Bir üye"} davet koduyla gruba katıldı.`);
@@ -15737,8 +15876,16 @@
                     return;
                 }
 
-                if (meta.ownerUid !== _myUid) {
-                    showToastGlobal("Bu grubun daha davet kodu yok. Sadece grup sahibi oluşturabilir.");
+                const isCommunity = window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta);
+                const canCreateInvite = meta.ownerUid === _myUid ||
+                    (isCommunity && (
+                        window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "create_invite") ||
+                        window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "manage_channels")
+                    ));
+                if (!canCreateInvite) {
+                    showToastGlobal(isCommunity
+                        ? "Yeni davet kodu oluşturmak için yetkin yok."
+                        : "Bu grubun daha davet kodu yok. Sadece grup sahibi oluşturabilir.");
                     return;
                 }
 
