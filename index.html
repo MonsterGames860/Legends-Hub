@@ -14264,6 +14264,12 @@
                     if (remaining.length === 0) {
                         // Grupta kalan tek kişi bendim: grubu tamamen kaldır.
                         await database.ref("group_chats/" + gid).remove();
+                        // MODÜL 5 EKLENTİ 1 DÜZELTME: topluluksa community_directory
+                        // kaydı da silinmeli, yoksa artık var olmayan bir topluluk
+                        // Topluluklar listesinde "hayalet" olarak görünmeye devam eder.
+                        if (meta && meta.isCommunity) {
+                            await database.ref("community_directory/" + gid).remove();
+                        }
                     } else {
                         // Sistem mesajı, ben hâlâ üyeyken (kural gereği) gönderilmeli --
                         // bu yüzden ayrılma kayıtlarından ÖNCE atılır.
@@ -14276,6 +14282,12 @@
                         // olmadığından) ve tüm işlem hata fırlatarak yarım
                         // kalır (ayrılma "çalışmıyormuş" gibi görünür).
                         await database.ref("group_chats/" + gid + "/meta/memberCount").set(remaining.length);
+                        // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory'deki kopya
+                        // sayaç da senkron kalsın (aksi halde Topluluklar listesinde
+                        // eski üye sayısı gösterilmeye devam eder).
+                        if (meta && meta.isCommunity) {
+                            await database.ref("community_directory/" + gid + "/memberCount").set(remaining.length);
+                        }
                         await database.ref("group_chats/" + gid + "/meta/admins/" + _myUid).remove();
                         await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
                     }
@@ -14614,6 +14626,10 @@
                     // memberCount her zaman members/{targetUid} silinmeden ÖNCE
                     // güncellenir (bkz. performLeaveGroup'taki aynı not).
                     await database.ref(`group_chats/${groupId}/meta/memberCount`).set(remaining);
+                    // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory kopya sayacı.
+                    if (isCommunity) {
+                        await database.ref(`community_directory/${groupId}/memberCount`).set(remaining);
+                    }
                     await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).remove();
                     await database.ref(`group_chats/${groupId}/meta/members/${targetUid}`).remove();
                     await database.ref(`user_groups/${targetUid}/${groupId}`).remove();
@@ -15005,6 +15021,13 @@
                 await database.ref(`group_chats/${groupId}/meta/members/${uid}`).set(true);
                 const newCount = Object.keys(meta.members || {}).length + (meta.members && meta.members[uid] ? 0 : 1);
                 await database.ref(`group_chats/${groupId}/meta/memberCount`).set(newCount);
+                // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory'deki kopya sayaç
+                // eskiden burada güncellenmiyordu -> Topluluklar listesinde eski
+                // (stale) üye sayısı görünüyordu. meta.isCommunity ise directory'yi
+                // de eşitle.
+                if (meta && meta.isCommunity) {
+                    await database.ref(`community_directory/${groupId}/memberCount`).set(newCount);
+                }
                 await database.ref(`user_groups/${uid}/${groupId}`).set(true);
                 const added = window.CommunityMentions.getByUid(uid);
                 await postGroupSystemMessage(groupId, `➕ ${added ? added.username : "Yeni bir üye"} gruba eklendi.`);
@@ -15662,10 +15685,16 @@
                         return;
                     }
 
+                    const newMemberCount = Object.keys(meta.members || {}).length + 1;
                     const updates = {};
                     updates["group_chats/" + groupId + "/meta/members/" + _myUid] = true;
-                    updates["group_chats/" + groupId + "/meta/memberCount"] = Object.keys(meta.members || {}).length + 1;
+                    updates["group_chats/" + groupId + "/meta/memberCount"] = newMemberCount;
                     updates["user_groups/" + _myUid + "/" + groupId] = true;
+                    // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory kopya sayacı,
+                    // davet koduyla katılımda da senkron kalsın.
+                    if (meta.isCommunity) {
+                        updates["community_directory/" + groupId + "/memberCount"] = newMemberCount;
+                    }
                     await database.ref().update(updates);
 
                     const me = window.CommunityMentions.getByUid(_myUid);
