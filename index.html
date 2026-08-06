@@ -14885,12 +14885,22 @@
                         // olduğu için yazmayı reddeder (auth.uid hâlâ üye
                         // olmadığından) ve tüm işlem hata fırlatarak yarım
                         // kalır (ayrılma "çalışmıyormuş" gibi görünür).
-                        await database.ref("group_chats/" + gid + "/meta/memberCount").set(remaining.length);
+                        //
+                        // DÜZELTME: remaining.length (client cache'inden
+                        // hesaplanan bayat bir sayı) yerine transaction()
+                        // ile ATOMIK azaltma yapılıyor -- biri ayrılırken
+                        // aynı anda başka biri katılırsa/ayrılırsa artık
+                        // sayaç senkronsuzlaşmıyor. Sıralama (önce memberCount,
+                        // sonra members silme) korunuyor çünkü transaction
+                        // da senkron olarak await ediliyor.
+                        const countRef = database.ref("group_chats/" + gid + "/meta/memberCount");
+                        const txResult = await countRef.transaction((current) => Math.max(0, (current || 1) - 1));
+                        const newCount = txResult.snapshot ? txResult.snapshot.val() : remaining.length;
                         // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory'deki kopya
                         // sayaç da senkron kalsın (aksi halde Topluluklar listesinde
                         // eski üye sayısı gösterilmeye devam eder).
                         if (meta && meta.isCommunity) {
-                            await database.ref("community_directory/" + gid + "/memberCount").set(remaining.length);
+                            await database.ref("community_directory/" + gid + "/memberCount").set(newCount);
                         }
                         await database.ref("group_chats/" + gid + "/meta/admins/" + _myUid).remove();
                         await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
@@ -15226,10 +15236,16 @@
                 if (!confirm(`${c ? c.username : "Bu kullanıcı"} gruptan çıkarılsın mı?`)) return;
 
                 try {
-                    const remaining = Object.keys(meta.members || {}).filter((uid) => uid !== targetUid).length;
+                    // DÜZELTME: bayat cache'ten hesaplanan remaining sayısı
+                    // yerine transaction() ile ATOMIK azaltma (bkz. yukarıdaki
+                    // joinCommunityFromPreview / performLeaveGroup'taki aynı
+                    // düzeltmelerin açıklaması -- eşzamanlı katılma/ayrılma/atma
+                    // işlemlerinde sayaç artık senkronsuzlaşmıyor).
                     // memberCount her zaman members/{targetUid} silinmeden ÖNCE
                     // güncellenir (bkz. performLeaveGroup'taki aynı not).
-                    await database.ref(`group_chats/${groupId}/meta/memberCount`).set(remaining);
+                    const countRef = database.ref(`group_chats/${groupId}/meta/memberCount`);
+                    const txResult = await countRef.transaction((current) => Math.max(0, (current || 1) - 1));
+                    const remaining = txResult.snapshot ? txResult.snapshot.val() : null;
                     // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory kopya sayacı.
                     if (isCommunity) {
                         await database.ref(`community_directory/${groupId}/memberCount`).set(remaining);
@@ -16145,8 +16161,19 @@
 
                 try {
                     await database.ref(`group_chats/${groupId}/meta/members/${_myUid}`).set(true);
-                    const newCount = Object.keys((_groupMetaCache[groupId] || c).members || {}).length + 1;
-                    await database.ref(`group_chats/${groupId}/meta/memberCount`).set(newCount);
+                    // ÖNEMLİ DÜZELTME: memberCount'u client-tarafında bayat
+                    // (stale) cache'e göre "+1" hesaplayıp set() ile yazmak
+                    // yarış durumuna (race condition) açıktı -- iki kullanıcı
+                    // kısa aralıklarla katılırsa ikisi de aynı eski sayıyı
+                    // okuyup aynı (yanlış, düşük) değeri yazabiliyordu, bu da
+                    // "3 üye var ama 1 üye gösteriyor" gibi kalıcı sapmalara
+                    // yol açıyordu. transaction() ATOMIK bir okuma+yazmadır:
+                    // Firebase sunucusu üzerinde çalışır, aynı anda gelen
+                    // birden fazla transaction sırayla ve her biri güncel
+                    // değeri görerek işlenir -- çakışma imkansız hale gelir.
+                    const countRef = database.ref(`group_chats/${groupId}/meta/memberCount`);
+                    const txResult = await countRef.transaction((current) => (current || 0) + 1);
+                    const newCount = txResult.committed ? txResult.snapshot.val() : (txResult.snapshot ? txResult.snapshot.val() : null);
                     await database.ref(`community_directory/${groupId}/memberCount`).set(newCount);
                     await database.ref("user_groups/" + _myUid + "/" + groupId).set(true);
                     // MODÜL 5 EKLENTİ 1: topluluğa "Katıl" ile giren yeni üyeye
@@ -16299,17 +16326,23 @@
                         return;
                     }
 
-                    const newMemberCount = Object.keys(meta.members || {}).length + 1;
+                    // ÖNEMLİ DÜZELTME: aynı yarış durumu (race condition)
+                    // buradaki koda-katılma akışında da vardı -- meta.members
+                    // okunup client'ta +1 hesaplanıyordu. transaction()
+                    // kullanarak atomik artırma yapıyoruz (bkz.
+                    // joinCommunityFromPreview'daki aynı düzeltmenin açıklaması).
                     const updates = {};
                     updates["group_chats/" + groupId + "/meta/members/" + _myUid] = true;
-                    updates["group_chats/" + groupId + "/meta/memberCount"] = newMemberCount;
                     updates["user_groups/" + _myUid + "/" + groupId] = true;
+                    await database.ref().update(updates);
+                    const countRef = database.ref(`group_chats/${groupId}/meta/memberCount`);
+                    const txResult = await countRef.transaction((current) => (current || 0) + 1);
+                    const newMemberCount = txResult.snapshot ? txResult.snapshot.val() : null;
                     // MODÜL 5 EKLENTİ 1 DÜZELTME: community_directory kopya sayacı,
                     // davet koduyla katılımda da senkron kalsın.
                     if (meta.isCommunity) {
-                        updates["community_directory/" + groupId + "/memberCount"] = newMemberCount;
+                        await database.ref("community_directory/" + groupId + "/memberCount").set(newMemberCount);
                     }
-                    await database.ref().update(updates);
                     // MODÜL 5 EKLENTİ 1: davet koduyla katılan yeni üyeye de
                     // varsayılan (başlangıç) rütbe otomatik atansın.
                     if (meta.isCommunity && window.CommunityChannels) {
