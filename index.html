@@ -13139,7 +13139,11 @@
                 { key: "add_reactions", label: "Tepki Ekle", category: "Metin Kanalları" },
                 { key: "manage_messages", label: "Mesajları Yönet (Başkalarının Mesajını Sil)", category: "Metin Kanalları" },
                 { key: "pin_messages", label: "Mesaj Sabitle", category: "Metin Kanalları" },
-                { key: "mention_everyone", label: "@everyone / @here Etiketleme", category: "Metin Kanalları" }
+                { key: "mention_everyone", label: "@everyone / @here Etiketleme", category: "Metin Kanalları" },
+                // MODÜL 5 EKLENTİ 4: Özel Emoji & GIF Kütüphanesi — bu izne
+                // sahip olanlar (+ her zaman owner) topluluğa özel emoji/GIF
+                // yükleyebilir ve silebilir (bkz. window.CommunityEmojis).
+                { key: "manage_emojis", label: "Emojileri Yönet (Özel Emoji/GIF Ekle-Sil)", category: "Metin Kanalları" }
             ];
 
             // Bu izinler "varsayılan üye" (herhangi bir rolü olmayan/hiçbir
@@ -14252,6 +14256,286 @@
         })();
 
         // ════════════════════════════════════════════════════════════════
+        // 🎨 MODÜL 5 EKLENTİ 4 — ÖZEL EMOJİ & GIF KÜTÜPHANESİ
+        //     (Görev listesindeki "Modül 5 Eklentileri — Part 3")
+        // ════════════════════════════════════════════════════════════════
+        // Firebase Realtime Database yapısı (bu proje Firestore DEĞİL,
+        // Realtime Database kullanıyor; "tablo" burada bir RTDB path'idir
+        // — diğer tüm Modül 5 eklentileriyle aynı yaklaşım):
+        //
+        //   community_emojis/{groupId}/{emojiId}
+        //       -> { name, image_url, is_animated, uploadedBy, createdAt }
+        //
+        //   community_id KARŞILIĞI: bu projede "topluluk" kavramı ayrı bir
+        //   node değil, group_chats/{groupId}/meta.isCommunity === true
+        //   bayrağıyla işaretlenmiş bir grup sohbetidir (bkz. MODÜL 5
+        //   EKLENTİ 1). Bu yüzden community_id burada groupId'dir ve emoji
+        //   kütüphanesi topluluk bazlı (her topluluğun kendi emoji seti).
+        //
+        // YÜKLEME: dosya, projenin geri kalanıyla TUTARLI şekilde ImgBB'ye
+        // gönderilir (bkz. uploadFileToImgBB, aynı IMGBB_API_KEY). GIF'ler
+        // de ImgBB üzerinden animasyonlu olarak barındırılabilir; is_animated
+        // bayrağı dosya uzantısı/mime türünden (image/gif) otomatik çıkarılır.
+        //
+        // YÜKLEME/SİLME YETKİSİ: topluluk kurucusu (meta.ownerUid) HER ZAMAN
+        // yetkilidir. Bunun dışında MODÜL 5 EKLENTİ 1'in rol/izin sistemine
+        // yeni bir izin anahtarı eklenir: "manage_emojis" (Emojileri Yönet).
+        // Bu, PERMISSION_DEFS listesine CommunityChannels tarafında ayrıca
+        // eklenmiştir (bkz. aşağıdaki kayıt). Emoji YÜKLEYEN kişi, kendi
+        // yüklediği emojiyi manage_emojis izni olmasa da silebilir.
+        //
+        // KULLANIM YETKİSİ (mesaj/tepki gönderirken): bir özel emoji bir
+        // topluluğa aitse, sadece o topluluğun AKTİF ÜYESİ (group_chats/
+        // {groupId}/meta/members/{uid} === true) onu kullanabilir. Üye
+        // değilse (topluluktan ayrılmış, hiç katılmamış, vb.) canUseEmoji()
+        // false döner ve mesaj/tepki gönderme akışı bu emojiyi reddetmelidir.
+        // Global/standart unicode emojiler bu kısıtlamaya tabi DEĞİLDİR —
+        // sadece community_emojis altındaki ÖZEL emojiler için geçerlidir.
+        //
+        // NOT: Diğer modüllerle tutarlı olsun diye tamamen client-side
+        // yazılmıştır; gerçek üretimde bu kontroller ayrıca RTDB Security
+        // Rules ile sunucu tarafında da zorunlu kılınmalıdır (özellikle
+        // canUseEmoji mantığı — client-side kontrol tek başına bypass
+        // edilebilir, bkz. dosya sonundaki security rules taslağı notu).
+        window.CommunityEmojis = (() => {
+            // groupId -> { emojiId: {name, image_url, is_animated, uploadedBy, createdAt} }
+            const _cache = {};
+            // groupId -> Firebase ref (canlı dinleyici referansı, kapatmak için)
+            const _refs = {};
+            let _myUid = null;
+
+            firebase.auth().onAuthStateChanged((user) => { _myUid = user ? user.uid : null; });
+
+            function escAttr(str) {
+                return String(str == null ? "" : str).replace(/[&<>"']/g, (c) => ({
+                    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+                }[c]));
+            }
+
+            // ── Emoji adı doğrulama ──────────────────────────────────────
+            // Discord tarzı kısıtlama: sadece harf/rakam/alt çizgi, 2-32
+            // karakter. Boşluk YASAK -- ileride ":emoji_adi:" şeklinde
+            // metin içi kullanım/autocomplete eklenirse ayrıştırmayı
+            // bozmasın diye (MODÜL 5 EKLENTİ 2'deki rol adı kısıtıyla
+            // aynı gerekçe).
+            function isValidEmojiName(name) {
+                return typeof name === "string" && /^[a-zA-Z0-9_]{2,32}$/.test(name);
+            }
+
+            function ensureGroupCache(groupId) {
+                if (!_cache[groupId]) _cache[groupId] = {};
+                return _cache[groupId];
+            }
+
+            // ══ YETKİ KONTROLÜ: YÜKLEME / SİLME ═══════════════════════════
+            // Kurucu her zaman yetkili; aksi halde CommunityChannels'ın
+            // rol/izin sistemindeki "manage_emojis" iznine bakılır.
+            function canManageEmojis(groupId, uid) {
+                if (!uid) return false;
+                const meta = (window.MessagingSystem && window.MessagingSystem._groupMetaCache &&
+                    window.MessagingSystem._groupMetaCache[groupId]) || null;
+                if (meta && meta.ownerUid === uid) return true;
+                if (window.CommunityChannels && window.CommunityChannels.hasPermission(groupId, uid, "manage_emojis")) {
+                    return true;
+                }
+                return false;
+            }
+
+            // Bir emojiyi silme yetkisi: manage_emojis + kurucu, VEYA o
+            // emojiyi bizzat yükleyen kişi (kendi yüklediğini geri alabilir).
+            function canDeleteEmoji(groupId, uid, emoji) {
+                if (!uid || !emoji) return false;
+                if (canManageEmojis(groupId, uid)) return true;
+                return emoji.uploadedBy === uid;
+            }
+
+            // ══ ÜYELİK / KULLANIM YETKİSİ KONTROLÜ ═════════════════════════
+            // Bir topluluğun AKTİF üyesi mi? group_chats/{groupId}/meta/
+            // members/{uid} === true olması gerekir (MODÜL 5 EKLENTİ 1'in
+            // üyelik kaydıyla birebir aynı kontrol noktası).
+            async function isActiveMember(groupId, uid) {
+                if (!groupId || !uid) return false;
+                // Önce bellek içi cache'e bak (MessagingSystem zaten grup
+                // meta'sını dinliyorsa ekstra bir ağ isteği harcanmasın).
+                const cachedMeta = (window.MessagingSystem && window.MessagingSystem._groupMetaCache &&
+                    window.MessagingSystem._groupMetaCache[groupId]) || null;
+                if (cachedMeta && cachedMeta.members) {
+                    return !!cachedMeta.members[uid];
+                }
+                // Cache'te yoksa (örn. kullanıcı o topluluğu hiç açmadan
+                // başka bir yerden -- mesela DM üzerinden -- bu emojiyi
+                // kullanmaya çalışıyorsa) doğrudan Firebase'den oku. Bu,
+                // "üye değilse erişimi engelle" kuralının stale/eksik
+                // cache yüzünden yanlışlıkla atlanmamasını garanti eder.
+                try {
+                    const snap = await firebase.database()
+                        .ref("group_chats/" + groupId + "/meta/members/" + uid)
+                        .once("value");
+                    return snap.val() === true;
+                } catch (e) {
+                    console.error("[CommunityEmojis] Üyelik kontrolü başarısız:", e);
+                    return false; // ağ hatasında GÜVENLİ TARAF: erişimi reddet
+                }
+            }
+
+            // Bir emojiyi kullanmaya (mesaja ekleme / tepki olarak atma)
+            // yetkisi var mı? emojiId, community_emojis/{groupId}/{emojiId}
+            // path'inden gelir -- yani emojinin AİT OLDUĞU topluluk zaten
+            // groupId parametresiyle bellidir (emoji objesinin kendisinde
+            // ayrıca community_id tutmaya gerek yok, path zaten bunu ifade
+            // eder; bu da ayrı bir tutarsızlık kaynağını ortadan kaldırır).
+            //
+            // @returns { allowed: boolean, reason?: string }
+            async function canUseEmoji(groupId, uid, emojiId) {
+                if (!uid) return { allowed: false, reason: "Giriş yapmalısın." };
+                if (!groupId || !emojiId) return { allowed: false, reason: "Geçersiz emoji referansı." };
+
+                const g = ensureGroupCache(groupId);
+                let emoji = g[emojiId];
+                if (!emoji) {
+                    // Cache'te yoksa tek seferlik oku (emoji panelini hiç
+                    // açmadan, örn. eski bir mesajı kopyala-yapıştır ile
+                    // gönderme senaryosunda da doğru sonuç versin diye).
+                    try {
+                        const snap = await firebase.database()
+                            .ref("community_emojis/" + groupId + "/" + emojiId)
+                            .once("value");
+                        emoji = snap.val();
+                    } catch (e) {
+                        console.error("[CommunityEmojis] Emoji okunamadı:", e);
+                        return { allowed: false, reason: "Emoji bulunamadı." };
+                    }
+                }
+                if (!emoji) return { allowed: false, reason: "Bu emoji artık mevcut değil." };
+
+                // Emoji bir topluluğa ait (community_emojis/{groupId}/... yolu
+                // altında var olması zaten bunu kanıtlıyor) -- şimdi kullanıcı
+                // o topluluğun aktif üyesi mi kontrol et.
+                const member = await isActiveMember(groupId, uid);
+                if (!member) {
+                    return { allowed: false, reason: "Bu özel emojiyi kullanmak için topluluğun üyesi olmalısın." };
+                }
+                return { allowed: true };
+            }
+
+            // ══ YÜKLEME ═════════════════════════════════════════════════
+            // file: <input type="file"> üzerinden seçilen görsel/GIF.
+            // name: emoji adı (isValidEmojiName ile doğrulanır).
+            // Döner: { success: true, emojiId } veya { success: false, reason }
+            async function uploadEmoji(groupId, uid, name, file, onProgress) {
+                if (!canManageEmojis(groupId, uid)) {
+                    return { success: false, reason: "Özel emoji/GIF yüklemek için yetkin yok." };
+                }
+                if (!isValidEmojiName(name)) {
+                    return { success: false, reason: "Emoji adı 2-32 karakter olmalı ve sadece harf/rakam/alt çizgi içermeli." };
+                }
+                if (!file || !/^image\//i.test(file.type)) {
+                    return { success: false, reason: "Sadece görsel/GIF dosyaları desteklenir." };
+                }
+                // Aynı toplulukta emoji adı benzersiz olsun (Discord'daki gibi
+                // ":ad:" ile birebir eşleşen tek bir emoji bulunabilsin diye).
+                const g = ensureGroupCache(groupId);
+                const nameTaken = Object.values(g).some((e) => e && e.name === name);
+                if (nameTaken) {
+                    return { success: false, reason: "Bu isimde bir emoji zaten var." };
+                }
+
+                let imageUrl;
+                try {
+                    // Projenin geri kalanıyla AYNI ImgBB yükleme fonksiyonu
+                    // kullanılır (bkz. uploadFileToImgBB, IMGBB_API_KEY).
+                    imageUrl = await uploadFileToImgBB(file, onProgress);
+                } catch (e) {
+                    return { success: false, reason: e.message || "Yükleme başarısız oldu." };
+                }
+
+                const isAnimated = /^image\/gif$/i.test(file.type);
+                const ref = firebase.database().ref("community_emojis/" + groupId).push();
+                const record = {
+                    name,
+                    image_url: imageUrl,
+                    is_animated: isAnimated,
+                    uploadedBy: uid,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                };
+                try {
+                    await ref.set(record);
+                } catch (e) {
+                    return { success: false, reason: "Veritabanına kaydedilemedi: " + (e.message || e) };
+                }
+                return { success: true, emojiId: ref.key };
+            }
+
+            // ══ SİLME ═══════════════════════════════════════════════════
+            async function deleteEmoji(groupId, uid, emojiId) {
+                const g = ensureGroupCache(groupId);
+                const emoji = g[emojiId];
+                if (!emoji) return { success: false, reason: "Emoji bulunamadı." };
+                if (!canDeleteEmoji(groupId, uid, emoji)) {
+                    return { success: false, reason: "Bu emojiyi silme yetkin yok." };
+                }
+                try {
+                    await firebase.database().ref("community_emojis/" + groupId + "/" + emojiId).remove();
+                } catch (e) {
+                    return { success: false, reason: "Silinemedi: " + (e.message || e) };
+                }
+                return { success: true };
+            }
+
+            // ══ CANLI DİNLEYİCİ (bir topluluğun emoji paneli açıldığında) ══
+            function listenEmojis(groupId, onChange) {
+                stopListening(groupId);
+                const ref = firebase.database().ref("community_emojis/" + groupId);
+                _refs[groupId] = ref;
+                ensureGroupCache(groupId);
+                ref.on("value", (snap) => {
+                    _cache[groupId] = snap.val() || {};
+                    if (typeof onChange === "function") onChange(_cache[groupId]);
+                });
+            }
+
+            function stopListening(groupId) {
+                if (_refs[groupId]) {
+                    _refs[groupId].off();
+                    delete _refs[groupId];
+                }
+            }
+
+            function getCached(groupId) {
+                return ensureGroupCache(groupId);
+            }
+
+            // ══ BASİT RENDER YARDIMCISI (emoji seçim paneli için) ══════════
+            function renderPickerHtml(groupId) {
+                const g = ensureGroupCache(groupId);
+                const ids = Object.keys(g);
+                if (!ids.length) {
+                    return `<div class="cch-empty-hint">Bu toplulukta henüz özel emoji/GIF yok.</div>`;
+                }
+                return ids.map((id) => {
+                    const e = g[id];
+                    return `<button type="button" class="community-emoji-pick-btn" data-emoji-id="${escAttr(id)}" title=":${escAttr(e.name)}:">
+                        <img src="${escAttr(e.image_url)}" alt="${escAttr(e.name)}" loading="lazy">
+                    </button>`;
+                }).join("");
+            }
+
+            return {
+                isValidEmojiName,
+                canManageEmojis,
+                canDeleteEmoji,
+                isActiveMember,
+                canUseEmoji,
+                uploadEmoji,
+                deleteEmoji,
+                listenEmojis,
+                stopListening,
+                getCached,
+                renderPickerHtml
+            };
+        })();
+
+        // ════════════════════════════════════════════════════════════════
         // 🗨️ MODÜL 5 — MESAJLAR (DM) & GRUP SOHBETLERİ (MessagingSystem)
         // ════════════════════════════════════════════════════════════════
         // Firebase Realtime Database yapısı (projedeki tüm diğer modüllerle
@@ -15033,6 +15317,29 @@
                     if (window.CommunityChannels.hasPermission(groupId, _myUid, "mention_everyone")) {
                         if (hasEveryoneWord) workingText = window.CommunityMentions.encodeEveryone(workingText);
                         if (hasHereWord) workingText = window.CommunityMentions.encodeHere(workingText);
+                    }
+                }
+
+                // MODÜL 5 EKLENTİ 4: mesaj metninde ":emoji_adi:" şeklinde
+                // özel emoji referansları varsa, gönderen kişinin bu
+                // topluluğun aktif üyesi olduğu doğrulanır (canUseEmoji).
+                // Üye değilse (örn. daha önce üye olup ayrılmış, ya da
+                // metni başka bir toplulukta kopyalayıp buraya yapıştırmış
+                // olabilir) o referans sessizce düz metin olarak bırakılır
+                // -- yani gerçek bir emoji görseli olarak RENDER EDİLMEZ.
+                if (isCommunity && window.CommunityEmojis) {
+                    const emojiRefs = [...workingText.matchAll(/:([a-zA-Z0-9_]{2,32}):/g)];
+                    for (const m of emojiRefs) {
+                        const emojiName = m[1];
+                        const cached = window.CommunityEmojis.getCached(groupId);
+                        const found = Object.entries(cached).find(([, e]) => e && e.name === emojiName);
+                        if (!found) continue; // bu topluluğa ait değil, unicode/başka bir şey olabilir -- dokunma
+                        const [emojiId] = found;
+                        const usage = await window.CommunityEmojis.canUseEmoji(groupId, _myUid, emojiId);
+                        if (!usage.allowed) {
+                            alert(usage.reason || "Bu özel emojiyi kullanma yetkin yok.");
+                            return;
+                        }
                     }
                 }
 
