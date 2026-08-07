@@ -1249,6 +1249,74 @@
         font-size: 1rem;
     }
 
+    /* ---------- MODÜL 5 EKLENTİ 4: Özel Emoji Seçim Paneli ----------
+       "+" menüsündeki "Emoji Ekle" seçeneğiyle açılır. .forum-attach-popover
+       tabanını kullanır (aynı konumlandırma/gölge/z-index) ama içeriği
+       topluluk başlıklı bölümler + emoji grid'i olarak farklılaşır. */
+    .community-emoji-picker-popover {
+        min-width: 260px;
+        max-width: min(300px, calc(100vw - 32px));
+        max-height: min(360px, calc(100vh - 120px));
+        overflow-y: auto;
+        gap: 10px;
+    }
+    .community-emoji-picker-section + .community-emoji-picker-section {
+        margin-top: 4px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+    }
+    .community-emoji-picker-section-title {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        padding: 2px 4px 6px;
+    }
+    .community-emoji-picker-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+        gap: 6px;
+    }
+    .community-emoji-pick-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        padding: 4px;
+        background: var(--bg-panel);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+    .community-emoji-pick-btn:hover {
+        border-color: var(--accent);
+        transform: scale(1.08);
+    }
+    .community-emoji-pick-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+    .cch-empty-hint {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        padding: 8px 4px;
+        line-height: 1.5;
+    }
+
+    /* Mesaj içinde ":ad:" -> görsele çevrilen özel emoji (inline, satır
+       yüksekliğine göre ölçeklenir -- unicode emoji ile aynı akışta durur). */
+    .community-emoji-inline {
+        width: 1.35em;
+        height: 1.35em;
+        vertical-align: -0.3em;
+        object-fit: contain;
+    }
+
     /* ---------- GIF Arama Popup'ı (Discord tarzı, Giphy) ---------- */
     .forum-gif-picker-modal {
         width: 100%;
@@ -3638,6 +3706,64 @@
     .cch-manage-row-name { flex: 1; font-size: 0.88rem; }
     .cch-manage-row-meta { font-size: 0.72rem; color: var(--text-dim); }
     .cch-manage-row-actions { display: flex; gap: 6px; }
+
+    /* MODÜL 5 EKLENTİ 4: Emoji yönetim listesi -- Kanallar/Rütbeler'deki
+       satır listesinden farklı olarak grid (görsel önizlemeli kart). */
+    .community-emoji-manage-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+        gap: 10px;
+    }
+    .community-emoji-manage-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg-panel-raised);
+        text-align: center;
+    }
+    .community-emoji-manage-card img {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+    }
+    .community-emoji-manage-card-name {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        word-break: break-all;
+        line-height: 1.3;
+    }
+    .community-emoji-manage-card .cch-icon-btn { font-size: 0.72rem; }
+
+    /* Emoji Ekle modalı — dosya önizleme satırı */
+    .community-emoji-add-preview-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 6px;
+    }
+    .community-emoji-add-preview {
+        width: 56px;
+        height: 56px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--bg-panel-raised);
+        font-size: 1.5rem;
+        overflow: hidden;
+    }
+    .community-emoji-add-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
     .cch-icon-btn {
         background: none;
         border: 1px solid var(--line);
@@ -6323,7 +6449,7 @@
                             </div>
 
                             <div class="msg-composer">
-                                <div class="forum-plus-btn" id="groupPlusBtn" title="Fotoğraf veya GIF ekle">
+                                <div class="forum-plus-btn" id="groupPlusBtn" title="Fotoğraf, GIF veya emoji ekle">
                                     +
                                     <div class="forum-attach-popover" id="groupPlusPopover">
                                         <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
@@ -6331,6 +6457,12 @@
                                         </button>
                                         <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
                                             <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        </button>
+                                        <!-- MODÜL 5 EKLENTİ 4: Özel Emoji & GIF Kütüphanesi — sadece
+                                             kullanıcının ÜYE olduğu topluluğun/toplulukların özel
+                                             emojileri burada listelenir (bkz. openCommunityEmojiPicker). -->
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
+                                            <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
                                         </button>
                                     </div>
                                 </div>
@@ -6539,6 +6671,19 @@
                                 <div class="forum-modal-error" id="cchRolesError" style="display:none;"></div>
                             </div>
 
+                            <!-- MODÜL 5 EKLENTİ 4: Özel Emoji & GIF Kütüphanesi (sadece
+                                 isCommunity=true, manage_emojis izni olanlar / kurucu görür) -->
+                            <div class="msg-group-detail-section" id="cemManageEmojisSection" style="display:none;">
+                                <div class="msg-group-detail-section-title msg-group-detail-members-title">
+                                    <span id="cemManageEmojisHeading">Özel Emojiler</span>
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-add-member-btn" id="cemManageAddEmojiBtn">＋ Emoji/GIF Ekle</button>
+                                </div>
+                                <div class="cch-manage-list community-emoji-manage-grid" id="cemManageEmojiList">
+                                    <div class="hub-placeholder">Yükleniyor…</div>
+                                </div>
+                                <div class="forum-modal-error" id="cemEmojisError" style="display:none;"></div>
+                            </div>
+
                             <!-- Üye listesi -->
                             <div class="msg-group-detail-section">
                                 <div class="msg-group-detail-section-title msg-group-detail-members-title">
@@ -6705,6 +6850,42 @@
                             <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="cchRoleDeleteBtn" style="display:none;">🗑 Rütbeyi Sil</button>
                             <button class="forum-btn forum-btn-ghost" id="cchRoleEditCancelBtn">Vazgeç</button>
                             <button class="forum-btn forum-btn-primary" id="cchRoleEditSaveBtn">Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODÜL 5 EKLENTİ 4: EMOJİ/GIF EKLE MODALI -->
+                <div class="forum-modal-backdrop" id="cemEmojiAddModalBackdrop" style="display:none;">
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span>Özel Emoji / GIF Ekle</span>
+                            <button class="forum-modal-close" id="cemEmojiAddModalClose">✕</button>
+                        </div>
+                        <div class="forum-modal-body">
+                            <label class="forum-field-label">Emoji Adı</label>
+                            <input type="text" class="forum-text-input" id="cemEmojiNameInput" maxlength="32" placeholder="Örn: parti_kedi (sadece harf/rakam/_ , 2-32 karakter)">
+
+                            <label class="forum-field-label" style="margin-top:10px;">Görsel / GIF Dosyası</label>
+                            <div class="community-emoji-add-preview-row">
+                                <div class="community-emoji-add-preview" id="cemEmojiPreviewWrap">
+                                    <img id="cemEmojiPreviewImg" style="display:none;" alt="Önizleme">
+                                    <span id="cemEmojiPreviewFallback">😀</span>
+                                </div>
+                                <div style="flex:1;">
+                                    <button type="button" class="forum-btn forum-btn-ghost" id="cemEmojiPickFileBtn">Dosya Seç</button>
+                                    <input type="file" id="cemEmojiFileInput" style="display:none;" accept="image/*">
+                                    <div class="msg-group-detail-avatar-status" id="cemEmojiUploadStatus" style="display:none;"></div>
+                                </div>
+                            </div>
+                            <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px; line-height:1.5;">
+                                Görsel ImgBB üzerinden yüklenir. GIF dosyaları animasyonlu olarak (is_animated) kaydedilir.
+                                Bu emoji sadece bu topluluğun ÜYELERİ tarafından kullanılabilir.
+                            </p>
+                            <div class="forum-modal-error" id="cemEmojiAddError" style="display:none;"></div>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-ghost" id="cemEmojiAddCancelBtn">Vazgeç</button>
+                            <button class="forum-btn forum-btn-primary" id="cemEmojiAddSaveBtn">Ekle</button>
                         </div>
                     </div>
                 </div>
@@ -11093,7 +11274,7 @@
             popover.style.top = `${top}px`;
         }
 
-        function wirePlusButton({ plusBtnId, popoverId, attachBtnId, gifBtnId }) {
+        function wirePlusButton({ plusBtnId, popoverId, attachBtnId, gifBtnId, emojiBtnId, textareaId, emojiGroupIdResolver }) {
             const plusBtn = document.getElementById(plusBtnId);
             const popover = document.getElementById(popoverId);
             const attachBtn = document.getElementById(attachBtnId);
@@ -11170,6 +11351,16 @@
                         attachBtn.click();
                     } else if (action === "gif" && gifBtn) {
                         gifBtn.click();
+                    } else if (action === "emoji") {
+                        // MODÜL 5 EKLENTİ 4: Özel Emoji & GIF Kütüphanesi.
+                        // Gizli bir buton yok -- doğrudan emoji seçim
+                        // panelini açan fonksiyona yönlendiriyoruz.
+                        const emojiBtn = emojiBtnId ? document.getElementById(emojiBtnId) : null;
+                        if (emojiBtn) {
+                            emojiBtn.click();
+                        } else if (typeof openCommunityEmojiPicker === "function") {
+                            openCommunityEmojiPicker(plusBtn, textareaId, emojiGroupIdResolver);
+                        }
                     }
                 });
             });
@@ -11177,6 +11368,154 @@
             // closeAllPlusPopovers tarafından çağrılabilmesi için referans sakla.
             popover.__closePopover = closePopover;
         }
+
+        // ════════════════════════════════════════════════════════════════
+        // 🎨 MODÜL 5 EKLENTİ 4 — EMOJİ SEÇİM PANELİ ("+" menüsündeki
+        //     "Emoji Ekle" seçeneğine tıklanınca açılır)
+        // ════════════════════════════════════════════════════════════════
+        // Panel, kullanıcının ÜYE OLDUĞU topluluk(lar)ın özel emojilerini
+        // toplulukbaşlıklı gruplar halinde listeler. Bir topluluğun
+        // üyesi değilsen o topluluğun emojileri bu panelde HİÇ görünmez
+        // (window.CommunityEmojis.canUseEmoji ile ayrıca sunucu tarafında
+        // da doğrulanır — bkz. sendGroupMessage ve RTDB Security Rules).
+        //
+        // emojiGroupIdResolver: composer'ın "aktif topluluk" bağlamı varsa
+        // (örn. grup sohbeti composer'ı açıkken o topluluk) o topluluk
+        // panelde ÜSTTE ve öne çıkarılmış gösterilir; ama yine de
+        // kullanıcının diğer toplulukların emojilerini de aynı panelden
+        // seçebilmesi için TÜM üye olunan topluluklar listelenir.
+        let _emojiPickerEl = null;
+        let _emojiPickerLoadedGroupIds = new Set();
+
+        function ensureEmojiPickerEl() {
+            if (_emojiPickerEl) return _emojiPickerEl;
+            const el = document.createElement("div");
+            el.className = "forum-attach-popover community-emoji-picker-popover";
+            el.id = "communityEmojiPickerPopover";
+            document.body.appendChild(el);
+            _emojiPickerEl = el;
+            return el;
+        }
+
+        function closeCommunityEmojiPicker() {
+            if (_emojiPickerEl) {
+                _emojiPickerEl.classList.remove("is-open", "is-fixed-popover");
+                _emojiPickerEl.style.left = "";
+                _emojiPickerEl.style.top = "";
+            }
+        }
+
+        // Panelin dışına tıklanınca / Escape'e basılınca kapansın.
+        document.addEventListener("click", () => closeCommunityEmojiPicker());
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeCommunityEmojiPicker();
+        });
+
+        function myCommunityGroupIds() {
+            // "Üye olunan topluluklar" -- user_groups/{myUid} üzerinden
+            // zaten canlı olarak dinlenen _userGroupsCache/_groupMetaCache
+            // (MessagingSystem) kullanılır; sadece isCommunity===true
+            // olanlar filtrelenir (MODÜL 5 EKLENTİ 1'in tanımıyla aynı).
+            const ms = window.MessagingSystem;
+            if (!ms || !ms._groupMetaCache) return [];
+            return Object.keys(ms._groupMetaCache).filter((gid) => {
+                const meta = ms._groupMetaCache[gid];
+                return meta && meta.isCommunity === true && meta.members && meta.members[
+                    (window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid) || ""
+                ];
+            });
+        }
+
+        function escEmojiAttr(str) {
+            return String(str == null ? "" : str).replace(/[&<>"']/g, (c) => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[c]));
+        }
+
+        function renderEmojiPickerContents(activeGroupId) {
+            const el = ensureEmojiPickerEl();
+            const groupIds = myCommunityGroupIds();
+            // Aktif topluluk varsa listenin başına al (küme -> dizi, tekrarsız).
+            const orderedIds = activeGroupId
+                ? [activeGroupId, ...groupIds.filter((g) => g !== activeGroupId)]
+                : groupIds;
+
+            if (!orderedIds.length) {
+                el.innerHTML = `<div class="cch-empty-hint">Herhangi bir topluluğun üyesi değilsin, bu yüzden özel emoji yok.</div>`;
+                return;
+            }
+
+            const ms = window.MessagingSystem;
+            const sections = orderedIds.map((gid) => {
+                const meta = (ms && ms._groupMetaCache && ms._groupMetaCache[gid]) || {};
+                const communityName = escEmojiAttr(meta.name || "Topluluk");
+                // Henüz dinlenmiyorsa dinlemeye başla (canlı güncellenir).
+                if (!_emojiPickerLoadedGroupIds.has(gid) && window.CommunityEmojis) {
+                    _emojiPickerLoadedGroupIds.add(gid);
+                    window.CommunityEmojis.listenEmojis(gid, () => {
+                        // Panel hâlâ açıksa içeriği tazele.
+                        if (el.classList.contains("is-open")) renderEmojiPickerContents(activeGroupId);
+                    });
+                }
+                const cached = window.CommunityEmojis ? window.CommunityEmojis.getCached(gid) : {};
+                const ids = Object.keys(cached);
+                const gridHtml = ids.length
+                    ? ids.map((eid) => {
+                        const e = cached[eid];
+                        return `<button type="button" class="community-emoji-pick-btn" data-emoji-group-id="${escEmojiAttr(gid)}" data-emoji-id="${escEmojiAttr(eid)}" data-emoji-name="${escEmojiAttr(e.name)}" title=":${escEmojiAttr(e.name)}:">
+                            <img src="${escEmojiAttr(e.image_url)}" alt="${escEmojiAttr(e.name)}" loading="lazy">
+                        </button>`;
+                    }).join("")
+                    : `<div class="cch-empty-hint">Bu toplulukta henüz özel emoji/GIF yok.</div>`;
+
+                return `<div class="community-emoji-picker-section">
+                    <div class="community-emoji-picker-section-title">${communityName}</div>
+                    <div class="community-emoji-picker-grid">${gridHtml}</div>
+                </div>`;
+            });
+
+            el.innerHTML = sections.join("");
+        }
+
+        function insertTextAtCursor(textarea, text) {
+            if (!textarea) return;
+            const start = textarea.selectionStart ?? textarea.value.length;
+            const end = textarea.selectionEnd ?? textarea.value.length;
+            const before = textarea.value.slice(0, start);
+            const after = textarea.value.slice(end);
+            textarea.value = before + text + after;
+            const newPos = start + text.length;
+            textarea.setSelectionRange(newPos, newPos);
+            textarea.focus();
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        function openCommunityEmojiPicker(anchorBtn, textareaId, emojiGroupIdResolver) {
+            const el = ensureEmojiPickerEl();
+            const activeGroupId = typeof emojiGroupIdResolver === "function" ? emojiGroupIdResolver() : null;
+
+            // Aynı anda başka "+" popover'ları açık kalmasın.
+            closeAllPlusPopovers(null);
+
+            renderEmojiPickerContents(activeGroupId);
+
+            el.classList.add("is-fixed-popover", "is-open");
+            requestAnimationFrame(() => positionFixedPopover(anchorBtn, el));
+
+            // Bir emojiye tıklanınca ilgili textarea'ya ":ad:" olarak eklenir.
+            // Kullanım yetkisi (üyelik) mesaj GÖNDERİLİRKEN sendGroupMessage
+            // içinde tekrar doğrulanır -- burada sadece metne ekleniyor.
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const btn = e.target.closest(".community-emoji-pick-btn");
+                if (!btn) return;
+                const name = btn.getAttribute("data-emoji-name");
+                const textarea = textareaId ? document.getElementById(textareaId) : null;
+                if (textarea && name) insertTextAtCursor(textarea, `:${name}:`);
+                closeCommunityEmojiPicker();
+            };
+        }
+        window.openCommunityEmojiPicker = openCommunityEmojiPicker;
 
         // Panelin dışına tıklanınca ya da Escape'e basılınca tüm "+"
         // panellerini kapat (composer'lar arası ortak, tek dinleyici).
@@ -11498,9 +11837,35 @@
         // Metin önce escapeHtml'den, SONRA mention render'dan geçer, EN SON
         // bu token'lar/URL'ler HTML'e çevrilir — böylece XSS riski oluşmaz
         // (URL'ler de escape edilmiş haliyle attribute'a yazılır).
-        function renderRichContent(storedText, roleColorResolver, roleLookupResolver) {
+        function renderRichContent(storedText, roleColorResolver, roleLookupResolver, emojiGroupId) {
             if (!storedText) return "";
             let html = window.CommunityMentions.renderForDisplay(storedText, roleColorResolver, roleLookupResolver);
+
+            // ---- 0) MODÜL 5 EKLENTİ 4: Özel topluluk emojileri (":ad:") ----
+            // Sadece emojiGroupId verilmişse (yani bu render bir topluluk
+            // kanalı bağlamında yapılıyorsa) çalışır -- forum/DM/market gibi
+            // topluluk bağlamı olmayan yerlerde ":ad:" hiç dokunulmadan düz
+            // metin olarak kalır (yanlışlıkla başka bir topluluğun emoji
+            // adını unicode gibi yorumlamamak için). Emoji, o toplulukta
+            // gerçekten var mı diye community_emojis cache'ine bakılır --
+            // yoksa (silinmiş, hiç var olmamış, başka bir topluluğa ait)
+            // yine düz metin olarak kalır; KULLANICININ O AN ÜYE OLUP
+            // OLMADIĞI burada AYRICA kontrol edilmez, çünkü gönderim anında
+            // zaten sendGroupMessage/canUseEmoji tarafından reddedilmiş
+            // olurdu -- burası sadece MEVCUT/GEÇERLİ bir emojiyi görsele
+            // çevirme adımıdır, yetkilendirme değil.
+            if (emojiGroupId && window.CommunityEmojis) {
+                const cached = window.CommunityEmojis.getCached(emojiGroupId);
+                const byName = {};
+                Object.values(cached).forEach((e) => { if (e && e.name) byName[e.name] = e; });
+                html = html.replace(/:([a-zA-Z0-9_]{2,32}):/g, (match, name) => {
+                    const e = byName[name];
+                    if (!e) return match; // toplulukta böyle bir emoji yok -- dokunma
+                    const safeUrl = RBAC.escapeHtml(e.image_url);
+                    const safeName = RBAC.escapeHtml(e.name);
+                    return `<img class="community-emoji-inline" src="${safeUrl}" alt=":${safeName}:" title=":${safeName}:" loading="lazy">`;
+                });
+            }
 
             // ---- 1) Elle BBCode etiketleri (öncelikli, geriye dönük uyum) ----
             html = html.replace(/\[img\](.*?)\[\/img\]/gi, (match, url) => {
@@ -13559,6 +13924,11 @@
                         btn.addEventListener("click", () => openRoleEditModal(groupId, btn.getAttribute("data-cch-mng-edit-role")));
                     });
                 }
+
+                // MODÜL 5 EKLENTİ 4: Özel Emoji & GIF Kütüphanesi bölümü.
+                // window.CommunityEmojis henüz bu script bloğunda tanımlı
+                // olmayabilir (modül sırasına bağlı) -- güvenli erişim.
+                if (window.CommunityEmojis) window.CommunityEmojis.renderManageSection(groupId);
             }
 
             // ══ ÜYE RÜTBE ROZETLERİ (üye listesinde gösterim) ═══════════
@@ -14520,6 +14890,192 @@
                 }).join("");
             }
 
+            // ════════════════════════════════════════════════════════════
+            // ══ YÖNETİM PANELİ (Grup Detayı -> "Özel Emojiler" bölümü) ═══
+            // ════════════════════════════════════════════════════════════
+            // CommunityChannels.renderManagePanel() her açılışta bunu da
+            // çağırır (bkz. renderManagePanel içindeki köprü). Bölüm sadece
+            // manage_emojis izni olanlara (+ kurucuya) görünür -- diğer
+            // üyeler için tamamen gizlenir, boş liste bile göstermez.
+            let _manageListenerStarted = new Set(); // groupId -> bu oturumda listenEmojis çağrıldı mı
+
+            function renderManageSection(groupId) {
+                const sec = document.getElementById("cemManageEmojisSection");
+                if (!sec) return;
+                const canManage = canManageEmojis(groupId, _myUid);
+                sec.style.display = canManage ? "flex" : "none";
+                if (!canManage) return;
+
+                // Canlı dinleyici bir kere başlar; sonraki her değişiklikte
+                // otomatik yeniden render eder (elle tekrar çağırmaya gerek yok).
+                if (!_manageListenerStarted.has(groupId)) {
+                    _manageListenerStarted.add(groupId);
+                    listenEmojis(groupId, () => renderManageList(groupId));
+                } else {
+                    renderManageList(groupId);
+                }
+            }
+
+            function renderManageList(groupId) {
+                const g = ensureGroupCache(groupId);
+                const ids = Object.keys(g);
+                const headingEl = document.getElementById("cemManageEmojisHeading");
+                if (headingEl) headingEl.textContent = `Özel Emojiler (${ids.length})`;
+
+                const listEl = document.getElementById("cemManageEmojiList");
+                if (!listEl) return;
+                listEl.innerHTML = ids.length ? ids.map((id) => {
+                    const e = g[id];
+                    const canDelete = canDeleteEmoji(groupId, _myUid, e);
+                    const deleteBtn = canDelete
+                        ? `<button type="button" class="cch-icon-btn" data-cem-mng-delete="${escAttr(id)}" title="Sil">🗑</button>`
+                        : "";
+                    return `
+                        <div class="community-emoji-manage-card">
+                            <img src="${escAttr(e.image_url)}" alt="${escAttr(e.name)}" loading="lazy">
+                            <span class="community-emoji-manage-card-name">:${escAttr(e.name)}:${e.is_animated ? " 🎬" : ""}</span>
+                            ${deleteBtn}
+                        </div>
+                    `;
+                }).join("") : `<div class="cch-empty-note">Henüz özel emoji/GIF yok. "＋ Emoji/GIF Ekle" ile ekleyebilirsin.</div>`;
+
+                listEl.querySelectorAll("[data-cem-mng-delete]").forEach((btn) => {
+                    btn.addEventListener("click", async () => {
+                        const emojiId = btn.getAttribute("data-cem-mng-delete");
+                        const e = g[emojiId];
+                        if (!e) return;
+                        if (!confirm(`":${e.name}:" emojisini silmek istediğine emin misin?`)) return;
+                        btn.disabled = true;
+                        const res = await deleteEmoji(groupId, _myUid, emojiId);
+                        if (!res.success) alert(res.reason || "Silinemedi.");
+                        // Liste, canlı dinleyici (listenEmojis) tarafından
+                        // otomatik olarak yeniden render edilecek.
+                    });
+                });
+            }
+
+            // ══ "EMOJİ/GIF EKLE" MODALI ═══════════════════════════════════
+            let _pendingEmojiFile = null; // henüz kaydedilmemiş, seçilmiş dosya
+
+            function openAddEmojiModal(groupId) {
+                if (!canManageEmojis(groupId, _myUid)) return;
+                _pendingEmojiFile = null;
+                document.getElementById("cemEmojiAddModalBackdrop").dataset.groupId = groupId;
+                document.getElementById("cemEmojiNameInput").value = "";
+                document.getElementById("cemEmojiAddError").style.display = "none";
+                document.getElementById("cemEmojiUploadStatus").style.display = "none";
+                const imgEl = document.getElementById("cemEmojiPreviewImg");
+                const fallbackEl = document.getElementById("cemEmojiPreviewFallback");
+                if (imgEl) { imgEl.src = ""; imgEl.style.display = "none"; }
+                if (fallbackEl) fallbackEl.style.display = "flex";
+                document.getElementById("cemEmojiAddModalBackdrop").style.display = "flex";
+            }
+
+            function closeAddEmojiModal() {
+                document.getElementById("cemEmojiAddModalBackdrop").style.display = "none";
+                _pendingEmojiFile = null;
+            }
+
+            function wireManageUi() {
+                const addBtn = document.getElementById("cemManageAddEmojiBtn");
+                if (addBtn && !addBtn.dataset.bound) {
+                    addBtn.dataset.bound = "1";
+                    addBtn.addEventListener("click", () => {
+                        if (_lastRenderedGroupId) openAddEmojiModal(_lastRenderedGroupId);
+                    });
+                }
+
+                document.getElementById("cemEmojiAddModalClose")?.addEventListener("click", closeAddEmojiModal);
+                document.getElementById("cemEmojiAddCancelBtn")?.addEventListener("click", closeAddEmojiModal);
+
+                const pickBtn = document.getElementById("cemEmojiPickFileBtn");
+                const fileInput = document.getElementById("cemEmojiFileInput");
+                if (pickBtn && fileInput && !pickBtn.dataset.bound) {
+                    pickBtn.dataset.bound = "1";
+                    pickBtn.addEventListener("click", () => fileInput.click());
+                    fileInput.addEventListener("change", () => {
+                        const file = fileInput.files && fileInput.files[0];
+                        fileInput.value = "";
+                        if (!file) return;
+                        if (!/^image\//i.test(file.type)) {
+                            document.getElementById("cemEmojiAddError").textContent = "Sadece görsel/GIF dosyaları desteklenir.";
+                            document.getElementById("cemEmojiAddError").style.display = "block";
+                            return;
+                        }
+                        _pendingEmojiFile = file;
+                        const imgEl = document.getElementById("cemEmojiPreviewImg");
+                        const fallbackEl = document.getElementById("cemEmojiPreviewFallback");
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            if (imgEl) { imgEl.src = reader.result; imgEl.style.display = "block"; }
+                            if (fallbackEl) fallbackEl.style.display = "none";
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+
+                const saveBtn = document.getElementById("cemEmojiAddSaveBtn");
+                if (saveBtn && !saveBtn.dataset.bound) {
+                    saveBtn.dataset.bound = "1";
+                    saveBtn.addEventListener("click", async () => {
+                        const groupId = document.getElementById("cemEmojiAddModalBackdrop").dataset.groupId;
+                        const name = document.getElementById("cemEmojiNameInput").value.trim();
+                        const errEl = document.getElementById("cemEmojiAddError");
+                        const statusEl = document.getElementById("cemEmojiUploadStatus");
+                        errEl.style.display = "none";
+
+                        if (!isValidEmojiName(name)) {
+                            errEl.textContent = "Emoji adı 2-32 karakter olmalı ve sadece harf/rakam/alt çizgi içermeli.";
+                            errEl.style.display = "block";
+                            return;
+                        }
+                        if (!_pendingEmojiFile) {
+                            errEl.textContent = "Lütfen bir görsel/GIF dosyası seç.";
+                            errEl.style.display = "block";
+                            return;
+                        }
+
+                        saveBtn.disabled = true;
+                        statusEl.style.display = "block";
+                        statusEl.textContent = "Yükleniyor...";
+
+                        const res = await uploadEmoji(groupId, _myUid, name, _pendingEmojiFile, (pct) => {
+                            if (typeof pct === "number") statusEl.textContent = `Yükleniyor... %${Math.round(pct)}`;
+                        });
+
+                        saveBtn.disabled = false;
+                        if (!res.success) {
+                            errEl.textContent = res.reason || "Eklenemedi.";
+                            errEl.style.display = "block";
+                            statusEl.style.display = "none";
+                            return;
+                        }
+                        statusEl.style.display = "none";
+                        closeAddEmojiModal();
+                        // Liste, canlı dinleyici (listenEmojis) tarafından
+                        // otomatik olarak yeniden render edilecek.
+                    });
+                }
+            }
+
+            // Grup Detay panelinin genel açılış akışıyla aynı hizada
+            // wireManageUi'yi bir kez bağlamak için: DOMContentLoaded'da
+            // çağrılır (bkz. dosya sonu init bloğu).
+            let _lastRenderedGroupId = null;
+            function renderManageSectionWrapped(groupId) {
+                _lastRenderedGroupId = groupId;
+                renderManageSection(groupId);
+            }
+
+            // Emoji Ekle modalının statik butonları (aç/kapat/dosya seç/
+            // kaydet) sayfa yüklenince BİR KEZ bağlanır -- CommunityChannels
+            // modülündeki bindStaticEvents ile aynı desen.
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", wireManageUi);
+            } else {
+                wireManageUi();
+            }
+
             return {
                 isValidEmojiName,
                 canManageEmojis,
@@ -14531,7 +15087,9 @@
                 listenEmojis,
                 stopListening,
                 getCached,
-                renderPickerHtml
+                renderPickerHtml,
+                renderManageSection: renderManageSectionWrapped,
+                wireManageUi
             };
         })();
 
@@ -17241,7 +17799,7 @@
 
                     const bodyHtml = isDeleted
                         ? `<div class="msg-bubble-text msg-bubble-deleted">🚫 Bu mesaj silindi</div>`
-                        : `<div class="msg-bubble-text">${renderRichContent(m.text, mentionColorResolver, roleLookupResolver)}</div>`;
+                        : `<div class="msg-bubble-text">${renderRichContent(m.text, mentionColorResolver, roleLookupResolver, isCommunityBubble ? _activeGroupId : null)}</div>`;
 
                     let actionsHtml = "";
                     if (!isDeleted) {
@@ -17467,7 +18025,16 @@
                 }
 
                 if (typeof wirePlusButton === "function") {
-                    wirePlusButton({ plusBtnId, popoverId: plusPopoverId, attachBtnId, gifBtnId });
+                    wirePlusButton({
+                        plusBtnId, popoverId: plusPopoverId, attachBtnId, gifBtnId, textareaId,
+                        // MODÜL 5 EKLENTİ 4: emoji panelinin hangi topluluğun
+                        // emojilerini göstereceğini belirlemek için -- grup
+                        // composer'ında aktif açık topluluk, DM/forum gibi
+                        // topluluk bağlamı olmayan yerlerde null döner (o
+                        // durumda panel "üye olduğun tüm topluluklar" moduna
+                        // düşer, bkz. openCommunityEmojiPicker).
+                        emojiGroupIdResolver: () => (typeof _activeGroupId !== "undefined" ? _activeGroupId : null)
+                    });
                 }
             }
 
