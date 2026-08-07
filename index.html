@@ -13964,6 +13964,32 @@
                 renderActiveMessageList(_lastRenderedGroupId, _lastRenderedChannelId, _lastRenderedMessagesArr);
             }
 
+            // Bazen (gönderim sonrası) .on("value") dinleyicisinin RTDB'den
+            // güncellemeyi ekrana yansıtması gecikebiliyor ya da bir yarış
+            // durumu yüzünden hiç tetiklenmeyebiliyor -- kullanıcı mesaj
+            // gönderdiğinde ekranda görünmemesi ama F5 sonrası görünmesi
+            // tam olarak bu belirtiye uyuyor. Bu yüzden mesaj gönderimi
+            // BAŞARILI olduğunda (sendGroupMessage), pasif dinlemeye
+            // güvenmek yerine aktif kanalı ANINDA VE ZORLA (tek seferlik
+            // .once ile) tekrar okuyup render ediyoruz -- dinleyici zaten
+            // doğru çalışıyorsa bu çağrı zararsız (aynı veriyle tekrar
+            // render eder), çalışmıyorsa telafi eder.
+            async function forceRefreshActiveMessages(groupId) {
+                const channelId = getActiveChannelId(groupId);
+                if (!channelId) return;
+                try {
+                    const snap = await firebase.database()
+                        .ref("group_chats/" + groupId + "/channels/" + channelId + "/messages")
+                        .orderByChild("createdAt").limitToLast(150).once("value");
+                    if (getActiveChannelId(groupId) !== channelId) return; // bu sırada kanal değişmiş olabilir
+                    const all = snap.val() || {};
+                    const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    renderActiveMessageList(groupId, channelId, arr);
+                } catch (err) {
+                    console.error("[CommunityChannels] forceRefreshActiveMessages okunamadı:", err, "groupId:", groupId, "channelId:", channelId);
+                }
+            }
+
             function selectChannel(groupId, channelId) {
                 setActiveChannelId(groupId, channelId);
                 if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
@@ -14908,7 +14934,8 @@
                 openAssignRoleModal,
                 getDefaultRoleId,
                 assignDefaultRoleIfAny,
-                rerenderActiveMessages
+                rerenderActiveMessages,
+                forceRefreshActiveMessages
             };
         })();
 
@@ -16241,6 +16268,28 @@
                 }
 
                 groupReplyBannerCtrl.clear();
+
+                // Kendi gönderdiğimiz mesajın ekranda ANINDA görünmesini
+                // garantiye almak için: pasif .on("value") dinleyicisine
+                // güvenmek yerine (gecikebiliyor/tetiklenmeyebiliyor),
+                // topluluk kanallarında aktif mesaj listesini burada
+                // aktif olarak zorla tazeliyoruz.
+                if (isCommunity && window.CommunityChannels && window.CommunityChannels.forceRefreshActiveMessages) {
+                    window.CommunityChannels.forceRefreshActiveMessages(groupId);
+                } else if (!isCommunity && _groupMessagesRef && _activeGroupId === groupId) {
+                    // Normal (topluluk olmayan) gruplarda da aynı garanti:
+                    // .on("value") dinleyicisinin kendisi zaten tetiklenecek
+                    // olsa da, burada tek seferlik bir .once ile ekstra bir
+                    // zorlama render yapıyoruz -- zararsız, gecikmeyi telafi eder.
+                    database.ref(basePath).orderByChild("createdAt").limitToLast(150).once("value").then((snap) => {
+                        if (_activeGroupId !== groupId) return;
+                        const all = snap.val() || {};
+                        const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                        renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
+                    }).catch((err) => {
+                        console.error("[Messaging] Grup mesajları zorla tazelenemedi:", err);
+                    });
+                }
 
                 // İKİNCİL İŞLEM: grup meta önizlemesi — başarısız olursa mesaj
                 // yine de gönderilmiş sayılır, sahte hata gösterilmez.
