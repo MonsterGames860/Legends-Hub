@@ -11556,13 +11556,20 @@
                 plusBtnId: "forumPlusBtn",
                 popoverId: "forumPlusPopover",
                 attachBtnId: "forumAttachBtn",
-                gifBtnId: "forumGifBtn"
+                gifBtnId: "forumGifBtn",
+                textareaId: "forumComposerInput",
+                // Forumda tek bir "aktif topluluk" bağlamı yok -- panel
+                // otomatik olarak "üye olunan tüm topluluklar" moduna
+                // düşer (bkz. openCommunityEmojiPicker / myCommunityGroupIds).
+                emojiGroupIdResolver: () => null
             });
             wirePlusButton({
                 plusBtnId: "forumReplyPlusBtn",
                 popoverId: "forumReplyPlusPopover",
                 attachBtnId: "forumReplyAttachBtn",
-                gifBtnId: "forumReplyGifBtn"
+                gifBtnId: "forumReplyGifBtn",
+                textareaId: "forumReplyInput",
+                emojiGroupIdResolver: () => null
             });
             // NOT: mktCommentPlusBtn burada DEĞİL — o, marketplace detay
             // modalının kendi init fonksiyonunda (modal her açıldığında
@@ -11896,6 +11903,20 @@
                 const byName = {};
                 if (emojiGroupId) {
                     // Belirli bir topluluk bağlamı (grup/topluluk sohbeti).
+                    // Diğer daldaki gibi: henüz dinlenmiyorsa dinlemeye
+                    // başla (cache'i doldurmak için) VE veri geç gelirse
+                    // (F5 sonrası mesajlar rollerden/emojilerden önce
+                    // gelebiliyor) aktif mesaj listesini otomatik olarak
+                    // yeniden render et -- aksi halde ":emoji_adi:" sayfa
+                    // yenilenene kadar düz metin olarak kalırdı.
+                    if (!_emojiPickerLoadedGroupIds.has(emojiGroupId)) {
+                        _emojiPickerLoadedGroupIds.add(emojiGroupId);
+                        window.CommunityEmojis.listenEmojis(emojiGroupId, () => {
+                            if (window.CommunityChannels && window.CommunityChannels.rerenderActiveMessages) {
+                                window.CommunityChannels.rerenderActiveMessages(emojiGroupId);
+                            }
+                        });
+                    }
                     const cached = window.CommunityEmojis.getCached(emojiGroupId);
                     Object.values(cached).forEach((e) => { if (e && e.name) byName[e.name] = e; });
                 } else if (typeof myCommunityGroupIds === "function") {
@@ -13704,6 +13725,13 @@
                     _cache[groupId].roles = snap.val() || {};
                     renderManagePanel(groupId);
                     renderGroupMemberListSafe(groupId);
+                    // Rol adı/rengi güncellenince (ya da F5 sonrası ilk kez
+                    // gelince) mesajlardaki @Rütbe etiketleri ve isim
+                    // renkleri de tazelensin -- aksi halde roller mesajlar
+                    // GELDİKTEN SONRA yüklenirse "@bilinmeyen-rütbe" kalıcı
+                    // görünürdü (mesaj listesi kendiliğinden yeniden
+                    // render olmuyordu).
+                    rerenderActiveMessages(groupId);
                 });
 
                 _categoriesRef = firebase.database().ref("group_chats/" + groupId + "/categories");
@@ -13718,6 +13746,10 @@
                     _cache[groupId].memberRoles = snap.val() || {};
                     renderGroupMemberListSafe(groupId);
                     updateComposerLockSafe(groupId);
+                    // Üye-rütbe eşleşmeleri (kimin hangi rütbesi olduğu)
+                    // güncellenince mesajlardaki isim renkleri de tazelensin
+                    // -- aynı F5-sıralama sorunu burası için de geçerli.
+                    rerenderActiveMessages(groupId);
                 });
             }
 
@@ -13736,6 +13768,37 @@
             }
 
             // ══ KANAL SEÇİMİ + MESAJ AKIŞI ══════════════════════════════
+            // En son çekilen mesaj anlık görüntüsü -- roller/memberRoles/
+            // özel emojiler RTDB'den GEÇ gelirse (F5 sonrası sık görülen
+            // sıralama), mesajları TEKRAR SUNUCUDAN çekmeden aynı veriyle
+            // yeniden render edebilmek için saklanır (bkz. rerenderActiveMessages).
+            let _lastRenderedGroupId = null;
+            let _lastRenderedChannelId = null;
+            let _lastRenderedMessagesArr = null;
+
+            function renderActiveMessageList(groupId, channelId, arr) {
+                _lastRenderedGroupId = groupId;
+                _lastRenderedChannelId = channelId;
+                _lastRenderedMessagesArr = arr;
+                if (window.renderBubbleList) {
+                    window.renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
+                }
+            }
+
+            // Rütbeler / üye-rütbe eşleşmeleri / topluluk emojileri gibi
+            // mesaj görünümünü etkileyen ama mesajların KENDİSİ olmayan
+            // veriler canlı güncellendiğinde çağrılır -- son çekilen mesaj
+            // listesini AYNI groupId/channelId için tekrar render eder ki
+            // "@bilinmeyen-rütbe" / düz metin ":emoji:" gibi geçici
+            // görünümler, veri gelir gelmez kalıcı olarak düzelsin (sayfayı
+            // tekrar yenilemeye gerek kalmadan).
+            function rerenderActiveMessages(groupId) {
+                if (_lastRenderedGroupId !== groupId) return;
+                if (!_lastRenderedMessagesArr) return;
+                if (getActiveChannelId(groupId) !== _lastRenderedChannelId) return;
+                renderActiveMessageList(_lastRenderedGroupId, _lastRenderedChannelId, _lastRenderedMessagesArr);
+            }
+
             function selectChannel(groupId, channelId) {
                 setActiveChannelId(groupId, channelId);
                 if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
@@ -13745,9 +13808,7 @@
                 _activeMessagesRef.on("value", (snap) => {
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                    if (window.renderBubbleList) {
-                        window.renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
-                    }
+                    renderActiveMessageList(groupId, channelId, arr);
                 }, (err) => {
                     // İzin reddi ya da başka bir okuma hatası sessizce
                     // yutulmasın -- konsola basıp kullanıcıya da görünür
@@ -14681,7 +14742,8 @@
                 resolveRoleByName,
                 openAssignRoleModal,
                 getDefaultRoleId,
-                assignDefaultRoleIfAny
+                assignDefaultRoleIfAny,
+                rerenderActiveMessages
             };
         })();
 
