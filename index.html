@@ -1309,12 +1309,27 @@
     }
 
     /* Mesaj içinde ":ad:" -> görsele çevrilen özel emoji (inline, satır
-       yüksekliğine göre ölçeklenir -- unicode emoji ile aynı akışta durur). */
+       yüksekliğine göre ölçeklenir -- unicode emoji ile aynı akışta durur).
+       2.2em civarı, belirgin/okunabilir boyut + dikey ortalama. */
     .community-emoji-inline {
-        width: 1.35em;
-        height: 1.35em;
-        vertical-align: -0.3em;
+        display: inline-block;
+        width: 2.2em;
+        height: 2.2em;
+        vertical-align: middle;
+        margin: -0.4em 0.04em;
         object-fit: contain;
+    }
+
+    /* Emoji dizilimi veya uzun kesintisiz metinlerde kart/balon yapısının
+       taşmaması için (mesaj metni render edilen tüm konteynerler). */
+    .forum-message-text,
+    .forum-thread-detail-body,
+    .forum-reply-text,
+    .forum-pinned-item .forum-message-text,
+    .msg-bubble-text {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
     }
 
     /* ---------- GIF Arama Popup'ı (Discord tarzı, Giphy) ---------- */
@@ -5950,6 +5965,9 @@
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
                                         <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
                                     </button>
+                                    <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
+                                        <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
+                                    </button>
                                 </div>
                             </div>
 
@@ -6023,6 +6041,9 @@
                                     </button>
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
                                         <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                    </button>
+                                    <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
+                                        <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
                                     </button>
                                 </div>
                             </div>
@@ -6175,6 +6196,9 @@
                                         </button>
                                         <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
                                             <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        </button>
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
+                                            <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
                                         </button>
                                     </div>
                                 </div>
@@ -6345,6 +6369,9 @@
                                         </button>
                                         <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
                                             <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        </button>
+                                        <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
+                                            <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
                                         </button>
                                     </div>
                                 </div>
@@ -11854,13 +11881,46 @@
             // zaten sendGroupMessage/canUseEmoji tarafından reddedilmiş
             // olurdu -- burası sadece MEVCUT/GEÇERLİ bir emojiyi görsele
             // çevirme adımıdır, yetkilendirme değil.
-            if (emojiGroupId && window.CommunityEmojis) {
-                const cached = window.CommunityEmojis.getCached(emojiGroupId);
+            // DÜZELTME: emojiGroupId verilmediği (forum/DM/market gibi tek bir
+            // topluluğa bağlı olmayan yerlerde render edildiği) durumlarda da
+            // ":ad:" kırılmadan görsele çevrilsin diye, spesifik bir grup ID
+            // yoksa görüntüleyenin ÜYE OLDUĞU TÜM toplulukların emoji
+            // önbelleklerinde isimle arama yapılır (ilk eşleşen kullanılır).
+            // Bu; sayfa yenilendiğinde (F5) mesajların yeniden render'ında da
+            // AYNI canlı cache'ten okunduğu için sonuç kalıcı ve tutarlıdır
+            // -- localStorage'a ayrıca bir şey yazmaya gerek yoktur, çünkü
+            // window.CommunityEmojis zaten kendi RTDB dinleyicileriyle
+            // (listenEmojis) veriyi ayakta tutuyor ve renderRichContent her
+            // çağrıldığında güncel cache'i okuyor (bkz. parseCustomEmojis).
+            if (window.CommunityEmojis) {
                 const byName = {};
-                Object.values(cached).forEach((e) => { if (e && e.name) byName[e.name] = e; });
+                if (emojiGroupId) {
+                    // Belirli bir topluluk bağlamı (grup/topluluk sohbeti).
+                    const cached = window.CommunityEmojis.getCached(emojiGroupId);
+                    Object.values(cached).forEach((e) => { if (e && e.name) byName[e.name] = e; });
+                } else if (typeof myCommunityGroupIds === "function") {
+                    // Bağlam yok (forum/DM/market) -- üye olunan tüm
+                    // topluluklarda ada göre ara. İlk bulunan kazanır;
+                    // aynı isimde emoji birden fazla toplulukta varsa
+                    // hangisinin gösterileceği önemli değildir (sadece
+                    // görsel gösterim amaçlı, yetkilendirme değil).
+                    myCommunityGroupIds().forEach((gid) => {
+                        // Henüz dinlenmiyorsa dinlemeye başla ki cache dolsun
+                        // (bir sonraki render'da -- örn. RTDB güncellemesi
+                        // tetiklediğinde -- emoji görünür hale gelir).
+                        if (!_emojiPickerLoadedGroupIds.has(gid)) {
+                            _emojiPickerLoadedGroupIds.add(gid);
+                            window.CommunityEmojis.listenEmojis(gid, () => {});
+                        }
+                        const cached = window.CommunityEmojis.getCached(gid);
+                        Object.values(cached).forEach((e) => {
+                            if (e && e.name && !byName[e.name]) byName[e.name] = e;
+                        });
+                    });
+                }
                 html = html.replace(/:([a-zA-Z0-9_]{2,32}):/g, (match, name) => {
                     const e = byName[name];
-                    if (!e) return match; // toplulukta böyle bir emoji yok -- dokunma
+                    if (!e) return match; // hiçbir yerde böyle bir emoji yok -- dokunma
                     const safeUrl = RBAC.escapeHtml(e.image_url);
                     const safeName = RBAC.escapeHtml(e.name);
                     return `<img class="community-emoji-inline" src="${safeUrl}" alt=":${safeName}:" title=":${safeName}:" loading="lazy">`;
