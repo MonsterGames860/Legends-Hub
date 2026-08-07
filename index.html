@@ -2904,6 +2904,37 @@
        ════════════════════════════════════════════════════════════ */
     .grp-preview-modal { max-width: 420px; }
 
+    /* MODÜL 5 EKLENTİ 3: Topluluk kapak fotoğrafı (Discord server banner
+       benzeri). Modal'ın en üstünde, köşeleri modal ile hizalı tam
+       genişlikte görsel. Kapak GIF olabilir -- upload dosyayı canvas'a
+       hiç uğratmadan olduğu gibi gönderdiği için animasyon korunur. */
+    .grp-preview-banner {
+        width: 100%;
+        height: 120px;
+        overflow: hidden;
+        border-radius: 14px 14px 0 0;
+        background: var(--bg-panel-raised);
+    }
+    .grp-preview-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* Kapak fotoğrafı VARKEN avatar, Discord'daki gibi kapağın alt
+       kenarına hafifçe biner (negatif margin) -- arkasında kalan kapak
+       kısmının görünmemesi için kalın bir "kesik" border eklenir.
+       NOT: .grp-preview-banner DOM'da her zaman mevcut (JS display:none
+       ile gizliyor), bu yüzden CSS'te "+" bitişik-kardeş selector'ı
+       yerine JS'in eklediği .has-banner class'ı kullanılır -- aksi halde
+       kapağı olmayan topluluklarda da hero yanlışlıkla yukarı kayardı. */
+    .grp-preview-hero.has-banner {
+        margin-top: -42px;
+        background: none;
+        border-bottom: none;
+        padding-top: 0;
+    }
+    .grp-preview-hero.has-banner .grp-preview-avatar {
+        border-width: 4px;
+        border-color: var(--bg-panel);
+        background: var(--bg-panel);
+    }
+
     .grp-preview-hero {
         display: flex;
         flex-direction: column;
@@ -3103,6 +3134,102 @@
     /* ── Grup Detay / Ayarlar Paneli ─────────────────────────────── */
     .msg-group-detail-modal { max-width: 480px; }
     .msg-group-detail-body { gap: 18px; }
+
+    /* MODÜL 5 EKLENTİ 3: Topluluk Kapak Fotoğrafı (Discord server banner
+       benzeri). Modal içeriğinin negatif margin ile kenarlara taşırılması
+       ile tam genişlikte, üstte köşeleri modal ile aynı hizada görünür.
+       GIF yükleme desteklidir -- upload akışı canvas'a hiç dokunmadan
+       dosyayı olduğu gibi ImgBB'ye gönderir (bkz. uploadFileToImgBB),
+       bu yüzden animasyon korunur. */
+    .msg-group-detail-banner-section {
+        margin: -20px -20px 4px;
+    }
+    .msg-group-detail-banner-wrap {
+        position: relative;
+        width: 100%;
+        height: 128px;
+        border-radius: 14px 14px 0 0;
+        overflow: hidden;
+        background: linear-gradient(135deg, var(--bg-panel-raised), var(--bg-panel));
+        border-bottom: 1px solid var(--line);
+    }
+    .msg-group-detail-banner-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .msg-group-detail-banner-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+        pointer-events: none;
+    }
+    /* Kapak yokken fallback metni butonun arkasında kalmasın diye
+       görünmez yapılır -- boş durumda tek görsel eleman olarak sadece
+       ortalanmış "Kapak Ekle" butonu kalır (bkz. .is-empty kuralı altta). */
+    .msg-group-detail-banner-wrap.is-empty .msg-group-detail-banner-fallback {
+        opacity: 0.35;
+    }
+    .msg-group-detail-banner-edit-btn {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.25);
+        background: rgba(10, 14, 18, 0.62);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+        backdrop-filter: blur(2px);
+    }
+    .msg-group-detail-banner-wrap:hover .msg-group-detail-banner-edit-btn,
+    .msg-group-detail-banner-wrap:focus-within .msg-group-detail-banner-edit-btn {
+        opacity: 1;
+    }
+    /* Kapak fotoğrafı YOKSA buton her zaman görünür (aksi halde nasıl
+       ekleneceği hiç anlaşılmaz -- hover'a bağlı gizlilik sadece MEVCUT
+       bir kapağın üstündeki değiştirme butonu için mantıklıdır).
+       .is-empty class'ı JS tarafından (renderGroupDetailPanel) eklenir --
+       :has() yerine bunu kullanmak eski tarayıcı desteğini de garantiler. */
+    .msg-group-detail-banner-wrap.is-empty .msg-group-detail-banner-edit-btn {
+        opacity: 1;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .msg-group-detail-banner-remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.25);
+        background: rgba(10, 14, 18, 0.62);
+        color: #fff;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .msg-group-detail-banner-remove-btn:hover { background: rgba(220, 60, 60, 0.75); }
+
     .msg-group-detail-identity {
         display: flex;
         flex-direction: column;
@@ -3755,6 +3882,120 @@
         text-align: right;
     }
     .msg-bubble-row.is-own .msg-bubble-time { color: rgba(102,252,241,0.6); }
+
+    /* ══════════════════════════════════════════════════════════════
+       DISCORD TARZI MESAJ GÖRÜNÜMÜ (sadece topluluk kanalları)
+       ══════════════════════════════════════════════════════════════
+       WhatsApp tarzı köşeli/renkli balonlar yerine Discord'daki gibi
+       düz, soldan hizalı, arka planı olmayan bir akış: avatar solda
+       sabit, isim+rütbe üstte tek satır, mesaj metni altında. Art arda
+       gelen mesajlar (aynı gönderen, kısa aralık) "gruplu" (is-grouped)
+       sayılır: avatar/isim tekrar basılmaz, sadece hover'da saat solda
+       görünür, satır aralığı sıkılaşır. Bu mod SADECE .msg-bubble-list
+       elemanına is-discord-mode class'ı eklendiğinde aktiftir; DM ve
+       normal gruplarda hiçbir görsel değişiklik olmaz. */
+    .msg-bubble-list.is-discord-mode {
+        gap: 2px;
+        padding: 8px 14px 14px;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-row {
+        max-width: 100%;
+        width: 100%;
+        align-self: stretch !important;
+        flex-direction: row !important;
+        gap: 14px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        position: relative;
+        transition: background 0.08s ease;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-row:hover {
+        background: rgba(255, 255, 255, 0.025);
+    }
+    /* İlk mesaj (grubun başı): normal üst boşluk. Gruplanmış (art arda)
+       mesajlar: neredeyse bitişik, WhatsApp'taki gibi ayrı balon hissi
+       vermesin diye satır arası boşluk daraltılır. */
+    .msg-bubble-list.is-discord-mode .msg-bubble-row.is-group-start { margin-top: 14px; }
+    .msg-bubble-list.is-discord-mode .msg-bubble-row.is-grouped { margin-top: 0; }
+    .msg-bubble-list.is-discord-mode .msg-bubble-avatar {
+        align-self: flex-start;
+        margin-top: 2px;
+        width: 38px;
+        height: 38px;
+    }
+    /* Gruplanmış (art arda) mesajlarda avatar gizlenir ama yerini
+       hover'da beliren küçük bir saat alır (Discord'daki gibi). */
+    .msg-bubble-list.is-discord-mode .msg-bubble-row.is-grouped .msg-bubble-avatar {
+        visibility: hidden;
+        width: 38px;
+        height: 0;
+        margin-top: 0;
+        position: relative;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-row.is-grouped .msg-bubble-hover-time {
+        display: none;
+        position: absolute;
+        left: 8px;
+        top: 4px;
+        width: 38px;
+        text-align: center;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        pointer-events: none;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-row.is-grouped:hover .msg-bubble-hover-time {
+        display: block;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-wrap {
+        flex: 1;
+        min-width: 0;
+        align-items: stretch !important;
+    }
+    /* Balon tamamen kaldırılır: arka plan yok, köşe yuvarlama yok,
+       dolgu (padding) yok -- düz metin akışı. */
+    .msg-bubble-list.is-discord-mode .msg-bubble {
+        background: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        max-width: 100%;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-row.is-own .msg-bubble-sender {
+        display: flex !important; /* Discord'da kendi mesajında da isim gösterilir */
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-sender {
+        font-size: 0.92rem;
+        font-weight: 700;
+        margin-bottom: 2px;
+        gap: 7px;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-sender .msg-bubble-sender-time {
+        font-size: 0.7rem;
+        font-weight: 400;
+        color: var(--text-dim);
+        margin-left: 2px;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-text {
+        font-size: 0.92rem;
+        line-height: 1.45;
+        color: var(--text-primary);
+    }
+    /* Zaman damgası: grup başı satırda isimle aynı satırda gösterildiği
+       için balonun altındaki eski konum tamamen kaldırılır. */
+    .msg-bubble-list.is-discord-mode .msg-bubble-time { display: none; }
+    .msg-bubble-list.is-discord-mode .msg-bubble-actions {
+        position: absolute;
+        top: 0;
+        right: 8px;
+        margin-top: 0;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px;
+    }
+    .msg-bubble-list.is-discord-mode .msg-bubble-reply-quote {
+        margin-bottom: 4px;
+    }
 
     /* ── WhatsApp tarzı tarih ayırıcı (Bugün / Dün / gün adı / tarih) ── */
     .msg-date-divider {
@@ -6182,6 +6423,23 @@
                         </div>
                         <div class="forum-modal-body msg-group-detail-body" id="groupDetailBody">
 
+                            <!-- MODÜL 5 EKLENTİ 3: Topluluk Kapak Fotoğrafı (Banner) --
+                                 Discord'daki server banner'ı gibi geniş, tam genişlikte
+                                 bir görsel; GIF de olabilir (yükleme ImgBB'ye dosyayı
+                                 olduğu gibi gönderiyor, animasyon canvas'tan geçmediği
+                                 için bozulmuyor). SADECE topluluklarda gösterilir --
+                                 normal gruplarda bu bölüm tamamen gizlenir. -->
+                            <div class="msg-group-detail-banner-section" id="groupDetailBannerSection" style="display:none;">
+                                <div class="msg-group-detail-banner-wrap" id="groupDetailBannerWrap">
+                                    <img class="msg-group-detail-banner-img" id="groupDetailBannerImg" alt="" style="display:none;">
+                                    <div class="msg-group-detail-banner-fallback" id="groupDetailBannerFallback">Kapak fotoğrafı yok</div>
+                                    <button type="button" class="msg-group-detail-banner-edit-btn" id="groupDetailBannerEditBtn" title="Kapak fotoğrafını değiştir">📷 Kapak Ekle/Değiştir</button>
+                                    <button type="button" class="msg-group-detail-banner-remove-btn" id="groupDetailBannerRemoveBtn" title="Kapak fotoğrafını kaldır" style="display:none;">✕</button>
+                                    <input type="file" id="groupDetailBannerFileInput" style="display:none;" accept="image/*">
+                                </div>
+                                <div class="msg-group-detail-avatar-status" id="groupDetailBannerStatus" style="display:none;"></div>
+                            </div>
+
                             <!-- Resim + isim -->
                             <div class="msg-group-detail-identity">
                                 <div class="msg-group-detail-avatar-wrap">
@@ -6533,7 +6791,15 @@
                             <button class="forum-modal-close" id="communityPreviewModalClose">✕</button>
                         </div>
 
-                        <div class="grp-preview-hero">
+                        <!-- MODÜL 5 EKLENTİ 3: Kapak fotoğrafı (varsa) -- Discord'daki
+                             topluluk önizleme kartındaki banner'ın karşılığı. Kapağı
+                             olmayan topluluklarda bu bölüm tamamen gizlenir, hero
+                             (avatar) alanı eskisi gibi üstte kalır. -->
+                        <div class="grp-preview-banner" id="communityPreviewBannerWrap" style="display:none;">
+                            <img id="communityPreviewBannerImg" alt="">
+                        </div>
+
+                        <div class="grp-preview-hero" id="communityPreviewHero">
                             <div class="grp-preview-avatar" id="communityPreviewAvatar">🌐</div>
                             <div class="grp-preview-name-row">
                                 <span id="communityPreviewName">—</span>
@@ -15046,6 +15312,35 @@
                 const sendMsgRow = document.getElementById("permOnlyAdminsSendMessagesRow");
                 if (sendMsgRow) sendMsgRow.style.display = isCommunity ? "none" : "flex";
 
+                // MODÜL 5 EKLENTİ 3: Topluluk Kapak Fotoğrafı (Banner) --
+                // SADECE topluluklarda gösterilir. Düzenleme/kaldırma
+                // butonları sadece bilgileri değiştirme yetkisi olanlara
+                // (canEditInfo) görünür -- avatar/isim ile aynı yetki kuralı.
+                const bannerSection = document.getElementById("groupDetailBannerSection");
+                if (bannerSection) {
+                    bannerSection.style.display = isCommunity ? "block" : "none";
+                    if (isCommunity) {
+                        const bannerImg = document.getElementById("groupDetailBannerImg");
+                        const bannerFallback = document.getElementById("groupDetailBannerFallback");
+                        const bannerEditBtn = document.getElementById("groupDetailBannerEditBtn");
+                        const bannerRemoveBtn = document.getElementById("groupDetailBannerRemoveBtn");
+                        const hasBanner = !!meta.bannerUrl;
+                        if (bannerImg) {
+                            bannerImg.src = hasBanner ? meta.bannerUrl : "";
+                            bannerImg.style.display = hasBanner ? "block" : "none";
+                        }
+                        if (bannerFallback) bannerFallback.style.display = hasBanner ? "none" : "flex";
+                        // Kapak yoksa buton her zaman görünür olsun diye bir
+                        // class ekliyoruz (CSS'teki :has() fallback'i --
+                        // eski tarayıcılarda :has() çalışmasa bile bu class
+                        // aynı görünürlüğü garanti eder).
+                        const wrapEl = document.getElementById("groupDetailBannerWrap");
+                        if (wrapEl) wrapEl.classList.toggle("is-empty", !hasBanner);
+                        if (bannerEditBtn) bannerEditBtn.style.display = canEditInfo ? "flex" : "none";
+                        if (bannerRemoveBtn) bannerRemoveBtn.style.display = (canEditInfo && hasBanner) ? "flex" : "none";
+                    }
+                }
+
                 // MODÜL 5 EKLENTİ 1: Doğrulama rozeti (mavi tik) -- sadece
                 // site genelinde "Owner / Developer" rütbesindeki kullanıcı
                 // görür, ve sadece topluluklarda (normal gruplarda anlamsız).
@@ -15573,6 +15868,76 @@
                 });
             }
 
+            // MODÜL 5 EKLENTİ 3: Topluluk kapak fotoğrafı (banner) yükleme.
+            // wireGroupAvatarFileUpload ile aynı deseni izler; tek fark
+            // groupPhoto yerine bannerUrl alanına yazması. GIF desteklidir
+            // (uploadFileToImgBB dosyayı canvas'a hiç uğratmadan olduğu
+            // gibi gönderir, bu yüzden animasyon bozulmaz).
+            function wireGroupBannerFileUpload() {
+                const btn = document.getElementById("groupDetailBannerEditBtn");
+                const removeBtn = document.getElementById("groupDetailBannerRemoveBtn");
+                const fileInput = document.getElementById("groupDetailBannerFileInput");
+                const statusEl = document.getElementById("groupDetailBannerStatus");
+                if (!btn || !fileInput) return;
+
+                const setStatus = (msg, isError) => {
+                    if (!statusEl) return;
+                    if (!msg) { statusEl.style.display = "none"; return; }
+                    statusEl.textContent = msg;
+                    statusEl.style.display = "block";
+                    statusEl.classList.toggle("is-error", !!isError);
+                };
+
+                btn.addEventListener("click", () => fileInput.click());
+                fileInput.addEventListener("change", async () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    fileInput.value = "";
+                    if (!file) return;
+                    const groupId = _activeGroupDetailId;
+                    const meta = _groupMetaCache[groupId];
+                    if (!groupId || !groupCanEditInfo(meta, _myUid)) { alert("Bu toplulukta bilgileri sadece yöneticiler değiştirebilir."); return; }
+
+                    btn.disabled = true;
+                    setStatus(`"${file.name}" ImgBB'ye yükleniyor...`, false);
+                    try {
+                        const link = await uploadFileToImgBB(file, (pct) => {
+                            if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
+                        });
+                        const now = firebase.database.ServerValue.TIMESTAMP;
+                        await database.ref(`group_chats/${groupId}/meta`).update({ bannerUrl: link, updatedAt: now });
+                        if (meta.isCommunity === true) {
+                            await database.ref(`community_directory/${groupId}`).update({ bannerUrl: link }).catch(() => {});
+                        }
+                        setStatus("Kapak fotoğrafı güncellendi.", false);
+                        setTimeout(() => setStatus(null), 2000);
+                    } catch (err) {
+                        console.error("[Topluluk] Kapak yükleme hatası:", err);
+                        setStatus("Yükleme başarısız: " + (err && err.message ? err.message : "bilinmeyen hata"), true);
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+
+                if (removeBtn) {
+                    removeBtn.addEventListener("click", async () => {
+                        const groupId = _activeGroupDetailId;
+                        const meta = _groupMetaCache[groupId];
+                        if (!groupId || !groupCanEditInfo(meta, _myUid)) { alert("Bu toplulukta bilgileri sadece yöneticiler değiştirebilir."); return; }
+                        if (!confirm("Kapak fotoğrafını kaldırmak istediğine emin misin?")) return;
+                        try {
+                            const now = firebase.database.ServerValue.TIMESTAMP;
+                            await database.ref(`group_chats/${groupId}/meta`).update({ bannerUrl: null, updatedAt: now });
+                            if (meta.isCommunity === true) {
+                                await database.ref(`community_directory/${groupId}`).update({ bannerUrl: null }).catch(() => {});
+                            }
+                        } catch (err) {
+                            console.error("[Topluluk] Kapak kaldırma hatası:", err);
+                            setStatus("Kaldırma başarısız: " + (err && err.message ? err.message : "bilinmeyen hata"), true);
+                        }
+                    });
+                }
+            }
+
             // ── İzin toggle'ları ─────────────────────────────────────────
             function wireGroupPermissionToggles() {
                 const map = {
@@ -15684,6 +16049,7 @@
                     _groupAddMemberSearchTimer = setTimeout(() => renderAddMemberResults(val), 200);
                 });
                 wireGroupAvatarFileUpload();
+                wireGroupBannerFileUpload();
                 wireGroupPermissionToggles();
 
                 document.getElementById("groupTransferOwnerModalClose")?.addEventListener("click", () => {
@@ -16112,6 +16478,17 @@
                 const c = _communityDirectoryCache[groupId];
                 if (!c) return;
 
+                // MODÜL 5 EKLENTİ 3: kapak fotoğrafı (varsa) -- avatar'ın
+                // kapağın alt kenarına binmesi için hero elemanına
+                // has-banner class'ı eklenir (bkz. ilgili CSS notu).
+                const bannerWrap = document.getElementById("communityPreviewBannerWrap");
+                const bannerImg = document.getElementById("communityPreviewBannerImg");
+                const heroEl = document.getElementById("communityPreviewHero");
+                const hasBanner = !!c.bannerUrl;
+                if (bannerWrap) bannerWrap.style.display = hasBanner ? "block" : "none";
+                if (bannerImg) bannerImg.src = hasBanner ? c.bannerUrl : "";
+                if (heroEl) heroEl.classList.toggle("has-banner", hasBanner);
+
                 const avatarEl = document.getElementById("communityPreviewAvatar");
                 avatarEl.innerHTML = c.groupPhoto ? `<img src="${escapeAttr(c.groupPhoto)}" alt="">` : "🌐";
 
@@ -16444,17 +16821,33 @@
                 if (!listEl) return;
                 if (messages.length === 0) {
                     listEl.innerHTML = '<div class="hub-placeholder">Henüz mesaj yok. İlk mesajı sen yaz!</div>';
+                    listEl.classList.remove("is-discord-mode");
                     return;
                 }
                 const RBAC = window.CommunityRBAC;
                 let lastDayKey = null;
                 const html = [];
 
+                // Discord tarzı görünüm SADECE topluluk kanallarında aktif --
+                // DM ve normal gruplarda WhatsApp tarzı balon görünümü aynen
+                // sürer (bkz. .is-discord-mode CSS bloğunun üstündeki not).
+                const groupMetaForMode = isGroup ? _groupMetaCache[_activeGroupId] : null;
+                const isDiscordMode = isGroup && !!(window.CommunityChannels && window.CommunityChannels.isCommunityMeta(groupMetaForMode));
+                listEl.classList.toggle("is-discord-mode", isDiscordMode);
+
+                // Ardışık mesaj gruplama: aynı gönderen + aradaki süre 5
+                // dakikadan az + biri sistem/yanıt mesajı değilse "gruplu"
+                // sayılır (avatar/isim tekrarlanmaz) -- tıpkı Discord'daki gibi.
+                const GROUP_WINDOW_MS = 5 * 60 * 1000;
+                let prevAuthorUid = null;
+                let prevCreatedAt = null;
+
                 messages.forEach((m) => {
                     const dk = dayKey(m.createdAt);
                     if (dk !== lastDayKey) {
                         lastDayKey = dk;
                         html.push(`<div class="msg-date-divider"><span>${escapeAttr(formatDateDividerLabel(m.createdAt))}</span></div>`);
+                        prevAuthorUid = null; // Gün değiştiyse grup da bozulur
                     }
 
                     // Sistem mesajları ("X grubu kurdu" vb.) normal baloncuk değil,
@@ -16462,6 +16855,7 @@
                     // aynı çözümleme yolunu (renderRichContent) kullanır.
                     if (m.isSystem) {
                         html.push(`<div class="msg-system-pill"><span>${renderRichContent(m.text)}</span></div>`);
+                        prevAuthorUid = null; // Sistem mesajı grup zincirini böler
                         return;
                     }
 
@@ -16472,22 +16866,39 @@
                     const isVerified = candidate ? candidate.isVerified : false;
                     const role = candidate ? candidate.role : "";
 
+                    // Gruplama kararı: aynı gönderen, üst üste, aradaki süre
+                    // pencere içinde, ve bir yanıt (replyTo) değilse (bir
+                    // yanıt her zaman kendi bağlamını görsel olarak net
+                    // göstermeli, bu yüzden grup başı gibi davranır).
+                    const isGrouped = isDiscordMode
+                        && prevAuthorUid === m.authorUid
+                        && prevCreatedAt !== null
+                        && (m.createdAt - prevCreatedAt) < GROUP_WINDOW_MS
+                        && !(m.replyTo && m.replyTo.messageId);
+                    prevAuthorUid = m.authorUid;
+                    prevCreatedAt = m.createdAt;
+
                     // MODÜL 5 EKLENTİ 1: topluluk sohbetlerinde site geneli
                     // [RÜTBE] etiketi YERİNE, o topluluktaki en yüksek yerel
                     // rütbenin rengiyle boyanmış isim + mavi tik gösterilir.
                     // Normal gruplarda (topluluk değilse) eski davranış
                     // (Kurucu/Yönetici rozeti + site rütbesi) aynen sürer.
                     const activeMetaForBubble = isGroup ? _groupMetaCache[_activeGroupId] : null;
-                    const isCommunityBubble = !!(window.CommunityChannels && window.CommunityChannels.isCommunityMeta(activeMetaForBubble));
+                    const isCommunityBubble = isDiscordMode;
                     let senderHtml = "";
-                    if (isGroup && !isOwn) {
+                    // Discord modunda grup başı DEĞİLSE (yani gruplanmışsa)
+                    // isim satırı hiç basılmaz -- CSS zaten gizler ama DOM'u
+                    // şişirmemek için burada da atlıyoruz.
+                    const shouldShowSender = isGroup && (isDiscordMode ? !isGrouped : !isOwn);
+                    if (shouldShowSender) {
+                        const timeInline = isDiscordMode ? `<span class="msg-bubble-sender-time">${formatMessageTime(m.createdAt)}</span>` : "";
                         if (isCommunityBubble) {
                             const highestRole = window.CommunityChannels.getHighestRoleForMember(_activeGroupId, m.authorUid);
                             const roleColor = highestRole ? highestRole.color_hex : null;
-                            senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor)}</div>`;
+                            senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor)}${timeInline}</div>`;
                         } else {
                             const groupRoleHtml = groupRoleBadgeHtml(activeMetaForBubble, m.authorUid, { forBubble: true });
-                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified)}</div>`;
+                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified)}${timeInline}</div>`;
                         }
                     }
 
@@ -16546,9 +16957,25 @@
                         actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${pinBtn}${deleteBtn}</div>`;
                     }
 
+                    // Discord modunda: kendi mesajım da dahil herkes sol
+                    // hizalı, düz akış (is-own sadece renk/hizalama farkı
+                    // için WhatsApp modunda kullanılıyordu). Gruplanmış
+                    // satırlarda avatarın yerine hover'da beliren küçük bir
+                    // saat gösterilir (CSS .msg-bubble-hover-time'ı bekliyor).
+                    const rowClasses = ["msg-bubble-row"];
+                    if (isDiscordMode) {
+                        rowClasses.push(isGrouped ? "is-grouped" : "is-group-start");
+                    } else if (isOwn) {
+                        rowClasses.push("is-own");
+                    }
+                    const hoverTimeHtml = (isDiscordMode && isGrouped)
+                        ? `<span class="msg-bubble-hover-time">${formatMessageTime(m.createdAt)}</span>`
+                        : "";
+
                     html.push(`
-                        <div class="msg-bubble-row${isOwn ? ' is-own' : ''}" data-msg-id="${escapeAttr(m.id)}">
+                        <div class="${rowClasses.join(' ')}" data-msg-id="${escapeAttr(m.id)}">
                             <img class="msg-bubble-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
+                            ${hoverTimeHtml}
                             <div class="msg-bubble-wrap">
                                 <div class="msg-bubble">
                                     ${senderHtml}
