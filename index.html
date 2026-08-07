@@ -1256,9 +1256,21 @@
     .community-emoji-picker-popover {
         min-width: 260px;
         max-width: min(300px, calc(100vw - 32px));
-        max-height: min(360px, calc(100vh - 120px));
+        max-height: min(420px, calc(100vh - 120px));
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        gap: 0;
+    }
+    .community-emoji-picker-scroll {
         overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
         gap: 10px;
+        flex: 1 1 auto;
+        min-height: 0;
     }
     .community-emoji-picker-section + .community-emoji-picker-section {
         margin-top: 4px;
@@ -1289,6 +1301,8 @@
         border: 1px solid transparent;
         border-radius: 8px;
         cursor: pointer;
+        font-size: 1.3rem;
+        line-height: 1;
         transition: border-color 0.15s ease, transform 0.1s ease;
     }
     .community-emoji-pick-btn:hover {
@@ -1300,6 +1314,58 @@
         height: 100%;
         object-fit: contain;
         border-radius: 4px;
+    }
+    /* Discord tarzı alt önizleme şeridi: panelin altına sabit, seçili
+       emojinin görseli/karakteri + ismi + topluluk adını gösterir. */
+    .community-emoji-picker-preview {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--line);
+        background: var(--bg-panel);
+        min-height: 50px;
+    }
+    .cep-hint {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+    }
+    .cep-glyph {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        border-radius: 6px;
+        flex: 0 0 auto;
+    }
+    .cep-glyph-unicode {
+        font-size: 1.8rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cep-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .cep-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .cep-community {
+        font-size: 0.7rem;
+        color: var(--accent);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .cch-empty-hint {
         font-size: 0.78rem;
@@ -11414,6 +11480,20 @@
         let _emojiPickerEl = null;
         let _emojiPickerLoadedGroupIds = new Set();
 
+        // Standart unicode emojiler -- özel topluluk emojilerinden AYRI,
+        // sabit/yerleşik bir katalog. Kategori başlıklarıyla gruplanır;
+        // topluluğa özel emojilerin ÜSTÜNDE, sabit bir "Emojiler" bölümü
+        // olarak gösterilir. Bu liste isim gerektirmez (":ad:" formatına
+        // ihtiyaç yok) -- tıklanınca doğrudan unicode karakter eklenir.
+        const UNICODE_EMOJI_CATALOG = [
+            { title: "Yüzler ve Duygular", emojis: ["😀","😁","😂","🤣","😊","😇","🙂","🙃","😉","😍","🥰","😘","😗","😋","😛","😜","🤪","😎","🤩","🥳","😏","😒","😞","😔","😢","😭","😤","😠","😡","🤬","🤯","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😴","🤤","😪","😵","🤢","🤮","🥵","🥶","😷","🤒","🤕","🥴","😵‍💫","🙄","😬","😑","😐","😶","🫡","🫠","🥹","😌","😅"] },
+            { title: "El ve Vücut", emojis: ["👍","👎","👌","✌️","🤞","🤟","🤘","👏","🙌","🙏","💪","👋","🤝","👊","✊","🤙","👆","👇","👈","👉","🖐️","🤲","💅","🫶","🫰"] },
+            { title: "Kalpler", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟"] },
+            { title: "Hayvanlar", emojis: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦉","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐢","🐍","🦖","🦕","🐙","🦑","🦀","🐡","🐬","🐳","🐋","🦈","🐊"] },
+            { title: "Yiyecek", emojis: ["🍏","🍎","🍊","🍋","🍌","🍉","🍇","🍓","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🌽","🥕","🌶️","🧀","🍞","🥐","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🍜","🍣","🍦","🍩","🍪","🎂","🍰","🍫","🍬","🍭","☕","🍵","🥤","🍺","🍻","🍷"] },
+            { title: "Etkinlik ve Nesneler", emojis: ["⚽","🏀","🏈","⚾","🎾","🏐","🎱","🏓","🎮","🕹️","🎲","🎯","🎳","🎸","🎧","🎤","🎬","📷","🔥","✨","⭐","🌟","💫","💥","💯","🎉","🎊","🎁","🏆","🥇","🚀","💻","📱","💡","🔔","💰","💎"] }
+        ];
+
         function ensureEmojiPickerEl() {
             if (_emojiPickerEl) return _emojiPickerEl;
             const el = document.createElement("div");
@@ -11467,13 +11547,21 @@
                 ? [activeGroupId, ...groupIds.filter((g) => g !== activeGroupId)]
                 : groupIds;
 
-            if (!orderedIds.length) {
-                el.innerHTML = `<div class="cch-empty-hint">Herhangi bir topluluğun üyesi değilsin, bu yüzden özel emoji yok.</div>`;
-                return;
-            }
-
             const ms = window.MessagingSystem;
-            const sections = orderedIds.map((gid) => {
+
+            // ---- 1) Sabit "Emojiler" bölümü (unicode, isim/topluluk gerektirmez) ----
+            const unicodeSectionsHtml = UNICODE_EMOJI_CATALOG.map((cat) => {
+                const gridHtml = cat.emojis.map((ch) => {
+                    return `<button type="button" class="community-emoji-pick-btn" data-emoji-kind="unicode" data-emoji-char="${escEmojiAttr(ch)}" title="${escEmojiAttr(ch)}">${ch}</button>`;
+                }).join("");
+                return `<div class="community-emoji-picker-section">
+                    <div class="community-emoji-picker-section-title">${escEmojiAttr(cat.title)}</div>
+                    <div class="community-emoji-picker-grid">${gridHtml}</div>
+                </div>`;
+            }).join("");
+
+            // ---- 2) Topluluğa özel emoji bölümleri (sadece emojisi OLANLAR) ----
+            const customSections = orderedIds.map((gid) => {
                 const meta = (ms && ms._groupMetaCache && ms._groupMetaCache[gid]) || {};
                 const communityName = escEmojiAttr(meta.name || "Topluluk");
                 // Henüz dinlenmiyorsa dinlemeye başla (canlı güncellenir).
@@ -11486,22 +11574,63 @@
                 }
                 const cached = window.CommunityEmojis ? window.CommunityEmojis.getCached(gid) : {};
                 const ids = Object.keys(cached);
-                const gridHtml = ids.length
-                    ? ids.map((eid) => {
-                        const e = cached[eid];
-                        return `<button type="button" class="community-emoji-pick-btn" data-emoji-group-id="${escEmojiAttr(gid)}" data-emoji-id="${escEmojiAttr(eid)}" data-emoji-name="${escEmojiAttr(e.name)}" title=":${escEmojiAttr(e.name)}:">
-                            <img src="${escEmojiAttr(e.image_url)}" alt="${escEmojiAttr(e.name)}" loading="lazy">
-                        </button>`;
-                    }).join("")
-                    : `<div class="cch-empty-hint">Bu toplulukta henüz özel emoji/GIF yok.</div>`;
+                // Bu topluluğun hiç özel emojisi yoksa -- panelde YER KAPLAMASIN,
+                // boş "henüz emoji yok" bölümü göstermek yerine bölümün
+                // tamamını atla (kalabalık yapmasın).
+                if (!ids.length) return null;
+                const gridHtml = ids.map((eid) => {
+                    const e = cached[eid];
+                    return `<button type="button" class="community-emoji-pick-btn" data-emoji-kind="custom" data-emoji-group-id="${escEmojiAttr(gid)}" data-emoji-id="${escEmojiAttr(eid)}" data-emoji-name="${escEmojiAttr(e.name)}" data-emoji-community="${communityName}" title=":${escEmojiAttr(e.name)}:">
+                        <img src="${escEmojiAttr(e.image_url)}" alt="${escEmojiAttr(e.name)}" loading="lazy">
+                    </button>`;
+                }).join("");
 
                 return `<div class="community-emoji-picker-section">
                     <div class="community-emoji-picker-section-title">${communityName}</div>
                     <div class="community-emoji-picker-grid">${gridHtml}</div>
                 </div>`;
-            });
+            }).filter(Boolean);
 
-            el.innerHTML = sections.join("");
+            const customSectionsHtml = customSections.join("");
+
+            el.innerHTML = `
+                <div class="community-emoji-picker-scroll">
+                    ${unicodeSectionsHtml}
+                    ${customSectionsHtml}
+                </div>
+                <div class="community-emoji-picker-preview" id="communityEmojiPreview">
+                    <span class="cep-hint">Bir emojiye dokun</span>
+                </div>`;
+        }
+
+        // Discord tarzı alt önizleme şeridi: emoji butonuna değinildiğinde
+        // (hover/touch) görsel + isim + (varsa) topluluk adını gösterir.
+        // Unicode emojide isim/topluluk YOK -- sadece karakter büyük gösterilir.
+        function updateEmojiPreview(btn) {
+            const previewEl = document.getElementById("communityEmojiPreview");
+            if (!previewEl) return;
+            if (!btn) {
+                previewEl.innerHTML = `<span class="cep-hint">Bir emojiye dokun</span>`;
+                return;
+            }
+            const kind = btn.getAttribute("data-emoji-kind");
+            if (kind === "unicode") {
+                const ch = btn.getAttribute("data-emoji-char");
+                previewEl.innerHTML = `
+                    <span class="cep-glyph cep-glyph-unicode">${ch}</span>
+                    <span class="cep-meta"><span class="cep-name">Emoji</span></span>`;
+            } else {
+                const name = btn.getAttribute("data-emoji-name");
+                const community = btn.getAttribute("data-emoji-community");
+                const img = btn.querySelector("img");
+                const src = img ? img.getAttribute("src") : "";
+                previewEl.innerHTML = `
+                    <img class="cep-glyph" src="${escEmojiAttr(src)}" alt="${escEmojiAttr(name)}">
+                    <span class="cep-meta">
+                        <span class="cep-name">:${escEmojiAttr(name)}:</span>
+                        <span class="cep-community">${escEmojiAttr(community || "")}</span>
+                    </span>`;
+            }
         }
 
         function insertTextAtCursor(textarea, text) {
@@ -11529,18 +11658,34 @@
             el.classList.add("is-fixed-popover", "is-open");
             requestAnimationFrame(() => positionFixedPopover(anchorBtn, el));
 
-            // Bir emojiye tıklanınca ilgili textarea'ya ":ad:" olarak eklenir.
+            // Bir emojiye tıklanınca ilgili textarea'ya eklenir: unicode
+            // emojide karakterin kendisi, özel emojide ":ad:" formatı.
             // Kullanım yetkisi (üyelik) mesaj GÖNDERİLİRKEN sendGroupMessage
             // içinde tekrar doğrulanır -- burada sadece metne ekleniyor.
             el.onclick = (e) => {
                 e.stopPropagation();
                 const btn = e.target.closest(".community-emoji-pick-btn");
                 if (!btn) return;
-                const name = btn.getAttribute("data-emoji-name");
                 const textarea = textareaId ? document.getElementById(textareaId) : null;
-                if (textarea && name) insertTextAtCursor(textarea, `:${name}:`);
+                if (btn.getAttribute("data-emoji-kind") === "unicode") {
+                    const ch = btn.getAttribute("data-emoji-char");
+                    if (textarea && ch) insertTextAtCursor(textarea, ch);
+                } else {
+                    const name = btn.getAttribute("data-emoji-name");
+                    if (textarea && name) insertTextAtCursor(textarea, `:${name}:`);
+                }
                 closeCommunityEmojiPicker();
             };
+
+            // Fare ile üzerine gelince (masaüstü) ya da parmakla dokununca
+            // (mobil) önizleme şeridini güncelle -- Discord'daki gibi.
+            // mouseover/touchstart olay delegasyonu ile tek dinleyici.
+            const showPreviewFromEvent = (e) => {
+                const btn = e.target.closest(".community-emoji-pick-btn");
+                if (btn) updateEmojiPreview(btn);
+            };
+            el.onmouseover = showPreviewFromEvent;
+            el.ontouchstart = showPreviewFromEvent;
         }
         window.openCommunityEmojiPicker = openCommunityEmojiPicker;
 
@@ -11871,6 +12016,20 @@
         // Metin önce escapeHtml'den, SONRA mention render'dan geçer, EN SON
         // bu token'lar/URL'ler HTML'e çevrilir — böylece XSS riski oluşmaz
         // (URL'ler de escape edilmiş haliyle attribute'a yazılır).
+        // Forum (özel bir "grup" bağlamı olmayan) taraflarında ":ad:" özel
+        // emojileri, kullanıcının üye olduğu topluluklardan ada göre
+        // aranarak çözülüyor (bkz. renderRichContent, emojiGroupId boşken).
+        // Bu veri RTDB'den F5 sonrası GEÇ gelebildiği için, geldiğinde
+        // forumun görünür tüm bölümlerini (mesaj akışı + açık konu detayı +
+        // yorumlar) yeniden çizen tek bir yardımcı fonksiyon burada.
+        function rerenderForumViews() {
+            if (typeof renderForumMessages === "function") renderForumMessages();
+            if (typeof activeThreadId !== "undefined" && activeThreadId) {
+                if (typeof renderThreadDetailHeader === "function") renderThreadDetailHeader(activeThreadId);
+                if (typeof renderThreadReplies === "function") renderThreadReplies(activeThreadId);
+            }
+        }
+
         function renderRichContent(storedText, roleColorResolver, roleLookupResolver, emojiGroupId) {
             if (!storedText) return "";
             let html = window.CommunityMentions.renderForDisplay(storedText, roleColorResolver, roleLookupResolver);
@@ -11931,7 +12090,13 @@
                         // tetiklediğinde -- emoji görünür hale gelir).
                         if (!_emojiPickerLoadedGroupIds.has(gid)) {
                             _emojiPickerLoadedGroupIds.add(gid);
-                            window.CommunityEmojis.listenEmojis(gid, () => {});
+                            window.CommunityEmojis.listenEmojis(gid, () => {
+                                // Veri geç geldiyse (F5 sonrası sık görülen
+                                // sıra sorunu) forumdaki görünür bölümleri
+                                // yeniden çiz ki ":ad:" kalıcı olarak
+                                // görsele dönüşsün (bkz. rerenderForumViews).
+                                rerenderForumViews();
+                            });
                         }
                         const cached = window.CommunityEmojis.getCached(gid);
                         Object.values(cached).forEach((e) => {
@@ -15487,6 +15652,17 @@
             // bir DM'i ilk kez açarken meta'nın var olduğundan EMİN OLMAMIZ
             // gerekiyor — aksi halde "isim/avatar gelmiyor, mesaj atamıyorum"
             // sorunu tam burada oluşur (PERMISSION_DENIED, sessizce yutuluyordu).
+            // Yarış durumunu (race condition) önlemek için: kullanıcı art
+            // arda hızlıca birden fazla DM'e tıklarsa, her çağrıya artan bir
+            // "istek jetonu" veriyoruz. await'lerden SONRA hâlâ en son
+            // tıklanan sohbet biz miyiz diye bunu kontrol ediyoruz --
+            // sadece _activeDmId'ye bakmak yetersizdi çünkü iki farklı
+            // sohbete art arda tıklanınca (aynı dmId'ye geri dönülse bile)
+            // eski bir .on() dinleyicisi yeni açılan sohbetin _dmMessagesRef'inin
+            // üzerine yazıp mesajları başka bir kullanıcıya bağlayabiliyordu
+            // (ya da ilk açılışta hiç mesaj göstermeyebiliyordu).
+            let _dmOpenRequestSeq = 0;
+
             async function ensureDmMetaExists(dmId, otherUid) {
                 const metaRef = database.ref("dms/" + dmId + "/meta");
                 const snap = await metaRef.once("value").catch(() => null);
@@ -15498,6 +15674,7 @@
             }
 
             async function openDmConversation(dmId, otherUid) {
+                const mySeq = ++_dmOpenRequestSeq;
                 _activeDmId = dmId;
                 _activeDmOtherUid = otherUid;
 
@@ -15526,21 +15703,32 @@
                     await ensureDmMetaExists(dmId, otherUid);
                 } catch (err) {
                     console.error("[Messaging] DM meta oluşturulamadı:", err);
-                    showToastGlobal("Sohbet açılamadı. Yetki sorunu olabilir.");
+                    if (mySeq === _dmOpenRequestSeq) showToastGlobal("Sohbet açılamadı. Yetki sorunu olabilir.");
                     return;
                 }
 
-                if (_activeDmId !== dmId) return; // bu sırada başka bir sohbete geçilmiş olabilir
+                // Bu await sırasında başka bir sohbete geçilmiş olabilir --
+                // hem dmId hem de istek jetonu kontrol edilir. Sadece dmId
+                // kontrolü yetersizdi: A -> B -> A gibi hızlı geçişlerde
+                // dmId eşleşse bile aradaki eski/yavaş bir çağrı devreye
+                // girip yanlış listener'ı bağlayabiliyordu.
+                if (mySeq !== _dmOpenRequestSeq || _activeDmId !== dmId) return;
 
                 if (_dmMessagesRef) _dmMessagesRef.off();
                 _dmMessagesRef = database.ref("dms/" + dmId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _dmMessagesRef.on("value", (snap) => {
+                    // Callback ASENKRON olarak (RTDB'den) tekrar tekrar
+                    // tetiklenir -- her tetiklendiğinde HÂLÂ güncel/aktif
+                    // istek olduğumuzdan emin ol, aksi halde arka planda
+                    // kapatılmış eski bir sohbetin mesajları ekrana (yanlış
+                    // kullanıcının başlığı altına) yazılabilir.
+                    if (mySeq !== _dmOpenRequestSeq || _activeDmId !== dmId) return;
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     renderBubbleList(document.getElementById("dmMessageList"), arr, { isGroup: false });
                 }, (err) => {
                     console.error("[Messaging] DM mesajları okunamadı:", err);
-                    showToastGlobal("Mesajlar yüklenemedi. Yetki sorunu olabilir.");
+                    if (mySeq === _dmOpenRequestSeq) showToastGlobal("Mesajlar yüklenemedi. Yetki sorunu olabilir.");
                 });
 
                 // Bu sohbeti açtık — okunmamış sayacı sıfırla.
@@ -15550,6 +15738,7 @@
             }
 
             function closeDmConversation() {
+                _dmOpenRequestSeq++; // bekleyen açık istekleri geçersiz kıl
                 _activeDmId = null;
                 _activeDmOtherUid = null;
                 if (_dmMessagesRef) { _dmMessagesRef.off(); _dmMessagesRef = null; }
