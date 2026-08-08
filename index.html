@@ -447,6 +447,67 @@
         background: rgba(245, 197, 66, 0.045);
     }
 
+    /* ---------- Discord tarzı forum akışı ----------
+       Forum (Genel Sohbet + Thread yorumları), kart/balon görünümünden
+       çıkıp topluluk kanallarıyla AYNI düz-akış tarzına geçti: kutu/border
+       kaldırılır, ardışık aynı-gönderen mesajlarında avatar/isim tekrar
+       basılmaz (bkz. renderForumMessage/renderSingleReply'deki isGrouped
+       parametresi ve renderForumMessageGroup). Whisper mesajlarında
+       sadece sol kenarlık rengi korunur, kutu/arka plan kaldırılmaz. */
+    .forum-messages, .forum-replies {
+        gap: 2px !important;
+        padding: 4px 2px;
+    }
+    .forum-message, .forum-reply {
+        background: none !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 2px 8px !important;
+        position: relative;
+        transition: background 0.08s ease;
+    }
+    .forum-message:hover, .forum-reply:hover {
+        background: rgba(255, 255, 255, 0.025) !important;
+    }
+    .forum-message.is-whisper {
+        border-left: 2px solid rgba(245, 197, 66, 0.5) !important;
+        background: rgba(245, 197, 66, 0.04) !important;
+    }
+    .forum-message.is-group-start, .forum-reply.is-group-start { margin-top: 14px; }
+    .forum-message.is-grouped, .forum-reply.is-grouped { margin-top: 0; }
+    .forum-message.is-grouped .forum-message-avatar,
+    .forum-reply.is-grouped .forum-reply-avatar {
+        visibility: hidden;
+        width: 38px;
+        height: 0;
+        margin-top: 0;
+        position: relative;
+    }
+    .forum-message .msg-bubble-hover-time, .forum-reply .msg-bubble-hover-time {
+        display: none;
+        position: absolute;
+        left: 8px;
+        top: 4px;
+        width: 38px;
+        text-align: center;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        pointer-events: none;
+    }
+    .forum-message.is-grouped:hover .msg-bubble-hover-time,
+    .forum-reply.is-grouped:hover .msg-bubble-hover-time {
+        display: block;
+    }
+    .forum-message-actions, .forum-reply-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 4px;
+        position: static;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+
     .forum-message-avatar {
         width: 38px;
         height: 38px;
@@ -517,12 +578,6 @@
         line-height: 1.55;
         word-break: break-word;
         white-space: pre-wrap;
-    }
-
-    .forum-message-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 4px;
     }
 
     .forum-message-action-btn {
@@ -1367,6 +1422,112 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+    /* ---------- Tepki (Reaction) barı — "👍 33" rozetleri ---------- */
+    .msg-reaction-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 4px;
+    }
+    .msg-reaction-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        line-height: 1.6;
+        color: var(--text-primary);
+        transition: border-color 0.12s ease, background 0.12s ease;
+    }
+    .msg-reaction-pill:hover {
+        border-color: var(--accent);
+    }
+    .msg-reaction-pill.is-reacted {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 16%, var(--bg-panel));
+    }
+    .msg-reaction-pill-glyph {
+        font-size: 0.95rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+    }
+    .msg-reaction-pill-img {
+        width: 16px;
+        height: 16px;
+        object-fit: contain;
+        border-radius: 3px;
+    }
+    .msg-reaction-pill-count {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-dim);
+    }
+    .msg-reaction-pill.is-reacted .msg-reaction-pill-count {
+        color: var(--accent);
+    }
+    .msg-reaction-add-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 8px;
+        background: none;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        opacity: 0.7;
+        transition: opacity 0.12s ease, border-color 0.12s ease;
+    }
+    .msg-reaction-bar:hover .msg-reaction-add-btn,
+    .msg-reaction-add-btn:hover {
+        opacity: 1;
+        border-color: var(--line);
+        color: var(--text-primary);
+    }
+
+    /* ---------- Uzun-basma / sağ-tık bağlam menüsü ---------- */
+    .msg-context-menu {
+        z-index: 500;
+        display: flex;
+        flex-direction: column;
+        min-width: 160px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 6px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        gap: 2px;
+    }
+    .msg-context-menu .msg-bubble-action-btn,
+    .msg-context-menu .forum-message-action-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 9px 10px;
+        border-radius: 6px;
+        font-size: 0.86rem;
+        color: var(--text-primary);
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+    .msg-context-menu .msg-bubble-action-btn:hover,
+    .msg-context-menu .forum-message-action-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+        text-decoration: none;
+    }
+    .msg-context-menu .msg-bubble-action-btn.is-danger,
+    .msg-context-menu .forum-message-action-btn.is-danger {
+        color: #ff6b6b;
+    }
+
     .cch-empty-hint {
         font-size: 0.78rem;
         color: var(--text-dim);
@@ -1547,12 +1708,6 @@
         line-height: 1.5;
         white-space: pre-wrap;
         word-break: break-word;
-    }
-
-    .forum-reply-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 2px;
     }
 
     /* ---------- Modal: Yeni Konu Aç ---------- */
@@ -8005,6 +8160,121 @@
             });
         }
 
+        // ══════════════════════════════════════════════════════════════
+        // TEPKİ (REACTION) SİSTEMİ — Discord tarzı: her mesajın altında
+        // "👍 33" gibi rozetler. DM, normal grup, topluluk kanalı ve
+        // forum (mesaj + yorum) dahil HER YERDE kullanılan ortak modül.
+        // ------------------------------------------------------------
+        // Depolama: {mesajPath}/reactions/{emojiKey}/{uid} = true
+        //   emojiKey unicode emojide karakterin kendisi ("👍"), özel
+        //   emojide "custom:{groupId}:{emojiName}" formatındadır --
+        //   böylece hangi topluluğa ait olduğu render anında bilinir.
+        // Bir mesajda en fazla MAX_REACTION_TYPES FARKLI emoji türü
+        // olabilir (Discord'daki gibi bir sınır) -- bu sınıra ulaşılınca
+        // YENİ bir tür eklenemez (var olanlara katılmaya devam edilebilir).
+        const MAX_REACTION_TYPES = 20;
+
+        function reactionKeyForUnicode(ch) { return ch; }
+        function reactionKeyForCustom(groupId, emojiName) { return "custom:" + groupId + ":" + emojiName; }
+        function parseReactionKey(key) {
+            if (key.startsWith("custom:")) {
+                const parts = key.split(":");
+                return { kind: "custom", groupId: parts[1], emojiName: parts.slice(2).join(":") };
+            }
+            return { kind: "unicode", char: key };
+        }
+        // RTDB anahtarları ".", "#", "$", "[", "]" içeremez -- bazı unicode
+        // emoji/ZWJ dizileri (nadiren) bu karakterleri barındırabileceği
+        // için ham emojiyi DEĞİL, güvenli bir kodlamasını anahtar olarak
+        // kullanıyoruz. encodeURIComponent bu 5 karakteri de kodlar.
+        function safeReactionDbKey(key) { return encodeURIComponent(key); }
+        function unsafeReactionDbKey(dbKey) { return decodeURIComponent(dbKey); }
+
+        // Bir reaksiyon rozetine (👍 33) tıklanınca çağrılır: kullanıcı
+        // zaten tepki vermişse geri çeker, vermemişse ekler (toggle).
+        // messagePath: reactions düğümünün ebeveyni, örn.
+        // "group_chats/{gid}/channels/{cid}/messages/{mid}" ya da
+        // "dms/{dmId}/messages/{mid}" ya da "forum_messages/{mid}".
+        // NOT: MAX_REACTION_TYPES sınırı burada bir transaction ile
+        // ATOMİK olarak kontrol edilir -- iki kullanıcı aynı anda farklı
+        // yeni emoji eklerse bile sınır güvenilir şekilde uygulanır
+        // (önceden elde tutulan bir "currentReactions" anlık görüntüsüne
+        // güvenmek yarış durumuna açıktı).
+        async function toggleReaction(messagePath, emojiKey) {
+            const myUid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
+            if (!myUid) return;
+            const dbKey = safeReactionDbKey(emojiKey);
+            const reactionsRef = firebase.database().ref(messagePath + "/reactions");
+            let blockedByLimit = false;
+            await reactionsRef.transaction((current) => {
+                const obj = current || {};
+                const hasType = !!obj[dbKey];
+                if (hasType && obj[dbKey][myUid]) {
+                    // Zaten tepki vermiş -- geri çek.
+                    const nextType = { ...obj[dbKey] };
+                    delete nextType[myUid];
+                    const next = { ...obj };
+                    if (Object.keys(nextType).length) next[dbKey] = nextType;
+                    else delete next[dbKey];
+                    return next;
+                }
+                if (!hasType && Object.keys(obj).length >= MAX_REACTION_TYPES) {
+                    blockedByLimit = true;
+                    return; // undefined dönmek transaction'ı iptal eder, değişiklik yapılmaz.
+                }
+                const next = { ...obj };
+                next[dbKey] = { ...(obj[dbKey] || {}), [myUid]: true };
+                return next;
+            });
+            if (blockedByLimit) {
+                showToastGlobal("Bu mesajda en fazla " + MAX_REACTION_TYPES + " farklı tepki türü olabilir.");
+            }
+        }
+        window.toggleReaction = toggleReaction;
+
+        // reactions objesini ("emojiKey" -> {uid:true,...}) sıralı bir
+        // diziye çevirir: [{key, count, reacted, kind, char|groupId+emojiName}]
+        // reacted: BEN bu tepkiyi verdim mi (rozetin "aktif" görünümü için).
+        function summarizeReactions(reactionsObj, myUid) {
+            if (!reactionsObj) return [];
+            return Object.keys(reactionsObj).map((dbKey) => {
+                const uidsMap = reactionsObj[dbKey] || {};
+                const uids = Object.keys(uidsMap).filter((u) => uidsMap[u]);
+                const key = unsafeReactionDbKey(dbKey);
+                return { key, count: uids.length, reacted: myUid ? !!uidsMap[myUid] : false, ...parseReactionKey(key) };
+            }).filter((r) => r.count > 0).sort((a, b) => a.key < b.key ? -1 : 1);
+        }
+
+        // Bir mesajın altına konacak tepki rozetleri satırının HTML'i +
+        // "yeni tepki ekle" butonu. messagePath data-attr olarak satıra
+        // gömülür; tıklama olayları global event delegation ile yakalanır
+        // (bkz. wireReactionRowDelegation).
+        function renderReactionBar(reactionsObj, messagePath, myUid) {
+            const list = summarizeReactions(reactionsObj, myUid);
+            if (!list.length) {
+                return `<div class="msg-reaction-bar" data-reaction-path="${escEmojiAttr(messagePath)}">
+                    <button type="button" class="msg-reaction-add-btn" data-action="add-reaction" title="Tepki ekle">😊+</button>
+                </div>`;
+            }
+            const pillsHtml = list.map((r) => {
+                const glyph = r.kind === "unicode"
+                    ? r.char
+                    : (() => {
+                        const cached = window.CommunityEmojis ? window.CommunityEmojis.getCached(r.groupId) : {};
+                        const found = Object.values(cached).find((e) => e && e.name === r.emojiName);
+                        return found ? `<img class="msg-reaction-pill-img" src="${escEmojiAttr(found.image_url)}" alt="${escEmojiAttr(r.emojiName)}">` : "❔";
+                    })();
+                return `<button type="button" class="msg-reaction-pill${r.reacted ? ' is-reacted' : ''}" data-action="toggle-reaction" data-reaction-key="${escEmojiAttr(r.key)}" title="${r.kind === 'unicode' ? '' : ':' + escEmojiAttr(r.emojiName) + ':'}">
+                    <span class="msg-reaction-pill-glyph">${glyph}</span><span class="msg-reaction-pill-count">${r.count}</span>
+                </button>`;
+            }).join("");
+            return `<div class="msg-reaction-bar" data-reaction-path="${escEmojiAttr(messagePath)}">
+                ${pillsHtml}
+                <button type="button" class="msg-reaction-add-btn" data-action="add-reaction" title="Tepki ekle">😊+</button>
+            </div>`;
+        }
+        window.renderReactionBar = renderReactionBar;
+
         // Diğer tüm modüllerin erişebilmesi için genişletilmiş public API.
         window.CommunityMentions = {
             start: startMentionUserCache,
@@ -10272,7 +10542,12 @@
                 if (emptyEl) listEl.appendChild(emptyEl);
                 else listEl.innerHTML = '<div class="hub-placeholder">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>';
             } else {
-                listEl.innerHTML = visibleMessages.map(renderForumMessage).join("");
+                // Discord tarzı görünüm: aynı gönderenin art arda (5 dk
+                // içinde, aralarında yanıt/alıntı olmadan) attığı mesajlar
+                // gruplanır -- avatar/isim sadece grup başında gösterilir
+                // (bkz. renderBubbleList'teki AYNI mantık, msg-bubble-list
+                // ile tutarlılık için buraya da uygulandı).
+                listEl.innerHTML = renderForumMessageGroup(visibleMessages);
             }
 
             attachMessageActionHandlers(listEl);
@@ -10280,6 +10555,55 @@
 
             // Yeni mesaj gelince otomatik en alta kaydır (sadece normal akışta).
             listEl.scrollTop = listEl.scrollHeight;
+        }
+
+        // Ardışık mesaj gruplama: forum mesaj akışını (Genel Sohbet) ve
+        // thread yorumlarını (renderThreadReplies) AYNI Discord tarzı
+        // mantıkla dizen ortak yardımcı. Gün ayracı da ekler.
+        // NOT: dayKey/formatDateDividerLabel MessagingSystem IIFE'si
+        // içinde tanımlı (farklı scope) -- forum tarafı için burada kendi
+        // basit eşdeğerleri kullanılıyor.
+        function forumDayKey(ts) {
+            if (!ts) return "unknown";
+            const d = new Date(ts);
+            return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+        }
+        function forumFormatDateDividerLabel(ts) {
+            if (!ts) return "";
+            const d = new Date(ts);
+            const now = new Date();
+            const isToday = d.toDateString() === now.toDateString();
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday = d.toDateString() === yesterday.toDateString();
+            if (isToday) return "Bugün";
+            if (isYesterday) return "Dün";
+            return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+        }
+        const FORUM_GROUP_WINDOW_MS = 5 * 60 * 1000;
+        function renderForumMessageGroup(items, renderFn) {
+            const fn = renderFn || renderForumMessage;
+            let lastDayKey = null;
+            let prevAuthorUid = null;
+            let prevCreatedAt = null;
+            const html = [];
+            items.forEach((m) => {
+                const dk = forumDayKey(m.createdAt);
+                if (dk !== lastDayKey) {
+                    lastDayKey = dk;
+                    html.push(`<div class="msg-date-divider"><span>${RBAC.escapeHtml(forumFormatDateDividerLabel(m.createdAt))}</span></div>`);
+                    prevAuthorUid = null;
+                }
+                const hasQuote = !!(m.replyToMessageId);
+                const isGrouped = prevAuthorUid === m.authorUid
+                    && prevCreatedAt !== null
+                    && (m.createdAt - prevCreatedAt) < FORUM_GROUP_WINDOW_MS
+                    && !hasQuote;
+                prevAuthorUid = m.authorUid;
+                prevCreatedAt = m.createdAt;
+                html.push(fn(m, isGrouped));
+            });
+            return html.join("");
         }
 
         function renderPinnedItem(m) {
@@ -10301,7 +10625,7 @@
             `;
         }
 
-        function renderForumMessage(m) {
+        function renderForumMessage(m, isGrouped) {
             const candidate = window.CommunityMentions.getByUid(m.authorUid);
             const username = candidate ? candidate.username : "Kullanıcı";
             const avatarUrl = candidate ? candidate.avatarUrl : "";
@@ -10331,6 +10655,8 @@
 
             // Bu mesaj başka bir mesaja açık yanıt olarak gönderilmişse,
             // üstünde küçük bir alıntı referansı gösterilir (Discord tarzı).
+            // Bir alıntı varsa (renderForumMessageGroup'ta zaten hesaba
+            // katıldığı gibi) bu satır her zaman "grup başı" gibi davranır.
             let quoteHtml = "";
             if (m.replyToMessageId) {
                 const replyCandidate = window.CommunityMentions.getByUid(m.replyToAuthorUid);
@@ -10341,21 +10667,39 @@
                 </div>`;
             }
 
+            // Discord tarzı: gruplanmış (aynı gönderenin art arda mesajı)
+            // satırlarda avatar/isim/zaman başlığı basılmaz -- CSS
+            // (.forum-messages.is-discord-mode .forum-message.is-grouped)
+            // avatarı gizleyip mesaj metnini sola hizalar; hover'da küçük
+            // bir saat gösterilir (msg-bubble-hover-time deseniyle aynı).
+            const headerHtml = isGrouped ? "" : `
+                <div class="forum-message-header">
+                    <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
+                        ${RBAC.renderNameWithRank(username, role, isVerified)}
+                    </span>
+                    <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
+                    ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
+                    ${m.pinned === true ? '<span class="forum-message-pinned-tag">📌</span>' : ''}
+                </div>`;
+            const hoverTimeHtml = isGrouped
+                ? `<span class="msg-bubble-hover-time">${formatMessageTime(m.createdAt)}</span>`
+                : "";
+            const rowClasses = ["forum-message"];
+            if (isWhisper) rowClasses.push("is-whisper");
+            rowClasses.push(isGrouped ? "is-grouped" : "is-group-start");
+
+            const reactionBarHtml = renderReactionBar(m.reactions, "forum_messages/" + m.id, myUid);
+
             return `
-                <div class="forum-message${isWhisper ? ' is-whisper' : ''}" data-message-id="${m.id}">
+                <div class="${rowClasses.join(' ')}" data-message-id="${m.id}">
                     <img class="forum-message-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
+                    ${hoverTimeHtml}
                     <div class="forum-message-body">
-                        <div class="forum-message-header">
-                            <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
-                                ${RBAC.renderNameWithRank(username, role, isVerified)}
-                            </span>
-                            <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
-                            ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
-                            ${m.pinned === true ? '<span class="forum-message-pinned-tag">📌</span>' : ''}
-                        </div>
+                        ${headerHtml}
                         ${quoteHtml}
                         <div class="forum-message-text">${renderRichContent(m.text)}</div>
-                        ${actionsHtml ? `<div class="forum-message-actions">${actionsHtml}</div>` : ''}
+                        ${reactionBarHtml}
+                        ${actionsHtml ? `<div class="forum-message-actions" hidden>${actionsHtml}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -10388,6 +10732,14 @@
 
         function attachMessageActionHandlers(containerEl) {
             if (!containerEl) return;
+
+            // Long-press / sağ-tık bağlam menüsü (forum akışı için).
+            // .msg-context-menu içindeki klonlanan butonlar için de
+            // TEKRAR çağrılabilir olması gerektiğinden idempotent
+            // (dataset bayrağıyla) tasarlandı -- bkz. wireBubbleContextMenu.
+            if (typeof window.wireBubbleContextMenu === "function" && containerEl.id) {
+                window.wireBubbleContextMenu(containerEl, "[data-message-id], [data-reply-id]");
+            }
 
             containerEl.querySelectorAll('[data-action="public-reply"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
@@ -10919,13 +11271,18 @@
             }
 
             // DÜZ LİSTE (Discord tarzı): iç içe ağaç yapısı yerine tüm
-            // yorumlar zaman sırasına göre alt alta dizilir; bir yoruma
-            // yanıt verildiyse üstünde küçük bir alıntı referansı gösterilir.
-            listEl.innerHTML = allReplies.map((r) => renderSingleReply(r, threadId)).join("");
+            // yorumlar zaman sırasına göre alt alta dizilir; ardışık aynı
+            // gönderen mesajları gruplanır (renderForumMessageGroup ile
+            // aynı mantık); bir yoruma yanıt verildiyse üstünde küçük bir
+            // alıntı referansı gösterilir.
+            listEl.innerHTML = renderForumMessageGroup(
+                allReplies.map((r) => ({ ...r, replyToMessageId: r.replyToReplyId })),
+                (r, isGrouped) => renderSingleReply(r, threadId, isGrouped)
+            );
             attachReplyActionHandlers(listEl, threadId);
         }
 
-        function renderSingleReply(r, threadId) {
+        function renderSingleReply(r, threadId, isGrouped) {
             const candidate = window.CommunityMentions.getByUid(r.authorUid);
             const username = candidate ? candidate.username : "Kullanıcı";
             const avatarUrl = candidate ? candidate.avatarUrl : "";
@@ -10957,25 +11314,44 @@
                 </div>`;
             }
 
+            const headerHtml = isGrouped ? "" : `
+                <div class="forum-reply-header">
+                    <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
+                        ${RBAC.renderNameWithRank(username, role, isVerified)}
+                    </span>
+                    <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
+                </div>`;
+            const hoverTimeHtml = isGrouped
+                ? `<span class="msg-bubble-hover-time">${formatMessageTime(r.createdAt)}</span>`
+                : "";
+            const rowClasses = ["forum-reply", isGrouped ? "is-grouped" : "is-group-start"];
+
+            const reactionBarHtml = renderReactionBar(r.reactions, "forum_replies/" + threadId + "/" + r.id, myUid);
+
             return `
-                <div class="forum-reply" data-reply-id="${r.id}">
+                <div class="${rowClasses.join(' ')}" data-reply-id="${r.id}">
                     <img class="forum-reply-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
+                    ${hoverTimeHtml}
                     <div class="forum-reply-body">
-                        <div class="forum-reply-header">
-                            <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
-                                ${RBAC.renderNameWithRank(username, role, isVerified)}
-                            </span>
-                            <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
-                        </div>
+                        ${headerHtml}
                         ${quoteHtml}
                         <div class="forum-reply-text">${renderRichContent(r.text || "")}</div>
-                        ${actionsHtml ? `<div class="forum-reply-actions">${actionsHtml}</div>` : ''}
+                        ${reactionBarHtml}
+                        ${actionsHtml ? `<div class="forum-reply-actions" hidden>${actionsHtml}</div>` : ''}
                     </div>
                 </div>
             `;
         }
 
         function attachReplyActionHandlers(containerEl, threadId) {
+            // Long-press / sağ-tık bağlam menüsü (thread yorumları için).
+            // menu.id yok, containerEl.id genelde "forumRepliesList" --
+            // context-menu'nün İÇİNE tekrar context-menu bağlanmasın diye
+            // sadece gerçek listeye (id'si olana) bağlıyoruz.
+            if (typeof window.wireBubbleContextMenu === "function" && containerEl.id) {
+                window.wireBubbleContextMenu(containerEl, "[data-reply-id]");
+            }
+
             containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
                 el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
             });
@@ -11646,9 +12022,13 @@
             textarea.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
-        function openCommunityEmojiPicker(anchorBtn, textareaId, emojiGroupIdResolver) {
+        // Genel amaçlı emoji seçici açıcı: hem "textarea'ya ekle" (composer
+        // "+" menüsü) hem "mesaja tepki ekle" (reaction picker) AYNI panel
+        // altyapısını (renderEmojiPickerContents, önizleme şeridi, vb.)
+        // kullanır -- farkları sadece emoji seçildiğinde ne yapılacağı
+        // (onSelect callback'i).
+        function openEmojiPickerGeneric(anchorBtn, activeGroupId, onSelect) {
             const el = ensureEmojiPickerEl();
-            const activeGroupId = typeof emojiGroupIdResolver === "function" ? emojiGroupIdResolver() : null;
 
             // Aynı anda başka "+" popover'ları açık kalmasın.
             closeAllPlusPopovers(null);
@@ -11658,23 +12038,26 @@
             el.classList.add("is-fixed-popover", "is-open");
             requestAnimationFrame(() => positionFixedPopover(anchorBtn, el));
 
-            // Bir emojiye tıklanınca ilgili textarea'ya eklenir: unicode
-            // emojide karakterin kendisi, özel emojide ":ad:" formatı.
-            // Kullanım yetkisi (üyelik) mesaj GÖNDERİLİRKEN sendGroupMessage
-            // içinde tekrar doğrulanır -- burada sadece metne ekleniyor.
+            // NOT: mobilde touchstart hemen ardından sentetik bir "click"
+            // de tetikler. Önceden bu click paneli ANINDA kapatıyordu, bu
+            // yüzden touchstart'ın gösterdiği önizleme şeridi görünür
+            // olmaya fırsat bulamadan kayboluyordu. Şimdi: emoji YİNE tek
+            // dokunuşta seçilir (ekstra adım YOK), ama panel kapatma kısa
+            // bir gecikmeyle yapılır ki önizleme bir an için görünsün.
             el.onclick = (e) => {
                 e.stopPropagation();
                 const btn = e.target.closest(".community-emoji-pick-btn");
                 if (!btn) return;
-                const textarea = textareaId ? document.getElementById(textareaId) : null;
+                updateEmojiPreview(btn);
                 if (btn.getAttribute("data-emoji-kind") === "unicode") {
                     const ch = btn.getAttribute("data-emoji-char");
-                    if (textarea && ch) insertTextAtCursor(textarea, ch);
+                    if (ch) onSelect({ kind: "unicode", char: ch });
                 } else {
                     const name = btn.getAttribute("data-emoji-name");
-                    if (textarea && name) insertTextAtCursor(textarea, `:${name}:`);
+                    const groupId = btn.getAttribute("data-emoji-group-id");
+                    if (name && groupId) onSelect({ kind: "custom", name, groupId });
                 }
-                closeCommunityEmojiPicker();
+                setTimeout(() => closeCommunityEmojiPicker(), 220);
             };
 
             // Fare ile üzerine gelince (masaüstü) ya da parmakla dokununca
@@ -11687,7 +12070,35 @@
             el.onmouseover = showPreviewFromEvent;
             el.ontouchstart = showPreviewFromEvent;
         }
+
+        function openCommunityEmojiPicker(anchorBtn, textareaId, emojiGroupIdResolver) {
+            const activeGroupId = typeof emojiGroupIdResolver === "function" ? emojiGroupIdResolver() : null;
+            openEmojiPickerGeneric(anchorBtn, activeGroupId, (picked) => {
+                const textarea = textareaId ? document.getElementById(textareaId) : null;
+                if (!textarea) return;
+                if (picked.kind === "unicode") insertTextAtCursor(textarea, picked.char);
+                else insertTextAtCursor(textarea, `:${picked.name}:`);
+            });
+        }
         window.openCommunityEmojiPicker = openCommunityEmojiPicker;
+
+        // "😊+" (tepki ekle) butonuna basılınca açılır: seçilen emoji,
+        // ilgili mesaja tepki olarak eklenir (textarea'ya YAZILMAZ).
+        // messagePath: renderReactionBar'ın data-reaction-path'i ile aynı.
+        function openReactionPicker(anchorBtn, messagePath) {
+            // Reaction paneli TÜM üye olunan topluluklardaki özel
+            // emojileri gösterir (kullanıcı isteği: "her emojiler
+            // kullanılabilsin topluluğa özel olanlarda dahil") -- bu
+            // yüzden activeGroupId=null (myCommunityGroupIds() fallback'i).
+            openEmojiPickerGeneric(anchorBtn, null, (picked) => {
+                const emojiKey = picked.kind === "unicode" ? picked.char : reactionKeyForCustom(picked.groupId, picked.name);
+                toggleReaction(messagePath, emojiKey).catch((err) => {
+                    console.error("[Reactions] toggle başarısız:", err);
+                    showToastGlobal("Tepki eklenemedi. Yetki sorunu olabilir.");
+                });
+            });
+        }
+        window.openReactionPicker = openReactionPicker;
 
         // Panelin dışına tıklanınca ya da Escape'e basılınca tüm "+"
         // panellerini kapat (composer'lar arası ortak, tek dinleyici).
@@ -18053,11 +18464,14 @@
                 let lastDayKey = null;
                 const html = [];
 
-                // Discord tarzı görünüm SADECE topluluk kanallarında aktif --
-                // DM ve normal gruplarda WhatsApp tarzı balon görünümü aynen
-                // sürer (bkz. .is-discord-mode CSS bloğunun üstündeki not).
+                // Discord tarzı görünüm: DM'ler HARİÇ her yerde aktif --
+                // normal grup sohbetleri VE topluluk kanalları artık aynı
+                // Discord tarzı akışı kullanıyor (isim üstte, ardışık
+                // mesajlar gruplu). DM'ler bilinçli olarak WhatsApp tarzı
+                // balon görünümünde bırakıldı (bkz. kullanıcı talebi).
                 const groupMetaForMode = isGroup ? _groupMetaCache[_activeGroupId] : null;
-                const isDiscordMode = isGroup && !!(window.CommunityChannels && window.CommunityChannels.isCommunityMeta(groupMetaForMode));
+                const isCommunityMode = isGroup && !!(window.CommunityChannels && window.CommunityChannels.isCommunityMeta(groupMetaForMode));
+                const isDiscordMode = isGroup; // DM'lerde isGroup=false -> eski WhatsApp modu korunur
                 listEl.classList.toggle("is-discord-mode", isDiscordMode);
 
                 // Ardışık mesaj gruplama: aynı gönderen + aradaki süre 5
@@ -18109,7 +18523,7 @@
                     // Normal gruplarda (topluluk değilse) eski davranış
                     // (Kurucu/Yönetici rozeti + site rütbesi) aynen sürer.
                     const activeMetaForBubble = isGroup ? _groupMetaCache[_activeGroupId] : null;
-                    const isCommunityBubble = isDiscordMode;
+                    const isCommunityBubble = isCommunityMode;
                     let senderHtml = "";
                     // Discord modunda grup başı DEĞİLSE (yani gruplanmışsa)
                     // isim satırı hiç basılmaz -- CSS zaten gizler ama DOM'u
@@ -18128,6 +18542,14 @@
                     }
 
                     const isDeleted = m.deleted === true;
+
+                    // Tepki (reaction) barının RTDB path'i: bu mesajın
+                    // kendi düğümü (channels/{cid}/messages/{mid} ya da
+                    // dms/{dmId}/messages/{mid} ya da group_chats/{gid}/messages/{mid}).
+                    const reactionMsgPath = isGroup
+                        ? (_activeMessagesBasePath(_activeGroupId) ? _activeMessagesBasePath(_activeGroupId) + "/" + m.id : null)
+                        : (_activeDmId ? "dms/" + _activeDmId + "/messages/" + m.id : null);
+                    const reactionBarHtml = (!isDeleted && reactionMsgPath) ? renderReactionBar(m.reactions, reactionMsgPath, _myUid) : "";
 
                     let replyHtml = "";
                     if (m.replyTo && m.replyTo.messageId) {
@@ -18179,7 +18601,13 @@
                         const pinBtn = canPinThis
                             ? `<button type="button" class="msg-bubble-action-btn" data-msg-action="${isPinned ? 'unpin' : 'pin'}" data-msg-id="${escapeAttr(m.id)}">${isPinned ? '📌 Kaldır' : '📌 Sabitle'}</button>`
                             : "";
-                        actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${pinBtn}${deleteBtn}</div>`;
+                        // NOT: bu buton grubu artık her zaman görünür DEĞİL --
+                        // mesaja sağ tıklanınca / basılı tutulunca (long-press)
+                        // açılan bir bağlam menüsüne taşındı (bkz.
+                        // wireBubbleContextMenu). İçerik burada, DOM'da
+                        // gizli olarak duruyor; menü açıldığında bu HTML
+                        // floating menüye kopyalanıyor.
+                        actionsHtml = `<div class="msg-bubble-actions" hidden>${replyBtn}${pinBtn}${deleteBtn}</div>`;
                     }
 
                     // Discord modunda: kendi mesajım da dahil herkes sol
@@ -18208,6 +18636,7 @@
                                     ${bodyHtml}
                                     <div class="msg-bubble-time">${formatMessageTime(m.createdAt)}</div>
                                 </div>
+                                ${reactionBarHtml}
                                 ${actionsHtml}
                             </div>
                         </div>
@@ -18235,14 +18664,141 @@
                 });
             }
 
+            // ── Uzun basma / sağ tık ile aksiyon menüsü ──────────────────
+            // Önceden Yanıtla/Sabitle/Sil butonları HER ZAMAN görünürdü.
+            // Artık mesajın kendisi (balon/forum satırı) sağ tıklanınca
+            // (masaüstü) ya da basılı tutulunca (mobil, ~450ms) küçük bir
+            // bağlam menüsü açılıyor -- Discord/WhatsApp'taki gibi. Menü
+            // içeriği, mesaj HTML'inde ZATEN var olan ama `hidden` olan
+            // `.msg-bubble-actions` / `.forum-message-actions` /
+            // `.forum-reply-actions` bloğunun bir KLONU: böylece
+            // bindBubbleActions / attachMessageActionHandlers'daki event
+            // delegation (data-msg-action, data-action gibi) hiç
+            // değiştirilmeden, klonlanan buton üzerindeki tıklama da aynı
+            // listEl'in dinleyicisine düşer (klon, listEl'in İÇİNE ekleniyor).
+            let _activeContextMenuEl = null;
+            function closeActiveContextMenu() {
+                if (_activeContextMenuEl) { _activeContextMenuEl.remove(); _activeContextMenuEl = null; }
+            }
+            document.addEventListener("click", (e) => {
+                if (_activeContextMenuEl && !_activeContextMenuEl.contains(e.target)) closeActiveContextMenu();
+            });
+            document.addEventListener("scroll", closeActiveContextMenu, true);
+
+            function openBubbleContextMenu(rowEl, listEl, clientX, clientY) {
+                const sourceActions = rowEl.querySelector(
+                    ".msg-bubble-actions, .forum-message-actions, .forum-reply-actions"
+                );
+                if (!sourceActions) return;
+                closeActiveContextMenu();
+
+                const menu = document.createElement("div");
+                menu.className = "msg-context-menu";
+                // Kaynaktaki butonları KLONLA (orijinaller `hidden`
+                // kalmaya devam eder, DOM'dan silinmezler -- böylece
+                // reactionBarHtml/actionsHtml render mantığı bozulmaz).
+                Array.from(sourceActions.children).forEach((btn) => {
+                    menu.appendChild(btn.cloneNode(true));
+                });
+                if (!menu.children.length) return;
+
+                listEl.appendChild(menu);
+                menu.style.position = "fixed";
+                menu.style.left = "0px";
+                menu.style.top = "0px";
+                menu.style.visibility = "hidden";
+                requestAnimationFrame(() => {
+                    const menuRect = menu.getBoundingClientRect();
+                    const vw = window.innerWidth, vh = window.innerHeight;
+                    let left = Math.min(clientX, vw - menuRect.width - 8);
+                    let top = Math.min(clientY, vh - menuRect.height - 8);
+                    left = Math.max(8, left);
+                    top = Math.max(8, top);
+                    menu.style.left = left + "px";
+                    menu.style.top = top + "px";
+                    menu.style.visibility = "visible";
+                });
+                _activeContextMenuEl = menu;
+
+                // msg-bubble-actions içindeki butonlar zaten data-msg-action
+                // ile event DELEGATION'a (listEl.addEventListener) bağlı --
+                // klon otomatik yakalanır. AMA forum tarafı (.forum-message-actions
+                // / .forum-reply-actions) her butona TEK TEK addEventListener
+                // ile bağlanıyor (attachMessageActionHandlers) -- bu tür
+                // dinleyiciler cloneNode ile KOPYALANMAZ, bu yüzden forum
+                // menüsü için klonlanan butonlara tekrar aynı fonksiyon
+                // çağrılarak dinleyici bağlanıyor.
+                if (sourceActions.classList.contains("forum-message-actions") || sourceActions.classList.contains("forum-reply-actions")) {
+                    if (typeof attachMessageActionHandlers === "function") attachMessageActionHandlers(menu);
+                    if (typeof attachReplyActionHandlers === "function" && sourceActions.classList.contains("forum-reply-actions")) {
+                        const threadId = typeof activeThreadId !== "undefined" ? activeThreadId : null;
+                        attachReplyActionHandlers(menu, threadId);
+                    }
+                }
+            }
+
+            // Bir mesaj listesine (msg-bubble-list, forumMessagesList,
+            // forumRepliesList) sağ-tık + uzun-basma dinleyicilerini bağlar.
+            // rowSelector: satırı bulmak için ("[data-msg-id]" ya da
+            // "[data-message-id], [data-reply-id]" gibi).
+            function wireBubbleContextMenu(listEl, rowSelector) {
+                if (!listEl || listEl.dataset.ctxMenuBound) return;
+                listEl.dataset.ctxMenuBound = "1";
+
+                listEl.addEventListener("contextmenu", (e) => {
+                    const row = e.target.closest(rowSelector);
+                    if (!row) return;
+                    e.preventDefault();
+                    openBubbleContextMenu(row, listEl, e.clientX, e.clientY);
+                });
+
+                let pressTimer = null;
+                let pressStartX = 0, pressStartY = 0;
+                let longPressRow = null;
+                const LONG_PRESS_MS = 450;
+                const MOVE_TOLERANCE = 10;
+
+                listEl.addEventListener("touchstart", (e) => {
+                    const row = e.target.closest(rowSelector);
+                    if (!row) return;
+                    // Reaksiyon barındaki/aksiyon menüsündeki dokunuşlarda
+                    // long-press tetiklenmesin (zaten kendi tıklamaları var).
+                    if (e.target.closest(".msg-reaction-bar, .msg-context-menu")) return;
+                    longPressRow = row;
+                    const t = e.touches[0];
+                    pressStartX = t.clientX; pressStartY = t.clientY;
+                    pressTimer = setTimeout(() => {
+                        if (navigator.vibrate) navigator.vibrate(12);
+                        openBubbleContextMenu(row, listEl, pressStartX, pressStartY);
+                        pressTimer = null;
+                    }, LONG_PRESS_MS);
+                }, { passive: true });
+
+                listEl.addEventListener("touchmove", (e) => {
+                    if (!pressTimer) return;
+                    const t = e.touches[0];
+                    if (Math.abs(t.clientX - pressStartX) > MOVE_TOLERANCE || Math.abs(t.clientY - pressStartY) > MOVE_TOLERANCE) {
+                        clearTimeout(pressTimer);
+                        pressTimer = null;
+                    }
+                }, { passive: true });
+
+                const cancelPress = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
+                listEl.addEventListener("touchend", cancelPress);
+                listEl.addEventListener("touchcancel", cancelPress);
+            }
+            window.wireBubbleContextMenu = wireBubbleContextMenu;
+
             // ── Yanıtla / Sil aksiyon tıklamaları (event delegation) ────
             function bindBubbleActions(listEl, { getReplyBanner, sendFn }) {
                 if (!listEl || listEl.dataset.actionsBound) return;
                 listEl.dataset.actionsBound = "1";
+                wireBubbleContextMenu(listEl, "[data-msg-id]");
 
                 listEl.addEventListener("click", async (e) => {
                     const replyBtn = e.target.closest('[data-msg-action="reply"]');
                     if (replyBtn) {
+                        closeActiveContextMenu();
                         const banner = getReplyBanner();
                         banner.set({
                             messageId: replyBtn.getAttribute("data-msg-id"),
@@ -18253,6 +18809,7 @@
                     }
                     const deleteBtn = e.target.closest('[data-msg-action="delete"]');
                     if (deleteBtn) {
+                        closeActiveContextMenu();
                         if (!confirm("Bu mesajı silmek istediğine emin misin?")) return;
                         try {
                             await sendFn.deleteMessage(deleteBtn.getAttribute("data-msg-id"));
@@ -18264,12 +18821,35 @@
                     }
                     const pinBtn = e.target.closest('[data-msg-action="pin"]');
                     if (pinBtn) {
+                        closeActiveContextMenu();
                         await pinGroupMessage(pinBtn.getAttribute("data-msg-id"));
                         return;
                     }
                     const unpinBtn = e.target.closest('[data-msg-action="unpin"]');
                     if (unpinBtn) {
+                        closeActiveContextMenu();
                         await unpinGroupMessage();
+                        return;
+                    }
+                    // ── Tepki (reaction) etkileşimleri ──
+                    const addReactionBtn = e.target.closest('[data-action="add-reaction"]');
+                    if (addReactionBtn) {
+                        const bar = addReactionBtn.closest(".msg-reaction-bar");
+                        const messagePath = bar ? bar.getAttribute("data-reaction-path") : null;
+                        if (messagePath) openReactionPicker(addReactionBtn, messagePath);
+                        return;
+                    }
+                    const reactionPill = e.target.closest('[data-action="toggle-reaction"]');
+                    if (reactionPill) {
+                        const bar = reactionPill.closest(".msg-reaction-bar");
+                        const messagePath = bar ? bar.getAttribute("data-reaction-path") : null;
+                        const emojiKey = reactionPill.getAttribute("data-reaction-key");
+                        if (messagePath && emojiKey) {
+                            toggleReaction(messagePath, emojiKey).catch((err) => {
+                                console.error("[Reactions] toggle başarısız:", err);
+                                showToastGlobal("Tepki eklenemedi. Yetki sorunu olabilir.");
+                            });
+                        }
                         return;
                     }
                     const quote = e.target.closest("[data-jump-to]");
