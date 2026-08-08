@@ -498,27 +498,6 @@
     .forum-reply.is-grouped:hover .msg-bubble-hover-time {
         display: block;
     }
-    /* Forum aksiyon butonları (Yanıtla/Sabitle/Sil): SADECE uzun-basma/
-       sağ-tık ile açılır -- satır ".is-actions-open" class'ını alınca
-       görünür olur (bkz. wireBubbleContextMenu, msg-bubble-actions ile
-       aynı mekanizma). */
-    .forum-message-actions, .forum-reply-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 4px;
-        position: static;
-        background: none;
-        border: none;
-        padding: 0;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.12s ease;
-    }
-    .forum-message.is-actions-open .forum-message-actions,
-    .forum-reply.is-actions-open .forum-reply-actions {
-        opacity: 1;
-        pointer-events: auto;
-    }
 
     .forum-message-avatar {
         width: 38px;
@@ -1441,6 +1420,109 @@
         padding: 8px 4px;
         line-height: 1.5;
     }
+
+    /* ---------- Tepki (Reaction) rozetleri — "👍 33" ---------- */
+    .msg-reaction-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 4px;
+    }
+    .msg-reaction-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        line-height: 1.6;
+        color: var(--text-primary);
+        transition: border-color 0.12s ease, background 0.12s ease;
+    }
+    .msg-reaction-pill:hover { border-color: var(--accent); }
+    .msg-reaction-pill.is-reacted {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 16%, var(--bg-panel));
+    }
+    .msg-reaction-pill-glyph {
+        font-size: 0.95rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+    }
+    .msg-reaction-pill-img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
+    .msg-reaction-pill-count { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim); }
+    .msg-reaction-pill.is-reacted .msg-reaction-pill-count { color: var(--accent); }
+
+    /* ---------- Mesaj Context Paneli (uzun-basma/sağ-tık) ----------
+       position:fixed, document.body'ye eklenir; mesajın hemen üstünde ya
+       da altında (JS ile hesaplanır, viewport dışına taşmaz) konumlanır. */
+    .msg-context-panel {
+        position: fixed;
+        z-index: 600;
+        display: flex;
+        flex-direction: column;
+        min-width: 220px;
+        max-width: min(320px, calc(100vw - 16px));
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+        gap: 8px;
+    }
+    .ctx-panel-reactions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--line);
+        overflow-x: auto;
+    }
+    .ctx-panel-reaction-btn {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        font-size: 1.15rem;
+        background: none;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.1s ease, transform 0.1s ease;
+    }
+    .ctx-panel-reaction-btn:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: scale(1.1);
+    }
+    .ctx-panel-reaction-more {
+        font-size: 0.95rem;
+        color: var(--text-dim);
+    }
+    .ctx-panel-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .ctx-panel-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 9px 10px;
+        border-radius: 6px;
+        font-size: 0.86rem;
+        color: var(--text-primary);
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+    .ctx-panel-btn:hover { background: rgba(255, 255, 255, 0.06); }
+    .ctx-panel-btn.is-danger { color: #ff6b6b; }
 
     /* Mesaj içinde ":ad:" -> görsele çevrilen özel emoji (inline, satır
        yüksekliğine göre ölçeklenir -- unicode emoji ile aynı akışta durur).
@@ -4252,16 +4334,6 @@
     /* Zaman damgası: grup başı satırda isimle aynı satırda gösterildiği
        için balonun altındaki eski konum tamamen kaldırılır. */
     .msg-bubble-list.is-discord-mode .msg-bubble-time { display: none; }
-    .msg-bubble-list.is-discord-mode .msg-bubble-actions {
-        position: absolute;
-        top: 0;
-        right: 8px;
-        margin-top: 0;
-        background: var(--bg-panel-raised);
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        padding: 2px;
-    }
     .msg-bubble-list.is-discord-mode .msg-bubble-reply-quote {
         margin-bottom: 4px;
     }
@@ -4299,39 +4371,9 @@
         max-width: 80%;
     }
 
-    /* ── Mesaj eylemleri (Yanıtla / Sil) — SADECE uzun-basma/sağ-tık ── */
     .msg-bubble-row { position: relative; }
     .msg-bubble-wrap { display: flex; flex-direction: column; min-width: 0; }
     .msg-bubble-row.is-own .msg-bubble-wrap { align-items: flex-end; }
-    .msg-bubble-actions {
-        display: flex;
-        gap: 4px;
-        margin-top: 3px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.12s ease;
-    }
-    /* NOT: eskiden ":hover" ile de açılıyordu -- mobilde dokunma bazı
-       tarayıcılarda "hover" olarak da yorumlanabildiği için istenmeden
-       her dokunuşta menü açılmasına sebep oluyordu. Artık SADECE
-       "is-actions-open" class'ı (wireBubbleContextMenu tarafından
-       sağ-tık/uzun-basmada eklenir) ile açılıyor. */
-    .msg-bubble-row.is-actions-open .msg-bubble-actions {
-        opacity: 1;
-        pointer-events: auto;
-    }
-    .msg-bubble-action-btn {
-        background: var(--bg-panel);
-        border: 1px solid var(--line);
-        color: var(--text-dim);
-        font-size: 0.68rem;
-        font-weight: 700;
-        padding: 3px 9px;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-    .msg-bubble-action-btn:hover { color: var(--accent); border-color: var(--accent); }
-    .msg-bubble-action-btn.is-danger:hover { color: var(--danger); border-color: var(--danger); }
 
     /* Yanıtlanan mesaj alıntısı: balonun içinde, metnin üstünde */
     .msg-bubble-reply-quote {
@@ -8072,6 +8114,101 @@
         }
 
         // Diğer tüm modüllerin erişebilmesi için genişletilmiş public API.
+        // ══════════════════════════════════════════════════════════════
+        // TEPKİ (REACTION) SİSTEMİ — mesaj altında "👍 33" rozetleri.
+        // DM, normal grup, topluluk kanalı ve forum (mesaj + yorum) dahil
+        // HER YERDE kullanılan ortak modül. Tepki EKLEME arayüzü artık
+        // context panelinin içinde (bkz. openMessageContextPanel).
+        // ------------------------------------------------------------
+        // Depolama: {mesajPath}/reactions/{emojiKey}/{uid} = true
+        //   emojiKey unicode emojide karakterin kendisi ("👍"), özel
+        //   emojide "custom:{groupId}:{emojiName}" formatındadır.
+        const MAX_REACTION_TYPES = 20;
+
+        function reactionKeyForCustom(groupId, emojiName) { return "custom:" + groupId + ":" + emojiName; }
+        function parseReactionKey(key) {
+            if (key.startsWith("custom:")) {
+                const parts = key.split(":");
+                return { kind: "custom", groupId: parts[1], emojiName: parts.slice(2).join(":") };
+            }
+            return { kind: "unicode", char: key };
+        }
+        // RTDB anahtarları ".", "#", "$", "[", "]" içeremez -- ham emojiyi
+        // DEĞİL, encodeURIComponent ile kodlanmış halini anahtar olarak
+        // kullanıyoruz (bu 5 karakteri de güvenli hale getirir).
+        function safeReactionDbKey(key) { return encodeURIComponent(key); }
+        function unsafeReactionDbKey(dbKey) { return decodeURIComponent(dbKey); }
+
+        // Bir reaksiyon rozetine tıklanınca çağrılır: kullanıcı zaten tepki
+        // vermişse geri çeker, vermemişse ekler (toggle). MAX_REACTION_TYPES
+        // sınırı bir Firebase transaction ile ATOMİK kontrol edilir.
+        async function toggleReaction(messagePath, emojiKey) {
+            const myUid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
+            if (!myUid) return;
+            const dbKey = safeReactionDbKey(emojiKey);
+            const reactionsRef = firebase.database().ref(messagePath + "/reactions");
+            let blockedByLimit = false;
+            await reactionsRef.transaction((current) => {
+                const obj = current || {};
+                const hasType = !!obj[dbKey];
+                if (hasType && obj[dbKey][myUid]) {
+                    const nextType = { ...obj[dbKey] };
+                    delete nextType[myUid];
+                    const next = { ...obj };
+                    if (Object.keys(nextType).length) next[dbKey] = nextType;
+                    else delete next[dbKey];
+                    return next;
+                }
+                if (!hasType && Object.keys(obj).length >= MAX_REACTION_TYPES) {
+                    blockedByLimit = true;
+                    return; // undefined dönmek transaction'ı iptal eder.
+                }
+                const next = { ...obj };
+                next[dbKey] = { ...(obj[dbKey] || {}), [myUid]: true };
+                return next;
+            });
+            if (blockedByLimit) {
+                showToastGlobal("Bu mesajda en fazla " + MAX_REACTION_TYPES + " farklı tepki türü olabilir.");
+            }
+        }
+        window.toggleReaction = toggleReaction;
+
+        // reactions objesini sıralı bir diziye çevirir:
+        // [{key, count, reacted, kind, char|groupId+emojiName}]
+        function summarizeReactions(reactionsObj, myUid) {
+            if (!reactionsObj) return [];
+            return Object.keys(reactionsObj).map((dbKey) => {
+                const uidsMap = reactionsObj[dbKey] || {};
+                const uids = Object.keys(uidsMap).filter((u) => uidsMap[u]);
+                const key = unsafeReactionDbKey(dbKey);
+                return { key, count: uids.length, reacted: myUid ? !!uidsMap[myUid] : false, ...parseReactionKey(key) };
+            }).filter((r) => r.count > 0).sort((a, b) => a.key < b.key ? -1 : 1);
+        }
+
+        // Bir mesajın altına konacak tepki rozetleri satırının HTML'i.
+        // "+" (yeni tepki ekle) butonu YOK -- yeni tepki eklemek artık
+        // context panelinden yapılıyor (bkz. openMessageContextPanel).
+        // Zaten var olan tepkilere katılmak/geri çekmek için rozete
+        // doğrudan tıklanabilir.
+        function renderReactionBar(reactionsObj, messagePath, myUid) {
+            const list = summarizeReactions(reactionsObj, myUid);
+            if (!list.length) return "";
+            const pillsHtml = list.map((r) => {
+                const glyph = r.kind === "unicode"
+                    ? r.char
+                    : (() => {
+                        const cached = window.CommunityEmojis ? window.CommunityEmojis.getCached(r.groupId) : {};
+                        const found = Object.values(cached).find((e) => e && e.name === r.emojiName);
+                        return found ? `<img class="msg-reaction-pill-img" src="${escEmojiAttr(found.image_url)}" alt="${escEmojiAttr(r.emojiName)}">` : "❔";
+                    })();
+                return `<button type="button" class="msg-reaction-pill${r.reacted ? ' is-reacted' : ''}" data-action="toggle-reaction" data-reaction-key="${escEmojiAttr(r.key)}" title="${r.kind === 'unicode' ? '' : ':' + escEmojiAttr(r.emojiName) + ':'}">
+                    <span class="msg-reaction-pill-glyph">${glyph}</span><span class="msg-reaction-pill-count">${r.count}</span>
+                </button>`;
+            }).join("");
+            return `<div class="msg-reaction-bar" data-reaction-path="${escEmojiAttr(messagePath)}">${pillsHtml}</div>`;
+        }
+        window.renderReactionBar = renderReactionBar;
+
         window.CommunityMentions = {
             start: startMentionUserCache,
             onReady: onMentionCacheReady,
@@ -10433,21 +10570,17 @@
 
             const canModerate = RBAC.canModerate(viewerProfile);
             const canPin = RBAC.hasMinimumTier(viewerProfile, "helper");
+            const canDeleteThis = canModerate || m.authorUid === myUid;
+            const canReplyThis = m.authorUid !== myUid;
 
-            // "Yanıtla" (herkese açık) — whisper mesajı olsun olmasın, kendi
-            // mesajımız hariç her mesaja eklenir. "/w" gizli mesajdan farklı
-            // bir mekanizmadır: sadece görsel bir alıntı referansı bırakır.
-            let actionsHtml = "";
-            if (m.authorUid !== myUid) {
-                const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(m.text || "").slice(0, 160));
-                actionsHtml += `<button class="forum-message-action-btn" data-action="public-reply" data-message-id="${m.id}" data-from-uid="${m.authorUid}" data-snippet="${snippetAttr}">Yanıtla</button>`;
-            }
-            if (canPin) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="pin" data-message-id="${m.id}" data-pinned="${m.pinned === true}">${m.pinned ? "Sabitlemeyi Kaldır" : "Sabitle"}</button>`;
-            }
-            if (canModerate || m.authorUid === myUid) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="delete" data-message-id="${m.id}">Sil</button>`;
-            }
+            // Context panel (Tepki + Yanıtla + Sabitle + Sil) artık satırda
+            // hazır HTML olarak durmuyor -- basılı tutulduğunda/sağ
+            // tıklandığında openMessageContextPanel bu data-* özniteliklerinden
+            // canlı olarak üretiyor (bkz. renderBubbleList'teki aynı desen).
+            const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(m.text || "").slice(0, 160));
+            const reactionMsgPath = "forum_messages/" + m.id;
+            const ctxDataAttrs = ` data-msg-author-uid="${RBAC.escapeHtml(m.authorUid)}" data-msg-snippet="${snippetAttr}" data-can-delete="${canDeleteThis}" data-can-reply="${canReplyThis}" data-can-pin="${canPin}" data-is-pinned="${m.pinned === true}" data-reaction-path="${RBAC.escapeHtml(reactionMsgPath)}" data-ctx-kind="forum-message"`;
+            const reactionBarHtml = renderReactionBar(m.reactions, reactionMsgPath, myUid);
 
             // Bu mesaj başka bir mesaja açık yanıt olarak gönderilmişse,
             // üstünde küçük bir alıntı referansı gösterilir (Discord tarzı).
@@ -10485,14 +10618,14 @@
             rowClasses.push(isGrouped ? "is-grouped" : "is-group-start");
 
             return `
-                <div class="${rowClasses.join(' ')}" data-message-id="${m.id}">
+                <div class="${rowClasses.join(' ')}" data-message-id="${m.id}"${ctxDataAttrs}>
                     <img class="forum-message-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     ${hoverTimeHtml}
                     <div class="forum-message-body">
                         ${headerHtml}
                         ${quoteHtml}
                         <div class="forum-message-text">${renderRichContent(m.text)}</div>
-                        ${actionsHtml ? `<div class="forum-message-actions">${actionsHtml}</div>` : ''}
+                        ${reactionBarHtml}
                     </div>
                 </div>
             `;
@@ -11085,14 +11218,12 @@
             const thread = forumThreadsCache[threadId];
             const isLocked = thread && thread.isLocked;
 
-            let actionsHtml = "";
-            if (!isLocked && r.authorUid !== myUid) {
-                const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(r.text || "").slice(0, 160));
-                actionsHtml += `<button class="forum-message-action-btn" data-action="reply-to-reply" data-reply-id="${r.id}" data-from-uid="${r.authorUid}" data-snippet="${snippetAttr}">Yanıtla</button>`;
-            }
-            if (RBAC.canModerate(viewerProfile) || r.authorUid === myUid) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="delete-reply" data-reply-id="${r.id}">Sil</button>`;
-            }
+            const canReplyThis = !isLocked && r.authorUid !== myUid;
+            const canDeleteThis = RBAC.canModerate(viewerProfile) || r.authorUid === myUid;
+            const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(r.text || "").slice(0, 160));
+            const reactionMsgPath = "forum_replies/" + threadId + "/" + r.id;
+            const ctxDataAttrs = ` data-msg-author-uid="${RBAC.escapeHtml(r.authorUid)}" data-msg-snippet="${snippetAttr}" data-can-delete="${canDeleteThis}" data-can-reply="${canReplyThis}" data-reaction-path="${RBAC.escapeHtml(reactionMsgPath)}" data-ctx-kind="forum-reply" data-thread-id="${RBAC.escapeHtml(threadId)}"`;
+            const reactionBarHtml = renderReactionBar(r.reactions, reactionMsgPath, myUid);
 
             // Bu yorum başka bir yoruma açık yanıt olarak gönderilmişse,
             // üstünde küçük bir alıntı referansı gösterilir (Discord tarzı).
@@ -11119,14 +11250,14 @@
             const rowClasses = ["forum-reply", isGrouped ? "is-grouped" : "is-group-start"];
 
             return `
-                <div class="${rowClasses.join(' ')}" data-reply-id="${r.id}">
+                <div class="${rowClasses.join(' ')}" data-reply-id="${r.id}"${ctxDataAttrs}>
                     <img class="forum-reply-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     ${hoverTimeHtml}
                     <div class="forum-reply-body">
                         ${headerHtml}
                         ${quoteHtml}
                         <div class="forum-reply-text">${renderRichContent(r.text || "")}</div>
-                        ${actionsHtml ? `<div class="forum-reply-actions">${actionsHtml}</div>` : ''}
+                        ${reactionBarHtml}
                     </div>
                 </div>
             `;
@@ -11865,6 +11996,22 @@
             });
         }
         window.openCommunityEmojiPicker = openCommunityEmojiPicker;
+
+        // "➕" (daha fazla tepki) butonuna basılınca açılır: seçilen emoji,
+        // context panelinin bağlı olduğu mesaja tepki olarak eklenir.
+        // Tam katalog (unicode + üye olunan TÜM topluluklardaki özel
+        // emojiler) gösterilir -- kısayol sırasındaki 8 emojiyle sınırlı
+        // değildir.
+        function openReactionPicker(anchorBtn, messagePath) {
+            openEmojiPickerGeneric(anchorBtn, null, (picked) => {
+                const emojiKey = picked.kind === "unicode" ? picked.char : reactionKeyForCustom(picked.groupId, picked.name);
+                toggleReaction(messagePath, emojiKey).catch((err) => {
+                    console.error("[Reactions] toggle başarısız:", err);
+                    showToastGlobal("Tepki eklenemedi. Yetki sorunu olabilir.");
+                });
+            });
+        }
+        window.openReactionPicker = openReactionPicker;
 
         // Panelin dışına tıklanınca ya da Escape'e basılınca tüm "+"
         // panellerini kapat (composer'lar arası ortak, tek dinleyici).
@@ -18341,32 +18488,25 @@
                         ? `<div class="msg-bubble-text msg-bubble-deleted">🚫 Bu mesaj silindi</div>`
                         : `<div class="msg-bubble-text">${renderRichContent(m.text, mentionColorResolver, roleLookupResolver, isCommunityBubble ? _activeGroupId : null)}</div>`;
 
-                    let actionsHtml = "";
+                    // Context panel (Tepki + Yanıtla + Sabitle + Sil) artık
+                    // satırda HAZIR HTML olarak durmuyor -- basılı
+                    // tutulduğunda/sağ tıklandığında openMessageContextPanel
+                    // bu data-* özniteliklerinden canlı olarak üretiyor.
+                    // Böylece panel her açıldığında izin/sabitlenme durumu
+                    // GÜNCEL hesaplanır.
+                    let ctxDataAttrs = "";
+                    let reactionMsgPath = "";
                     if (!isDeleted) {
-                        const replyBtn = `<button type="button" class="msg-bubble-action-btn" data-msg-action="reply" data-msg-id="${escapeAttr(m.id)}" data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}">↩ Yanıtla</button>`;
-                        // MODÜL 5 EKLENTİ 1: topluluklarda "Mesajları Yönet"
-                        // yerel iznine sahip üyeler başkalarının mesajını da
-                        // silebilir (kendi mesajı her zaman silinebilir).
                         const canDeleteThis = isOwn || (isGroup && isCommunityBubble && window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "manage_messages"));
-                        const deleteBtn = canDeleteThis
-                            ? `<button type="button" class="msg-bubble-action-btn is-danger" data-msg-action="delete" data-msg-id="${escapeAttr(m.id)}">🗑 Sil</button>`
-                            : "";
-                        // Sabitleme: grup sohbetinde yönetici/kurucu, topluluklarda
-                        // ayrıca "Mesaj Sabitle" yerel iznine sahip üyeler de görür.
                         const groupMetaForPin = isGroup ? _groupMetaCache[_activeGroupId] : null;
                         const isPinned = groupMetaForPin && groupMetaForPin.pinnedMessageId === m.id;
                         const canPinThis = isGroup && (groupIsAdmin(groupMetaForPin, _myUid) || (isCommunityBubble && window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "pin_messages")));
-                        const pinBtn = canPinThis
-                            ? `<button type="button" class="msg-bubble-action-btn" data-msg-action="${isPinned ? 'unpin' : 'pin'}" data-msg-id="${escapeAttr(m.id)}">${isPinned ? '📌 Kaldır' : '📌 Sabitle'}</button>`
-                            : "";
-                        // NOT: bu buton grubu artık HER ZAMAN görünür DEĞİL --
-                        // CSS'de varsayılan olarak display:none (bkz.
-                        // .msg-bubble-actions kuralı), sadece atasındaki satır
-                        // ".ctx-menu-open" sınıfını aldığında görünür olur.
-                        // Bu sınıf, mesaja sağ tıklanınca / basılı tutulunca
-                        // (long-press) wireBubbleContextMenu tarafından eklenir.
-                        actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${pinBtn}${deleteBtn}</div>`;
+                        reactionMsgPath = isGroup
+                            ? (_activeMessagesBasePath(_activeGroupId) ? _activeMessagesBasePath(_activeGroupId) + "/" + m.id : "")
+                            : (_activeDmId ? "dms/" + _activeDmId + "/messages/" + m.id : "");
+                        ctxDataAttrs = ` data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}" data-can-delete="${canDeleteThis}" data-can-pin="${canPinThis}" data-is-pinned="${!!isPinned}" data-reaction-path="${escapeAttr(reactionMsgPath)}"`;
                     }
+                    const reactionBarHtml = (!isDeleted && reactionMsgPath) ? renderReactionBar(m.reactions, reactionMsgPath, _myUid) : "";
 
                     // Discord modunda: kendi mesajım da dahil herkes sol
                     // hizalı, düz akış (is-own sadece renk/hizalama farkı
@@ -18384,7 +18524,7 @@
                         : "";
 
                     html.push(`
-                        <div class="${rowClasses.join(' ')}" data-msg-id="${escapeAttr(m.id)}">
+                        <div class="${rowClasses.join(' ')}" data-msg-id="${escapeAttr(m.id)}"${ctxDataAttrs}>
                             <img class="msg-bubble-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                             ${hoverTimeHtml}
                             <div class="msg-bubble-wrap">
@@ -18394,7 +18534,7 @@
                                     ${bodyHtml}
                                     <div class="msg-bubble-time">${formatMessageTime(m.createdAt)}</div>
                                 </div>
-                                ${actionsHtml}
+                                ${reactionBarHtml}
                             </div>
                         </div>
                     `);
@@ -18421,22 +18561,195 @@
                 });
             }
 
-            // ── Yanıtla / Sil aksiyon tıklamaları (event delegation) ────
-            // ── Uzun-basma / sağ-tık ile Yanıtla-Sabitle-Sil menüsü ──────
-            // Menü artık normal dokunuşta/hover'da AÇILMAZ (bkz. CSS'teki
-            // .msg-bubble-actions kuralı) -- sadece satıra sağ tıklanınca
-            // (masaüstü) ya da ~420ms basılı tutulunca (mobil) satıra
-            // "is-actions-open" class'ı eklenir. Aynı anda tek bir satırda
-            // açık kalır; başka yere dokununca/tıklanınca kapanır.
-            let _openActionsRow = null;
-            function closeOpenActionsRow() {
-                if (_openActionsRow) { _openActionsRow.classList.remove("is-actions-open"); _openActionsRow = null; }
+            // ══════════════════════════════════════════════════════════
+            // MESAJ CONTEXT PANELİ — Tepki + Yanıtla + Sabitle + Sil
+            // ------------------------------------------------------------
+            // Mesaja sağ tıklanınca (masaüstü) ya da ~420ms basılı
+            // tutulunca (mobil) açılır. TEK bir "position:fixed" panel:
+            // mesajın hemen ÜSTÜNDE ya da ALTINDA (hangisi sığıyorsa)
+            // görünür, sağ/sol kenardan taşarsa yatayda da kaydırılır --
+            // böylece davranış her mesajda (grup/DM/forum, satır başı/
+            // ortası/sonu fark etmeksizin) TUTARLI olur.
+            // rowData: renderContextPanelHtml'e satırın data-* bilgileri.
+            let _activeCtxPanelEl = null;
+            let _activeCtxPanelRow = null;
+
+            function closeMessageContextPanel() {
+                if (_activeCtxPanelEl) { _activeCtxPanelEl.remove(); _activeCtxPanelEl = null; }
+                _activeCtxPanelRow = null;
             }
             document.addEventListener("click", (e) => {
-                if (_openActionsRow && !_openActionsRow.contains(e.target)) closeOpenActionsRow();
+                if (_activeCtxPanelEl && !_activeCtxPanelEl.contains(e.target)) closeMessageContextPanel();
             }, true);
-            document.addEventListener("scroll", closeOpenActionsRow, true);
+            document.addEventListener("scroll", closeMessageContextPanel, true);
+            window.addEventListener("resize", closeMessageContextPanel);
 
+            // Panel içeriğini satırın data-* özniteliklerinden üretir.
+            // ctxKind: "bubble" (grup/DM), "forum-message", "forum-reply".
+            function renderContextPanelHtml(row) {
+                const msgId = row.getAttribute("data-msg-id") || row.getAttribute("data-message-id") || row.getAttribute("data-reply-id");
+                const ctxKind = row.getAttribute("data-ctx-kind") || "bubble";
+                const canDelete = row.getAttribute("data-can-delete") === "true";
+                const canPin = row.getAttribute("data-can-pin") === "true";
+                const canReply = row.hasAttribute("data-can-reply") ? row.getAttribute("data-can-reply") === "true" : true;
+                const isPinned = row.getAttribute("data-is-pinned") === "true";
+                const authorUid = row.getAttribute("data-msg-author-uid") || "";
+                const snippet = row.getAttribute("data-msg-snippet") || "";
+                const reactionPath = row.getAttribute("data-reaction-path") || "";
+                const threadId = row.getAttribute("data-thread-id") || "";
+
+                // Tepki sırası: sabit, sık kullanılan ~8 emoji + "daha
+                // fazlası" için tam emoji panelini açan bir buton. Tam
+                // katalog (unicode + topluluk özel emojileri) burada bir
+                // sıraya sığmayacağı için kısayol + genişletilebilir panel
+                // yaklaşımı kullanılıyor.
+                const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "🎉"];
+                const reactionRowHtml = reactionPath ? `
+                    <div class="ctx-panel-reactions">
+                        ${QUICK_REACTIONS.map((ch) => `<button type="button" class="ctx-panel-reaction-btn" data-ctx-action="quick-react" data-reaction-char="${ch}">${ch}</button>`).join("")}
+                        <button type="button" class="ctx-panel-reaction-btn ctx-panel-reaction-more" data-ctx-action="more-react" title="Daha fazla tepki">➕</button>
+                    </div>` : "";
+
+                const buttonsHtml = [];
+                if (canReply) {
+                    buttonsHtml.push(`<button type="button" class="ctx-panel-btn" data-ctx-action="reply">↩ Yanıtla</button>`);
+                }
+                if (canPin) {
+                    buttonsHtml.push(`<button type="button" class="ctx-panel-btn" data-ctx-action="${isPinned ? 'unpin' : 'pin'}">${isPinned ? '📌 Sabitlemeyi Kaldır' : '📌 Sabitle'}</button>`);
+                }
+                if (canDelete) {
+                    buttonsHtml.push(`<button type="button" class="ctx-panel-btn is-danger" data-ctx-action="delete">🗑 Sil</button>`);
+                }
+
+                return `
+                    <div class="msg-context-panel" data-msg-id="${escEmojiAttr(msgId)}" data-ctx-kind="${escEmojiAttr(ctxKind)}" data-author-uid="${escEmojiAttr(authorUid)}" data-snippet="${escEmojiAttr(snippet)}" data-reaction-path="${escEmojiAttr(reactionPath)}" data-thread-id="${escEmojiAttr(threadId)}">
+                        ${reactionRowHtml}
+                        ${buttonsHtml.length ? `<div class="ctx-panel-actions">${buttonsHtml.join("")}</div>` : ""}
+                    </div>`;
+            }
+
+            // Paneli satırın hemen üstünde/altında, viewport dışına
+            // TAŞMAYACAK şekilde konumlandırır.
+            function positionContextPanel(panelEl, rowEl) {
+                const rowRect = rowEl.getBoundingClientRect();
+                const panelRect = panelEl.getBoundingClientRect();
+                const vw = window.innerWidth, vh = window.innerHeight;
+                const GAP = 6;
+
+                // Dikey: önce ÜSTTE dene, sığmazsa ALTTA, o da sığmazsa
+                // (çok uzun panel/çok küçük ekran) viewport içine sıkıştır.
+                let top = rowRect.top - panelRect.height - GAP;
+                if (top < 8) {
+                    const belowTop = rowRect.bottom + GAP;
+                    if (belowTop + panelRect.height <= vh - 8) top = belowTop;
+                    else top = Math.max(8, Math.min(rowRect.top, vh - panelRect.height - 8));
+                }
+
+                // Yatay: satırla hizala, ama sağ/sol kenardan taşırma.
+                let left = rowRect.left;
+                if (left + panelRect.width > vw - 8) left = vw - panelRect.width - 8;
+                if (left < 8) left = 8;
+
+                panelEl.style.top = top + "px";
+                panelEl.style.left = left + "px";
+                panelEl.style.visibility = "visible";
+            }
+
+            function openMessageContextPanel(row, listEl) {
+                closeMessageContextPanel();
+                const html = renderContextPanelHtml(row);
+                if (!html.trim()) return;
+                const wrapper = document.createElement("div");
+                wrapper.innerHTML = html.trim();
+                const panelEl = wrapper.firstElementChild;
+                document.body.appendChild(panelEl);
+                panelEl.style.visibility = "hidden";
+                requestAnimationFrame(() => positionContextPanel(panelEl, row));
+                _activeCtxPanelEl = panelEl;
+                _activeCtxPanelRow = row;
+
+                panelEl.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    const quickReact = e.target.closest('[data-ctx-action="quick-react"]');
+                    if (quickReact) {
+                        const reactionPath = panelEl.getAttribute("data-reaction-path");
+                        const ch = quickReact.getAttribute("data-reaction-char");
+                        if (reactionPath && ch) {
+                            toggleReaction(reactionPath, ch).catch((err) => {
+                                console.error("[Reactions] toggle başarısız:", err);
+                                showToastGlobal("Tepki eklenemedi. Yetki sorunu olabilir.");
+                            });
+                        }
+                        closeMessageContextPanel();
+                        return;
+                    }
+                    const moreReact = e.target.closest('[data-ctx-action="more-react"]');
+                    if (moreReact) {
+                        const reactionPath = panelEl.getAttribute("data-reaction-path");
+                        closeMessageContextPanel();
+                        if (reactionPath && typeof window.openReactionPicker === "function") {
+                            window.openReactionPicker(moreReact, reactionPath);
+                        }
+                        return;
+                    }
+                    const replyBtn = e.target.closest('[data-ctx-action="reply"]');
+                    if (replyBtn) {
+                        const kind = panelEl.getAttribute("data-ctx-kind");
+                        const msgId = panelEl.getAttribute("data-msg-id");
+                        const authorUid = panelEl.getAttribute("data-author-uid");
+                        const snippet = panelEl.getAttribute("data-snippet");
+                        closeMessageContextPanel();
+                        if (kind === "forum-message") {
+                            startForumReply(msgId, authorUid, snippet);
+                        } else if (kind === "forum-reply") {
+                            startThreadReply(msgId, authorUid, snippet);
+                        } else if (typeof window.__ctxPanelReplyHandler === "function") {
+                            window.__ctxPanelReplyHandler({ messageId: msgId, authorUid, snippet });
+                        }
+                        return;
+                    }
+                    const deleteBtn = e.target.closest('[data-ctx-action="delete"]');
+                    if (deleteBtn) {
+                        const kind = panelEl.getAttribute("data-ctx-kind");
+                        const msgId = panelEl.getAttribute("data-msg-id");
+                        closeMessageContextPanel();
+                        if (!confirm("Bu mesajı silmek istediğine emin misin?")) return;
+                        try {
+                            if (kind === "forum-message") {
+                                await deleteForumMessage(msgId);
+                            } else if (kind === "forum-reply") {
+                                const threadId = panelEl.getAttribute("data-thread-id");
+                                await deleteReply(threadId, msgId);
+                            } else if (typeof window.__ctxPanelDeleteHandler === "function") {
+                                await window.__ctxPanelDeleteHandler(msgId);
+                            }
+                        } catch (err) {
+                            console.error("[Messaging] Mesaj silinemedi:", err);
+                            showToastGlobal("Mesaj silinemedi. Yetki sorunu olabilir.");
+                        }
+                        return;
+                    }
+                    const pinBtn = e.target.closest('[data-ctx-action="pin"], [data-ctx-action="unpin"]');
+                    if (pinBtn) {
+                        const kind = panelEl.getAttribute("data-ctx-kind");
+                        const msgId = panelEl.getAttribute("data-msg-id");
+                        const isUnpin = pinBtn.getAttribute("data-ctx-action") === "unpin";
+                        closeMessageContextPanel();
+                        if (kind === "forum-message") {
+                            await togglePinMessage(msgId, !isUnpin);
+                        } else if (isUnpin) {
+                            await unpinGroupMessage();
+                        } else {
+                            await pinGroupMessage(msgId);
+                        }
+                        return;
+                    }
+                });
+            }
+            window.openMessageContextPanel = openMessageContextPanel;
+
+            // Bir mesaj listesine (msg-bubble-list, forumMessagesList,
+            // forumRepliesList) sağ-tık + uzun-basma dinleyicilerini bağlar.
             function wireBubbleContextMenu(listEl, rowSelector) {
                 if (!listEl || listEl.dataset.ctxMenuBound) return;
                 listEl.dataset.ctxMenuBound = "1";
@@ -18445,10 +18758,8 @@
                     const row = e.target.closest(rowSelector);
                     if (!row) return;
                     e.preventDefault();
-                    if (_openActionsRow === row) { closeOpenActionsRow(); return; }
-                    closeOpenActionsRow();
-                    row.classList.add("is-actions-open");
-                    _openActionsRow = row;
+                    if (_activeCtxPanelRow === row) { closeMessageContextPanel(); return; }
+                    openMessageContextPanel(row, listEl);
                 });
 
                 let pressTimer = null;
@@ -18459,16 +18770,12 @@
                 listEl.addEventListener("touchstart", (e) => {
                     const row = e.target.closest(rowSelector);
                     if (!row) return;
-                    // Zaten açık olan aksiyon menüsündeki dokunuşlarda
-                    // (bir butona basma) long-press tetiklenmesin.
-                    if (e.target.closest(".msg-bubble-actions, .forum-message-actions, .forum-reply-actions")) return;
+                    if (e.target.closest(".msg-reaction-bar")) return;
                     const t = e.touches[0];
                     pressStartX = t.clientX; pressStartY = t.clientY;
                     pressTimer = setTimeout(() => {
                         if (navigator.vibrate) navigator.vibrate(12);
-                        closeOpenActionsRow();
-                        row.classList.add("is-actions-open");
-                        _openActionsRow = row;
+                        openMessageContextPanel(row, listEl);
                         pressTimer = null;
                     }, LONG_PRESS_MS);
                 }, { passive: true });
@@ -18488,45 +18795,35 @@
             }
             window.wireBubbleContextMenu = wireBubbleContextMenu;
 
+            // ── Tepki rozetlerine tıklama + yanıt alıntısına zıplama ────
             function bindBubbleActions(listEl, { getReplyBanner, sendFn }) {
                 if (!listEl || listEl.dataset.actionsBound) return;
                 listEl.dataset.actionsBound = "1";
                 wireBubbleContextMenu(listEl, "[data-msg-id]");
 
+                // Context panelinin "Yanıtla"/"Sil" aksiyonları grup/DM
+                // sohbetlerinde bu callback'ler üzerinden çalışır (forum
+                // kendi fonksiyonlarını doğrudan çağırıyor, bkz. yukarısı).
+                window.__ctxPanelReplyHandler = (payload) => {
+                    const banner = getReplyBanner();
+                    banner.set(payload);
+                };
+                window.__ctxPanelDeleteHandler = async (msgId) => {
+                    await sendFn.deleteMessage(msgId);
+                };
+
                 listEl.addEventListener("click", async (e) => {
-                    const replyBtn = e.target.closest('[data-msg-action="reply"]');
-                    if (replyBtn) {
-                        closeOpenActionsRow();
-                        const banner = getReplyBanner();
-                        banner.set({
-                            messageId: replyBtn.getAttribute("data-msg-id"),
-                            authorUid: replyBtn.getAttribute("data-msg-author-uid"),
-                            snippet: replyBtn.getAttribute("data-msg-snippet") || ""
-                        });
-                        return;
-                    }
-                    const deleteBtn = e.target.closest('[data-msg-action="delete"]');
-                    if (deleteBtn) {
-                        closeOpenActionsRow();
-                        if (!confirm("Bu mesajı silmek istediğine emin misin?")) return;
-                        try {
-                            await sendFn.deleteMessage(deleteBtn.getAttribute("data-msg-id"));
-                        } catch (err) {
-                            console.error("[Messaging] Mesaj silinemedi:", err);
-                            showToastGlobal("Mesaj silinemedi. Yetki sorunu olabilir.");
+                    const reactionPill = e.target.closest('[data-action="toggle-reaction"]');
+                    if (reactionPill) {
+                        const bar = reactionPill.closest(".msg-reaction-bar");
+                        const messagePath = bar ? bar.getAttribute("data-reaction-path") : null;
+                        const emojiKey = reactionPill.getAttribute("data-reaction-key");
+                        if (messagePath && emojiKey) {
+                            toggleReaction(messagePath, emojiKey).catch((err) => {
+                                console.error("[Reactions] toggle başarısız:", err);
+                                showToastGlobal("Tepki eklenemedi. Yetki sorunu olabilir.");
+                            });
                         }
-                        return;
-                    }
-                    const pinBtn = e.target.closest('[data-msg-action="pin"]');
-                    if (pinBtn) {
-                        closeOpenActionsRow();
-                        await pinGroupMessage(pinBtn.getAttribute("data-msg-id"));
-                        return;
-                    }
-                    const unpinBtn = e.target.closest('[data-msg-action="unpin"]');
-                    if (unpinBtn) {
-                        closeOpenActionsRow();
-                        await unpinGroupMessage();
                         return;
                     }
                     const quote = e.target.closest("[data-jump-to]");
