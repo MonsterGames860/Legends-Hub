@@ -5957,6 +5957,16 @@
         white-space: nowrap;
     }
 </style>
+
+<!-- ================================================================
+     PWA — MANIFEST + META
+     ================================================================ -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0b0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Legends Hub">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 </head>
 <body>
 
@@ -7452,6 +7462,17 @@
                                 <span class="profile-info-label">Son IP <span class="profile-owner-only-tag">yalnızca owner</span></span>
                                 <span class="profile-info-value profile-info-mono" id="profileIpText">—</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- PWA İNDİRME KARTI -->
+                    <div class="profile-card" id="pwaInstallCard" style="display:none;">
+                        <div class="profile-card-header"><span>Uygulama</span></div>
+                        <div class="profile-admin-row">
+                            <span>📱 Legends Hub'ı cihazına indir, tek dokunuşla aç</span>
+                            <button type="button" class="profile-btn profile-btn-primary" id="pwaInstallBtn">
+                                Uygulamayı İndir
+                            </button>
                         </div>
                     </div>
 
@@ -19595,6 +19616,84 @@
             }
         });
 
+    })();
+    </script>
+
+    <!-- ================================================================
+         PWA INSTALL LOGIC + SERVICE WORKER KAYDI
+         ================================================================ -->
+    <script>
+    (function () {
+        "use strict";
+
+        var deferredPrompt = null;
+        var installCard = document.getElementById("pwaInstallCard");
+        var installBtn = document.getElementById("pwaInstallBtn");
+
+        if (!installBtn || !installCard) return;
+
+        function showCard() {
+            installCard.style.display = "";
+        }
+        function hideCard() {
+            installCard.style.display = "none";
+        }
+
+        function isRunningStandalone() {
+            return (
+                window.matchMedia("(display-mode: standalone)").matches ||
+                window.navigator.standalone === true // iOS Safari
+            );
+        }
+
+        if (isRunningStandalone()) {
+            hideCard();
+        }
+
+        window.addEventListener("beforeinstallprompt", function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!isRunningStandalone()) {
+                showCard();
+            }
+        });
+
+        installBtn.addEventListener("click", function () {
+            if (!deferredPrompt) return;
+
+            installBtn.disabled = true;
+            installBtn.textContent = "Bekleniyor...";
+
+            deferredPrompt.prompt();
+
+            deferredPrompt.userChoice.then(function (choiceResult) {
+                if (choiceResult.outcome === "accepted") {
+                    installBtn.textContent = "✓ Yükleniyor...";
+                } else {
+                    installBtn.textContent = "Uygulamayı İndir";
+                    installBtn.disabled = false;
+                }
+                deferredPrompt = null;
+            });
+        });
+
+        window.addEventListener("appinstalled", function () {
+            hideCard();
+            deferredPrompt = null;
+        });
+
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker
+                    .register("./sw.js")
+                    .then(function (reg) {
+                        console.log("[SW] Kayıt başarılı, scope:", reg.scope);
+                    })
+                    .catch(function (err) {
+                        console.warn("[SW] Kayıt başarısız:", err);
+                    });
+            });
+        }
     })();
     </script>
 
