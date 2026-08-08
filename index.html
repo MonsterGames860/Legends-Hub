@@ -5963,6 +5963,21 @@
      ================================================================ -->
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0b0c10">
+
+<!-- ================================================================
+     ERKEN PWA YAKALAYICI — beforeinstallprompt event'i sayfa daha
+     tam yüklenmeden (script bloğu çalışmadan) ateşlenebiliyor.
+     Bu yüzden event'i en tepede, global bir değişkende saklıyoruz;
+     aşağıdaki asıl install-logic bu saklanan event'i kullanacak.
+     ================================================================ -->
+<script>
+    window.__pwaDeferredPrompt = null;
+    window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();
+        window.__pwaDeferredPrompt = e;
+        window.dispatchEvent(new Event("pwaPromptReady"));
+    });
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Legends Hub">
@@ -19626,7 +19641,6 @@
     (function () {
         "use strict";
 
-        var deferredPrompt = null;
         var installCard = document.getElementById("pwaInstallCard");
         var installBtn = document.getElementById("pwaInstallBtn");
 
@@ -19650,36 +19664,54 @@
             hideCard();
         }
 
+        // Event <head> içindeki erken yakalayıcı tarafından zaten
+        // tetiklenmiş ve window.__pwaDeferredPrompt içine kaydedilmiş
+        // olabilir (sayfa yüklenmesinin çok erken bir anında ateşlenmiş
+        // olma ihtimaline karşı). Burada önce onu kontrol ediyoruz.
+        function tryShowFromStoredPrompt() {
+            if (window.__pwaDeferredPrompt && !isRunningStandalone()) {
+                showCard();
+            }
+        }
+        tryShowFromStoredPrompt();
+
+        // Event bu noktadan SONRA tetiklenirse de yakala (custom event,
+        // <head>'teki erken yakalayıcı tarafından dispatch ediliyor).
+        window.addEventListener("pwaPromptReady", tryShowFromStoredPrompt);
+
+        // Ekstra güvenlik: doğrudan da dinle (bazı tarayıcı/sıra
+        // senaryolarında ikisi de tetiklenebilir, zararı yok).
         window.addEventListener("beforeinstallprompt", function (e) {
             e.preventDefault();
-            deferredPrompt = e;
+            window.__pwaDeferredPrompt = e;
             if (!isRunningStandalone()) {
                 showCard();
             }
         });
 
         installBtn.addEventListener("click", function () {
-            if (!deferredPrompt) return;
+            var promptEvent = window.__pwaDeferredPrompt;
+            if (!promptEvent) return;
 
             installBtn.disabled = true;
             installBtn.textContent = "Bekleniyor...";
 
-            deferredPrompt.prompt();
+            promptEvent.prompt();
 
-            deferredPrompt.userChoice.then(function (choiceResult) {
+            promptEvent.userChoice.then(function (choiceResult) {
                 if (choiceResult.outcome === "accepted") {
                     installBtn.textContent = "✓ Yükleniyor...";
                 } else {
                     installBtn.textContent = "Uygulamayı İndir";
                     installBtn.disabled = false;
                 }
-                deferredPrompt = null;
+                window.__pwaDeferredPrompt = null;
             });
         });
 
         window.addEventListener("appinstalled", function () {
             hideCard();
-            deferredPrompt = null;
+            window.__pwaDeferredPrompt = null;
         });
 
         if ("serviceWorker" in navigator) {
