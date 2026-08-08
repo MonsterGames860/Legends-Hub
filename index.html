@@ -7503,6 +7503,23 @@
                         </div>
                     </div>
 
+                    <!-- AYARLAR: Bildirim aç/kapa -- sadece kendi profilinde
+                         görünür (herkesin kendi tercihi, admin yetkisi
+                         gerekmez). Karar localStorage'da "pl_notif_decision"
+                         altında saklanır -- NotificationSystem'in izin
+                         istemi kartıyla AYNI anahtar, böylece tek bir
+                         "kaynak doğru" (source of truth) olur. -->
+                    <div class="profile-card" id="profileNotifSettingsCard" style="display:none;">
+                        <div class="profile-card-header"><span>Bildirimler</span></div>
+                        <div class="profile-admin-row">
+                            <span>Ses + tarayıcı bildirimleri</span>
+                            <label class="profile-toggle">
+                                <input type="checkbox" id="profileNotifToggle">
+                                <span class="profile-toggle-track"></span>
+                            </label>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
@@ -8942,6 +8959,34 @@
                 const toggle = document.getElementById("profileVerifiedToggle");
                 toggle.checked = profile.isVerified === true;
                 toggle.onchange = () => handleVerifiedToggle(uid, toggle.checked);
+            }
+
+            // --- Bildirim ayarları kartı: SADECE kendi profilinde
+            //     görünür (kişisel bir tercih, yönetici yetkisi ilgisiz).
+            //     localStorage'daki "pl_notif_decision" kararını okuyup
+            //     yazıyor -- NotificationSystem.trigger() aynı anahtarı
+            //     kontrol ediyor, o yüzden burada değiştirilen ayar
+            //     anında etkili olur. ---
+            const notifCard = document.getElementById("profileNotifSettingsCard");
+            if (notifCard) {
+                notifCard.style.display = isSelf ? "block" : "none";
+                if (isSelf) {
+                    const notifToggle = document.getElementById("profileNotifToggle");
+                    // "off" DIŞINDAKİ her durum (granted/denied/snoozed/hiç
+                    // karar verilmemiş) açık sayılır -- kapatma sadece bu
+                    // toggle üzerinden, açıkça "off" yazılarak yapılır.
+                    notifToggle.checked = localStorage.getItem("pl_notif_decision") !== "off";
+                    notifToggle.onchange = () => {
+                        if (notifToggle.checked) {
+                            // Kullanıcı tekrar açtı: önceki "off" kararını
+                            // sil ki NotificationSystem normal akışına
+                            // (tarayıcı izin durumuna göre) geri dönsün.
+                            localStorage.removeItem("pl_notif_decision");
+                        } else {
+                            localStorage.setItem("pl_notif_decision", "off");
+                        }
+                    };
+                }
             }
 
             // --- Başkasının profilinde: Mesaj Gönder / Engelle ---
@@ -16339,6 +16384,25 @@
                 } catch (err) {
                     console.error("[Messaging] DM inbox güncellenemedi (mesaj yine de gönderildi):", err);
                 }
+
+                // İKİNCİL İŞLEM: alıcıya bildirim yaz. writeNotification()
+                // zaten kendi kendine bildirim göndermeyi engelliyor
+                // (targetUid === myUid kontrolü), o yüzden burada ayrıca
+                // kontrol etmiyoruz. Bildirim yazımı başarısız olsa bile
+                // mesaj zaten gönderilmiş sayılır — hata sessizce loglanır.
+                try {
+                    const _senderName = (window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "Biri";
+                    writeNotification(otherUid, {
+                        type: "dm",
+                        actorUsername: _senderName,
+                        actorUid: _myUid,
+                        dmId: dmId,
+                        messageId: msgRef.key,
+                        textSnippet: makeNotifSnippet(encoded)
+                    });
+                } catch (err) {
+                    console.error("[Messaging] DM bildirimi yazılamadı (mesaj yine de gönderildi):", err);
+                }
             }
 
             async function deleteDmMessage(messageId) {
@@ -16792,6 +16856,30 @@
                     });
                 } catch (err) {
                     console.error("[Messaging] Grup meta güncellenemedi (mesaj yine de gönderildi):", err);
+                }
+
+                // İKİNCİL İŞLEM: gruptaki diğer üyelere bildirim yaz
+                // (forum thread'lerindeki mention akışına benzer şekilde
+                // -- ama burada tüm mesaj tüm üyeleri "etiketliyor" sayılır).
+                // writeNotification() gönderenin kendisini zaten atlıyor.
+                // Bildirim yazımı başarısız olsa bile mesaj yine de
+                // gönderilmiş sayılır — hata sessizce loglanır.
+                try {
+                    const _senderName = (window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "Biri";
+                    const _groupSnippet = makeNotifSnippet(encoded);
+                    const memberUids = Object.keys((activeMeta && activeMeta.members) || {});
+                    memberUids.forEach((tUid) => {
+                        writeNotification(tUid, {
+                            type: "group",
+                            actorUsername: _senderName,
+                            actorUid: _myUid,
+                            groupId: groupId,
+                            messageId: msgRef.key,
+                            textSnippet: _groupSnippet
+                        });
+                    });
+                } catch (err) {
+                    console.error("[Messaging] Grup bildirimi yazılamadı (mesaj yine de gönderildi):", err);
                 }
             }
 
@@ -19439,7 +19527,7 @@
          *  3) Firebase dinleyici — notifications/{uid} ile gerçek zamanlı
          */
         const NotificationSystem = (() => {
-            const LS_KEY       = "pl_notif_decision";   // "granted"|"denied"|"snoozed"
+            const LS_KEY       = "pl_notif_decision";   // "granted"|"denied"|"snoozed"|"off"
             const LS_SNOOZE    = "pl_notif_snoozed_until";
             const SNOOZE_DAYS  = 3;
 
@@ -19456,27 +19544,27 @@
                 return Date.now() < until;
             }
 
-            // ── Ses: iki tonlu Web Audio çan ────────────────────────
+            // ── Ses: gerçek bildirim.mp3 dosyası (repo köküne yüklenir) ──
+            // Eskiden Web Audio API ile sentetik iki-tonlu bir çan sesi
+            // üretiliyordu (harici dosya bağımlılığı olmasın diye). Artık
+            // yerine gerçek bir ses dosyası çalınıyor. Her tetiklemede
+            // YENİ bir <audio> elemanı oluşturuyoruz (paylaşılan tek bir
+            // elemanı yeniden kullanmak yerine) -- çünkü art arda hızlı
+            // bildirimler gelirse (ör. gruba art arda mesaj) her biri
+            // kendi sesini baştan çalabilsin, öncekini kesmesin.
+            const SOUND_SRC = "bildirim.mp3";
+
             function playSound() {
                 try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-                    function makeTone(freq, startAt, dur, vol) {
-                        const osc = ctx.createOscillator();
-                        const g   = ctx.createGain();
-                        osc.type = "sine";
-                        osc.frequency.value = freq;
-                        g.gain.setValueAtTime(0, ctx.currentTime + startAt);
-                        g.gain.linearRampToValueAtTime(vol, ctx.currentTime + startAt + 0.015);
-                        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startAt + dur);
-                        osc.connect(g);
-                        g.connect(ctx.destination);
-                        osc.start(ctx.currentTime + startAt);
-                        osc.stop(ctx.currentTime + startAt + dur + 0.02);
+                    const audio = new Audio(SOUND_SRC);
+                    audio.volume = 0.6;
+                    // Tarayıcı otoplay kısıtlamaları (kullanıcı sayfayla
+                    // henüz hiç etkileşime girmemişse) reddedebilir --
+                    // bu normal ve sessizce yoksayılıyor.
+                    const playPromise = audio.play();
+                    if (playPromise && typeof playPromise.catch === "function") {
+                        playPromise.catch(() => {});
                     }
-
-                    makeTone(880,  0,    0.32, 0.22); // A5 — ilk nota
-                    makeTone(1174, 0.14, 0.45, 0.16); // D6 — ikinci nota (biraz sonra, alçak)
                 } catch (_) { /* ses desteklenmiyorsa sessizce geç */ }
             }
 
@@ -19512,6 +19600,10 @@
 
             // ── Ana tetikleyici ──────────────────────────────────────
             function trigger(type, actorUsername) {
+                // Kullanıcı bildirimleri kapatmışsa (bkz. profil sayfasındaki
+                // "Bildirimler" toggle'ı) hiçbir şey çalma/gösterme.
+                if (getDecision() === "off") return;
+
                 // Ses her zaman çal (permission bağımsız; kullanıcı sayfadaysa duyar)
                 playSound();
 
@@ -19521,6 +19613,18 @@
                     sendBrowserNotif(
                         "Play Legends — Etiketlendin!",
                         `@${actorUsername} seni bir mesajda etiketledi.`
+                    );
+                } else if (type === "dm") {
+                    showPingToast("✉️", `${actor} sana mesaj gönderdi`);
+                    sendBrowserNotif(
+                        "Play Legends — Yeni mesaj!",
+                        `@${actorUsername} sana bir mesaj gönderdi.`
+                    );
+                } else if (type === "group") {
+                    showPingToast("👥", `${actor} grupta mesaj yazdı`);
+                    sendBrowserNotif(
+                        "Play Legends — Yeni grup mesajı!",
+                        `@${actorUsername} grupta bir mesaj gönderdi.`
                     );
                 } else {
                     showPingToast("💬", `${actor} sana yanıt verdi`);
