@@ -18624,7 +18624,17 @@
             document.addEventListener("click", (e) => {
                 if (_activeCtxPanelEl && !_activeCtxPanelEl.contains(e.target)) closeMessageContextPanel();
             }, true);
-            document.addEventListener("scroll", closeMessageContextPanel, true);
+            // BUG FIX: "scroll" olayları bubble ETMEZ ama capture fazında
+            // document'a kadar yakalanabilir -- bu yüzden bu dinleyici
+            // önceden panelin KENDİ İÇİNDEKİ (.ctx-panel-reactions) yatay
+            // kaydırmasını da "sayfa kaydırıldı, paneli kapat" sanıp anında
+            // kapatıyordu. Asıl amaç arka plandaki mesaj listesi kaydırılınca
+            // kapatmaktı -- o yüzden olayın kaynağının panelin İÇİNDE olup
+            // olmadığını kontrol ediyoruz.
+            document.addEventListener("scroll", (e) => {
+                if (_activeCtxPanelEl && _activeCtxPanelEl.contains(e.target)) return;
+                closeMessageContextPanel();
+            }, true);
             window.addEventListener("resize", closeMessageContextPanel);
 
             // Panel içeriğini satırın data-* özniteliklerinden üretir.
