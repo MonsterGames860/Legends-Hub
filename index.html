@@ -1567,6 +1567,65 @@
     .ctx-panel-btn:hover { background: rgba(255, 255, 255, 0.06); }
     .ctx-panel-btn.is-danger { color: #ff6b6b; }
 
+    /* ---------- "🗑 Tepkileri Sil" alt listesi ----------
+       Grup/topluluk kurucusu, yetkilisi ya da "manage_messages" iznine
+       sahip rütbeler için: mevcut tepki türlerini (glyph + sayı) gösterir,
+       birine dokununca o tepki HERKESTEN silinir. Varsayılan gizli;
+       "Tepkileri Sil" butonuna basılınca açılır/kapanır. */
+    .ctx-panel-manage-reactions {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 8px;
+        margin-top: 2px;
+        border-top: 1px solid var(--line);
+    }
+    .ctx-panel-manage-reactions.is-visible { display: flex; }
+    .ctx-panel-manage-reactions-hint {
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.04em;
+        color: var(--text-dim);
+        text-transform: uppercase;
+    }
+    .ctx-panel-manage-reactions-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        min-width: 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .ctx-panel-manage-reactions-row::-webkit-scrollbar { height: 4px; }
+    .ctx-panel-manage-reactions-row::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 4px;
+    }
+    .ctx-panel-manage-reaction-btn {
+        flex: 0 0 auto;
+        width: auto;
+        height: 34px;
+        padding: 0 8px;
+        gap: 4px;
+        border-color: rgba(255, 107, 107, 0.35);
+        background: rgba(255, 107, 107, 0.07);
+    }
+    .ctx-panel-manage-reaction-btn:hover {
+        background: rgba(255, 107, 107, 0.16);
+        transform: none;
+    }
+    .ctx-panel-manage-reaction-glyph { font-size: 1rem; line-height: 1; display: inline-flex; }
+    .ctx-panel-manage-reaction-glyph img { width: 18px; height: 18px; object-fit: contain; }
+    .ctx-panel-manage-reaction-count {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-dim);
+    }
+
     /* Mesaj içinde ":ad:" -> görsele çevrilen özel emoji (inline, satır
        yüksekliğine göre ölçeklenir -- unicode emoji ile aynı akışta durur).
        2.2em civarı, belirgin/okunabilir boyut + dikey ortalama. */
@@ -8216,6 +8275,17 @@
         }
         window.toggleReaction = toggleReaction;
 
+        // Bir tepki TÜRÜNÜ mesajdan tamamen kaldırır (kimin verdiğine
+        // bakmaksızın) -- moderasyon amaçlı. Sadece Helper+ / grup kurucusu
+        // / topluluk yetkilisi / "manage_messages" iznine sahip rütbeler
+        // context panelden bunu çağırabilir (yetki kontrolü UI tarafında
+        // data-can-manage-reactions ile yapılır, bkz. openMessageContextPanel).
+        async function removeReactionType(messagePath, emojiKey) {
+            const dbKey = safeReactionDbKey(emojiKey);
+            await firebase.database().ref(messagePath + "/reactions/" + dbKey).remove();
+        }
+        window.removeReactionType = removeReactionType;
+
         // reactions objesini sıralı bir diziye çevirir:
         // [{key, count, reacted, kind, char|groupId+emojiName}]
         function summarizeReactions(reactionsObj, myUid) {
@@ -10473,6 +10543,20 @@
             const pinnedCountEl = document.getElementById("forumPinnedCount");
             if (!listEl) return;
 
+            // BUG FIX: Bu fonksiyon SADECE yeni mesaj gelince değil, o
+            // mesajın İÇİNDEKİ herhangi bir alt-alan (ör. reactions/*)
+            // değişince de tetikleniyor -- çünkü RTDB dinleyicisi tüm
+            // forum_messages düğümünü izliyor (bkz. listenToForumMessages).
+            // Önceden her render'da KOŞULSUZ en alta kaydırılıyordu; bu
+            // yüzden kullanıcı yukarıda eski mesajları okurken ya da
+            // sadece bir tepki eklerken en alta fırlatılıyordu. Artık:
+            // kullanıcı zaten alta yakınsa (yeni mesaj takibi) en altta
+            // KALSIN, ama yukarıda bir yerdeyse mevcut scroll konumu
+            // AYNEN KORUNSUN.
+            const NEAR_BOTTOM_PX = 80;
+            const wasNearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
+            const prevScrollTop = listEl.scrollTop;
+
             const myUid = window.CommunityAuth.user.uid;
 
             const allMessages = Object.keys(forumMessagesCache).map((id) => ({
@@ -10529,8 +10613,12 @@
             attachMessageActionHandlers(listEl);
             if (pinnedListEl) attachMessageActionHandlers(pinnedListEl);
 
-            // Yeni mesaj gelince otomatik en alta kaydır (sadece normal akışta).
-            listEl.scrollTop = listEl.scrollHeight;
+            // Kullanıcı zaten en alta yakınsa (yeni mesajları takip
+            // ediyorsa) en altta kalsın; değilse (yukarıda eski mesajlara
+            // bakıyor ya da sadece bir tepki değişti) scroll konumunu
+            // AYNEN koru -- innerHTML yeniden yazıldığı için tarayıcı
+            // scrollTop'ı sıfırlayabilir, bu yüzden açıkça geri veriyoruz.
+            listEl.scrollTop = wasNearBottom ? listEl.scrollHeight : prevScrollTop;
         }
 
         // Ardışık mesaj gruplama: forum mesaj akışını (Genel Sohbet) ve
@@ -10622,7 +10710,7 @@
             // canlı olarak üretiyor (bkz. renderBubbleList'teki aynı desen).
             const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(m.text || "").slice(0, 160));
             const reactionMsgPath = "forum_messages/" + m.id;
-            const ctxDataAttrs = ` data-msg-author-uid="${RBAC.escapeHtml(m.authorUid)}" data-msg-snippet="${snippetAttr}" data-can-delete="${canDeleteThis}" data-can-reply="${canReplyThis}" data-can-pin="${canPin}" data-is-pinned="${m.pinned === true}" data-reaction-path="${RBAC.escapeHtml(reactionMsgPath)}" data-ctx-kind="forum-message"`;
+            const ctxDataAttrs = ` data-msg-author-uid="${RBAC.escapeHtml(m.authorUid)}" data-msg-snippet="${snippetAttr}" data-can-delete="${canDeleteThis}" data-can-reply="${canReplyThis}" data-can-pin="${canPin}" data-is-pinned="${m.pinned === true}" data-can-manage-reactions="${canModerate}" data-reaction-path="${RBAC.escapeHtml(reactionMsgPath)}" data-ctx-kind="forum-message"`;
             const reactionBarHtml = renderReactionBar(m.reactions, reactionMsgPath, myUid);
 
             // Bu mesaj başka bir mesaja açık yanıt olarak gönderilmişse,
@@ -11265,7 +11353,7 @@
             const canDeleteThis = RBAC.canModerate(viewerProfile) || r.authorUid === myUid;
             const snippetAttr = RBAC.escapeHtml(makeNotifSnippet(r.text || "").slice(0, 160));
             const reactionMsgPath = "forum_replies/" + threadId + "/" + r.id;
-            const ctxDataAttrs = ` data-msg-author-uid="${RBAC.escapeHtml(r.authorUid)}" data-msg-snippet="${snippetAttr}" data-can-delete="${canDeleteThis}" data-can-reply="${canReplyThis}" data-reaction-path="${RBAC.escapeHtml(reactionMsgPath)}" data-ctx-kind="forum-reply" data-thread-id="${RBAC.escapeHtml(threadId)}"`;
+            const ctxDataAttrs = ` data-msg-author-uid="${RBAC.escapeHtml(r.authorUid)}" data-msg-snippet="${snippetAttr}" data-can-delete="${canDeleteThis}" data-can-reply="${canReplyThis}" data-can-manage-reactions="${RBAC.canModerate(viewerProfile)}" data-reaction-path="${RBAC.escapeHtml(reactionMsgPath)}" data-ctx-kind="forum-reply" data-thread-id="${RBAC.escapeHtml(threadId)}"`;
             const reactionBarHtml = renderReactionBar(r.reactions, reactionMsgPath, myUid);
 
             // Bu yorum başka bir yoruma açık yanıt olarak gönderilmişse,
@@ -18416,6 +18504,15 @@
                     listEl.classList.remove("is-discord-mode");
                     return;
                 }
+                // BUG FIX: bu fonksiyon her RTDB güncellemesinde (yeni mesaj,
+                // düzenleme, SİLİNMEDE OLDUĞU GİBİ TEPKİ EKLEME/ÇIKARMA dahil)
+                // yeniden çağrılıyor. innerHTML'i yeniden yazmadan ÖNCE,
+                // kullanıcı zaten en alta yakın mı diye bakıyoruz -- değilse
+                // (yukarıda eski mesajlara bakıyorsa) render sonrası scroll
+                // konumunu AYNEN koruyacağız (bkz. scrollBubbleListToBottom).
+                const NEAR_BOTTOM_PX = 80;
+                const wasNearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
+                const preservedScroll = wasNearBottom ? undefined : listEl.scrollTop;
                 const RBAC = window.CommunityRBAC;
                 let lastDayKey = null;
                 const html = [];
@@ -18544,10 +18641,17 @@
                         const groupMetaForPin = isGroup ? _groupMetaCache[_activeGroupId] : null;
                         const isPinned = groupMetaForPin && groupMetaForPin.pinnedMessageId === m.id;
                         const canPinThis = isGroup && (groupIsAdmin(groupMetaForPin, _myUid) || (isCommunityBubble && window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "pin_messages")));
+                        // Tepkileri yönetme (başkalarının verdiği tepkileri silme)
+                        // yetkisi: grup/topluluk KURUCUSU, ADMİNİ ya da
+                        // "manage_messages" iznine sahip bir rütbeye sahip
+                        // üyeler -- bu yetki SADECE bulunduğu grup/topluluğa
+                        // özeldir (site geneli bir rol DEĞİL, meta.ownerUid /
+                        // meta.admins / o topluluğun kendi rol sistemi).
+                        const canManageReactionsThis = isGroup && (groupIsAdmin(groupMetaForPin, _myUid) || (isCommunityBubble && window.CommunityChannels.hasPermission(_activeGroupId, _myUid, "manage_messages")));
                         reactionMsgPath = isGroup
                             ? (_activeMessagesBasePath(_activeGroupId) ? _activeMessagesBasePath(_activeGroupId) + "/" + m.id : "")
                             : (_activeDmId ? "dms/" + _activeDmId + "/messages/" + m.id : "");
-                        ctxDataAttrs = ` data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}" data-can-delete="${canDeleteThis}" data-can-pin="${canPinThis}" data-is-pinned="${!!isPinned}" data-reaction-path="${escapeAttr(reactionMsgPath)}"`;
+                        ctxDataAttrs = ` data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}" data-can-delete="${canDeleteThis}" data-can-pin="${canPinThis}" data-is-pinned="${!!isPinned}" data-can-manage-reactions="${canManageReactionsThis}" data-reaction-path="${escapeAttr(reactionMsgPath)}"`;
                     }
                     const reactionBarHtml = (!isDeleted && reactionMsgPath) ? renderReactionBar(m.reactions, reactionMsgPath, _myUid) : "";
 
@@ -18584,17 +18688,32 @@
                 });
 
                 listEl.innerHTML = html.join("");
-                scrollBubbleListToBottom(listEl);
+                scrollBubbleListToBottom(listEl, preservedScroll);
             }
 
             // Mesaj listesini en alta kaydırır. İçerideki görsel/GIF/embed'ler
             // asenkron yüklendiği için scrollHeight'ın geç büyümesi "sanki en
             // üste atlıyormuş gibi" bir izlenim veriyordu — bunu önlemek için
             // kaydırmayı hem hemen hem de görseller yüklendikçe tekrar uyguluyoruz.
-            function scrollBubbleListToBottom(listEl) {
+            // BUG FIX: bu fonksiyon SADECE yeni mesaj gelince değil, mevcut
+            // bir mesajın İÇİNDEKİ herhangi bir alt-alan (ör. reactions/*)
+            // değişip liste yeniden render edilince de çağrılıyordu -- bu
+            // yüzden kullanıcı yukarıda eski mesajlara bakarken ya da
+            // sadece bir tepki eklerken/silerken en alta fırlatılıyordu.
+            // preservedScroll parametresi verilirse (kullanıcı alta yakın
+            // DEĞİLSE) o konum korunur; verilmezse (ya da alta yakınsa)
+            // eskisi gibi en alta kaydırılır.
+            function scrollBubbleListToBottom(listEl, preservedScroll) {
                 if (!listEl) return;
-                listEl.scrollTop = listEl.scrollHeight;
-                requestAnimationFrame(() => { listEl.scrollTop = listEl.scrollHeight; });
+                const targetTop = (typeof preservedScroll === "number") ? preservedScroll : listEl.scrollHeight;
+                listEl.scrollTop = targetTop;
+                requestAnimationFrame(() => { listEl.scrollTop = targetTop; });
+                // Görseller yüklendikçe layout büyür -- eğer en alta doğru
+                // takip ediyorsak (preservedScroll verilmemişse) her yükleme
+                // sonrası tekrar en alta kaydır; sabit bir konumu korurken
+                // ise (preservedScroll verilmişse) görsellerin büyümesiyle
+                // kullanıcının baktığı yer kaymasın diye TEKRAR uygulamıyoruz.
+                if (typeof preservedScroll === "number") return;
                 listEl.querySelectorAll("img, video").forEach((el) => {
                     const isLoaded = el.tagName === "IMG" ? el.complete : el.readyState >= 1;
                     if (isLoaded) return;
@@ -18645,6 +18764,7 @@
                 const canDelete = row.getAttribute("data-can-delete") === "true";
                 const canPin = row.getAttribute("data-can-pin") === "true";
                 const canReply = row.hasAttribute("data-can-reply") ? row.getAttribute("data-can-reply") === "true" : true;
+                const canManageReactions = row.getAttribute("data-can-manage-reactions") === "true";
                 const isPinned = row.getAttribute("data-is-pinned") === "true";
                 const authorUid = row.getAttribute("data-msg-author-uid") || "";
                 const snippet = row.getAttribute("data-msg-snippet") || "";
@@ -18676,10 +18796,41 @@
                     buttonsHtml.push(`<button type="button" class="ctx-panel-btn is-danger" data-ctx-action="delete">🗑 Sil</button>`);
                 }
 
+                // "Tepkileri Sil" -- grup/topluluk kurucusu, yetkilisi ya da
+                // "manage_messages" iznine sahip bir rütbeye sahip üyeler
+                // için (bkz. data-can-manage-reactions). Basınca mesajın
+                // ALTINDA GÖRÜNEN mevcut tepki türlerini (glyph + sayı)
+                // ikinci bir sırada listeler; birine basılınca o tepki
+                // türü HERKESTEN silinir (kimin verdiğine bakılmaksızın).
+                // Mevcut tepki türleri, ekstra bir RTDB okuması yapmadan,
+                // zaten ekranda render edilmiş .msg-reaction-bar'dan okunur.
+                let manageReactionsRowHtml = "";
+                if (canManageReactions && reactionPath) {
+                    const barEl = row.querySelector(".msg-reaction-bar");
+                    const pills = barEl ? Array.from(barEl.querySelectorAll(".msg-reaction-pill")) : [];
+                    if (pills.length) {
+                        const chipsHtml = pills.map((p) => {
+                            const key = p.getAttribute("data-reaction-key") || "";
+                            const glyphHtml = p.querySelector(".msg-reaction-pill-glyph") ? p.querySelector(".msg-reaction-pill-glyph").innerHTML : "";
+                            const countText = p.querySelector(".msg-reaction-pill-count") ? p.querySelector(".msg-reaction-pill-count").textContent : "";
+                            return `<button type="button" class="ctx-panel-reaction-btn ctx-panel-manage-reaction-btn" data-ctx-action="remove-reaction-type" data-reaction-key="${escEmojiAttr(key)}" title="Bu tepkiyi herkesten sil">
+                                <span class="ctx-panel-manage-reaction-glyph">${glyphHtml}</span><span class="ctx-panel-manage-reaction-count">${escEmojiAttr(countText)}</span>
+                            </button>`;
+                        }).join("");
+                        manageReactionsRowHtml = `
+                            <div class="ctx-panel-manage-reactions" data-ctx-manage-reactions-hidden="true">
+                                <div class="ctx-panel-manage-reactions-hint">Silmek için bir tepkiye dokun</div>
+                                <div class="ctx-panel-manage-reactions-row">${chipsHtml}</div>
+                            </div>`;
+                        buttonsHtml.push(`<button type="button" class="ctx-panel-btn is-danger" data-ctx-action="toggle-manage-reactions">🗑 Tepkileri Sil</button>`);
+                    }
+                }
+
                 return `
                     <div class="msg-context-panel" data-msg-id="${escEmojiAttr(msgId)}" data-ctx-kind="${escEmojiAttr(ctxKind)}" data-author-uid="${escEmojiAttr(authorUid)}" data-snippet="${escEmojiAttr(snippet)}" data-reaction-path="${escEmojiAttr(reactionPath)}" data-thread-id="${escEmojiAttr(threadId)}">
                         ${reactionRowHtml}
                         ${buttonsHtml.length ? `<div class="ctx-panel-actions">${buttonsHtml.join("")}</div>` : ""}
+                        ${manageReactionsRowHtml}
                     </div>`;
             }
 
@@ -18758,6 +18909,38 @@
                         closeMessageContextPanel();
                         if (reactionPath && typeof window.openReactionPicker === "function") {
                             window.openReactionPicker(fakeAnchor, reactionPath);
+                        }
+                        return;
+                    }
+                    // "🗑 Tepkileri Sil" -- alt listeyi aç/kapat (henüz hiçbir
+                    // şey silmez, sadece hangi tepkinin silineceğini seçmek
+                    // için ikinci bir sıra gösterir/gizler).
+                    const toggleManage = e.target.closest('[data-ctx-action="toggle-manage-reactions"]');
+                    if (toggleManage) {
+                        const manageRow = panelEl.querySelector(".ctx-panel-manage-reactions");
+                        if (manageRow) {
+                            const nowHidden = manageRow.getAttribute("data-ctx-manage-reactions-hidden") !== "true";
+                            manageRow.setAttribute("data-ctx-manage-reactions-hidden", String(nowHidden));
+                            manageRow.classList.toggle("is-visible", !nowHidden);
+                            // Panel boyutu değişti (liste açıldı/kapandı) --
+                            // konumu viewport'a göre YENİDEN hesapla, yoksa
+                            // panel ekranın dışına taşabilir/üst üste biner.
+                            requestAnimationFrame(() => positionContextPanel(panelEl, row));
+                        }
+                        return;
+                    }
+                    // Alt listedeki bir tepkiye basılınca: o tepki TÜRÜ
+                    // (kim verdiyse) mesajdan tamamen kaldırılır.
+                    const removeType = e.target.closest('[data-ctx-action="remove-reaction-type"]');
+                    if (removeType) {
+                        const reactionPath = panelEl.getAttribute("data-reaction-path");
+                        const key = removeType.getAttribute("data-reaction-key");
+                        closeMessageContextPanel();
+                        if (reactionPath && key) {
+                            removeReactionType(reactionPath, key).catch((err) => {
+                                console.error("[Reactions] tepki silinemedi:", err);
+                                showToastGlobal("Tepki silinemedi. Yetki sorunu olabilir.");
+                            });
                         }
                         return;
                     }
