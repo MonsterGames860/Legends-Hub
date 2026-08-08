@@ -19636,6 +19636,8 @@
 
     <!-- ================================================================
          PWA INSTALL LOGIC + SERVICE WORKER KAYDI
+         (event zamanlamasına bağımlı değil — buton her zaman görünür
+         başlar, native prompt varsa onu kullanır, yoksa talimat gösterir)
          ================================================================ -->
     <script>
     (function () {
@@ -19660,27 +19662,21 @@
             );
         }
 
+        function isIos() {
+            return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+        }
+
         if (isRunningStandalone()) {
             hideCard();
+        } else {
+            // Native event'i beklemeden butonu göster. Chrome/Edge/Android'de
+            // manifest+SW geçerliyse kurulum zaten mümkündür; event
+            // tetiklenmese bile kullanıcıya bir yol göstermek daha iyidir.
+            showCard();
         }
 
-        // Event <head> içindeki erken yakalayıcı tarafından zaten
-        // tetiklenmiş ve window.__pwaDeferredPrompt içine kaydedilmiş
-        // olabilir (sayfa yüklenmesinin çok erken bir anında ateşlenmiş
-        // olma ihtimaline karşı). Burada önce onu kontrol ediyoruz.
-        function tryShowFromStoredPrompt() {
-            if (window.__pwaDeferredPrompt && !isRunningStandalone()) {
-                showCard();
-            }
-        }
-        tryShowFromStoredPrompt();
-
-        // Event bu noktadan SONRA tetiklenirse de yakala (custom event,
-        // <head>'teki erken yakalayıcı tarafından dispatch ediliyor).
-        window.addEventListener("pwaPromptReady", tryShowFromStoredPrompt);
-
-        // Ekstra güvenlik: doğrudan da dinle (bazı tarayıcı/sıra
-        // senaryolarında ikisi de tetiklenebilir, zararı yok).
+        // Native event tetiklenirse yakala (tetiklenirse tıklamada
+        // gerçek prompt() kullanılacak; tetiklenmezse fallback devrede).
         window.addEventListener("beforeinstallprompt", function (e) {
             e.preventDefault();
             window.__pwaDeferredPrompt = e;
@@ -19691,22 +19687,41 @@
 
         installBtn.addEventListener("click", function () {
             var promptEvent = window.__pwaDeferredPrompt;
-            if (!promptEvent) return;
 
-            installBtn.disabled = true;
-            installBtn.textContent = "Bekleniyor...";
+            // Durum 1: Native install event mevcut -> doğrudan kullan.
+            if (promptEvent) {
+                installBtn.disabled = true;
+                installBtn.textContent = "Bekleniyor...";
 
-            promptEvent.prompt();
+                promptEvent.prompt();
 
-            promptEvent.userChoice.then(function (choiceResult) {
-                if (choiceResult.outcome === "accepted") {
-                    installBtn.textContent = "✓ Yükleniyor...";
-                } else {
-                    installBtn.textContent = "Uygulamayı İndir";
-                    installBtn.disabled = false;
-                }
-                window.__pwaDeferredPrompt = null;
-            });
+                promptEvent.userChoice.then(function (choiceResult) {
+                    if (choiceResult.outcome === "accepted") {
+                        installBtn.textContent = "✓ Yükleniyor...";
+                    } else {
+                        installBtn.textContent = "Uygulamayı İndir";
+                        installBtn.disabled = false;
+                    }
+                    window.__pwaDeferredPrompt = null;
+                });
+                return;
+            }
+
+            // Durum 2: Native event henüz gelmedi -> kullanıcıya
+            // tarayıcının kendi menüsünü nasıl kullanacağını göster.
+            if (isIos()) {
+                alert(
+                    "Uygulamayı ana ekranına eklemek için:\n\n" +
+                    "1) Alt menüdeki Paylaş (□↑) simgesine dokun\n" +
+                    "2) \"Ana Ekrana Ekle\" seçeneğini seç"
+                );
+            } else {
+                alert(
+                    "Uygulamayı yüklemek için:\n\n" +
+                    "1) Tarayıcının sağ üstündeki ⋮ menüsüne dokun\n" +
+                    "2) \"Yükle\" veya \"Ana ekrana ekle\" seçeneğine dokun"
+                );
+            }
         });
 
         window.addEventListener("appinstalled", function () {
