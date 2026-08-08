@@ -1481,6 +1481,31 @@
         padding-bottom: 8px;
         border-bottom: 1px solid var(--line);
         overflow-x: auto;
+        overflow-y: hidden;
+        /* BUG FIX: .msg-context-panel bir flex konteyner (column) ve bu
+           satır onun bir flex-item'i. Flex item'ların varsayılan
+           min-width'i "auto"dur -- yani içeriğinin doğal genişliğinden
+           DAHA DAR olamaz. Bu yüzden 8 emoji + "➕" butonu sığmadığında
+           satır İÇİNDE kaydırma olmak yerine üst panel (.msg-context-panel)
+           kendini o genişliğe göre BÜYÜTÜYORDU (ya da viewport'tan
+           taşıyordu) ve overflow-x:auto hiçbir zaman devreye girmiyordu.
+           min-width: 0 bu satırın parent'tan daha dar olabilmesini
+           (dolayısıyla gerçekten kaydırılabilmesini) sağlar. */
+        min-width: 0;
+        /* Butonlar tek satırda kalsın, alta sarmasın -- flex-wrap
+           varsayılan olarak zaten "nowrap" ama açıkça belirtiyoruz ki
+           ileride biri yanlışlıkla wrap eklemesin. */
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        /* iOS Safari'de dokunmatik kaydırmayı "sekmeli" değil akıcı yapar. */
+        -webkit-overflow-scrolling: touch;
+        /* İnce/gizli scrollbar -- Discord'daki gibi sade görünüm. */
+        scrollbar-width: thin;
+    }
+    .ctx-panel-reactions::-webkit-scrollbar { height: 4px; }
+    .ctx-panel-reactions::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 4px;
     }
     .ctx-panel-reaction-btn {
         flex: 0 0 auto;
@@ -1501,8 +1526,26 @@
         transform: scale(1.1);
     }
     .ctx-panel-reaction-more {
+        /* "➕" DAHA GÖRÜNÜR/AYIRT EDİLEBİLİR OLSUN: diğer 8 tepki emojisi
+           gibi sade, isimsiz bir daire değil -- yanında "Emoji Ekle" yazan
+           bir "pill" buton. Kullanıcı bunun salt bir emoji değil, tam emoji
+           katalogunu (+ topluluk emojilerini) açan bir AKSİYON olduğunu
+           metinden anlasın. */
+        width: auto;
+        height: 34px;
+        padding: 0 10px 0 8px;
+        gap: 5px;
         font-size: 0.95rem;
         color: var(--text-dim);
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        white-space: nowrap;
+    }
+    .ctx-panel-reaction-more-icon { font-size: 0.85rem; line-height: 1; }
+    .ctx-panel-reaction-more-label {
+        font-family: var(--font-display);
+        font-size: 0.78rem;
+        line-height: 1;
     }
     .ctx-panel-actions {
         display: flex;
@@ -18607,7 +18650,9 @@
                 const reactionRowHtml = reactionPath ? `
                     <div class="ctx-panel-reactions">
                         ${QUICK_REACTIONS.map((ch) => `<button type="button" class="ctx-panel-reaction-btn" data-ctx-action="quick-react" data-reaction-char="${ch}">${ch}</button>`).join("")}
-                        <button type="button" class="ctx-panel-reaction-btn ctx-panel-reaction-more" data-ctx-action="more-react" title="Daha fazla tepki">➕</button>
+                        <button type="button" class="ctx-panel-reaction-btn ctx-panel-reaction-more" data-ctx-action="more-react" title="Emoji Ekle -- tüm emojiler ve topluluk emojileri" aria-label="Emoji Ekle">
+                            <span class="ctx-panel-reaction-more-icon">➕</span><span class="ctx-panel-reaction-more-label">Emoji Ekle</span>
+                        </button>
                     </div>` : "";
 
                 const buttonsHtml = [];
@@ -18686,9 +18731,23 @@
                     const moreReact = e.target.closest('[data-ctx-action="more-react"]');
                     if (moreReact) {
                         const reactionPath = panelEl.getAttribute("data-reaction-path");
+                        // ÖNEMLİ (BUG FIX): closeMessageContextPanel() panelEl'i
+                        // (ve içindeki moreReact butonunu) DOM'dan kaldırır.
+                        // openReactionPicker -> openEmojiPickerGeneric ->
+                        // positionFixedPopover bu butonu "anchor" olarak
+                        // kullanıp konumlandırma için getBoundingClientRect()
+                        // çağırıyor -- eleman DOM'dan sökülmüşse bu her zaman
+                        // (0,0,0,0) döner ve emoji paneli ekranın sol-üst
+                        // köşesine (ya da içerik altına gizlenmiş şekilde)
+                        // yanlış konumlanır; kullanıcıya "hiçbir şey açılmadı"
+                        // gibi görünür. Çözüm: DOM'dan silinmeden ÖNCE
+                        // butonun dikdörtgenini sabitleyip, aynı rect'i
+                        // döndüren sahte bir "anchor" nesnesi kullan.
+                        const anchorRect = moreReact.getBoundingClientRect();
+                        const fakeAnchor = { getBoundingClientRect: () => anchorRect };
                         closeMessageContextPanel();
                         if (reactionPath && typeof window.openReactionPicker === "function") {
-                            window.openReactionPicker(moreReact, reactionPath);
+                            window.openReactionPicker(fakeAnchor, reactionPath);
                         }
                         return;
                     }
