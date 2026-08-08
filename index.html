@@ -498,6 +498,10 @@
     .forum-reply.is-grouped:hover .msg-bubble-hover-time {
         display: block;
     }
+    /* Forum aksiyon butonları (Yanıtla/Sabitle/Sil): SADECE uzun-basma/
+       sağ-tık ile açılır -- satır ".is-actions-open" class'ını alınca
+       görünür olur (bkz. wireBubbleContextMenu, msg-bubble-actions ile
+       aynı mekanizma). */
     .forum-message-actions, .forum-reply-actions {
         display: flex;
         gap: 12px;
@@ -506,6 +510,14 @@
         background: none;
         border: none;
         padding: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s ease;
+    }
+    .forum-message.is-actions-open .forum-message-actions,
+    .forum-reply.is-actions-open .forum-reply-actions {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .forum-message-avatar {
@@ -4287,7 +4299,7 @@
         max-width: 80%;
     }
 
-    /* ── Mesaj eylemleri (Yanıtla / Sil) — balona basılı tutunca/hover'da ── */
+    /* ── Mesaj eylemleri (Yanıtla / Sil) — SADECE uzun-basma/sağ-tık ── */
     .msg-bubble-row { position: relative; }
     .msg-bubble-wrap { display: flex; flex-direction: column; min-width: 0; }
     .msg-bubble-row.is-own .msg-bubble-wrap { align-items: flex-end; }
@@ -4299,7 +4311,11 @@
         pointer-events: none;
         transition: opacity 0.12s ease;
     }
-    .msg-bubble-row:hover .msg-bubble-actions,
+    /* NOT: eskiden ":hover" ile de açılıyordu -- mobilde dokunma bazı
+       tarayıcılarda "hover" olarak da yorumlanabildiği için istenmeden
+       her dokunuşta menü açılmasına sebep oluyordu. Artık SADECE
+       "is-actions-open" class'ı (wireBubbleContextMenu tarafından
+       sağ-tık/uzun-basmada eklenir) ile açılıyor. */
     .msg-bubble-row.is-actions-open .msg-bubble-actions {
         opacity: 1;
         pointer-events: auto;
@@ -10510,6 +10526,13 @@
         function attachMessageActionHandlers(containerEl) {
             if (!containerEl) return;
 
+            // Uzun-basma / sağ-tık ile aksiyon menüsü (forum akışı için,
+            // grup/DM sohbetleriyle AYNI mekanizma). Sadece gerçek listeye
+            // (id'si olan container'a) bağlanır -- idempotent.
+            if (typeof window.wireBubbleContextMenu === "function" && containerEl.id) {
+                window.wireBubbleContextMenu(containerEl, "[data-message-id]");
+            }
+
             containerEl.querySelectorAll('[data-action="public-reply"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
                     startForumReply(
@@ -11110,6 +11133,10 @@
         }
 
         function attachReplyActionHandlers(containerEl, threadId) {
+            if (typeof window.wireBubbleContextMenu === "function" && containerEl.id) {
+                window.wireBubbleContextMenu(containerEl, "[data-reply-id]");
+            }
+
             containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
                 el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
             });
@@ -18332,6 +18359,12 @@
                         const pinBtn = canPinThis
                             ? `<button type="button" class="msg-bubble-action-btn" data-msg-action="${isPinned ? 'unpin' : 'pin'}" data-msg-id="${escapeAttr(m.id)}">${isPinned ? '📌 Kaldır' : '📌 Sabitle'}</button>`
                             : "";
+                        // NOT: bu buton grubu artık HER ZAMAN görünür DEĞİL --
+                        // CSS'de varsayılan olarak display:none (bkz.
+                        // .msg-bubble-actions kuralı), sadece atasındaki satır
+                        // ".ctx-menu-open" sınıfını aldığında görünür olur.
+                        // Bu sınıf, mesaja sağ tıklanınca / basılı tutulunca
+                        // (long-press) wireBubbleContextMenu tarafından eklenir.
                         actionsHtml = `<div class="msg-bubble-actions">${replyBtn}${pinBtn}${deleteBtn}</div>`;
                     }
 
@@ -18389,13 +18422,81 @@
             }
 
             // ── Yanıtla / Sil aksiyon tıklamaları (event delegation) ────
+            // ── Uzun-basma / sağ-tık ile Yanıtla-Sabitle-Sil menüsü ──────
+            // Menü artık normal dokunuşta/hover'da AÇILMAZ (bkz. CSS'teki
+            // .msg-bubble-actions kuralı) -- sadece satıra sağ tıklanınca
+            // (masaüstü) ya da ~420ms basılı tutulunca (mobil) satıra
+            // "is-actions-open" class'ı eklenir. Aynı anda tek bir satırda
+            // açık kalır; başka yere dokununca/tıklanınca kapanır.
+            let _openActionsRow = null;
+            function closeOpenActionsRow() {
+                if (_openActionsRow) { _openActionsRow.classList.remove("is-actions-open"); _openActionsRow = null; }
+            }
+            document.addEventListener("click", (e) => {
+                if (_openActionsRow && !_openActionsRow.contains(e.target)) closeOpenActionsRow();
+            }, true);
+            document.addEventListener("scroll", closeOpenActionsRow, true);
+
+            function wireBubbleContextMenu(listEl, rowSelector) {
+                if (!listEl || listEl.dataset.ctxMenuBound) return;
+                listEl.dataset.ctxMenuBound = "1";
+
+                listEl.addEventListener("contextmenu", (e) => {
+                    const row = e.target.closest(rowSelector);
+                    if (!row) return;
+                    e.preventDefault();
+                    if (_openActionsRow === row) { closeOpenActionsRow(); return; }
+                    closeOpenActionsRow();
+                    row.classList.add("is-actions-open");
+                    _openActionsRow = row;
+                });
+
+                let pressTimer = null;
+                let pressStartX = 0, pressStartY = 0;
+                const LONG_PRESS_MS = 420;
+                const MOVE_TOLERANCE = 10;
+
+                listEl.addEventListener("touchstart", (e) => {
+                    const row = e.target.closest(rowSelector);
+                    if (!row) return;
+                    // Zaten açık olan aksiyon menüsündeki dokunuşlarda
+                    // (bir butona basma) long-press tetiklenmesin.
+                    if (e.target.closest(".msg-bubble-actions, .forum-message-actions, .forum-reply-actions")) return;
+                    const t = e.touches[0];
+                    pressStartX = t.clientX; pressStartY = t.clientY;
+                    pressTimer = setTimeout(() => {
+                        if (navigator.vibrate) navigator.vibrate(12);
+                        closeOpenActionsRow();
+                        row.classList.add("is-actions-open");
+                        _openActionsRow = row;
+                        pressTimer = null;
+                    }, LONG_PRESS_MS);
+                }, { passive: true });
+
+                listEl.addEventListener("touchmove", (e) => {
+                    if (!pressTimer) return;
+                    const t = e.touches[0];
+                    if (Math.abs(t.clientX - pressStartX) > MOVE_TOLERANCE || Math.abs(t.clientY - pressStartY) > MOVE_TOLERANCE) {
+                        clearTimeout(pressTimer);
+                        pressTimer = null;
+                    }
+                }, { passive: true });
+
+                const cancelPress = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
+                listEl.addEventListener("touchend", cancelPress);
+                listEl.addEventListener("touchcancel", cancelPress);
+            }
+            window.wireBubbleContextMenu = wireBubbleContextMenu;
+
             function bindBubbleActions(listEl, { getReplyBanner, sendFn }) {
                 if (!listEl || listEl.dataset.actionsBound) return;
                 listEl.dataset.actionsBound = "1";
+                wireBubbleContextMenu(listEl, "[data-msg-id]");
 
                 listEl.addEventListener("click", async (e) => {
                     const replyBtn = e.target.closest('[data-msg-action="reply"]');
                     if (replyBtn) {
+                        closeOpenActionsRow();
                         const banner = getReplyBanner();
                         banner.set({
                             messageId: replyBtn.getAttribute("data-msg-id"),
@@ -18406,6 +18507,7 @@
                     }
                     const deleteBtn = e.target.closest('[data-msg-action="delete"]');
                     if (deleteBtn) {
+                        closeOpenActionsRow();
                         if (!confirm("Bu mesajı silmek istediğine emin misin?")) return;
                         try {
                             await sendFn.deleteMessage(deleteBtn.getAttribute("data-msg-id"));
@@ -18417,11 +18519,13 @@
                     }
                     const pinBtn = e.target.closest('[data-msg-action="pin"]');
                     if (pinBtn) {
+                        closeOpenActionsRow();
                         await pinGroupMessage(pinBtn.getAttribute("data-msg-id"));
                         return;
                     }
                     const unpinBtn = e.target.closest('[data-msg-action="unpin"]');
                     if (unpinBtn) {
+                        closeOpenActionsRow();
                         await unpinGroupMessage();
                         return;
                     }
