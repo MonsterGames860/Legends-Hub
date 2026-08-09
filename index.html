@@ -13953,8 +13953,19 @@
             // kullanıcı zaten alta yakınsa (yeni mesaj takibi) en altta
             // KALSIN, ama yukarıda bir yerdeyse mevcut scroll konumu
             // AYNEN KORUNSUN.
+            //
+            // 🐛 BUGFIX (ek): Forum sekmesi login anında DOM'da GİZLİYKEN
+            // (.hub-view henüz aktif değilken) ilk mesajlar geldiğinde bu
+            // fonksiyon zaten bir kez çalışıyor — ama o an listEl.clientHeight
+            // 0 olduğundan "wasNearBottom" formülü güvenilmez sonuç verip
+            // sekme sonradan görünür olduğunda liste en üstte kalabiliyordu.
+            // Eleman hâlâ gizliyse (clientHeight === 0) her zaman "alta
+            // yakın" kabul ediyoruz ki en son mesaja güvenle iniyor olsun
+            // (sekmeye girişte switchView zaten ayrıca en alta kaydırıyor,
+            // bu sadece ek bir güvence katmanı).
             const NEAR_BOTTOM_PX = 80;
-            const wasNearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
+            const isHidden = listEl.clientHeight === 0;
+            const wasNearBottom = isHidden || (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
             const prevScrollTop = listEl.scrollTop;
 
             const myUid = window.CommunityAuth.user.uid;
@@ -16550,6 +16561,24 @@
             // "Sana Gelenler" sekmesi açıldığında inbox'ı render et ve okundu say.
             if (view === "inbox") {
                 InboxSystem.openInbox();
+            }
+
+            // 🐛 BUGFIX: Forum (Genel Sohbet) sekmesi genelde login anında
+            // henüz DOM'da GİZLİYKEN (display:none / .hub-view aktif
+            // değilken) dolduruluyordu — bu yüzden renderForumMessages
+            // içindeki "en alta kaydır" hesabı (clientHeight=0 olduğu için)
+            // güvenilir çalışmıyor ve kullanıcı sekmeye TIKLADIĞINDA liste
+            // en üstte (en eski mesaj) kalmış oluyordu; DOM görünür hâle
+            // gelirken scroll'a hiç yeniden dokunulmuyordu. Artık forum
+            // sekmesine her girişte, mesaj listesi zaten DOM'da hazırsa
+            // açıkça en alta (en son mesaja) kaydırılıyor.
+            if (view === "forum") {
+                const forumListEl = document.getElementById("forumMessagesList");
+                if (forumListEl) {
+                    requestAnimationFrame(() => {
+                        forumListEl.scrollTop = forumListEl.scrollHeight;
+                    });
+                }
             }
 
             // "Oyuncular" sekmesi açıldığında listeyi (yeniden) yükle.
