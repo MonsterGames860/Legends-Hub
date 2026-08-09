@@ -13954,18 +13954,21 @@
             // KALSIN, ama yukarıda bir yerdeyse mevcut scroll konumu
             // AYNEN KORUNSUN.
             //
-            // 🐛 BUGFIX (ek): Forum sekmesi login anında DOM'da GİZLİYKEN
-            // (.hub-view henüz aktif değilken) ilk mesajlar geldiğinde bu
-            // fonksiyon zaten bir kez çalışıyor — ama o an listEl.clientHeight
-            // 0 olduğundan "wasNearBottom" formülü güvenilmez sonuç verip
-            // sekme sonradan görünür olduğunda liste en üstte kalabiliyordu.
-            // Eleman hâlâ gizliyse (clientHeight === 0) her zaman "alta
-            // yakın" kabul ediyoruz ki en son mesaja güvenle iniyor olsun
-            // (sekmeye girişte switchView zaten ayrıca en alta kaydırıyor,
-            // bu sadece ek bir güvence katmanı).
+            // 🐛 BUGFIX (kritik): Forum, sayfa ilk yüklendiğinde HTML'de
+            // zaten "is-active" (varsayılan sekme) olarak işaretli — yani
+            // switchView("forum") HİÇBİR ZAMAN çağrılmıyor, kullanıcı asla
+            // sekmeye "tıklamıyor". listenToForumMessages() login sonrası
+            // otomatik başlıyor ve mesajlar geldiğinde bu fonksiyon zaten
+            // İLK KEZ çalışıyor; o anda listEl doluyor ama scrollHeight/
+            // clientHeight tarayıcının layout'u henüz oturtmamış olması
+            // gibi sebeplerle güvenilmez ölçülebiliyordu, sonuç: liste en
+            // üstte (en eski mesaj) kalıyordu. Artık clientHeight'a
+            // güvenmek yerine açık bir "bu liste için ilk render mi"
+            // bayrağı kullanıyoruz — bu, forum sekmesine hiç tıklanmasa
+            // bile SAYFA AÇILIR AÇILMAZ en son mesaja inilmesini garanti eder.
             const NEAR_BOTTOM_PX = 80;
-            const isHidden = listEl.clientHeight === 0;
-            const wasNearBottom = isHidden || (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
+            const isFirstForumRender = listEl.dataset.forumInited !== "1";
+            const wasNearBottom = isFirstForumRender || (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
             const prevScrollTop = listEl.scrollTop;
 
             const myUid = window.CommunityAuth.user.uid;
@@ -14030,6 +14033,13 @@
             // AYNEN koru -- innerHTML yeniden yazıldığı için tarayıcı
             // scrollTop'ı sıfırlayabilir, bu yüzden açıkça geri veriyoruz.
             listEl.scrollTop = wasNearBottom ? listEl.scrollHeight : prevScrollTop;
+            if (wasNearBottom) {
+                // Avatar görselleri gibi içerikler asenkron yüklenip
+                // scrollHeight'ı geç büyütebileceği için bir kare sonra da
+                // tekrar en alta sabitliyoruz (özellikle ilk render'da önemli).
+                requestAnimationFrame(() => { listEl.scrollTop = listEl.scrollHeight; });
+            }
+            listEl.dataset.forumInited = "1";
         }
 
         // Ardışık mesaj gruplama: forum mesaj akışını (Genel Sohbet) ve
