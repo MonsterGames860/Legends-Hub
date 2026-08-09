@@ -2197,6 +2197,209 @@
     }
 
     /* ================================================================
+       MODÜL 7 — YÖNETİCİ PANELİ (Admin & Moderasyon)
+       ================================================================ */
+
+    .admin-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .admin-panel-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .admin-panel-subtitle {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        margin-top: 2px;
+    }
+
+    .admin-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+    }
+
+    .admin-tab-btn {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font-size: 0.78rem;
+        font-family: var(--font-display);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+
+    .admin-tab-btn:hover {
+        color: var(--text-primary);
+        border-color: var(--accent);
+    }
+
+    .admin-tab-btn.is-active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: var(--accent);
+        font-weight: 600;
+    }
+
+    .admin-tab-panel {
+        display: none;
+    }
+
+    .admin-tab-panel.is-active {
+        display: block;
+    }
+
+    .admin-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .admin-stat-card {
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        text-align: center;
+    }
+
+    .admin-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        font-family: var(--font-mono);
+    }
+
+    .admin-stat-label {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        margin-top: 4px;
+    }
+
+    .admin-search-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .admin-search-row .forum-text-input {
+        flex: 1;
+    }
+
+    .admin-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .admin-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        flex-wrap: wrap;
+    }
+
+    .admin-row-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--bg-void);
+        flex-shrink: 0;
+    }
+
+    .admin-row-main {
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .admin-row-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .admin-row-sub {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+    }
+
+    .admin-row-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .admin-row-actions .forum-btn {
+        padding: 5px 10px;
+        font-size: 0.72rem;
+    }
+
+    .admin-badge {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-family: var(--font-mono);
+    }
+
+    .admin-badge-open {
+        background: rgba(255, 77, 77, 0.15);
+        color: var(--danger);
+    }
+
+    .admin-badge-resolved {
+        background: rgba(102, 252, 241, 0.12);
+        color: var(--accent);
+    }
+
+    .admin-badge-banned {
+        background: rgba(255, 77, 77, 0.15);
+        color: var(--danger);
+    }
+
+    .admin-badge-muted {
+        background: rgba(245, 197, 66, 0.15);
+        color: var(--gold);
+    }
+
+    .admin-role-select {
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        color: var(--text-primary);
+        border-radius: 6px;
+        padding: 5px 8px;
+        font-size: 0.72rem;
+        font-family: var(--font-display);
+    }
+
+    @media (max-width: 720px) {
+        .admin-row { flex-direction: column; align-items: stretch; }
+        .admin-row-actions { justify-content: flex-start; }
+    }
+
+    /* ================================================================
        MODÜL 4 — 3D STUDIO EDİTÖR (Dashboard) & 3D MODEL PAZARI
        Sınırsız/esnek: hiçbir bileşende sabit px genişlik/yükseklik yok,
        tamamen flexbox/grid + % + vw/vh ile cihaza göre şekilleniyor.
@@ -6474,6 +6677,8 @@
                     <button class="mkt-download-btn" id="mktDetailDownloadBtn">⬇ Modeli İndir (Ücretsiz)</button>
                     <!-- Kendi ilanımsa: kaldır -->
                     <button class="mkt-download-btn is-danger" id="mktDetailRemoveBtn" style="display:none;">🗑️ Pazardan Kaldır</button>
+                    <button class="mkt-download-btn is-danger" id="mktDetailAdminHideBtn" style="display:none;">🚫 Yayından Kaldır (Admin)</button>
+                    <button class="mkt-download-btn" id="mktDetailReportBtn" style="display:none;">🚩 Şikâyet Et</button>
                     <!-- Yorumlar -->
                     <div class="mkt-comments-section">
                         <div class="mkt-comments-title">Yorumlar</div>
@@ -6647,6 +6852,7 @@
                                     <div class="msg-header-menu-popover" id="dmHeaderMenuPopover">
                                         <button type="button" class="msg-header-menu-item" id="dmMenuViewProfile">👤 Profili Gör</button>
                                         <button type="button" class="msg-header-menu-item is-danger" id="dmMenuBlockToggle">🚫 Engelle</button>
+                                        <button type="button" class="msg-header-menu-item" id="dmMenuReport">🚩 Şikâyet Et</button>
                                     </div>
                                 </div>
                             </div>
@@ -7034,6 +7240,7 @@
                         </div>
                         <div class="forum-modal-footer">
                             <button class="forum-btn forum-btn-ghost msg-group-delete-btn" id="groupDetailDeleteBtn" style="display:none;">🗑 Grubu Sil</button>
+                            <button class="forum-btn forum-btn-ghost" id="groupDetailReportBtn">🚩 Şikâyet Et</button>
                             <button class="forum-btn forum-btn-ghost" id="groupDetailCloseBtn">Kapat</button>
                         </div>
                     </div>
@@ -7367,6 +7574,40 @@
 
 
             <!-- ════════════════════════════════════════════════════════════
+                 GENEL AMAÇLI ŞİKÂYET MODALI (Modül 7) — kullanıcı, pazar
+                 ürünü, grup, DM şikayetleri için. Hangi görünüm aktif
+                 olursa olsun DOM'da bulunur (section dışında, herkese açık).
+                 ════════════════════════════════════════════════════════════ -->
+            <div class="forum-modal-backdrop" id="genericReportModalBackdrop" style="display:none;">
+                <div class="forum-modal">
+                    <div class="forum-modal-header">
+                        <span id="genericReportModalTitle">Şikâyet Et</span>
+                        <button class="forum-modal-close" id="genericReportModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body">
+                        <label class="forum-field-label">Sebep</label>
+                        <select class="forum-text-input" id="genericReportReasonSelect">
+                            <option value="spam">Spam / istenmeyen içerik</option>
+                            <option value="harassment">Taciz / zorbalık</option>
+                            <option value="hate">Nefret söylemi</option>
+                            <option value="illegal">Yasa dışı içerik</option>
+                            <option value="impersonation">Sahte / taklit hesap</option>
+                            <option value="nsfw">Uygunsuz / NSFW içerik</option>
+                            <option value="other">Diğer</option>
+                        </select>
+                        <label class="forum-field-label" style="margin-top:10px;">Detay (isteğe bağlı)</label>
+                        <textarea class="forum-text-input" id="genericReportDetailInput" maxlength="500" rows="3" placeholder="Şikâyetinle ilgili ek bilgi…"></textarea>
+                        <div class="forum-modal-error" id="genericReportError" style="display:none;"></div>
+                    </div>
+                    <div class="forum-modal-footer">
+                        <button class="forum-btn forum-btn-ghost" id="genericReportCancelBtn">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="genericReportSubmitBtn">Gönder</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ════════════════════════════════════════════════════════════
                  MENTIONS & REPLIES — SANA GELENLER PANELİ
                  ════════════════════════════════════════════════════════════ -->
             <section class="hub-view" data-view="inbox">
@@ -7412,6 +7653,7 @@
                             <div class="profile-other-actions" id="profileOtherUserActions" style="display:none; gap:8px; margin-top:10px;">
                                 <button type="button" class="forum-btn forum-btn-primary" id="profileSendDmBtn" style="padding:7px 14px; font-size:0.78rem;">✉️ Mesaj Gönder</button>
                                 <button type="button" class="forum-btn forum-btn-ghost" id="profileBlockBtn" style="padding:7px 14px; font-size:0.78rem; color:#ff6b6b; border-color:rgba(255,80,80,0.4);">🚫 Engelle</button>
+                                <button type="button" class="forum-btn forum-btn-ghost" id="profileReportBtn" style="padding:7px 14px; font-size:0.78rem;">🚩 Şikâyet Et</button>
                             </div>
                         </div>
                     </div>
@@ -7524,8 +7766,130 @@
             </section>
 
             <section class="hub-view" data-view="admin">
-                <div class="hub-placeholder">YÖNETİM PANELİ — Modül 7'de doldurulacak</div>
+                <div class="admin-panel-header">
+                    <div>
+                        <div class="admin-panel-title">🛡️ Yönetici Paneli</div>
+                        <div class="admin-panel-subtitle">Kullanıcı yönetimi, moderasyon ve şikâyetler</div>
+                    </div>
+                </div>
+
+                <div class="admin-tabs">
+                    <button type="button" class="admin-tab-btn is-active" data-admin-tab="stats">📊 İstatistikler</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="users">👥 Kullanıcılar</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="forum">💬 Forum</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="marketplace">🧊 Pazar Yeri</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="reports">🚩 Şikâyetler</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="communities">🌐 Topluluklar</button>
+                </div>
+
+                <!-- ═══ SEKME: İSTATİSTİKLER ═══ -->
+                <div class="admin-tab-panel is-active" data-admin-panel="stats">
+                    <div class="admin-stat-grid" id="adminStatGrid">
+                        <div class="admin-stat-card"><div class="admin-stat-value">—</div><div class="admin-stat-label">Kullanıcı</div></div>
+                        <div class="admin-stat-card"><div class="admin-stat-value">—</div><div class="admin-stat-label">Forum Mesajı</div></div>
+                        <div class="admin-stat-card"><div class="admin-stat-value">—</div><div class="admin-stat-label">Pazar Ürünü</div></div>
+                        <div class="admin-stat-card"><div class="admin-stat-value">—</div><div class="admin-stat-label">Aktif Grup</div></div>
+                    </div>
+                    <div class="hub-placeholder" id="adminStatsNote">İstatistikler yükleniyor…</div>
+                </div>
+
+                <!-- ═══ SEKME: KULLANICILAR (RBAC + Ban/Mute) ═══ -->
+                <div class="admin-tab-panel" data-admin-panel="users">
+                    <div class="admin-search-row">
+                        <input type="text" class="forum-text-input" id="adminUserSearchInput" placeholder="Kullanıcı adına göre ara…" autocomplete="off">
+                    </div>
+                    <div class="admin-list" id="adminUserList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
+
+                <!-- ═══ SEKME: FORUM MODERASYONU ═══ -->
+                <div class="admin-tab-panel" data-admin-panel="forum">
+                    <div class="admin-panel-subtitle" style="margin-bottom:10px;">Konular (forum_threads)</div>
+                    <div class="admin-list" id="adminThreadList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                    <div class="admin-panel-subtitle" style="margin:16px 0 10px;">Genel Sohbet Mesajları (son 50, sabitlenmiş öne alınır)</div>
+                    <div class="admin-list" id="adminMessageList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
+
+                <!-- ═══ SEKME: PAZAR YERİ (3D STUDIO) MODERASYONU ═══ -->
+                <div class="admin-tab-panel" data-admin-panel="marketplace">
+                    <div class="admin-list" id="adminListingList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
+
+                <!-- ═══ SEKME: ŞİKÂYETLER (ortak reports tablosu) ═══ -->
+                <div class="admin-tab-panel" data-admin-panel="reports">
+                    <div class="admin-search-row">
+                        <select class="forum-text-input" id="adminReportStatusFilter" style="max-width:200px;">
+                            <option value="open">Açık şikâyetler</option>
+                            <option value="resolved">Tamamlanmış</option>
+                            <option value="all">Tümü</option>
+                        </select>
+                    </div>
+                    <div class="admin-list" id="adminReportList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
+
+                <!-- ═══ SEKME: TOPLULUKLAR/GRUPLAR (askıya alınanlar) ═══ -->
+                <div class="admin-tab-panel" data-admin-panel="communities">
+                    <div class="admin-panel-subtitle" style="margin-bottom:10px;">Askıya Alınmış Topluluklar</div>
+                    <div class="admin-list" id="adminSuspendedList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
             </section>
+
+            <!-- ADMIN: Şikâyeti tamamlama modalı (açıklama girip kapatma) -->
+            <div class="forum-modal-backdrop" id="adminResolveReportModalBackdrop" style="display:none;">
+                <div class="forum-modal">
+                    <div class="forum-modal-header">
+                        <span>Şikâyeti Tamamla</span>
+                        <button class="forum-modal-close" id="adminResolveReportModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body">
+                        <label class="forum-field-label">Alınan aksiyon / açıklama</label>
+                        <textarea class="forum-text-input" id="adminResolveReportNote" maxlength="500" rows="3" placeholder="Ör. Kullanıcı 1 gün susturuldu, içerik silindi…"></textarea>
+                        <div class="forum-modal-error" id="adminResolveReportError" style="display:none;"></div>
+                    </div>
+                    <div class="forum-modal-footer">
+                        <button class="forum-btn forum-btn-ghost" id="adminResolveReportCancelBtn">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="adminResolveReportSubmitBtn">Tamamla ve Bildir</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN: Ban/Mute süre girme modalı -->
+            <div class="forum-modal-backdrop" id="adminSanctionModalBackdrop" style="display:none;">
+                <div class="forum-modal">
+                    <div class="forum-modal-header">
+                        <span id="adminSanctionModalTitle">Kullanıcıyı Yasakla</span>
+                        <button class="forum-modal-close" id="adminSanctionModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body">
+                        <label class="forum-field-label">Süre</label>
+                        <select class="forum-text-input" id="adminSanctionDurationSelect">
+                            <option value="3600000">1 saat</option>
+                            <option value="86400000">1 gün</option>
+                            <option value="604800000">7 gün</option>
+                            <option value="2592000000">30 gün</option>
+                            <option value="0">Süresiz</option>
+                        </select>
+                        <label class="forum-field-label" style="margin-top:10px;">Sebep</label>
+                        <textarea class="forum-text-input" id="adminSanctionReasonInput" maxlength="300" rows="2" placeholder="Ör. Tekrarlanan taciz…"></textarea>
+                        <div class="forum-modal-error" id="adminSanctionError" style="display:none;"></div>
+                    </div>
+                    <div class="forum-modal-footer">
+                        <button class="forum-btn forum-btn-ghost" id="adminSanctionCancelBtn">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="adminSanctionSubmitBtn">Uygula</button>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
@@ -7652,6 +8016,19 @@
 
         function canModerate(profile) {
             return hasMinimumTier(profile, "helper");
+        }
+
+        /**
+         * Bir kullanıcının profilinde ban durumu aktif mi kontrol eder.
+         * Süreli ban desteği: `banned: true` + `banUntil: <timestamp>`
+         * ise, o zaman geçtikten sonra ban KENDİLİĞİNDEN sona erer (admin
+         * panelinden ayrıca "yasağı kaldır" yapılması gerekmez). `banUntil`
+         * yoksa (null/undefined) ban SÜRESİZDİR.
+         */
+        function isBanActiveNow(profile) {
+            if (!profile || profile.banned !== true) return false;
+            if (!profile.banUntil) return true; // süresiz ban
+            return profile.banUntil > Date.now();
         }
 
         // ---------- RÜTBE (RANK) RENK + ETİKET SİSTEMİ ----------
@@ -7816,6 +8193,7 @@
             canManageVerification,
             canModerate,
             isOwner: isOwnerProfile,
+            isBanActiveNow,
             renderVerifiedBadge,
             renderUsernameWithBadge,
             renderAvatarAttrs,
@@ -8483,7 +8861,7 @@
             }
         };
 
-        function showDeniedScreen(reasonKey) {
+        function showDeniedScreen(reasonKey, extraProfile) {
             console.warn("[CommunityHub] Erişim reddedildi:", reasonKey);
 
             window.CommunityAuth.ready = true;
@@ -8516,7 +8894,19 @@
             if (loginFormEl) loginFormEl.style.display = "none";
             if (deniedEl) deniedEl.style.display = "flex";
             if (titleEl) titleEl.textContent = info.title;
-            if (textEl) textEl.textContent = info.text;
+
+            // "user_banned" için, admin panelinden girilmiş sebep/süre
+            // bilgisi varsa statik metne ek olarak gösteriyoruz.
+            let bodyText = info.text;
+            if (reasonKey === "user_banned" && extraProfile) {
+                const parts = [];
+                if (extraProfile.banReason) parts.push(`Sebep: ${extraProfile.banReason}`);
+                parts.push(extraProfile.banUntil
+                    ? `Yasak bitiş: ${new Date(extraProfile.banUntil).toLocaleString("tr-TR")}`
+                    : "Bu yasaklama süresizdir.");
+                bodyText = info.text + "\n\n" + parts.join(" · ");
+            }
+            if (textEl) textEl.textContent = bodyText;
             if (btnEl) btnEl.href = MAIN_SITE_URL;
         }
 
@@ -8704,12 +9094,10 @@
                 return;
             }
 
-            if (profile.banned === true) {
-                showDeniedScreen("user_banned");
+            if (isBanActiveNow(profile)) {
+                showDeniedScreen("user_banned", profile);
                 return;
             }
-
-            // ✅ Yetkili gerçek kullanıcı.
             window.CommunityAuth.user = firebaseUser;
             window.CommunityAuth.profile = profile;
             window.CommunityAuth.ready = true;
@@ -8757,8 +9145,8 @@
                     showDeniedScreen("no_session");
                     return;
                 }
-                if (profile.banned === true) {
-                    showDeniedScreen("user_banned");
+                if (isBanActiveNow(profile)) {
+                    showDeniedScreen("user_banned", profile);
                     return;
                 }
                 if (isGuestProfile(profile, auth.currentUser)) {
@@ -9014,6 +9402,16 @@
                             window.renderProfileView(profile, uid, isSelf);
                         };
                     }
+                    const reportBtn = document.getElementById("profileReportBtn");
+                    if (reportBtn) {
+                        reportBtn.onclick = () => {
+                            openGenericReportModal({
+                                targetType: "user",
+                                targetId: uid,
+                                targetLabel: "@" + (profile.username || "kullanıcı")
+                            });
+                        };
+                    }
                 }
             }
         };
@@ -9055,6 +9453,143 @@
                 });
             } catch (err) {
                 console.error("[Profile] Mavi tik güncellenemedi:", err);
+                alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+            }
+        }
+
+        // ==============================================================
+        // 🛡️ MODÜL 7: YÖNETİCİ PANELİ — KULLANICI YÖNETİMİ FONKSİYONLARI
+        // ==============================================================
+        // Aşağıdaki fonksiyonlar Admin Panel'in "Kullanıcı Yönetimi"
+        // sekmesi tarafından çağrılır. Hepsi handleVerifiedToggle ile
+        // AYNI deseni izler: (1) client-side yetki kontrolü — gerçek
+        // güvenlik yine RTDB Security Rules'da olmalı, (2) asıl veri
+        // yazımı, (3) audit_logs kaydı.
+
+        /**
+         * Süreli/süresiz ban uygular ya da kaldırır.
+         * durationMs: null/0 -> süresiz. Pozitif sayı -> o kadar ms sonra
+         * kendiliğinden sona erer (bkz. isBanActiveNow).
+         * Ban kaldırmak için newValue=false, diğer parametreler yoksayılır.
+         */
+        async function handleBanToggle(targetUid, newValue, reason, durationMs) {
+            if (!RBAC.canModerate(window.CommunityAuth.profile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            // Owner'ı banlamaya kalkışma gibi bariz hataları client
+            // tarafında da engelleyelim (gerçek koruma yine Rules'da olmalı).
+            // window.adminUsersCache, AdminPanel modülü tarafından panel
+            // açıldığında doldurulur (bkz. Modül 7 - startListeners). Panel
+            // hiç açılmamışsa bu fonksiyona zaten erişilemez (RBAC.canModerate
+            // yukarıda kontrol edildi), o yüzden boş cache'e düşmek güvenlidir.
+            const targetProfile = (window.adminUsersCache || {})[targetUid];
+            if (newValue && targetProfile && RBAC.isOwner(targetProfile)) {
+                alert("Owner rütbesindeki bir kullanıcı banlanamaz.");
+                return;
+            }
+            try {
+                if (newValue) {
+                    const banUntil = durationMs ? (Date.now() + durationMs) : null;
+                    await database.ref('users/' + targetUid).update({
+                        banned: true,
+                        banUntil: banUntil,
+                        banReason: reason || "Belirtilmedi"
+                    });
+                } else {
+                    await database.ref('users/' + targetUid).update({
+                        banned: false,
+                        banUntil: null,
+                        banReason: null
+                    });
+                }
+                await database.ref('audit_logs').push({
+                    action: newValue ? "ban_user" : "unban_user",
+                    targetUid: targetUid,
+                    detail: newValue ? (reason || "Belirtilmedi") : null,
+                    durationMs: newValue ? (durationMs || null) : null,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: window.CommunityAuth.profile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Admin] Ban işlemi başarısız:", err);
+                alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+            }
+        }
+
+        /**
+         * Süreli/süresiz susturma uygular ya da kaldırır. Var olan
+         * mute_status/{uid} düğümünü kullanır — forumdaki otomatik
+         * flood-koruması (reason: "auto_flood") ile AYNI mekanizma,
+         * burada reason: "admin" olarak yazılır. Bu sayede composer'daki
+         * "susturuldunuz" göstergesi ekstra kod gerekmeden otomatik çalışır.
+         */
+        async function handleMuteToggle(targetUid, newValue, reason, durationMs) {
+            if (!RBAC.canModerate(window.CommunityAuth.profile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            try {
+                if (newValue) {
+                    const mutedUntil = Date.now() + (durationMs || (10 * 60 * 1000)); // süresiz mute yok — makul üst sınır: girilmezse 10dk
+                    await database.ref('mute_status/' + targetUid).set({
+                        mutedUntil,
+                        violationCount: 1,
+                        reason: "admin",
+                        adminReason: reason || "Belirtilmedi",
+                        lastAppliedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } else {
+                    await database.ref('mute_status/' + targetUid).remove();
+                }
+                await database.ref('audit_logs').push({
+                    action: newValue ? "mute_user" : "unmute_user",
+                    targetUid: targetUid,
+                    detail: newValue ? (reason || "Belirtilmedi") : null,
+                    durationMs: newValue ? (durationMs || null) : null,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: window.CommunityAuth.profile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Admin] Susturma işlemi başarısız:", err);
+                alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+            }
+        }
+
+        /**
+         * Bir kullanıcının rütbesini (role) değiştirir. Sadece admin/owner
+         * çağırabilir. Owner rütbesi SADECE mevcut owner'lar tarafından
+         * verilip alınabilir (bir admin başka birini owner yapamaz veya
+         * bir owner'ı düşüremez) — basit bir yetki-yükseltme koruması.
+         */
+        async function handleRoleChange(targetUid, newRole) {
+            const myProfile = window.CommunityAuth.profile;
+            if (!RBAC.canManageVerification(myProfile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            const targetProfile = (window.adminUsersCache || {})[targetUid];
+            const targetIsOwner = targetProfile && RBAC.isOwner(targetProfile);
+            const newIsOwnerTier = window.CommunityRBAC.resolvePermissionTier(newRole) === "owner";
+            if ((targetIsOwner || newIsOwnerTier) && !RBAC.isOwner(myProfile)) {
+                alert("Owner rütbesiyle ilgili değişiklikleri sadece Owner yapabilir.");
+                return;
+            }
+            try {
+                const oldRole = (targetProfile && targetProfile.role) || "Player";
+                await database.ref('users/' + targetUid).update({ role: newRole });
+                await database.ref('audit_logs').push({
+                    action: "change_role",
+                    targetUid: targetUid,
+                    detail: `${oldRole} -> ${newRole}`,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: myProfile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Admin] Rütbe değiştirilemedi:", err);
                 alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
             }
         }
@@ -10600,6 +11135,91 @@
                 Object.assign({ createdAt: firebase.database.ServerValue.TIMESTAMP }, data)
             ).catch(() => {}); // kritik değil — sessiz hata
         }
+
+        // ==============================================================
+        // 🚩 MODÜL 7: ORTAK ŞİKÂYET (REPORT) SİSTEMİ
+        // ==============================================================
+        // TÜM şikayet türleri ("kullanıcı", "pazar ürünü (listing)",
+        // "grup", "topluluk (community)", "DM") tek bir "reports"
+        // düğümünde toplanır — targetType alanıyla ayrılır. Topluluk
+        // şikayetleri kendi özel modalını kullanmaya devam ediyor (bkz.
+        // submitCommunityReport, MODÜL 5 EKLENTİ 1) ama AYNI tabloya
+        // yazıyor. Bu modal ise diğer TÜM türler için genel amaçlı.
+        //
+        //   reports/{reportId}: {
+        //     targetType: "user"|"listing"|"group"|"dm"|"community",
+        //     targetId,            -> şikayet edilen şeyin ID'si (uid,
+        //                             listingId, groupId, dmId...)
+        //     targetLabel,         -> admin panelinde okunabilir gösterim
+        //                             (kullanıcı adı, ilan adı, grup adı)
+        //     reporterUid, reason, detail, status: "open"|"resolved",
+        //     resolvedBy, resolvedNote, createdAt, resolvedAt
+        //   }
+        // ==============================================================
+
+        let _genericReportTarget = null; // { targetType, targetId, targetLabel }
+
+        /**
+         * Genel şikayet modalını açar. `target` = { targetType, targetId,
+         * targetLabel }. targetLabel, admin panelinde ve onay mesajında
+         * okunabilir bir isim göstermek için kullanılır (ör. kullanıcı adı).
+         */
+        function openGenericReportModal(target) {
+            if (!target || !target.targetType || !target.targetId) return;
+            _genericReportTarget = target;
+            const titleEl = document.getElementById("genericReportModalTitle");
+            if (titleEl) titleEl.textContent = `Şikâyet Et: ${target.targetLabel || target.targetId}`;
+            document.getElementById("genericReportReasonSelect").value = "spam";
+            document.getElementById("genericReportDetailInput").value = "";
+            document.getElementById("genericReportError").style.display = "none";
+            document.getElementById("genericReportModalBackdrop").style.display = "flex";
+        }
+
+        function closeGenericReportModal() {
+            document.getElementById("genericReportModalBackdrop").style.display = "none";
+            _genericReportTarget = null;
+        }
+
+        async function submitGenericReport() {
+            if (!_genericReportTarget) return;
+            const { targetType, targetId, targetLabel } = _genericReportTarget;
+            const reason = document.getElementById("genericReportReasonSelect").value;
+            const detail = document.getElementById("genericReportDetailInput").value.trim();
+            const errorEl = document.getElementById("genericReportError");
+            const myUid = window.CommunityAuth.user && window.CommunityAuth.user.uid;
+
+            try {
+                const reportRef = database.ref("reports").push();
+                await reportRef.set({
+                    targetType,
+                    targetId,
+                    targetLabel: targetLabel || targetId,
+                    reporterUid: myUid,
+                    reason,
+                    detail,
+                    status: "open",
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Report] Şikâyet gönderme hatası:", err);
+                errorEl.textContent = "Şikâyet gönderilirken bir hata oluştu: " + (err && err.message ? err.message : err);
+                errorEl.style.display = "block";
+                return;
+            }
+
+            closeGenericReportModal();
+            alert("Şikâyetin alındı. Ekibimiz en kısa sürede inceleyecek.");
+        }
+
+        function initGenericReportModal() {
+            document.getElementById("genericReportModalClose")?.addEventListener("click", closeGenericReportModal);
+            document.getElementById("genericReportCancelBtn")?.addEventListener("click", closeGenericReportModal);
+            document.getElementById("genericReportModalBackdrop")?.addEventListener("click", (e) => {
+                if (e.target.id === "genericReportModalBackdrop") closeGenericReportModal();
+            });
+            document.getElementById("genericReportSubmitBtn")?.addEventListener("click", submitGenericReport);
+        }
+        window.openGenericReportModal = openGenericReportModal;
 
         // ------------------------------------------------------------
         // D) MESAJLARI CANLI DİNLEME + RENDER
@@ -13013,6 +13633,15 @@
                 window.refreshMarketplaceGrid();
             }
 
+            // Yönetim Paneli'ne her girişte veriyi tazele (ilk açılışta
+            // dinleyicileri de başlatır — bkz. AdminPanel.open). Diğer
+            // kullanıcılar için bu dinleyiciler HİÇ başlamaz (Helper+
+            // olmayanlar zaten nav öğesini göremez, ama çift güvenlik
+            // için AdminPanel.open kendi içinde de yetki kontrolü yapar).
+            if (view === "admin" && window.AdminPanel && typeof window.AdminPanel.open === "function") {
+                window.AdminPanel.open();
+            }
+
             // "Profilim" sekmesine geçildiğinde, kendi profilimizi render
             // ediyoruz. Daha önce bu hiç tetiklenmiyordu; sekme boş
             // görünüyordu çünkü renderProfileView sadece auth-ready /
@@ -13467,6 +14096,16 @@
             if (!grid) return;
             let listings = mktLoadListings();
 
+            // Admin/Helper+ dışındaki herkes için, moderasyonla "yayından
+            // kaldırılmış" (isHidden=true) ilanlar pazarda görünmez.
+            // Moderatörler kendi görünümlerinde bunları da görür ki admin
+            // panelinden habersiz bir yerde "kaybolmuş" gibi durmasın —
+            // kartın üstünde küçük bir "Gizli" rozeti ile işaretlenir.
+            const canModerateGrid = window.CommunityRBAC.canModerate(window.CommunityAuth.profile);
+            if (!canModerateGrid) {
+                listings = listings.filter(l => !l.isHidden);
+            }
+
             if (mktActiveCategory !== "all")
                 listings = listings.filter(l => l.category === mktActiveCategory);
             if (mktActiveSearch.trim()) {
@@ -13500,6 +14139,9 @@
                 const removeBadge = isOwner
                     ? `<button class="mkt-card-remove-btn" data-remove-id="${studioEscapeHtml(l.id)}" title="Pazardan kaldır">🗑️</button>`
                     : "";
+                const hiddenBadge = l.isHidden
+                    ? `<span class="mkt-card-tag" style="background:rgba(255,77,77,0.18); color:var(--danger); border-color:rgba(255,77,77,0.4);" title="Sadece moderatörlere görünüyor">🚫 Gizli</span>`
+                    : "";
                 return `
                 <div class="mkt-card" data-listing-id="${studioEscapeHtml(l.id)}">
                     <div class="mkt-card-canvas-wrap" id="mkt-canvas-${studioEscapeHtml(l.id)}">
@@ -13519,6 +14161,7 @@
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px;">
                             <div class="mkt-card-tags">
                                 ${(l.tags||[]).slice(0,3).map(t=>`<span class="mkt-card-tag">${studioEscapeHtml(t)}</span>`).join("")}
+                                ${hiddenBadge}
                             </div>
                             ${stars}
                         </div>
@@ -13627,6 +14270,30 @@
             const isOwner = listing.sellerUid && listing.sellerUid === studioCurrentUid();
             removeBtn.style.display = isOwner ? "flex" : "none";
             removeBtn.onclick = () => mktRemoveListing(listing.id);
+
+            // Başkasının ilanıysa: şikâyet butonu göster (kendi ilanını
+            // şikâyet etmenin bir anlamı yok, zaten kaldırma butonu var).
+            const reportBtn = document.getElementById("mktDetailReportBtn");
+            if (reportBtn) {
+                reportBtn.style.display = isOwner ? "none" : "flex";
+                reportBtn.onclick = () => openGenericReportModal({
+                    targetType: "listing",
+                    targetId: listing.id,
+                    targetLabel: listing.name || listing.id
+                });
+            }
+
+            // Admin/Helper+: pazardan yayından kaldırma (moderasyon —
+            // sahibinin kendi "Pazardan Kaldır" (hard delete) butonundan
+            // FARKLI: bu isHidden bayrağı ile SOFT kaldırma yapar, ilan
+            // verisi silinmez, admin panelinden geri açılabilir).
+            const adminHideBtn = document.getElementById("mktDetailAdminHideBtn");
+            if (adminHideBtn) {
+                const canModerate = window.CommunityRBAC.canModerate(window.CommunityAuth.profile);
+                adminHideBtn.style.display = (canModerate && !isOwner) ? "flex" : "none";
+                adminHideBtn.textContent = listing.isHidden ? "✅ Yayına Geri Al (Admin)" : "🚫 Yayından Kaldır (Admin)";
+                adminHideBtn.onclick = () => mktAdminToggleHidden(listing.id, !listing.isHidden);
+            }
 
             // Yorumlar
             const cmtInputReset = document.getElementById("mktDetailCommentInput");
@@ -13794,6 +14461,36 @@
                 });
             // mktRenderGrid() burada çağrılmıyor — 'marketplace_listings'
             // dinleyicisi silme işlemini alıp arayüzü kendisi güncelleyecek.
+        }
+
+        /**
+         * Admin/Helper+ moderasyonu: ilanı SOFT olarak yayından kaldırır
+         * (isHidden=true) — mktRemoveListing()'in aksine veri SİLİNMEZ,
+         * admin panelinden ya da bu butondan tekrar yayına alınabilir.
+         * Sahibinin kendi ilanını hard-delete etmesinden tamamen ayrı bir
+         * yetki/akıştır.
+         */
+        function mktAdminToggleHidden(listingId, newHiddenValue) {
+            if (!window.CommunityRBAC.canModerate(window.CommunityAuth.profile)) {
+                alert("Bu işlem için yetkiniz yok.");
+                return;
+            }
+            database.ref('marketplace_listings/' + listingId).update({ isHidden: newHiddenValue })
+                .then(() => {
+                    database.ref('audit_logs').push({
+                        action: newHiddenValue ? "hide_listing" : "unhide_listing",
+                        targetId: listingId,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: window.CommunityAuth.profile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    showToastGlobal(newHiddenValue ? "İlan yayından kaldırıldı." : "İlan yayına geri alındı.");
+                    mktCloseDetailModal();
+                })
+                .catch(err => {
+                    console.error("[Pazar] Admin gizleme işlemi başarısız:", err);
+                    showToastGlobal("İşlem sırasında bir sorun oluştu.");
+                });
         }
 
         // ── Satışa çıkarma (artık ücretsiz paylaşım) ─────────────────
@@ -14044,6 +14741,15 @@
             const LS_LAST_READ = "pl_inbox_last_read";
             let _allNotifs = {};   // notifId -> obje
 
+            // report_resolved bildirimlerinde "targetType" alanını okunabilir
+            // Türkçe etikete çevirmek için (bkz. AdminPanel'deki
+            // TARGET_TYPE_LABELS ile aynı sözlük — burada AYRI bir kopya,
+            // çünkü InboxSystem ve AdminPanel farklı IIFE kapsamlarında).
+            const TARGET_TYPE_LABELS_INBOX = {
+                user: "kullanıcı", listing: "pazar ürünü", group: "grup",
+                community: "topluluk", dm: "DM"
+            };
+
             function getLastReadTime() {
                 return parseInt(localStorage.getItem(LS_LAST_READ) || "0", 10);
             }
@@ -14098,27 +14804,54 @@
 
                 const typeBadge = n.type === "mention"
                     ? `<span class="inbox-badge inbox-badge-mention">🔔 Etiketlendin</span>`
+                    : n.type === "reply"
+                    ? `<span class="inbox-badge inbox-badge-reply">💬 Yanıt Geldi</span>`
+                    : n.type === "dm"
+                    ? `<span class="inbox-badge inbox-badge-reply">✉️ Yeni Mesaj</span>`
+                    : n.type === "group"
+                    ? `<span class="inbox-badge inbox-badge-reply">👥 Grup Mesajı</span>`
+                    : n.type === "report_resolved"
+                    ? `<span class="inbox-badge inbox-badge-mention">🚩 Şikâyet Sonuçlandı</span>`
                     : `<span class="inbox-badge inbox-badge-reply">💬 Yanıt Geldi</span>`;
 
                 const description = n.type === "mention"
                     ? `<strong>@${actorName}</strong> seni etiketledi`
+                    : n.type === "reply"
+                    ? `<strong>@${actorName}</strong> sana yanıt verdi`
+                    : n.type === "dm"
+                    ? `<strong>@${actorName}</strong> sana mesaj gönderdi`
+                    : n.type === "group"
+                    ? `<strong>@${actorName}</strong> grupta mesaj yazdı`
+                    : n.type === "report_resolved"
+                    ? `Şikâyetin (${escapeHtml(TARGET_TYPE_LABELS_INBOX[n.targetType] || n.targetType || "içerik")}: ${escapeHtml(n.targetLabel || "")}) incelendi ve tamamlandı`
                     : `<strong>@${actorName}</strong> sana yanıt verdi`;
 
                 const ctxMap = { message: "💬 Genel Sohbet", thread: "📋 Forum Konusu", reply: "💭 Konu Yorumu" };
-                const ctxLabel = ctxMap[n.context] || "📋 Forum";
+                const ctxLabel = n.type === "dm" ? "✉️ Direkt Mesaj"
+                    : n.type === "group" ? "👥 Grup Sohbeti"
+                    : n.type === "report_resolved" ? "🛡️ Yönetici Paneli"
+                    : (ctxMap[n.context] || "📋 Forum");
 
                 const snippetHtml = n.textSnippet
                     ? `<div class="inbox-entry-snippet">"${escapeHtml(n.textSnippet)}"</div>` : "";
 
-                // goto butonu için data attribute'lar
-                const hasTarget = n.messageId || n.threadId;
-                let gotoAttrs   = `data-context="${escapeHtml(n.context || "")}"`;
+                // goto butonu için data attribute'lar. DM/grup bildirimleri
+                // forum context'i taşımaz — ilgili sohbete gitmek için
+                // MessagingSystem'e devrediyoruz (bkz. handleGoTo altında
+                // eklenen dm/group dalları). report_resolved için gidilecek
+                // bir mesaj YOK — bu yüzden goto butonu hiç gösterilmiyor.
+                const hasTarget = n.messageId || n.threadId || (n.type === "dm" && n.dmId) || (n.type === "group" && n.groupId);
+                let gotoAttrs   = `data-context="${escapeHtml(n.context || "")}" data-type="${escapeHtml(n.type || "")}"`;
                 if (n.messageId) gotoAttrs += ` data-message-id="${escapeHtml(n.messageId)}"`;
                 if (n.threadId)  gotoAttrs += ` data-thread-id="${escapeHtml(n.threadId)}"`;
                 if (n.replyId)   gotoAttrs += ` data-reply-id="${escapeHtml(n.replyId)}"`;
+                if (n.dmId)      gotoAttrs += ` data-dm-id="${escapeHtml(n.dmId)}" data-other-uid="${escapeHtml(n.actorUid || "")}"`;
+                if (n.groupId)   gotoAttrs += ` data-group-id="${escapeHtml(n.groupId)}"`;
 
-                const gotoBtn = hasTarget
-                    ? `<button class="inbox-goto-btn" ${gotoAttrs}>Mesaja Git ↗</button>`
+                const gotoBtn = n.type === "report_resolved"
+                    ? "" // gidilecek bir yer yok — sadece bilgilendirme
+                    : hasTarget
+                    ? `<button class="inbox-goto-btn" ${gotoAttrs}>${n.type === "dm" || n.type === "group" ? "Sohbete Git ↗" : "Mesaja Git ↗"}</button>`
                     : `<span class="inbox-goto-disabled" title="Bu içeriğe doğrudan erişilemiyor">—</span>`;
 
                 return `
@@ -14141,11 +14874,27 @@
             // ── "Mesaja Git" akışı ────────────────────────────────────
             function handleGoTo(btn) {
                 const ctx       = btn.getAttribute("data-context");
+                const type      = btn.getAttribute("data-type");
                 const messageId = btn.getAttribute("data-message-id");
                 const threadId  = btn.getAttribute("data-thread-id");
                 const replyId   = btn.getAttribute("data-reply-id");
+                const dmId      = btn.getAttribute("data-dm-id");
+                const otherUid  = btn.getAttribute("data-other-uid");
+                const groupId   = btn.getAttribute("data-group-id");
 
-                if (ctx === "message" && messageId) {
+                if (type === "dm" && dmId && otherUid) {
+                    switchView("messages");
+                    if (window.MessagingSystem && window.MessagingSystem.openDmConversation) {
+                        window.MessagingSystem.openDmConversation(dmId, otherUid);
+                    }
+                } else if (type === "group" && groupId) {
+                    // Not: grup sohbetini doğrudan açan dışa açık bir
+                    // fonksiyon yok (bkz. MessagingSystem'in dışa açtığı
+                    // arayüz) — kullanıcıyı "Gruplar" sekmesine yönlendirip
+                    // listeden seçmesini istiyoruz. Bu, dosyadaki diğer
+                    // "doğrudan erişilemiyor" davranışıyla tutarlıdır.
+                    switchView("groups");
+                } else if (ctx === "message" && messageId) {
                     gotoMessage(messageId);
                 } else if (threadId) {
                     gotoThreadOrReply(threadId, replyId);
@@ -17836,6 +18585,15 @@
                 document.getElementById("groupDetailDeleteBtn")?.addEventListener("click", () => {
                     if (_activeGroupDetailId) deleteGroupCompletely(_activeGroupDetailId);
                 });
+                document.getElementById("groupDetailReportBtn")?.addEventListener("click", () => {
+                    if (!_activeGroupDetailId) return;
+                    const meta = _groupMetaCache[_activeGroupDetailId];
+                    openGenericReportModal({
+                        targetType: "group",
+                        targetId: _activeGroupDetailId,
+                        targetLabel: (meta && meta.name) || "Grup"
+                    });
+                });
                 document.getElementById("groupDetailModalBackdrop")?.addEventListener("click", (e) => {
                     if (e.target.id === "groupDetailModalBackdrop") closeGroupDetailPanel();
                 });
@@ -18393,14 +19151,22 @@
             async function submitCommunityReport() {
                 if (!_activeCommunityPreviewId) return;
                 const groupId = _activeCommunityPreviewId;
+                const communityMeta = _communityDirectoryCache[groupId];
                 const reason = document.getElementById("communityReportReasonSelect").value;
                 const detail = document.getElementById("communityReportDetailInput").value.trim();
                 const errorEl = document.getElementById("communityReportError");
 
+                // NOT: Modül 7'den itibaren TÜM şikayet türleri (kullanıcı,
+                // pazar ürünü, grup, topluluk, DM) tek ortak "reports"
+                // tablosunda toplanıyor — targetType alanıyla ayrılıyor.
+                // Admin panelindeki Şikayetler sekmesi bu tabloyu okur.
+                // (Eski "community_reports" düğümü artık kullanılmıyor.)
                 try {
-                    const reportRef = database.ref("community_reports").push();
+                    const reportRef = database.ref("reports").push();
                     await reportRef.set({
-                        groupId,
+                        targetType: "community",
+                        targetId: groupId,
+                        targetLabel: (communityMeta && communityMeta.name) || groupId,
                         reporterUid: _myUid,
                         reason,
                         detail,
@@ -19378,6 +20144,16 @@
                     await toggleBlockUser(_activeDmOtherUid);
                     document.getElementById("dmHeaderMenuPopover")?.classList.remove("is-open");
                 });
+                document.getElementById("dmMenuReport")?.addEventListener("click", () => {
+                    if (!_activeDmOtherUid) return;
+                    const candidate = window.CommunityMentions.getByUid(_activeDmOtherUid);
+                    openGenericReportModal({
+                        targetType: "dm",
+                        targetId: _activeDmId || _activeDmOtherUid,
+                        targetLabel: "@" + ((candidate && candidate.username) || "kullanıcı")
+                    });
+                    document.getElementById("dmHeaderMenuPopover")?.classList.remove("is-open");
+                });
 
                 // Yeni Grup modalı
                 document.getElementById("groupCreateBtn")?.addEventListener("click", openCreateGroupModal);
@@ -19710,6 +20486,571 @@
             return { init, trigger, playSound };
         })();
 
+        // ==============================================================
+        // 🛡️ MODÜL 7: YÖNETİCİ PANELİ (Admin & Moderasyon)
+        // ==============================================================
+        // Diğer modüllerdeki desene (NotificationSystem, InboxSystem,
+        // MessagingSystem) sadık kalarak IIFE + dışa açık küçük bir arayüz
+        // ile yazıldı. Veri dinleyicileri SADECE panel ilk kez açıldığında
+        // başlar (open() içinde bir kez) — Helper+ olmayan kullanıcılar
+        // zaten nav öğesini görmediği için bu fonksiyona hiç erişemez, ama
+        // yine de her aksiyon fonksiyonu kendi içinde RBAC kontrolü yapıyor
+        // (tek güvenlik katmanı bu değil — gerçek güvenlik RTDB Rules'da
+        // olmalı, bkz. dosya genelindeki diğer "NOT" yorumları).
+        const AdminPanel = (() => {
+            const RBAC = window.CommunityRBAC;
+
+            let _started = false;               // dinleyiciler bir kez başlar
+            let _activeTab = "stats";
+            let _reportStatusFilter = "open";
+            let _userSearchQuery = "";
+
+            // ---- Canlı cache'ler (sadece admin paneli açıldıktan sonra dolar) ----
+            const adminUsersCache = {};         // uid -> tam profil objesi (ban/mute/role dahil)
+            let adminMuteCache = {};            // uid -> mute_status objesi
+            let adminReportsCache = {};         // reportId -> report objesi
+            let adminCommunityDirCache = {};    // groupId -> community_directory objesi
+            window.__adminUsersCacheRef = adminUsersCache; // handleBanToggle/handleRoleChange bu isimle okuyor
+
+            // NOT: handleBanToggle/handleMuteToggle/handleRoleChange dosyanın
+            // üst kısmında "adminUsersCache" adında GLOBAL bir değişken
+            // bekliyor (bkz. Modül 7 - Kullanıcı Yönetimi Fonksiyonları).
+            // O fonksiyonlar tanımlandığında bu modül henüz yoktu; burada
+            // gerçek referansı `window.adminUsersCache` üzerinden sağlıyoruz.
+            window.adminUsersCache = adminUsersCache;
+
+            // ------------------------------------------------------------
+            // A) SEKME GEÇİŞİ
+            // ------------------------------------------------------------
+            function switchAdminTab(tab) {
+                _activeTab = tab;
+                document.querySelectorAll(".admin-tab-btn").forEach((btn) => {
+                    btn.classList.toggle("is-active", btn.getAttribute("data-admin-tab") === tab);
+                });
+                document.querySelectorAll(".admin-tab-panel").forEach((panel) => {
+                    panel.classList.toggle("is-active", panel.getAttribute("data-admin-panel") === tab);
+                });
+            }
+
+            // ------------------------------------------------------------
+            // B) İSTATİSTİKLER
+            // ------------------------------------------------------------
+            function renderStats() {
+                const grid = document.getElementById("adminStatGrid");
+                const note = document.getElementById("adminStatsNote");
+                if (!grid) return;
+
+                const userCount = Object.keys(adminUsersCache).length;
+                const messageCount = Object.keys(forumMessagesCache || {}).length;
+                const listingCount = (mktListingsCache || []).filter(l => !l.isHidden).length;
+                const activeGroupCount = Object.values(adminCommunityDirCache || {}).filter(c => !c.isSuspended).length;
+
+                const cards = [
+                    { value: userCount, label: "Kullanıcı" },
+                    { value: messageCount, label: "Forum Mesajı" },
+                    { value: listingCount, label: "Pazar Ürünü" },
+                    { value: activeGroupCount, label: "Aktif Grup" }
+                ];
+                grid.innerHTML = cards.map(c => `
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value">${c.value}</div>
+                        <div class="admin-stat-label">${c.label}</div>
+                    </div>
+                `).join("");
+                if (note) note.textContent = "Sayaçlar canlı senkron değildir — sekmeye her girişte tazelenir.";
+            }
+
+            // ------------------------------------------------------------
+            // C) KULLANICI YÖNETİMİ (RBAC, Ban, Mute)
+            // ------------------------------------------------------------
+            const ROLE_OPTIONS = ["Player", "Helper", "Moderator", "Admin"]; // Owner listede yok — bkz. handleRoleChange koruması
+
+            function renderUserRow(uid) {
+                const u = adminUsersCache[uid];
+                if (!u) return "";
+                const q = _userSearchQuery.trim().toLowerCase();
+                if (q && !(u.username || "").toLowerCase().includes(q)) return "";
+
+                const mute = adminMuteCache[uid];
+                const isMutedNow = mute && mute.mutedUntil && mute.mutedUntil > Date.now();
+                const isBannedNow = RBAC.isBanActiveNow(u);
+
+                const badges = [
+                    isBannedNow ? `<span class="admin-badge admin-badge-banned">🚫 Banlı</span>` : "",
+                    isMutedNow ? `<span class="admin-badge admin-badge-muted">🔇 Susturulmuş</span>` : ""
+                ].filter(Boolean).join(" ");
+
+                const roleSelectHtml = `
+                    <select class="admin-role-select" data-admin-role-select="${RBAC.escapeHtml(uid)}">
+                        ${ROLE_OPTIONS.map(r => `<option value="${r}" ${u.role === r ? "selected" : ""}>${r}</option>`).join("")}
+                    </select>`;
+
+                return `
+                    <div class="admin-row" data-admin-user-row="${RBAC.escapeHtml(uid)}">
+                        <img class="admin-row-avatar" src="${RBAC.escapeHtml(u.avatarUrl || '')}" alt="" onerror="this.style.visibility='hidden'">
+                        <div class="admin-row-main">
+                            <div class="admin-row-title">${RBAC.renderUsernameWithBadge(u.username, u.isVerified)} ${badges}</div>
+                            <div class="admin-row-sub">${RBAC.escapeHtml(u.role || "Player")}${isBannedNow && u.banReason ? " · Sebep: " + RBAC.escapeHtml(u.banReason) : ""}</div>
+                        </div>
+                        <div class="admin-row-actions">
+                            ${roleSelectHtml}
+                            <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="ban" data-uid="${RBAC.escapeHtml(uid)}">${isBannedNow ? "✅ Yasağı Kaldır" : "🚫 Banla"}</button>
+                            <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="mute" data-uid="${RBAC.escapeHtml(uid)}">${isMutedNow ? "✅ Susturmayı Kaldır" : "🔇 Sustur"}</button>
+                        </div>
+                    </div>`;
+            }
+
+            function renderUserList() {
+                const listEl = document.getElementById("adminUserList");
+                if (!listEl) return;
+                const uids = Object.keys(adminUsersCache).sort((a, b) =>
+                    (adminUsersCache[a].username || "").localeCompare(adminUsersCache[b].username || ""));
+                const html = uids.map(renderUserRow).filter(Boolean).join("");
+                listEl.innerHTML = html || `<div class="hub-placeholder">Sonuç bulunamadı.</div>`;
+            }
+
+            // Ban/Mute onayı gereken aksiyon süreli bir modal üzerinden
+            // alınır (bkz. HTML: adminSanctionModalBackdrop). Kaldırma
+            // işlemleri (zaten aktifse) onay istemeden tek tıkla yapılır.
+            let _pendingSanction = null; // { kind: "ban"|"mute", uid }
+
+            function openSanctionModal(kind, uid) {
+                _pendingSanction = { kind, uid };
+                const titleEl = document.getElementById("adminSanctionModalTitle");
+                const u = adminUsersCache[uid];
+                if (titleEl) titleEl.textContent = `${kind === "ban" ? "Yasakla" : "Sustur"}: @${(u && u.username) || uid}`;
+                document.getElementById("adminSanctionDurationSelect").value = "86400000";
+                document.getElementById("adminSanctionReasonInput").value = "";
+                document.getElementById("adminSanctionError").style.display = "none";
+                document.getElementById("adminSanctionModalBackdrop").style.display = "flex";
+            }
+
+            function closeSanctionModal() {
+                document.getElementById("adminSanctionModalBackdrop").style.display = "none";
+                _pendingSanction = null;
+            }
+
+            async function submitSanctionModal() {
+                if (!_pendingSanction) return;
+                const { kind, uid } = _pendingSanction;
+                const durationRaw = document.getElementById("adminSanctionDurationSelect").value;
+                const durationMs = durationRaw === "0" ? null : parseInt(durationRaw, 10);
+                const reason = document.getElementById("adminSanctionReasonInput").value.trim();
+                const errorEl = document.getElementById("adminSanctionError");
+                try {
+                    if (kind === "ban") {
+                        await handleBanToggle(uid, true, reason, durationMs);
+                    } else {
+                        await handleMuteToggle(uid, true, reason, durationMs);
+                    }
+                    closeSanctionModal();
+                } catch (err) {
+                    errorEl.textContent = "İşlem başarısız: " + (err && err.message ? err.message : err);
+                    errorEl.style.display = "block";
+                }
+            }
+
+            function onUserListClick(e) {
+                const banBtn = e.target.closest('[data-admin-action="ban"]');
+                const muteBtn = e.target.closest('[data-admin-action="mute"]');
+                if (banBtn) {
+                    const uid = banBtn.getAttribute("data-uid");
+                    const u = adminUsersCache[uid];
+                    if (RBAC.isBanActiveNow(u)) {
+                        if (confirm(`@${u.username || uid} için yasağı kaldırmak istediğine emin misin?`)) {
+                            handleBanToggle(uid, false);
+                        }
+                    } else {
+                        openSanctionModal("ban", uid);
+                    }
+                    return;
+                }
+                if (muteBtn) {
+                    const uid = muteBtn.getAttribute("data-uid");
+                    const mute = adminMuteCache[uid];
+                    const isMutedNow = mute && mute.mutedUntil && mute.mutedUntil > Date.now();
+                    if (isMutedNow) {
+                        if (confirm("Susturmayı kaldırmak istediğine emin misin?")) {
+                            handleMuteToggle(uid, false);
+                        }
+                    } else {
+                        openSanctionModal("mute", uid);
+                    }
+                }
+            }
+
+            function onUserListChange(e) {
+                const select = e.target.closest("[data-admin-role-select]");
+                if (!select) return;
+                const uid = select.getAttribute("data-admin-role-select");
+                const newRole = select.value;
+                handleRoleChange(uid, newRole);
+            }
+
+            // ------------------------------------------------------------
+            // D) FORUM MODERASYONU (konular + genel sohbet mesajları)
+            // ------------------------------------------------------------
+            function renderForumModeration() {
+                const threadListEl = document.getElementById("adminThreadList");
+                const msgListEl = document.getElementById("adminMessageList");
+
+                if (threadListEl) {
+                    const threads = Object.keys(forumThreadsCache || {}).map(id => Object.assign({ id }, forumThreadsCache[id]));
+                    threads.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    threadListEl.innerHTML = threads.length ? threads.map(t => {
+                        const author = adminUsersCache[t.authorUid];
+                        return `
+                        <div class="admin-row">
+                            <div class="admin-row-main">
+                                <div class="admin-row-title">${RBAC.escapeHtml(t.title || "(başlıksız)")} ${t.isPinned ? "📌" : ""} ${t.isLocked ? "🔒" : ""}</div>
+                                <div class="admin-row-sub">@${RBAC.escapeHtml((author && author.username) || "bilinmiyor")} · ${t.replyCount || 0} yanıt</div>
+                            </div>
+                            <div class="admin-row-actions">
+                                <button type="button" class="forum-btn forum-btn-ghost" data-thread-action="pin" data-id="${RBAC.escapeHtml(t.id)}">${t.isPinned ? "Sabiti Kaldır" : "📌 Sabitle"}</button>
+                                <button type="button" class="forum-btn forum-btn-ghost" data-thread-action="lock" data-id="${RBAC.escapeHtml(t.id)}">${t.isLocked ? "🔓 Kilidi Aç" : "🔒 Kilitle"}</button>
+                                <button type="button" class="forum-btn forum-btn-ghost" data-thread-action="delete" data-id="${RBAC.escapeHtml(t.id)}" style="color:var(--danger);">🗑 Sil</button>
+                            </div>
+                        </div>`;
+                    }).join("") : `<div class="hub-placeholder">Hiç konu yok.</div>`;
+                }
+
+                if (msgListEl) {
+                    const msgs = Object.keys(forumMessagesCache || {}).map(id => Object.assign({ id }, forumMessagesCache[id]));
+                    msgs.sort((a, b) => (b.pinned === true) - (a.pinned === true) || (b.createdAt || 0) - (a.createdAt || 0));
+                    const top = msgs.slice(0, 50);
+                    msgListEl.innerHTML = top.length ? top.map(m => {
+                        const author = adminUsersCache[m.authorUid];
+                        const snippet = makeNotifSnippet(m.text || "", 80);
+                        return `
+                        <div class="admin-row">
+                            <div class="admin-row-main">
+                                <div class="admin-row-title">${m.pinned ? "📌 " : ""}@${RBAC.escapeHtml((author && author.username) || "bilinmiyor")}</div>
+                                <div class="admin-row-sub">${RBAC.escapeHtml(snippet)}</div>
+                            </div>
+                            <div class="admin-row-actions">
+                                <button type="button" class="forum-btn forum-btn-ghost" data-msg-action="pin" data-id="${RBAC.escapeHtml(m.id)}">${m.pinned ? "Sabiti Kaldır" : "📌 Sabitle"}</button>
+                                <button type="button" class="forum-btn forum-btn-ghost" data-msg-action="delete" data-id="${RBAC.escapeHtml(m.id)}" style="color:var(--danger);">🗑 Sil</button>
+                            </div>
+                        </div>`;
+                    }).join("") : `<div class="hub-placeholder">Hiç mesaj yok.</div>`;
+                }
+            }
+
+            function onThreadListClick(e) {
+                const btn = e.target.closest("[data-thread-action]");
+                if (!btn) return;
+                const id = btn.getAttribute("data-id");
+                const action = btn.getAttribute("data-thread-action");
+                const t = forumThreadsCache[id];
+                if (action === "pin") toggleThreadPin(id, !(t && t.isPinned));
+                else if (action === "lock") toggleThreadLock(id, !(t && t.isLocked));
+                else if (action === "delete") {
+                    if (confirm("Bu konuyu ve tüm yanıtlarını silmek istediğine emin misin?")) deleteThread(id);
+                }
+            }
+
+            function onMessageListClick(e) {
+                const btn = e.target.closest("[data-msg-action]");
+                if (!btn) return;
+                const id = btn.getAttribute("data-id");
+                const action = btn.getAttribute("data-msg-action");
+                const m = forumMessagesCache[id];
+                if (action === "pin") togglePinMessage(id, !(m && m.pinned));
+                else if (action === "delete") {
+                    if (confirm("Bu mesajı silmek istediğine emin misin?")) deleteForumMessage(id);
+                }
+            }
+
+            // ------------------------------------------------------------
+            // E) PAZAR YERİ (3D STUDIO) MODERASYONU
+            // ------------------------------------------------------------
+            function renderMarketplaceModeration() {
+                const listEl = document.getElementById("adminListingList");
+                if (!listEl) return;
+                const listings = (mktListingsCache || []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                listEl.innerHTML = listings.length ? listings.map(l => `
+                    <div class="admin-row">
+                        <div class="admin-row-main">
+                            <div class="admin-row-title">${RBAC.escapeHtml(l.name || "(isimsiz)")} ${l.isHidden ? '<span class="admin-badge admin-badge-banned">Gizli</span>' : ""}</div>
+                            <div class="admin-row-sub">@${RBAC.escapeHtml(l.sellerUsername || "bilinmiyor")}</div>
+                        </div>
+                        <div class="admin-row-actions">
+                            <button type="button" class="forum-btn forum-btn-ghost" data-listing-action="toggle-hide" data-id="${RBAC.escapeHtml(l.id)}">${l.isHidden ? "✅ Yayına Al" : "🚫 Yayından Kaldır"}</button>
+                        </div>
+                    </div>
+                `).join("") : `<div class="hub-placeholder">Hiç ilan yok.</div>`;
+            }
+
+            function onListingListClick(e) {
+                const btn = e.target.closest('[data-listing-action="toggle-hide"]');
+                if (!btn) return;
+                const id = btn.getAttribute("data-id");
+                const l = (mktListingsCache || []).find(x => x.id === id);
+                mktAdminToggleHidden(id, !(l && l.isHidden));
+            }
+
+            // ------------------------------------------------------------
+            // F) ŞİKÂYETLER (ortak reports tablosu)
+            // ------------------------------------------------------------
+            const TARGET_TYPE_LABELS = {
+                user: "👤 Kullanıcı", listing: "🧊 Pazar Ürünü", group: "👥 Grup",
+                community: "🌐 Topluluk", dm: "✉️ DM"
+            };
+
+            function renderReportsList() {
+                const listEl = document.getElementById("adminReportList");
+                if (!listEl) return;
+                let reports = Object.keys(adminReportsCache).map(id => Object.assign({ id }, adminReportsCache[id]));
+                if (_reportStatusFilter !== "all") {
+                    reports = reports.filter(r => (r.status || "open") === _reportStatusFilter);
+                }
+                reports.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                listEl.innerHTML = reports.length ? reports.map(r => {
+                    const reporter = adminUsersCache[r.reporterUid];
+                    const isResolved = r.status === "resolved";
+                    return `
+                    <div class="admin-row">
+                        <div class="admin-row-main">
+                            <div class="admin-row-title">
+                                ${TARGET_TYPE_LABELS[r.targetType] || r.targetType} — ${RBAC.escapeHtml(r.targetLabel || r.targetId)}
+                                <span class="admin-badge ${isResolved ? 'admin-badge-resolved' : 'admin-badge-open'}">${isResolved ? "Tamamlandı" : "Açık"}</span>
+                            </div>
+                            <div class="admin-row-sub">
+                                Şikâyet eden: @${RBAC.escapeHtml((reporter && reporter.username) || "bilinmiyor")} ·
+                                Sebep: ${RBAC.escapeHtml(r.reason || "-")}
+                                ${r.detail ? " · " + RBAC.escapeHtml(r.detail) : ""}
+                                ${isResolved && r.resolvedNote ? `<br>Aksiyon: ${RBAC.escapeHtml(r.resolvedNote)}` : ""}
+                            </div>
+                        </div>
+                        <div class="admin-row-actions">
+                            ${!isResolved ? `<button type="button" class="forum-btn forum-btn-primary" data-report-action="resolve" data-id="${RBAC.escapeHtml(r.id)}">✅ Tamamla</button>` : ""}
+                        </div>
+                    </div>`;
+                }).join("") : `<div class="hub-placeholder">Şikâyet yok.</div>`;
+            }
+
+            let _pendingResolveReportId = null;
+
+            function openResolveModal(reportId) {
+                _pendingResolveReportId = reportId;
+                document.getElementById("adminResolveReportNote").value = "";
+                document.getElementById("adminResolveReportError").style.display = "none";
+                document.getElementById("adminResolveReportModalBackdrop").style.display = "flex";
+            }
+
+            function closeResolveModal() {
+                document.getElementById("adminResolveReportModalBackdrop").style.display = "none";
+                _pendingResolveReportId = null;
+            }
+
+            /**
+             * Şikâyeti "resolved" yapar, açıklamayı kaydeder VE şikâyeti
+             * açan kullanıcıya bir bildirim yazar (writeNotification) --
+             * bu bildirim otomatik olarak "Sana Gelenler" (InboxSystem)
+             * panelinde görünür, çünkü ikisi de aynı notifications/{uid}
+             * düğümünü kullanıyor (bkz. InboxSystem.renderEntry "report_resolved").
+             */
+            async function submitResolveModal() {
+                if (!_pendingResolveReportId) return;
+                const reportId = _pendingResolveReportId;
+                const note = document.getElementById("adminResolveReportNote").value.trim();
+                const errorEl = document.getElementById("adminResolveReportError");
+                const report = adminReportsCache[reportId];
+
+                try {
+                    await database.ref("reports/" + reportId).update({
+                        status: "resolved",
+                        resolvedBy: window.CommunityAuth.user.uid,
+                        resolvedNote: note,
+                        resolvedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+
+                    if (report && report.reporterUid) {
+                        writeNotification(report.reporterUid, {
+                            type: "report_resolved",
+                            actorUsername: window.CommunityAuth.profile.username || "Yetkili",
+                            actorUid: window.CommunityAuth.user.uid,
+                            reportId: reportId,
+                            targetType: report.targetType,
+                            targetLabel: report.targetLabel,
+                            textSnippet: note || "Şikâyetin incelendi."
+                        });
+                    }
+
+                    await database.ref("audit_logs").push({
+                        action: "resolve_report",
+                        targetReportId: reportId,
+                        detail: note,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: window.CommunityAuth.profile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+
+                    closeResolveModal();
+                } catch (err) {
+                    console.error("[Admin] Şikâyet tamamlanamadı:", err);
+                    errorEl.textContent = "İşlem başarısız: " + (err && err.message ? err.message : err);
+                    errorEl.style.display = "block";
+                }
+            }
+
+            function onReportListClick(e) {
+                const btn = e.target.closest('[data-report-action="resolve"]');
+                if (!btn) return;
+                openResolveModal(btn.getAttribute("data-id"));
+            }
+
+            // ------------------------------------------------------------
+            // G) TOPLULUKLAR — askıya alınmışlar listesi
+            // ------------------------------------------------------------
+            function renderSuspendedCommunities() {
+                const listEl = document.getElementById("adminSuspendedList");
+                if (!listEl) return;
+                const suspended = Object.keys(adminCommunityDirCache)
+                    .map(id => Object.assign({ id }, adminCommunityDirCache[id]))
+                    .filter(c => c.isSuspended === true);
+                listEl.innerHTML = suspended.length ? suspended.map(c => `
+                    <div class="admin-row">
+                        <div class="admin-row-main">
+                            <div class="admin-row-title">${RBAC.escapeHtml(c.name || c.id)}</div>
+                            <div class="admin-row-sub">${c.memberCount || 0} üye</div>
+                        </div>
+                        <div class="admin-row-actions">
+                            <button type="button" class="forum-btn forum-btn-primary" data-community-action="unsuspend" data-id="${RBAC.escapeHtml(c.id)}">▶ Askıyı Kaldır</button>
+                        </div>
+                    </div>
+                `).join("") : `<div class="hub-placeholder">Askıya alınmış topluluk yok.</div>`;
+            }
+
+            async function onSuspendedListClick(e) {
+                const btn = e.target.closest('[data-community-action="unsuspend"]');
+                if (!btn) return;
+                const groupId = btn.getAttribute("data-id");
+                if (!RBAC.canModerate(window.CommunityAuth.profile)) {
+                    alert("Bu işlem için yetkiniz yok.");
+                    return;
+                }
+                try {
+                    await database.ref(`group_chats/${groupId}/meta/isSuspended`).set(false);
+                    await database.ref(`community_directory/${groupId}/isSuspended`).set(false);
+                    await database.ref("audit_logs").push({
+                        action: "unsuspend_community",
+                        targetGroupId: groupId,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: window.CommunityAuth.profile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } catch (err) {
+                    console.error("[Admin] Askı kaldırılamadı:", err);
+                    alert("İşlem başarısız oldu.");
+                }
+            }
+
+            // ------------------------------------------------------------
+            // H) DİNLEYİCİLER — sadece panel ilk açıldığında bir kez başlar
+            // ------------------------------------------------------------
+            function startListeners() {
+                if (_started) return;
+                _started = true;
+
+                // Tam kullanıcı profilleri (ban/mute/role dahil) — mention
+                // cache'inden FARKLI, çünkü o cache bu alanları taşımıyor.
+                database.ref("users").on("value", (snap) => {
+                    const all = snap.val() || {};
+                    Object.keys(adminUsersCache).forEach(k => delete adminUsersCache[k]);
+                    Object.keys(all).forEach((uid) => {
+                        adminUsersCache[uid] = Object.assign({ uid }, all[uid]);
+                    });
+                    if (_activeTab === "users") renderUserList();
+                    if (_activeTab === "stats") renderStats();
+                    if (_activeTab === "forum") renderForumModeration();
+                    if (_activeTab === "reports") renderReportsList();
+                });
+
+                database.ref("mute_status").on("value", (snap) => {
+                    adminMuteCache = snap.val() || {};
+                    if (_activeTab === "users") renderUserList();
+                });
+
+                database.ref("reports").on("value", (snap) => {
+                    adminReportsCache = snap.val() || {};
+                    if (_activeTab === "reports") renderReportsList();
+                });
+
+                database.ref("community_directory").on("value", (snap) => {
+                    adminCommunityDirCache = snap.val() || {};
+                    if (_activeTab === "communities") renderSuspendedCommunities();
+                    if (_activeTab === "stats") renderStats();
+                });
+
+                // forum_threads / forum_messages / marketplace_listings zaten
+                // başka modüller tarafından dinleniyor (forumThreadsCache,
+                // forumMessagesCache, mktListingsCache) — burada AYRI bir
+                // dinleyici açmıyoruz, sadece bu cache'leri periyodik
+                // olarak (sekme her açıldığında) okuyup render ediyoruz.
+            }
+
+            // ------------------------------------------------------------
+            // I) DIŞA AÇIK: open() — nav'dan "admin" sekmesine geçildiğinde çağrılır
+            // ------------------------------------------------------------
+            function open() {
+                if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) return; // ekstra güvenlik katmanı
+                startListeners();
+                renderStats();
+                renderUserList();
+                renderForumModeration();
+                renderMarketplaceModeration();
+                renderReportsList();
+                renderSuspendedCommunities();
+            }
+
+            // ------------------------------------------------------------
+            // J) OLAY BAĞLAMA (bir kez, DOMContentLoaded'da)
+            // ------------------------------------------------------------
+            function initEvents() {
+                document.querySelectorAll(".admin-tab-btn").forEach((btn) => {
+                    btn.addEventListener("click", () => switchAdminTab(btn.getAttribute("data-admin-tab")));
+                });
+
+                document.getElementById("adminUserSearchInput")?.addEventListener("input", (e) => {
+                    _userSearchQuery = e.target.value || "";
+                    renderUserList();
+                });
+                document.getElementById("adminUserList")?.addEventListener("click", onUserListClick);
+                document.getElementById("adminUserList")?.addEventListener("change", onUserListChange);
+
+                document.getElementById("adminThreadList")?.addEventListener("click", onThreadListClick);
+                document.getElementById("adminMessageList")?.addEventListener("click", onMessageListClick);
+
+                document.getElementById("adminListingList")?.addEventListener("click", onListingListClick);
+
+                document.getElementById("adminReportStatusFilter")?.addEventListener("change", (e) => {
+                    _reportStatusFilter = e.target.value;
+                    renderReportsList();
+                });
+                document.getElementById("adminReportList")?.addEventListener("click", onReportListClick);
+                document.getElementById("adminResolveReportModalClose")?.addEventListener("click", closeResolveModal);
+                document.getElementById("adminResolveReportCancelBtn")?.addEventListener("click", closeResolveModal);
+                document.getElementById("adminResolveReportModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "adminResolveReportModalBackdrop") closeResolveModal();
+                });
+                document.getElementById("adminResolveReportSubmitBtn")?.addEventListener("click", submitResolveModal);
+
+                document.getElementById("adminSuspendedList")?.addEventListener("click", onSuspendedListClick);
+
+                document.getElementById("adminSanctionModalClose")?.addEventListener("click", closeSanctionModal);
+                document.getElementById("adminSanctionCancelBtn")?.addEventListener("click", closeSanctionModal);
+                document.getElementById("adminSanctionModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "adminSanctionModalBackdrop") closeSanctionModal();
+                });
+                document.getElementById("adminSanctionSubmitBtn")?.addEventListener("click", submitSanctionModal);
+            }
+
+            return { open, initEvents };
+        })();
+        window.AdminPanel = AdminPanel;
+
         document.addEventListener("communitystudio:auth-ready", (e) => {
             showHubShell(e.detail.user, e.detail.profile);
             NotificationSystem.init(e.detail.user.uid);
@@ -19730,6 +21071,8 @@
             initProfileAvatarEditor();
             initProfileSocialLinks();
             initGateLoginForm();
+            initGenericReportModal();
+            AdminPanel.initEvents();
             if (window.CommunityAuth && window.CommunityAuth.ready && window.CommunityAuth.isAuthorized) {
                 showHubShell(window.CommunityAuth.user, window.CommunityAuth.profile);
             }
