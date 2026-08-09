@@ -14412,6 +14412,25 @@
                 if (threadListView) threadListView.style.display = "none";
                 if (threadDetailView) threadDetailView.style.display = "none";
                 if (generalChatView) generalChatView.style.display = "block";
+                // 🐛 BUGFIX (gerçek kaynak): Genel Sohbet mesaj listesi
+                // (#forumMessagesList) login sonrası otomatik render
+                // ediliyor ama forumGeneralChatView o ana kadar hep
+                // display:none'dır — yani ilk render sırasında liste GERÇEK
+                // ANLAMDA gizliydi ve renderForumMessages içindeki "ilk
+                // render'da en alta git" bayrağı zaten tetiklenmiş olsa da
+                // o an clientHeight/scrollHeight tarayıcı tarafından henüz
+                // ölçülebilir değildi. Kullanıcı BU sekmeye (kategori
+                // tabına) her tıkladığında display:none'dan block'a geçiş
+                // gerçek scroll pozisyonunu ETKİLEMEZ — tarayıcı önceki
+                // (geçersiz) scrollTop'ı korur. Bu yüzden görünür olduğu
+                // her an açıkça en alta kaydırıyoruz.
+                const forumListEl = document.getElementById("forumMessagesList");
+                if (forumListEl) {
+                    forumListEl.scrollTop = forumListEl.scrollHeight;
+                    requestAnimationFrame(() => {
+                        forumListEl.scrollTop = forumListEl.scrollHeight;
+                    });
+                }
                 return;
             }
 
@@ -20217,9 +20236,33 @@
                     groupIds.forEach((gid) => {
                         database.ref("group_chats/" + gid + "/meta").on("value", (metaSnap) => {
                             const meta = metaSnap.val();
+                            const wasCommunityMember = !!(_groupMetaCache[gid] && _groupMetaCache[gid].isCommunity === true);
                             if (!meta) { delete _groupMetaCache[gid]; }
                             else { _groupMetaCache[gid] = meta; }
                             renderGroupChatList();
+
+                            // 🐛 BUGFIX: forumdaki ":ad:" özel emojileri
+                            // (renderRichContent -> myCommunityGroupIds)
+                            // kullanıcının üye olduğu TOPLULUKLARIN meta
+                            // verisine (isCommunity===true) bağlı. F5 sonrası
+                            // sayfa yüklenirken forum mesajları genelde bu
+                            // meta verisinden ÖNCE render edilir; o anda
+                            // myCommunityGroupIds() boş döndüğü için emoji
+                            // bulunamaz VE hiçbir emoji-cache dinleyicisi
+                            // kurulmadığından (forEach'in içi hiç çalışmaz)
+                            // meta daha sonra gelse bile forum kendini asla
+                            // yeniden çizmiyordu — emoji kalıcı olarak
+                            // ":nightstorm:" gibi düz metin kalıyordu. Artık
+                            // bu grup bir TOPLULUK ise (üyelik durumu
+                            // değişmiş olsun ya da olmasın, meta her
+                            // geldiğinde) forumun görünür bölümlerini
+                            // açıkça yeniden çiziyoruz ki emoji cache'i
+                            // güncel myCommunityGroupIds() ile tekrar
+                            // taransın ve görsele dönüşsün.
+                            const isCommunityNow = !!(meta && meta.isCommunity === true);
+                            if (isCommunityNow || wasCommunityMember) {
+                                if (typeof rerenderForumViews === "function") rerenderForumViews();
+                            }
 
                             // Grup detay paneli şu an bu grup için açıksa
                             // (üye çıkarma / rol değişimi / foto-isim
