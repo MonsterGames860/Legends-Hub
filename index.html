@@ -14725,8 +14725,26 @@
             const allReplies = Object.keys(repliesMap).map((id) => ({ id, ...repliesMap[id] }));
             allReplies.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
+            // 🐛 BUGFIX: konuya girildiğinde yorumlar en ESKİDEN başlayarak
+            // dizildiği için (doğru sıralama budur — Discord/forum tarzı
+            // kronolojik akış), listEl'in kendisi HİÇ scroll edilmiyordu ve
+            // tarayıcı varsayılan olarak listeyi EN ÜSTTE (ilk/en eski
+            // yorum) bırakıyordu. Kullanıcı konuya her girdiğinde en SON
+            // (en yeni) yorumu görmesi beklenir — tıpkı Genel Sohbet'teki
+            // renderForumMessages'daki wasNearBottom/prevScrollTop mantığı
+            // gibi: zaten alttaysa (yeni yorum takibi) alta kaydır/kal,
+            // yukarıda bir yerde okuyorsa mevcut konumu koru.
+            const NEAR_BOTTOM_PX = 80;
+            const wasNearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) <= NEAR_BOTTOM_PX;
+            const prevScrollTop = listEl.scrollTop;
+            // İlk render'da (henüz hiç scroll edilmemiş, scrollTop === 0 ve
+            // içerik henüz boşken) da en alta gitmesi gerektiği için bunu
+            // "en alta git" durumu sayıyoruz.
+            const isFirstRender = listEl.dataset.threadRepliesInited !== threadId;
+
             if (allReplies.length === 0) {
                 listEl.innerHTML = '<div class="hub-placeholder">Henüz yorum yok. İlk yorumu sen yaz!</div>';
+                listEl.dataset.threadRepliesInited = threadId;
                 return;
             }
 
@@ -14740,6 +14758,17 @@
                 (r, isGrouped) => renderSingleReply(r, threadId, isGrouped)
             );
             attachReplyActionHandlers(listEl, threadId);
+
+            if (isFirstRender || wasNearBottom) {
+                listEl.scrollTop = listEl.scrollHeight;
+                // İçerik (avatar görselleri vb.) asenkron yüklenip
+                // scrollHeight'ı geç büyütebileceği için bir kare sonra da
+                // tekrar en alta sabitliyoruz.
+                requestAnimationFrame(() => { listEl.scrollTop = listEl.scrollHeight; });
+            } else {
+                listEl.scrollTop = prevScrollTop;
+            }
+            listEl.dataset.threadRepliesInited = threadId;
         }
 
         function renderSingleReply(r, threadId, isGrouped) {
