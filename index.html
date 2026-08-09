@@ -6048,6 +6048,54 @@
         font-style: italic;
     }
 
+    /* ==========================================================
+       🎨 İSİM RENGİ SİSTEMİ (OG ve üzeri) — Profil Temasından
+       BAĞIMSIZ. Bu bölüm sadece kullanıcı adı metnini boyar;
+       mention chip'in arka planı/kenarlığı/[TAG] rütbe etiketi
+       BU SINIFLARDAN ETKİLENMEZ (onlar ayrı, sabit stillerdir).
+       .name-color-rgb kullanılan her yerde aynı CSS custom
+       property (--name-rgb-stops) okunur, böylece tek bir
+       @keyframes tüm platformda (sohbet, forum, profil, mention)
+       tutarlı çalışır.
+       ========================================================== */
+    @keyframes nameColorRgbShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Düz HEX renk modu: hem .user-name-colored hem mention içindeki
+       isim span'i için ortak. Rengin kendisi inline style ile
+       data-user-color üzerinden yazılır (bkz. JS: applyNameColorToEl). */
+    .user-name-colored {
+        color: var(--name-color, inherit);
+    }
+
+    /* RGB / çoklu-renk modu: background-clip:text tekniğiyle akan
+       gradyan metin rengi olarak kullanılır. --name-rgb-stops
+       JS tarafından inline style olarak set edilir. */
+    .name-color-rgb {
+        background-image: var(--name-rgb-stops, linear-gradient(90deg, #ff005c, #00e5ff, #ff005c));
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        animation: nameColorRgbShift 4s linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .name-color-rgb { animation: none; background-position: 0% 50%; }
+    }
+
+    /* Mention chip İÇİNDEKİ isim parçası — chip'in kendi kutusu
+       (arka plan/kenarlık/padding) .mention-chip'ten miras kalır ve
+       ASLA kullanıcı rengiyle değişmez. Sadece bu iç span boyanır. */
+    .mention-chip-name {
+        display: inline-flex;
+        align-items: center;
+    }
+
     /* MODÜL 5 EKLENTİ 1: @everyone -- diğer mention'lardan görsel olarak
        ayrışsın diye uyarı/turuncu tonunda, cursor:default (tıklanabilir
        bir profil değil). */
@@ -8168,6 +8216,64 @@
                         </div>
                     </div>
 
+                    <!-- ══════════════════════════════════════════════════════
+                         🎨 İSİM RENGİ SİSTEMİ — Profil Temasından TAMAMEN
+                         BAĞIMSIZ ayrı bir panel. Sadece OG ve üzeri
+                         rütbeler (kozmetik rütbe listesi — bkz. RBAC
+                         resolveThemeTier "og" kademesiyle AYNI eşik)
+                         kullanıcı adı rengini (HEX veya RGB animasyonlu)
+                         değiştirebilir. Rütbesi OG altında olanlarda bu
+                         panel kilitli görünür ve değişiklik yapılamaz.
+                         ══════════════════════════════════════════════════ -->
+                    <div class="profile-card" id="nameColorCard" style="display:none;">
+                        <div class="profile-card-header"><span>İsim Rengi</span></div>
+                        <div class="profile-theme-scope-note">✨ Bu ayar <strong>Profil Teması</strong>'ndan bağımsızdır. Seçtiğin renk; sohbet, forum, profil kartı ve etiketlemelerde (@KullanıcıAdı) ismini boyar.</div>
+
+                        <div class="theme-locked-banner" id="nameColorLockedBanner" style="display:none;">
+                            🔒 <span>Özel isim rengi ve RGB modu <strong>OG ve üzeri</strong> rütbelere özeldir.</span>
+                        </div>
+
+                        <div id="nameColorControls" style="display:none;">
+                            <div class="theme-custom-row" id="nameColorCustomRow">
+                                <input type="color" id="nameColorHexPicker" value="#66fcf1">
+                                <input type="text" class="theme-custom-hex" id="nameColorHexInput" placeholder="#66FCF1" maxlength="7">
+                                <button type="button" class="profile-btn profile-btn-ghost" id="nameColorApplyHexBtn" style="flex-shrink:0;">Tek Renk Uygula</button>
+                            </div>
+
+                            <div class="theme-rainbow-row">
+                                <div class="theme-rainbow-label">
+                                    <strong>🌀 RGB Animasyonlu İsim</strong>
+                                    <small>Aşağıdan 2-6 renk seç; isminin harfleri bu renkler arasında akıcı şekilde geçiş yapar.</small>
+                                </div>
+                                <label class="profile-toggle">
+                                    <input type="checkbox" id="nameColorRainbowToggle">
+                                    <span class="profile-toggle-track"></span>
+                                </label>
+                            </div>
+
+                            <div class="theme-rgb-picker" id="nameColorRgbPicker" style="display:none;">
+                                <div class="theme-rgb-picker-label">RGB döngüsüne dahil renkler (en az 2, en fazla 6):</div>
+                                <div class="theme-rgb-selected-chips" id="nameColorRgbChips"></div>
+                                <div class="theme-rgb-add-row">
+                                    <div class="theme-custom-row" style="margin-top:8px;">
+                                        <input type="color" id="nameColorRgbColorInput" value="#66fcf1">
+                                        <input type="text" class="theme-custom-hex" id="nameColorRgbHexInput" placeholder="#66FCF1" maxlength="7">
+                                        <button type="button" class="profile-btn profile-btn-ghost" id="nameColorRgbAddBtn" style="flex-shrink:0;">+ Renk Ekle</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-admin-row" style="margin-top:10px;">
+                                <span id="nameColorPreviewLabel">Önizleme:</span>
+                                <span id="nameColorPreviewName" class="user-name-colored" style="font-weight:700; font-size:1rem;">KullanıcıAdı</span>
+                            </div>
+
+                            <div class="theme-custom-row" style="margin-top:10px;">
+                                <button type="button" class="profile-btn profile-btn-ghost" id="nameColorResetBtn">Varsayılana Sıfırla</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- PWA İNDİRME KARTI -->
                     <div class="profile-card" id="pwaInstallCard" style="display:none;">
                         <div class="profile-card-header"><span>Uygulama</span></div>
@@ -8543,10 +8649,21 @@
          * Rütbe etiketi + kullanıcı adı + (varsa) mavi tik — sohbet ve
          * profil kartlarında kullanıcı isimlerinin gösterileceği TEK
          * merkezi fonksiyon. Format: "[RÜTBE] KullanıcıAdı ✓"
+         *
+         * `nameColor` (opsiyonel, 5. parametre): normalize edilmiş
+         * { mode:"hex", color } veya { mode:"rainbow", colors } objesi.
+         * VERİLDİĞİNDE SADECE KullanıcıAdı kısmı boyanır — [RÜTBE]
+         * etiketinin kendi rengi (getRankColor) HİÇ değişmez, çünkü
+         * formatRankTagHtml burada ayrı çağrılır ve nameColor'dan
+         * habersizdir. Bu, İstenen "sabit [TAG], dinamik isim" kuralının
+         * garantisidir.
          */
-        function renderNameWithRank(username, role, isVerified) {
+        function renderNameWithRank(username, role, isVerified, nameColor) {
             const safeName = escapeHtml(username || "Kullanıcı");
-            return `${formatRankTagHtml(role)}${safeName}${renderVerifiedBadge(isVerified)}`;
+            const nameHtml = window.NameColorSystem
+                ? window.NameColorSystem.wrapNameWithColor(safeName, nameColor)
+                : safeName;
+            return `${formatRankTagHtml(role)}${nameHtml}${renderVerifiedBadge(isVerified)}`;
         }
 
         /**
@@ -8631,6 +8748,98 @@
             imgEl.src = avatarUrl;
         }
 
+        // ==============================================================
+        // 🎨 İSİM RENGİ SİSTEMİ (OG ve üzeri) — MODÜL: NameColorSystem
+        // ==============================================================
+        // Profil Teması'ndan (--accent, site geneli vurgu rengi) TAMAMEN
+        // BAĞIMSIZ ikinci bir kişiselleştirme katmanı. Bu sistem SADECE
+        // kullanıcının GÖRÜNEN İSMİNİ boyar — [RÜTBE] etiketinin rengini
+        // (getRankColor/formatRankTagHtml) HİÇ ETKİLEMEZ.
+        //
+        // Veri şekli (users/{uid}/nameColor altında saklanır):
+        //   { mode: "hex", color: "#rrggbb" }
+        //   { mode: "rainbow", colors: ["#rrggbb", ...] }  (2-6 renk)
+        //   null / yok -> renk yok, isim normal (varsayılan) renginde.
+        //
+        // Yetki kuralı: sadece OG ve üzeri (aynı eşik: resolveThemeTier
+        // === "og" — Profil Teması'nın 3. kademesiyle BİREBİR aynı rütbe
+        // listesini kullanır, ki iki sistem arasında tutarsızlık olmasın).
+        // ==============================================================
+
+        const NAME_COLOR_MIN_COLORS = 2;
+        const NAME_COLOR_MAX_COLORS = 6;
+        const NAME_COLOR_DEFAULT_COLORS = ["#ff005c", "#00e5ff"];
+
+        function canUseNameColor(profile) {
+            return resolveThemeTier(profile && profile.role) === "og";
+        }
+
+        function isValidHexColor(hex) {
+            return typeof hex === "string" && /^#[0-9a-fA-F]{6}$/.test(hex);
+        }
+
+        /**
+         * nameColor verisini doğrular/normalize eder. Geçersiz veya
+         * yetkisiz veri her zaman null döner (= renksiz/varsayılan).
+         */
+        function normalizeNameColor(raw, profile) {
+            if (!raw || typeof raw !== "object") return null;
+            if (!canUseNameColor(profile)) return null; // yetkisizse asla uygulanmaz
+            if (raw.mode === "hex" && isValidHexColor(raw.color)) {
+                return { mode: "hex", color: raw.color.toLowerCase() };
+            }
+            if (raw.mode === "rainbow" && Array.isArray(raw.colors)) {
+                const valid = raw.colors.filter(isValidHexColor).slice(0, NAME_COLOR_MAX_COLORS);
+                if (valid.length >= NAME_COLOR_MIN_COLORS) {
+                    return { mode: "rainbow", colors: valid.map((c) => c.toLowerCase()) };
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Bir kullanıcının nameColor verisinden CSS'e uygulanabilir
+         * {className, styleAttr} çifti üretir. Bu fonksiyon TEK merkezi
+         * kaynaktır — sohbet, forum, profil kartı ve mention'lar HEPSİ
+         * buradan geçer, böylece renk mantığı tek yerde yaşar ve her
+         * yerde birebir aynı görünür.
+         *
+         * `viewerSafe` = true ise (varsayılan) profile nesnesi olmadan,
+         * doğrudan zaten-doğrulanmış nameColor verisiyle çalışır (mention
+         * cache'i gibi RBAC profile objesi taşımayan durumlar için).
+         */
+        function buildNameColorPresentation(nameColor) {
+            if (!nameColor) return { className: "", styleAttr: "" };
+            if (nameColor.mode === "hex" && isValidHexColor(nameColor.color)) {
+                return {
+                    className: "user-name-colored",
+                    styleAttr: ` style="--name-color:${nameColor.color};"`
+                };
+            }
+            if (nameColor.mode === "rainbow" && Array.isArray(nameColor.colors) && nameColor.colors.length >= NAME_COLOR_MIN_COLORS) {
+                const loop = nameColor.colors.concat([nameColor.colors[0]]);
+                const gradient = `linear-gradient(90deg, ${loop.join(", ")})`;
+                return {
+                    className: "user-name-colored name-color-rgb",
+                    styleAttr: ` style="--name-rgb-stops:${gradient};"`
+                };
+            }
+            return { className: "", styleAttr: "" };
+        }
+
+        /**
+         * İsmi (zaten escape edilmiş HTML güvenli string olarak) kullanıcının
+         * nameColor verisine göre saran <span> üretir. [TAG] rütbe etiketi
+         * bu fonksiyona hiç girmez — çağıran kod onu ayrı ekler, böylece
+         * etiketin sabit rengi bu sarmalamadan asla etkilenmez.
+         */
+        function wrapNameWithColor(safeNameHtml, nameColor, extraClass) {
+            const pres = buildNameColorPresentation(nameColor);
+            if (!pres.className) return safeNameHtml;
+            const cls = extraClass ? `${pres.className} ${extraClass}` : pres.className;
+            return `<span class="${cls}"${pres.styleAttr}>${safeNameHtml}</span>`;
+        }
+
         // Diğer tüm modüllerin (Forum, 3D Studio, Admin Panel, Mesajlaşma)
         // erişebilmesi için global'e açıyoruz.
         window.CommunityRBAC = {
@@ -8650,6 +8859,11 @@
             renderNameWithRank,
             renderCommunityMemberName
         };
+
+        // NameColorSystem: RBAC'tan ayrı ama onunla aynı dosyada, RBAC'ın
+        // resolveThemeTier'ına (Modül 6'da tanımlı) bağımlı olduğu için
+        // gerçek window ataması dosyanın ilerisinde (resolveThemeTier
+        // tanımlandıktan hemen sonra) yapılır — bkz. aşağıdaki blok.
 
         // ==============================================================
         // 🎨 MODÜL 6 — PROFİL İSTATİSTİKLERİ + RÜTBE BAZLI TEMA SİSTEMİ
@@ -8692,6 +8906,328 @@
         function themeTierAtLeast(currentTier, requiredTier) {
             return THEME_TIER_ORDER.indexOf(currentTier) >= THEME_TIER_ORDER.indexOf(requiredTier);
         }
+
+        // NameColorSystem'i burada (resolveThemeTier tanımlandıktan hemen
+        // sonra) global'e açıyoruz — canUseNameColor/normalizeNameColor
+        // resolveThemeTier'a bağımlı olduğu için tanım sırası bu şekilde.
+        window.NameColorSystem = {
+            MIN_COLORS: NAME_COLOR_MIN_COLORS,
+            MAX_COLORS: NAME_COLOR_MAX_COLORS,
+            DEFAULT_COLORS: NAME_COLOR_DEFAULT_COLORS.slice(),
+            canUse: canUseNameColor,
+            isValidHex: isValidHexColor,
+            normalize: normalizeNameColor,
+            buildPresentation: buildNameColorPresentation,
+            wrapNameWithColor: wrapNameWithColor
+        };
+
+        // ==============================================================
+        // 🎨 İSİM RENGİ — PROFİL PANELİ (UI olay bağlama + render)
+        // ==============================================================
+        // Bu blok, Profil Teması'nın initProfileTheme() ile BİREBİR aynı
+        // deseni izler (tek seferlik olay bağlama, dataset.wired koruması)
+        // ama TAMAMEN ayrı bir DOM ağacı (#nameColorCard) ve ayrı bir
+        // Firebase alanı (users/{uid}/nameColor) üzerinde çalışır.
+        // ==============================================================
+
+        let nameColorRgbPendingColors = null;
+
+        /**
+         * Kullanıcının kaydedilmiş nameColor tercihini Firebase profil
+         * objesinden okur (localStorage KULLANILMAZ — isim rengi, tema
+         * renginden farklı olarak platformda HERKESE görünen bir veri
+         * olduğu için tek doğru kaynak sunucudur, cihaz-yerel değil).
+         */
+        function getStoredNameColor(profile) {
+            return normalizeNameColor(profile && profile.nameColor, profile);
+        }
+
+        /**
+         * Yeni nameColor tercihini doğrular, yetkiyi kontrol eder ve
+         * Firebase'e yazar. mentionUserCache ve tüm açık görünümler
+         * canlı Firebase dinleyicisi üzerinden (startMentionUserCache /
+         * profile-updated event'i) otomatik güncellenir — ayrı bir
+         * "yayın" mekanizmasına gerek yoktur.
+         */
+        function setNameColor(nameColorObj) {
+            const profile = window.CommunityAuth && window.CommunityAuth.profile;
+            if (!canUseNameColor(profile)) {
+                alert("🔒 Özel isim rengi ve RGB modu OG ve üzeri rütbelere özeldir.");
+                return;
+            }
+
+            let toSave = null;
+            if (nameColorObj) {
+                if (nameColorObj.mode === "hex") {
+                    if (!isValidHexColor(nameColorObj.color)) {
+                        alert("Geçerli bir HEX renk kodu gir (örn. #66FCF1).");
+                        return;
+                    }
+                    toSave = { mode: "hex", color: nameColorObj.color.toLowerCase() };
+                } else if (nameColorObj.mode === "rainbow") {
+                    const colors = Array.isArray(nameColorObj.colors) ? nameColorObj.colors.filter(isValidHexColor) : [];
+                    if (colors.length < NAME_COLOR_MIN_COLORS) {
+                        alert(`🔒 RGB modu için en az ${NAME_COLOR_MIN_COLORS} renk seçmelisin.`);
+                        return;
+                    }
+                    if (colors.length > NAME_COLOR_MAX_COLORS) {
+                        alert(`En fazla ${NAME_COLOR_MAX_COLORS} renk seçebilirsin.`);
+                        return;
+                    }
+                    toSave = { mode: "rainbow", colors: colors.map((c) => c.toLowerCase()) };
+                }
+            }
+            // toSave === null -> "Varsayılana Sıfırla" (renk kaldırılıyor)
+
+            try {
+                if (window.CommunityAuth && window.CommunityAuth.user && typeof database !== "undefined") {
+                    database.ref('users/' + window.CommunityAuth.user.uid + '/nameColor').set(toSave);
+                } else {
+                    console.warn("[NameColor] Firebase bağlantısı yok, kaydedilemedi.");
+                    return;
+                }
+            } catch (e) {
+                console.warn("[NameColor] Firebase'e yazılamadı:", e);
+                return;
+            }
+
+            // Yerel profile önbelleğini de anında güncelle ki panel ve
+            // önizleme, sunucu geri-bildirimini beklemeden tepki versin.
+            if (window.CommunityAuth && window.CommunityAuth.profile) {
+                window.CommunityAuth.profile.nameColor = toSave;
+            }
+            renderNameColorPanel(window.CommunityAuth && window.CommunityAuth.profile);
+        }
+
+        /**
+         * RGB renk chip panelini çizer (Profil Teması'ndaki
+         * renderRgbColorPicker ile aynı görsel deseni kullanır, ama
+         * kendi bağımsız pending-liste state'i üzerinde çalışır).
+         */
+        function renderNameColorRgbPicker(colors, enabled) {
+            const chipsEl = document.getElementById("nameColorRgbChips");
+            if (!chipsEl) return;
+
+            if (!nameColorRgbPendingColors) {
+                nameColorRgbPendingColors = colors.slice();
+            }
+            const pending = nameColorRgbPendingColors;
+
+            chipsEl.innerHTML = "";
+            pending.forEach((hex, idx) => {
+                const chip = document.createElement("span");
+                chip.className = "theme-rgb-chip";
+
+                const dot = document.createElement("span");
+                dot.className = "theme-rgb-chip-dot";
+                dot.style.background = hex;
+                chip.appendChild(dot);
+
+                const label = document.createElement("span");
+                label.textContent = hex.toUpperCase();
+                chip.appendChild(label);
+
+                if (pending.length > NAME_COLOR_MIN_COLORS) {
+                    const removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "theme-rgb-chip-remove";
+                    removeBtn.textContent = "✕";
+                    removeBtn.disabled = !enabled;
+                    removeBtn.addEventListener("click", () => {
+                        nameColorRgbPendingColors.splice(idx, 1);
+                        renderNameColorRgbPicker(nameColorRgbPendingColors, enabled);
+                        updateNameColorPreview();
+                    });
+                    chip.appendChild(removeBtn);
+                }
+                chipsEl.appendChild(chip);
+            });
+        }
+
+        /**
+         * Önizleme alanını (#nameColorPreviewName), panelde o an
+         * seçili/hazır olan renk moduna göre canlı günceller —
+         * kaydetmeden önce kullanıcı sonucu görebilsin diye.
+         */
+        function updateNameColorPreview() {
+            const previewEl = document.getElementById("nameColorPreviewName");
+            if (!previewEl) return;
+            const rainbowToggle = document.getElementById("nameColorRainbowToggle");
+            const hexInput = document.getElementById("nameColorHexInput");
+            const colorInput = document.getElementById("nameColorHexPicker");
+
+            previewEl.className = "user-name-colored";
+            previewEl.style.cssText = "font-weight:700; font-size:1rem;";
+
+            if (rainbowToggle && rainbowToggle.checked && nameColorRgbPendingColors && nameColorRgbPendingColors.length >= NAME_COLOR_MIN_COLORS) {
+                const pres = buildNameColorPresentation({ mode: "rainbow", colors: nameColorRgbPendingColors });
+                previewEl.className = `${pres.className}`;
+                previewEl.setAttribute("style", `font-weight:700; font-size:1rem; ${pres.styleAttr.replace(/^ style="|"$/g, "")}`);
+            } else {
+                let hex = (hexInput && hexInput.value) || (colorInput && colorInput.value) || "";
+                if (hex && !hex.startsWith("#")) hex = "#" + hex;
+                if (isValidHexColor(hex)) {
+                    const pres = buildNameColorPresentation({ mode: "hex", color: hex });
+                    previewEl.className = `${pres.className}`;
+                    previewEl.setAttribute("style", `font-weight:700; font-size:1rem; ${pres.styleAttr.replace(/^ style="|"$/g, "")}`);
+                }
+            }
+        }
+
+        /**
+         * İsim Rengi kartını doldurur, kilit durumunu uygular ve (ilk
+         * çağrıda) tüm olay dinleyicilerini bağlar. profileThemeCard
+         * ile aynı yaşam döngüsünü izler: renderProfileView -> isSelf
+         * ise burası da çağrılır.
+         */
+        function renderNameColorPanel(profile) {
+            const card = document.getElementById("nameColorCard");
+            if (!card) return;
+            card.style.display = "block";
+
+            const canOg = canUseNameColor(profile);
+            const lockedBanner = document.getElementById("nameColorLockedBanner");
+            const controls = document.getElementById("nameColorControls");
+            if (lockedBanner) lockedBanner.style.display = canOg ? "none" : "flex";
+            if (controls) controls.style.display = canOg ? "block" : "none";
+
+            if (!canOg) {
+                // Rütbesi OG altında olan kullanıcılar için panel
+                // tamamen kilitli/yetkisiz görünür — kontrolleri hiç
+                // render etmiyoruz (sadece gizlemekle kalmıyoruz, ki
+                // devtools üzerinden görünür yapılsa bile setNameColor
+                // içindeki sunucu-taraflı-eşdeğer kontrol zaten reddeder).
+                return;
+            }
+
+            const stored = getStoredNameColor(profile);
+            const hexPicker = document.getElementById("nameColorHexPicker");
+            const hexInput = document.getElementById("nameColorHexInput");
+            const rainbowToggle = document.getElementById("nameColorRainbowToggle");
+            const rgbPicker = document.getElementById("nameColorRgbPicker");
+            const applyBtn = document.getElementById("nameColorApplyHexBtn");
+            const rgbColorInput = document.getElementById("nameColorRgbColorInput");
+            const rgbHexInput = document.getElementById("nameColorRgbHexInput");
+            const rgbAddBtn = document.getElementById("nameColorRgbAddBtn");
+            const resetBtn = document.getElementById("nameColorResetBtn");
+
+            // --- Mevcut durumu forma yansıt ---
+            if (stored && stored.mode === "hex") {
+                if (hexPicker) hexPicker.value = stored.color;
+                if (hexInput) hexInput.value = stored.color.toUpperCase();
+                if (rainbowToggle) rainbowToggle.checked = false;
+                if (rgbPicker) rgbPicker.style.display = "none";
+            } else if (stored && stored.mode === "rainbow") {
+                if (rainbowToggle) rainbowToggle.checked = true;
+                if (rgbPicker) rgbPicker.style.display = "block";
+                nameColorRgbPendingColors = stored.colors.slice();
+            } else {
+                if (rainbowToggle) rainbowToggle.checked = false;
+                if (rgbPicker) rgbPicker.style.display = "none";
+            }
+
+            const currentRgbColors = (stored && stored.mode === "rainbow")
+                ? stored.colors.slice()
+                : NAME_COLOR_DEFAULT_COLORS.slice();
+            renderNameColorRgbPicker(currentRgbColors, true);
+            updateNameColorPreview();
+
+            // --- Olay dinleyicileri (tek seferlik kurulum) ---
+            if (applyBtn && !applyBtn.dataset.wired) {
+                applyBtn.dataset.wired = "1";
+                applyBtn.addEventListener("click", () => {
+                    let hex = (hexInput.value || hexPicker.value || "").trim();
+                    if (!hex.startsWith("#")) hex = "#" + hex;
+                    setNameColor({ mode: "hex", color: hex });
+                });
+            }
+
+            if (hexPicker && !hexPicker.dataset.wired) {
+                hexPicker.dataset.wired = "1";
+                hexPicker.addEventListener("input", () => {
+                    if (hexInput) hexInput.value = hexPicker.value.toUpperCase();
+                    updateNameColorPreview();
+                });
+            }
+
+            if (hexInput && !hexInput.dataset.wired) {
+                hexInput.dataset.wired = "1";
+                hexInput.addEventListener("input", updateNameColorPreview);
+            }
+
+            if (rainbowToggle && !rainbowToggle.dataset.wired) {
+                rainbowToggle.dataset.wired = "1";
+                rainbowToggle.addEventListener("change", () => {
+                    if (rgbPicker) rgbPicker.style.display = rainbowToggle.checked ? "block" : "none";
+                    if (rainbowToggle.checked) {
+                        if (!nameColorRgbPendingColors || nameColorRgbPendingColors.length < NAME_COLOR_MIN_COLORS) {
+                            nameColorRgbPendingColors = NAME_COLOR_DEFAULT_COLORS.slice();
+                        }
+                        renderNameColorRgbPicker(nameColorRgbPendingColors, true);
+                        setNameColor({ mode: "rainbow", colors: nameColorRgbPendingColors.slice() });
+                    } else {
+                        // RGB kapatıldığında, o an geçerli HEX alanı varsa
+                        // onu uygula; yoksa rengi tamamen kaldır.
+                        const hex = (hexInput.value || hexPicker.value || "").trim();
+                        if (isValidHexColor(hex)) {
+                            setNameColor({ mode: "hex", color: hex });
+                        } else {
+                            setNameColor(null);
+                        }
+                    }
+                    updateNameColorPreview();
+                });
+            }
+
+            if (rgbColorInput && !rgbColorInput.dataset.wired) {
+                rgbColorInput.dataset.wired = "1";
+                rgbColorInput.addEventListener("input", () => {
+                    if (rgbHexInput) rgbHexInput.value = rgbColorInput.value.toUpperCase();
+                });
+            }
+
+            if (rgbAddBtn && !rgbAddBtn.dataset.wired) {
+                rgbAddBtn.dataset.wired = "1";
+                rgbAddBtn.addEventListener("click", () => {
+                    let hex = (rgbHexInput.value || rgbColorInput.value || "").trim();
+                    if (!hex.startsWith("#")) hex = "#" + hex;
+                    if (!isValidHexColor(hex)) {
+                        alert("Geçerli bir HEX renk kodu gir (örn. #FF005C).");
+                        return;
+                    }
+                    if (!nameColorRgbPendingColors) nameColorRgbPendingColors = NAME_COLOR_DEFAULT_COLORS.slice();
+                    if (nameColorRgbPendingColors.length >= NAME_COLOR_MAX_COLORS) {
+                        alert(`En fazla ${NAME_COLOR_MAX_COLORS} renk ekleyebilirsin.`);
+                        return;
+                    }
+                    if (nameColorRgbPendingColors.some((c) => c.toLowerCase() === hex.toLowerCase())) {
+                        alert("Bu renk zaten listede.");
+                        return;
+                    }
+                    nameColorRgbPendingColors.push(hex.toLowerCase());
+                    renderNameColorRgbPicker(nameColorRgbPendingColors, true);
+                    updateNameColorPreview();
+                    const rt = document.getElementById("nameColorRainbowToggle");
+                    if (rt && rt.checked) {
+                        setNameColor({ mode: "rainbow", colors: nameColorRgbPendingColors.slice() });
+                    }
+                });
+            }
+
+            if (resetBtn && !resetBtn.dataset.wired) {
+                resetBtn.dataset.wired = "1";
+                resetBtn.addEventListener("click", () => {
+                    if (rainbowToggle) rainbowToggle.checked = false;
+                    if (rgbPicker) rgbPicker.style.display = "none";
+                    nameColorRgbPendingColors = NAME_COLOR_DEFAULT_COLORS.slice();
+                    setNameColor(null);
+                });
+            }
+        }
+
+        window.NameColorSystem.renderPanel = renderNameColorPanel;
+        window.NameColorSystem.set = setNameColor;
+        window.NameColorSystem.getStored = getStoredNameColor;
 
         // ---------- Hazır renk paletleri ----------
         const THEME_BASIC_PALETTE = [
@@ -9296,13 +9832,22 @@
 
                 Object.keys(all).forEach((uid) => {
                     const u = all[uid] || {};
+                    // nameColor: kaydedilmiş rütbe yetersizse (ör. rütbe
+                    // sonradan düşürüldüyse) normalize() burada null döner
+                    // ve mention otomatik olarak renksiz görünür — ekstra
+                    // bir "temizlik" işlemi gerekmez, kontrol HER render'da
+                    // güncel rütbeye göre tekrar yapılır.
+                    const fakeProfileForTierCheck = { role: u.role || "user" };
                     mentionUserCache[uid] = {
                         uid,
                         username: u.username || u.originalUsername || "Kullanıcı",
                         originalUsername: u.originalUsername || u.username || "",
                         isVerified: u.isVerified === true,
                         avatarUrl: u.avatarUrl || "",
-                        role: u.role || "user"
+                        role: u.role || "user",
+                        nameColor: window.NameColorSystem
+                            ? window.NameColorSystem.normalize(u.nameColor, fakeProfileForTierCheck)
+                            : null
                     };
                 });
 
@@ -9500,8 +10045,24 @@
                 }
                 const roleColor = roleColorResolver ? roleColorResolver(uid) : null;
                 const colorStyle = roleColor ? ` style="color:${escapeHtml(roleColor)};"` : "";
+                // ── İSİM RENGİ (OG+) ──────────────────────────────────────
+                // ÇOK ÖNEMLİ KURAL: chip'in kendisi (.mention-chip — arka
+                // plan, kenarlık, padding) HER ZAMAN sabit/varsayılan
+                // kalır; roleColor bile chip'in DIŞ style'ına değil (o da
+                // zaten sadece metin rengi), aşağıdaki iç isim span'ine
+                // uygulanmaz. Kullanıcının nameColor'ı SADECE isim
+                // metnini (@KullanıcıAdı kısmını) sarmalayan iç span'e
+                // uygulanır — chip'in kutusuna hiç dokunmaz. Kullanıcı
+                // ismini/rengini sonradan değiştirse bile, bu mention her
+                // render'da mentionUserCache'ten GÜNCEL nameColor'ı okur;
+                // saklanan veri her zaman sadece [mention:UID] token'ıdır,
+                // yani geçmiş mention'lar asla "bozulmaz" / statik kalmaz.
+                const mentionNameCore = `@${escapeHtml(candidate.username)}`;
+                const mentionNameHtml = (window.NameColorSystem && candidate.nameColor)
+                    ? window.NameColorSystem.wrapNameWithColor(mentionNameCore, candidate.nameColor, "mention-chip-name")
+                    : `<span class="mention-chip-name" data-user-color="${candidate.nameColor ? (candidate.nameColor.mode) : 'none'}">${mentionNameCore}</span>`;
                 return `<span class="mention-chip" data-mention-uid="${uid}"${colorStyle}>` +
-                    `@${escapeHtml(candidate.username)}` +
+                    mentionNameHtml +
                     renderVerifiedBadge(candidate.isVerified) +
                     `</span>`;
             });
@@ -10276,10 +10837,12 @@
             if (!profile) return;
 
             if (nameEl) {
+                const nameColor = window.NameColorSystem ? window.NameColorSystem.normalize(profile.nameColor, profile) : null;
                 nameEl.innerHTML = window.CommunityRBAC.renderNameWithRank(
                     profile.username,
                     profile.role,
-                    profile.isVerified === true
+                    profile.isVerified === true,
+                    nameColor
                 );
             }
             if (roleEl) roleEl.textContent = (profile.role || "Player").toUpperCase();
@@ -10347,8 +10910,15 @@
 
             // --- Üst kart ---
             window.CommunityRBAC.applyAvatarToImg(document.getElementById("profileAvatarImg"), profile.avatarUrl);
-            document.getElementById("profileUsernameText").innerHTML =
-                RBAC.formatRankTagHtml(profile.role) + RBAC.escapeHtml(profile.username || "Kullanıcı");
+            {
+                const nameColorForHeader = window.NameColorSystem ? window.NameColorSystem.normalize(profile.nameColor, profile) : null;
+                const safeHeaderName = RBAC.escapeHtml(profile.username || "Kullanıcı");
+                const headerNameHtml = window.NameColorSystem
+                    ? window.NameColorSystem.wrapNameWithColor(safeHeaderName, nameColorForHeader)
+                    : safeHeaderName;
+                document.getElementById("profileUsernameText").innerHTML =
+                    RBAC.formatRankTagHtml(profile.role) + headerNameHtml;
+            }
             document.getElementById("profileVerifiedBadgeSlot").innerHTML =
                 RBAC.renderVerifiedBadge(profile.isVerified === true, "18px");
 
@@ -10367,10 +10937,13 @@
             // olmalı; başkasının profiline bakarken kart tamamen gizlenir.
             renderProfileStats(profile);
             const themeCardEl = document.getElementById("profileThemeCard");
+            const nameColorCardEl = document.getElementById("nameColorCard");
             if (isSelf) {
                 initProfileTheme(profile);
-            } else if (themeCardEl) {
-                themeCardEl.style.display = "none";
+                renderNameColorPanel(profile);
+            } else {
+                if (themeCardEl) themeCardEl.style.display = "none";
+                if (nameColorCardEl) nameColorCardEl.style.display = "none";
             }
 
             // --- Bio ---
@@ -12459,12 +13032,13 @@
             const username = candidate ? candidate.username : "Kullanıcı";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
+            const nameColor = candidate ? candidate.nameColor : null;
             const canPin = RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
             return `
                 <div class="forum-pinned-item">
                     <div class="forum-message-header">
                         <span class="forum-message-username">
-                            ${RBAC.renderNameWithRank(username, role, isVerified)}
+                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
                         </span>
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
@@ -12479,6 +13053,7 @@
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
+            const nameColor = candidate ? candidate.nameColor : null;
             const isWhisper = !!m.whisperToUid;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
@@ -12519,7 +13094,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-message-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
                     ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
@@ -12854,6 +13429,7 @@
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
+            const nameColor = candidate ? candidate.nameColor : null;
 
             const tagsHtml = `
                 ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
@@ -12871,7 +13447,7 @@
                             ${tagsHtml}
                         </div>
                         <div class="forum-thread-meta">
-                            <span>${RBAC.renderNameWithRank(username, role, isVerified)}</span>
+                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}</span>
                             <span class="forum-thread-meta-sep">·</span>
                             <span>${formatMessageTime(t.createdAt)}</span>
                         </div>
@@ -13030,6 +13606,7 @@
             const username = candidate ? candidate.username : "Kullanıcı";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
+            const nameColor = candidate ? candidate.nameColor : null;
             const viewerProfile = window.CommunityAuth.profile;
             const myUid = window.CommunityAuth.user.uid;
             const canModerateThread = RBAC.hasMinimumTier(viewerProfile, "helper");
@@ -13051,7 +13628,7 @@
                 </div>
                 <div class="forum-thread-detail-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(t.createdAt)}</span>
                 </div>
@@ -13128,6 +13705,7 @@
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
+            const nameColor = candidate ? candidate.nameColor : null;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
             const thread = forumThreadsCache[threadId];
@@ -13155,7 +13733,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-reply-header">
                     <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
                     </span>
                     <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
                 </div>`;
@@ -15438,6 +16016,7 @@
                 const username  = (candidate && candidate.username) || c.username || "Kullanıcı";
                 const isVerified = candidate ? candidate.isVerified : !!c.isVerified;
                 const role      = candidate ? candidate.role : (c.role || "");
+                const nameColor = candidate ? candidate.nameColor : null;
                 const avatarUrl = candidate ? candidate.avatarUrl : (c.avatarUrl || "");
                 const time = studioFormatRelativeDate(c.createdAt);
                 const bodyHtml = typeof renderRichContent === "function"
@@ -15461,7 +16040,7 @@
                     <div class="mkt-comment-body">
                         <div class="mkt-comment-header">
                             <span class="mkt-comment-author" data-cmt-uid="${studioEscapeHtml(c.uid||"")}">
-                                ${RBAC.renderNameWithRank(username, role, isVerified)}
+                                ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
                             </span>
                             <span class="mkt-comment-time">${time}</span>
                         </div>
@@ -20530,6 +21109,7 @@
                     const avatarUrl = candidate ? candidate.avatarUrl : "";
                     const isVerified = candidate ? candidate.isVerified : false;
                     const role = candidate ? candidate.role : "";
+                    const nameColor = candidate ? candidate.nameColor : null;
 
                     // Gruplama kararı: aynı gönderen, üst üste, aradaki süre
                     // pencere içinde, ve bir yanıt (replyTo) değilse (bir
@@ -20558,12 +21138,21 @@
                     if (shouldShowSender) {
                         const timeInline = isDiscordMode ? `<span class="msg-bubble-sender-time">${formatMessageTime(m.createdAt)}</span>` : "";
                         if (isCommunityBubble) {
+                            // Kullanıcının kişisel isim rengi (OG+), topluluğun
+                            // yerel rol rengine göre ÖNCELİKLİDİR -- kişisel
+                            // seçim, o topluluğa özel rol renginin üzerine yazılır.
                             const highestRole = window.CommunityChannels.getHighestRoleForMember(_activeGroupId, m.authorUid);
                             const roleColor = highestRole ? highestRole.color_hex : null;
-                            senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor)}${timeInline}</div>`;
+                            if (nameColor && window.NameColorSystem) {
+                                const safeCommunityName = RBAC.escapeHtml(username || "Kullanıcı");
+                                const coloredCommunityName = window.NameColorSystem.wrapNameWithColor(safeCommunityName, nameColor);
+                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderVerifiedBadge(isVerified)}${timeInline}</div>`;
+                            } else {
+                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor)}${timeInline}</div>`;
+                            }
                         } else {
                             const groupRoleHtml = groupRoleBadgeHtml(activeMetaForBubble, m.authorUid, { forBubble: true });
-                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified)}${timeInline}</div>`;
+                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}${timeInline}</div>`;
                         }
                     }
 
