@@ -4992,6 +4992,93 @@
         background: var(--bg-panel);
         border: 1px solid var(--line);
         border-radius: var(--radius);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* ==========================================================
+       🖼️ PROFİL BANNER (kapak görseli) — OG ve üzeri rütbelere
+       özel. .profile-hero'nun İÇİNE, en üste, tam genişlikte
+       gömülür; avatar/isim/rütbe satırı bannerın ÜZERİNDE kalır
+       (z-index ile). Banner yoksa hero eski (düz panel) haliyle
+       görünmeye devam eder — geriye dönük uyumlu.
+       ========================================================== */
+    .profile-banner {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+        z-index: 0;
+    }
+    .profile-hero.has-banner .profile-banner {
+        opacity: 1;
+    }
+    /* Banner üstünde okunabilirlik için alttan koyu bir gradyan */
+    .profile-hero.has-banner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(11,12,16,0.35) 0%, rgba(11,12,16,0.82) 100%);
+        z-index: 0;
+    }
+    .profile-hero > .profile-avatar-wrap,
+    .profile-hero > .profile-hero-info {
+        position: relative;
+        z-index: 1;
+    }
+    .profile-banner-edit-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: rgba(11,12,16,0.65);
+        color: var(--text-primary);
+        font-size: 0.82rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+    .profile-banner-edit-btn:hover { background: rgba(11,12,16,0.85); }
+
+    /* ==========================================================
+       🎨 PROFİL ARKA PLANI (kişisel) — Veteran ve üzeri rütbelere
+       özel. Sadece .profile-page KONTEYNERİNİ (kartların arkasını,
+       kartların kendisini DEĞİL) boyar/görsel yapar — site geneli
+       body/menü arka planına dokunmaz.
+       ========================================================== */
+    .profile-page.has-custom-bg {
+        position: relative;
+        border-radius: var(--radius);
+        padding: 14px;
+        margin: -14px;
+    }
+    .profile-page.has-custom-bg::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius);
+        background-color: var(--profile-bg-color, transparent);
+        background-image: var(--profile-bg-image, none);
+        background-size: cover;
+        background-position: center;
+        z-index: -1;
+    }
+    .profile-page.has-custom-bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius);
+        background: rgba(11,12,16,0.4);
+        z-index: -1;
     }
 
     .profile-avatar-wrap {
@@ -6360,6 +6447,114 @@
     }
     .inbox-mark-read-btn:hover { color: var(--text-primary); border-color: var(--text-dim); }
 
+    /* ══════════════════════════════════════════════════════════
+       👥 OYUNCULAR (Players Directory)
+       ══════════════════════════════════════════════════════════ */
+    .players-dir-page {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-width: 720px;
+    }
+    .players-dir-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .players-dir-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+    }
+    .players-dir-count {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+    }
+    .players-dir-search {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel);
+        color: var(--text-primary);
+        font-size: 0.88rem;
+        outline: none;
+    }
+    .players-dir-search:focus { border-color: var(--accent); }
+    .players-dir-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .players-dir-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel);
+        cursor: pointer;
+        transition: border-color 0.15s, transform 0.1s;
+    }
+    .players-dir-item:hover {
+        border-color: var(--text-dim);
+        transform: translateY(-1px);
+    }
+    .players-dir-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #000;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .players-dir-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+    }
+    .players-dir-name {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .players-dir-role {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+    }
+    .players-dir-empty {
+        text-align: center;
+        color: var(--text-dim);
+        padding: 30px 10px;
+        font-size: 0.85rem;
+    }
+    .players-dir-loadmore {
+        align-self: center;
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        border-radius: 8px;
+        padding: 8px 18px;
+        cursor: pointer;
+        margin-top: 6px;
+    }
+    .players-dir-loadmore:hover { color: var(--text-primary); border-color: var(--text-dim); }
+
     /* ── Giriş kartı ── */
     .inbox-list {
         display: flex;
@@ -6759,6 +6954,16 @@
                     </svg>
                     Sana Gelenler
                     <span class="hub-nav-badge" id="inboxUnreadBadge" style="display:none;">0</span>
+                </div>
+
+                <div class="hub-nav-item" data-view="players">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="5.5" cy="5" r="2.4" fill="currentColor"/>
+                        <circle cx="11" cy="5.6" r="1.9" fill="currentColor" opacity="0.6"/>
+                        <path d="M1.2 13.4c0-2.4 1.9-4.1 4.3-4.1s4.3 1.7 4.3 4.1" fill="currentColor"/>
+                        <path d="M9.6 9.7c1.9 0.2 3.3 1.7 3.3 3.7" stroke="currentColor" stroke-width="1.3" fill="none" opacity="0.6"/>
+                    </svg>
+                    Oyuncular
                 </div>
 
                 <div class="hub-nav-item" data-view="admin" data-restricted="true" data-min-role="helper">
@@ -8033,11 +8238,33 @@
                 </div>
             </section>
 
+            <!-- 👥 OYUNCULAR — kayıtlı tüm oyuncuları listeler, arama ile
+                 filtrelenir, herhangi birine tıklanınca profiline gidilir. -->
+            <section class="hub-view" data-view="players">
+                <div class="players-dir-page" id="playersDirPage">
+                    <div class="players-dir-header">
+                        <span class="players-dir-title">Oyuncular</span>
+                        <span class="players-dir-count" id="playersDirCount">— oyuncu</span>
+                    </div>
+                    <input type="text" class="players-dir-search" id="playersDirSearchInput" placeholder="🔍 Kullanıcı adına göre ara…" autocomplete="off">
+                    <div class="players-dir-list" id="playersDirList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
+            </section>
+
             <section class="hub-view" data-view="profile">
                 <div class="profile-page" id="profilePage">
 
                     <!-- ÜST KART: avatar, isim + mavi tik, rütbe, bio -->
-                    <div class="profile-hero">
+                    <div class="profile-hero" id="profileHero">
+                        <!-- 🖼️ BANNER (kapak görseli) — OG ve üzeri. Kendi
+                             profilinde kalem ikonu görünür; başkasının
+                             profilinde sadece görüntülenir (varsa). -->
+                        <div class="profile-banner" id="profileBannerBg"></div>
+                        <button class="profile-banner-edit-btn" id="profileBannerEditBtn" title="Banner değiştir" style="display:none;">✏️</button>
+                        <input type="file" id="profileBannerFileInput" accept="image/*" style="display:none;">
+
                         <div class="profile-avatar-wrap">
                             <img class="profile-avatar" id="profileAvatarImg" src="" alt="Avatar">
                             <button class="profile-avatar-edit" id="profileAvatarEditBtn" title="Avatarı değiştir">✏️</button>
@@ -8272,6 +8499,41 @@
 
                             <div class="theme-custom-row" style="margin-top:10px;">
                                 <button type="button" class="profile-btn profile-btn-ghost" id="nameColorResetBtn">Varsayılana Sıfırla</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         🎨 PROFİL ARKA PLANI (kişisel) — Veteran ve üzeri
+                         rütbelere özel. İsim Rengi'nden ve Profil
+                         Teması'ndan (site geneli) TAMAMEN AYRI: bu kart
+                         yalnızca kendi profil sayfamızın kart alanının
+                         arkasını (düz renk veya kendi yüklediğin görsel)
+                         özelleştirir.
+                         ══════════════════════════════════════════════════ -->
+                    <div class="profile-card" id="profileBgCard" style="display:none;">
+                        <div class="profile-card-header"><span>Profil Arka Planı</span></div>
+                        <div class="profile-theme-scope-note">🖌️ Bu ayar sadece kendi profil sayfanın arka planını değiştirir; site genelini etkilemez.</div>
+
+                        <div class="theme-locked-banner" id="profileBgLockedBanner" style="display:none;">
+                            🔒 <span>Profil arka planı <strong>Veteran ve üzeri</strong> rütbelere özeldir.</span>
+                        </div>
+
+                        <div id="profileBgControls" style="display:none;">
+                            <div class="theme-custom-row" id="profileBgCustomRow">
+                                <input type="color" id="profileBgColorPicker" value="#1f2937">
+                                <input type="text" class="theme-custom-hex" id="profileBgHexInput" placeholder="#1F2937" maxlength="7">
+                                <button type="button" class="profile-btn profile-btn-ghost" id="profileBgApplyColorBtn" style="flex-shrink:0;">Renk Uygula</button>
+                            </div>
+
+                            <div class="theme-custom-row" style="margin-top:10px;">
+                                <button type="button" class="profile-btn profile-btn-ghost" id="profileBgUploadBtn" style="flex-shrink:0;">🖼️ Kendi Görselini Yükle</button>
+                                <span id="profileBgUploadStatus" style="display:none; font-size:0.75rem; color:var(--text-dim);"></span>
+                            </div>
+                            <input type="file" id="profileBgFileInput" accept="image/*" style="display:none;">
+
+                            <div class="theme-custom-row" style="margin-top:10px;">
+                                <button type="button" class="profile-btn profile-btn-ghost" id="profileBgResetBtn">Varsayılana Sıfırla</button>
                             </div>
                         </div>
                     </div>
@@ -10956,19 +11218,35 @@
             document.getElementById("profileRoleChip").textContent = profile.role || "Player";
 
             // --- MODÜL 6: İstatistikler + Rütbe Bazlı Profil Teması ---
-            // Not: hem Profil Teması hem İsim Rengi kartları SADECE kendi
-            // profilinde düzenlenebilir/görünür olmalı; başkasının
-            // profiline bakarken her iki kart da tamamen gizlenir.
+            // Not: hem Profil Teması hem İsim Rengi hem Profil Arka Planı
+            // kartları SADECE kendi profilinde düzenlenebilir/görünür
+            // olmalı; başkasının profiline bakarken tüm bu kartlar
+            // tamamen gizlenir.
             renderProfileStats(profile);
             const themeCardEl = document.getElementById("profileThemeCard");
             const nameColorCardEl = document.getElementById("nameColorCard");
+            const profileBgCardEl = document.getElementById("profileBgCard");
+            const bannerEditBtnEl = document.getElementById("profileBannerEditBtn");
             if (isSelf) {
                 initProfileTheme(profile);
                 renderNameColorPanel(profile);
+                renderProfileBgPanel(profile);
+                if (bannerEditBtnEl) {
+                    bannerEditBtnEl.style.display = (resolveThemeTier(profile.role) === "og") ? "flex" : "none";
+                }
+                initProfileBannerEditor();
             } else {
                 if (themeCardEl) themeCardEl.style.display = "none";
                 if (nameColorCardEl) nameColorCardEl.style.display = "none";
+                if (profileBgCardEl) profileBgCardEl.style.display = "none";
+                if (bannerEditBtnEl) bannerEditBtnEl.style.display = "none";
             }
+
+            // Banner ve kişisel arka plan: profil sahibi kim olursa olsun
+            // (kendi profilimiz veya başkasınınki) GÖRÜNTÜLENİR — sadece
+            // DÜZENLEME kontrolleri kendi profilimizle sınırlıdır.
+            applyProfileBannerToDom(profile.profileBanner || null);
+            applyProfileBackgroundToDom(profile.profileBackground || null);
 
             // --- Bio ---
             document.getElementById("profileBioText").textContent =
@@ -11464,8 +11742,287 @@
         }
 
         // ==============================================================
-        // 🔗 MODÜL 2 - BÖLÜM E: SOSYAL BAĞLANTI SİSTEMİ
+        // 🖼️ PROFİL BANNER + 🎨 PROFİL ARKA PLANI (kişisel özelleştirme)
         // ==============================================================
+        // İkisi de Firebase Storage KULLANMAZ (avatar ile aynı desen):
+        // görsel tarayıcıda <canvas> ile sıkıştırılıp base64 data URL
+        // olarak doğrudan Realtime Database'e yazılır.
+        //
+        // Yetki eşiği (resolveThemeTier — Profil Teması/İsim Rengi ile
+        // AYNI kozmetik rütbe listesini kullanır):
+        //   • Banner (kapak görseli)      -> sadece "og" (OG ve üzeri)
+        //   • Profil Arka Planı (renk/görsel) -> "veteran" ve üzeri
+        //
+        // Firebase alanları: users/{uid}/profileBanner (data URL veya
+        // null), users/{uid}/profileBackground ({mode:"color",color} /
+        // {mode:"image",image:dataUrl} / null).
+        // ==============================================================
+
+        const BANNER_MAX_WIDTH = 900;       // px — kapak görseli hedef genişlik
+        const BANNER_MAX_HEIGHT = 300;       // px — hedef yükseklik (3:1 oran)
+        const BANNER_JPEG_QUALITY = 0.78;
+        const BANNER_MAX_BASE64_BYTES = 350 * 1024;
+
+        const PROFILE_BG_MAX_WIDTH = 700;
+        const PROFILE_BG_MAX_HEIGHT = 700;
+        const PROFILE_BG_JPEG_QUALITY = 0.75;
+        const PROFILE_BG_MAX_BASE64_BYTES = 300 * 1024;
+
+        /**
+         * compressImageFileToDataUrl'den FARKLI olarak KIRPMA YAPMAZ —
+         * görseli, en-boy oranını koruyarak verilen kutuya SIĞDIRIR
+         * (letterbox/pad yok, sadece ölçekler). Banner ve profil arka
+         * planı için uygundur; avatar'ın aksine kare zorlaması istenmez.
+         */
+        function compressImageFileToDataUrlFit(file, maxW, maxH, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const objectUrl = URL.createObjectURL(file);
+
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+
+                    const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                    const outW = Math.round(img.width * scale);
+                    const outH = Math.round(img.height * scale);
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = outW;
+                    canvas.height = outH;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, outW, outH);
+
+                    resolve(canvas.toDataURL("image/jpeg", quality));
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error("Görsel okunamadı."));
+                };
+                img.src = objectUrl;
+            });
+        }
+
+        /**
+         * O an açık profil sayfasında banner'ı DOM'a uygular. bannerDataUrlOrNull
+         * boş ise .has-banner class'ı kaldırılır ve hero eski (düz panel) haline döner.
+         */
+        function applyProfileBannerToDom(bannerDataUrlOrNull) {
+            const hero = document.getElementById("profileHero");
+            const bg = document.getElementById("profileBannerBg");
+            if (!hero || !bg) return;
+            if (bannerDataUrlOrNull) {
+                bg.style.backgroundImage = `url("${bannerDataUrlOrNull}")`;
+                hero.classList.add("has-banner");
+            } else {
+                bg.style.backgroundImage = "none";
+                hero.classList.remove("has-banner");
+            }
+        }
+
+        /**
+         * O an açık profil sayfasında kişisel arka planı (.profile-page)
+         * uygular. bgObj: {mode:"color",color} / {mode:"image",image} / null.
+         */
+        function applyProfileBackgroundToDom(bgObj) {
+            const page = document.getElementById("profilePage");
+            if (!page) return;
+            page.style.removeProperty("--profile-bg-color");
+            page.style.removeProperty("--profile-bg-image");
+            page.classList.remove("has-custom-bg");
+
+            if (!bgObj) return;
+            if (bgObj.mode === "color" && isValidHex(bgObj.color)) {
+                page.style.setProperty("--profile-bg-color", bgObj.color);
+                page.classList.add("has-custom-bg");
+            } else if (bgObj.mode === "image" && bgObj.image) {
+                page.style.setProperty("--profile-bg-image", `url("${bgObj.image}")`);
+                page.classList.add("has-custom-bg");
+            }
+        }
+
+        /**
+         * Banner düzenleme kalemi + dosya input'unu bağlar. Sadece
+         * kendi profilimizde çağrılır (renderProfileView -> isSelf).
+         */
+        function initProfileBannerEditor() {
+            const editBtn = document.getElementById("profileBannerEditBtn");
+            const fileInput = document.getElementById("profileBannerFileInput");
+            if (!editBtn || !fileInput) return;
+            if (editBtn.dataset.wired) return; // tek seferlik kurulum
+            editBtn.dataset.wired = "1";
+
+            editBtn.addEventListener("click", () => fileInput.click());
+
+            fileInput.addEventListener("change", async () => {
+                const file = fileInput.files && fileInput.files[0];
+                fileInput.value = "";
+                if (!file) return;
+
+                const profile = window.CommunityAuth && window.CommunityAuth.profile;
+                if (resolveThemeTier(profile && profile.role) !== "og") {
+                    alert("🔒 Profil banner'ı OG ve üzeri rütbelere özeldir.");
+                    return;
+                }
+                if (!file.type.startsWith("image/")) {
+                    alert("Lütfen bir görsel dosyası seçin.");
+                    return;
+                }
+                const MAX_RAW_BYTES = 15 * 1024 * 1024;
+                if (file.size > MAX_RAW_BYTES) {
+                    alert("Görsel çok büyük. Lütfen 15MB'tan küçük bir dosya seçin.");
+                    return;
+                }
+
+                const uid = window.CommunityAuth.user.uid;
+                editBtn.textContent = "⏳";
+                editBtn.disabled = true;
+
+                try {
+                    const dataUrl = await compressImageFileToDataUrlFit(file, BANNER_MAX_WIDTH, BANNER_MAX_HEIGHT, BANNER_JPEG_QUALITY);
+                    const approxBytes = Math.ceil((dataUrl.length * 3) / 4);
+                    if (approxBytes > BANNER_MAX_BASE64_BYTES) {
+                        alert("Görsel sıkıştırıldıktan sonra bile çok büyük kaldı. Lütfen daha basit/düşük çözünürlüklü bir görsel deneyin.");
+                        return;
+                    }
+                    await database.ref('users/' + uid).update({ profileBanner: dataUrl });
+                    applyProfileBannerToDom(dataUrl);
+                    if (profile) profile.profileBanner = dataUrl;
+                } catch (err) {
+                    console.error("[Profile] Banner yüklenemedi:", err);
+                    const reason = (err && err.code === "PERMISSION_DENIED")
+                        ? "Yetkiniz olmadığı için banner kaydedilemedi (veritabanı kuralları engelledi)."
+                        : "Banner yüklenemedi. Lütfen tekrar deneyin.";
+                    alert(reason);
+                } finally {
+                    editBtn.textContent = "✏️";
+                    editBtn.disabled = false;
+                }
+            });
+        }
+
+        /**
+         * "Profil Arka Planı" kartını doldurur, kilit durumunu uygular
+         * ve (ilk çağrıda) olay dinleyicilerini bağlar. Sadece kendi
+         * profilimizde çağrılır.
+         */
+        function renderProfileBgPanel(profile) {
+            const card = document.getElementById("profileBgCard");
+            if (!card) return;
+            card.style.display = "block";
+
+            const tier = resolveThemeTier(profile && profile.role);
+            const canVeteran = themeTierAtLeast(tier, "veteran");
+            const lockedBanner = document.getElementById("profileBgLockedBanner");
+            const controls = document.getElementById("profileBgControls");
+            if (lockedBanner) lockedBanner.style.display = canVeteran ? "none" : "flex";
+            if (controls) controls.style.display = canVeteran ? "block" : "none";
+            if (!canVeteran) return;
+
+            const colorPicker = document.getElementById("profileBgColorPicker");
+            const hexInput = document.getElementById("profileBgHexInput");
+            const applyColorBtn = document.getElementById("profileBgApplyColorBtn");
+            const uploadBtn = document.getElementById("profileBgUploadBtn");
+            const fileInput = document.getElementById("profileBgFileInput");
+            const statusEl = document.getElementById("profileBgUploadStatus");
+            const resetBtn = document.getElementById("profileBgResetBtn");
+
+            const stored = profile && profile.profileBackground ? profile.profileBackground : null;
+            if (stored && stored.mode === "color" && isValidHex(stored.color)) {
+                if (colorPicker) colorPicker.value = stored.color;
+                if (hexInput) hexInput.value = stored.color.toUpperCase();
+            }
+
+            const setStatus = (msg, isError) => {
+                if (!statusEl) return;
+                if (!msg) { statusEl.style.display = "none"; return; }
+                statusEl.textContent = msg;
+                statusEl.style.display = "inline";
+                statusEl.style.color = isError ? "#ff6b6b" : "var(--text-dim)";
+            };
+
+            async function saveBg(bgObj) {
+                try {
+                    const uid = window.CommunityAuth.user.uid;
+                    await database.ref('users/' + uid).update({ profileBackground: bgObj });
+                    applyProfileBackgroundToDom(bgObj);
+                    if (window.CommunityAuth.profile) window.CommunityAuth.profile.profileBackground = bgObj;
+                } catch (err) {
+                    console.error("[Profile] Arka plan kaydedilemedi:", err);
+                    const reason = (err && err.code === "PERMISSION_DENIED")
+                        ? "Yetkiniz olmadığı için arka plan kaydedilemedi."
+                        : "Arka plan kaydedilemedi. Lütfen tekrar deneyin.";
+                    alert(reason);
+                }
+            }
+
+            if (applyColorBtn && !applyColorBtn.dataset.wired) {
+                applyColorBtn.dataset.wired = "1";
+                applyColorBtn.addEventListener("click", () => {
+                    let hex = (hexInput.value || colorPicker.value || "").trim();
+                    if (!hex.startsWith("#")) hex = "#" + hex;
+                    if (!isValidHex(hex)) {
+                        alert("Geçerli bir HEX renk kodu gir (örn. #1F2937).");
+                        return;
+                    }
+                    saveBg({ mode: "color", color: hex.toLowerCase() });
+                });
+            }
+
+            if (colorPicker && !colorPicker.dataset.wired) {
+                colorPicker.dataset.wired = "1";
+                colorPicker.addEventListener("input", () => {
+                    if (hexInput) hexInput.value = colorPicker.value.toUpperCase();
+                });
+            }
+
+            if (uploadBtn && !uploadBtn.dataset.wired) {
+                uploadBtn.dataset.wired = "1";
+                uploadBtn.addEventListener("click", () => fileInput.click());
+            }
+
+            if (fileInput && !fileInput.dataset.wired) {
+                fileInput.dataset.wired = "1";
+                fileInput.addEventListener("change", async () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    fileInput.value = "";
+                    if (!file) return;
+                    if (!file.type.startsWith("image/")) {
+                        alert("Lütfen bir görsel dosyası seçin.");
+                        return;
+                    }
+                    const MAX_RAW_BYTES = 15 * 1024 * 1024;
+                    if (file.size > MAX_RAW_BYTES) {
+                        alert("Görsel çok büyük. Lütfen 15MB'tan küçük bir dosya seçin.");
+                        return;
+                    }
+                    uploadBtn.disabled = true;
+                    setStatus("Yükleniyor...", false);
+                    try {
+                        const dataUrl = await compressImageFileToDataUrlFit(file, PROFILE_BG_MAX_WIDTH, PROFILE_BG_MAX_HEIGHT, PROFILE_BG_JPEG_QUALITY);
+                        const approxBytes = Math.ceil((dataUrl.length * 3) / 4);
+                        if (approxBytes > PROFILE_BG_MAX_BASE64_BYTES) {
+                            setStatus("Görsel çok büyük kaldı, daha basit bir görsel dene.", true);
+                            return;
+                        }
+                        await saveBg({ mode: "image", image: dataUrl });
+                        setStatus("Arka plan güncellendi.", false);
+                        setTimeout(() => setStatus(null), 1800);
+                    } catch (err) {
+                        console.error("[Profile] Arka plan görseli yüklenemedi:", err);
+                        setStatus("Yükleme başarısız.", true);
+                    } finally {
+                        uploadBtn.disabled = false;
+                    }
+                });
+            }
+
+            if (resetBtn && !resetBtn.dataset.wired) {
+                resetBtn.dataset.wired = "1";
+                resetBtn.addEventListener("click", () => saveBg(null));
+            }
+        }
+
+
         // GÜVENLİK: Kullanıcı doğrudan URL girmez — yalnızca kullanıcı
         // adı veya ID'yi girer. Sistem platforma özgü kalıpla URL'yi
         // otomatik oluşturur. Kaydetme sırasında gelen değerler
@@ -15251,6 +15808,125 @@
             });
         }
 
+        // ==============================================================
+        // 👥 MODÜL — OYUNCULAR DİZİNİ (Players Directory)
+        // ==============================================================
+        // Sidebar'da "Sana Gelenler" ile "Yönetim Paneli" arasındaki
+        // "Oyuncular" sekmesi. Kayıtlı TÜM kullanıcıları listeler, isme
+        // göre arama sağlar ve bir karta tıklanınca openUserProfile(uid)
+        // ile o kişinin profilini açar. Firebase'e SADECE bu sekme
+        // açıldığında bir kerelik "users" sorgusu atılır (canlı
+        // dinleyici DEĞİL — binlerce kullanıcıda gereksiz sürekli trafik
+        // yaratmamak için); sekme her açıldığında liste tazelenir.
+        // ==============================================================
+        const PLAYERS_DIR_PAGE_SIZE = 40;
+
+        const PlayersDirectory = {
+            _allUsers: [],       // [{uid, username, role, avatarUrl, isVerified, nameColor}], username'e göre sıralı
+            _filtered: [],
+            _visibleCount: PLAYERS_DIR_PAGE_SIZE,
+            _loaded: false,
+
+            async load() {
+                const listEl = document.getElementById("playersDirList");
+                const countEl = document.getElementById("playersDirCount");
+                if (listEl && !this._loaded) {
+                    listEl.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
+                }
+                try {
+                    const snap = await database.ref('users').once('value');
+                    const all = snap.val() || {};
+                    const profile = window.CommunityAuth && window.CommunityAuth.profile;
+                    this._allUsers = Object.keys(all)
+                        .map((uid) => {
+                            const u = all[uid] || {};
+                            return {
+                                uid,
+                                username: u.username || u.originalUsername || "Kullanıcı",
+                                role: u.role || "",
+                                avatarUrl: u.avatarUrl || "",
+                                isVerified: u.isVerified === true,
+                                nameColor: window.NameColorSystem
+                                    ? window.NameColorSystem.normalize(u.nameColor, { role: u.role || "user" })
+                                    : null
+                            };
+                        })
+                        .sort((a, b) => a.username.localeCompare(b.username, "tr"));
+                    this._loaded = true;
+                    if (countEl) countEl.textContent = `${this._allUsers.length} oyuncu`;
+                    this.applyFilter(document.getElementById("playersDirSearchInput")?.value || "");
+                } catch (err) {
+                    console.error("[PlayersDirectory] Oyuncu listesi çekilemedi:", err);
+                    if (listEl) listEl.innerHTML = `<div class="players-dir-empty">Liste yüklenemedi. Lütfen tekrar dene.</div>`;
+                }
+            },
+
+            applyFilter(query) {
+                const q = (query || "").trim().toLowerCase();
+                this._filtered = q
+                    ? this._allUsers.filter((u) => u.username.toLowerCase().includes(q))
+                    : this._allUsers;
+                this._visibleCount = PLAYERS_DIR_PAGE_SIZE;
+                this.render();
+            },
+
+            render() {
+                const listEl = document.getElementById("playersDirList");
+                if (!listEl) return;
+
+                if (!this._filtered.length) {
+                    listEl.innerHTML = `<div class="players-dir-empty">Eşleşen oyuncu bulunamadı.</div>`;
+                    return;
+                }
+
+                const visible = this._filtered.slice(0, this._visibleCount);
+                const html = visible.map((u) => {
+                    const nameHtml = window.CommunityRBAC
+                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor)
+                        : RBAC.escapeHtml(u.username);
+                    const avatarAttrs = window.CommunityRBAC ? window.CommunityRBAC.renderAvatarAttrs(u.avatarUrl) : `src=""`;
+                    return `
+                        <div class="players-dir-item" data-action="open-player" data-uid="${u.uid}">
+                            <img class="players-dir-avatar" ${avatarAttrs} alt="">
+                            <div class="players-dir-info">
+                                <span class="players-dir-name">${nameHtml}</span>
+                                <span class="players-dir-role">${RBAC.escapeHtml(u.role || "Player")}</span>
+                            </div>
+                        </div>`;
+                }).join("");
+
+                const hasMore = this._filtered.length > this._visibleCount;
+                listEl.innerHTML = html + (hasMore
+                    ? `<button type="button" class="players-dir-loadmore" id="playersDirLoadMoreBtn">Daha fazla göster (${this._filtered.length - this._visibleCount} kaldı)</button>`
+                    : "");
+
+                listEl.querySelectorAll('[data-action="open-player"]').forEach((el) => {
+                    el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
+                });
+                const loadMoreBtn = document.getElementById("playersDirLoadMoreBtn");
+                if (loadMoreBtn) {
+                    loadMoreBtn.addEventListener("click", () => {
+                        this._visibleCount += PLAYERS_DIR_PAGE_SIZE;
+                        this.render();
+                    });
+                }
+            },
+
+            init() {
+                const searchInput = document.getElementById("playersDirSearchInput");
+                if (searchInput && !searchInput.dataset.wired) {
+                    searchInput.dataset.wired = "1";
+                    let debounceTimer = null;
+                    searchInput.addEventListener("input", () => {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => this.applyFilter(searchInput.value), 150);
+                    });
+                }
+                this.load();
+            }
+        };
+        window.PlayersDirectory = PlayersDirectory;
+
         /**
          * Bir konteynerin İÇİNDEKİ tüm @mention chip'lerine tıklama
          * dinleyicisi ekler — mesaj metni, thread body'si, yorum metni
@@ -15293,6 +15969,7 @@
                 groups:      ["Community",   "Grup Sohbetleri"],
                 communities: ["Community",   "Topluluklar"],
                 inbox:       ["Community",   "Mentions & Replies"],
+                players:     ["Community",   "Oyuncular"],
                 profile:     ["Community",   "Profilim"],
                 admin:       ["Yönetim",     "Panel"]
             };
@@ -15305,6 +15982,11 @@
             // "Sana Gelenler" sekmesi açıldığında inbox'ı render et ve okundu say.
             if (view === "inbox") {
                 InboxSystem.openInbox();
+            }
+
+            // "Oyuncular" sekmesi açıldığında listeyi (yeniden) yükle.
+            if (view === "players" && window.PlayersDirectory) {
+                window.PlayersDirectory.init();
             }
 
             // 3D Studio Dashboard'a her girişte istatistik + model listesini tazele
