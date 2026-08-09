@@ -8218,12 +8218,14 @@
 
                     <!-- ══════════════════════════════════════════════════════
                          🎨 İSİM RENGİ SİSTEMİ — Profil Temasından TAMAMEN
-                         BAĞIMSIZ ayrı bir panel. Sadece OG ve üzeri
-                         rütbeler (kozmetik rütbe listesi — bkz. RBAC
-                         resolveThemeTier "og" kademesiyle AYNI eşik)
-                         kullanıcı adı rengini (HEX veya RGB animasyonlu)
-                         değiştirebilir. Rütbesi OG altında olanlarda bu
-                         panel kilitli görünür ve değişiklik yapılamaz.
+                         BAĞIMSIZ ayrı bir panel. Profil Teması sadece site
+                         geneli vurgu rengini (menü/çerçeve) değiştirir; bu
+                         panel ise SADECE kullanıcı adını (sohbet, forum,
+                         mention, profil kartı — her yerde) boyar. Sadece
+                         OG ve üzeri rütbeler (RBAC resolveThemeTier "og"
+                         kademesiyle AYNI eşik) özel renk/RGB seçebilir.
+                         Rütbesi OG altında olanlarda bu panel kilitli
+                         görünür ve değişiklik yapılamaz.
                          ══════════════════════════════════════════════════ -->
                     <div class="profile-card" id="nameColorCard" style="display:none;">
                         <div class="profile-card-header"><span>İsim Rengi</span></div>
@@ -8924,19 +8926,22 @@
         // ==============================================================
         // 🎨 İSİM RENGİ — PROFİL PANELİ (UI olay bağlama + render)
         // ==============================================================
-        // Bu blok, Profil Teması'nın initProfileTheme() ile BİREBİR aynı
-        // deseni izler (tek seferlik olay bağlama, dataset.wired koruması)
-        // ama TAMAMEN ayrı bir DOM ağacı (#nameColorCard) ve ayrı bir
-        // Firebase alanı (users/{uid}/nameColor) üzerinde çalışır.
+        // Bu blok, Profil Teması'nın initProfileTheme() ile BENZER bir
+        // desen izler (tek seferlik olay bağlama, dataset.wired koruması)
+        // ama TAMAMEN AYRI bir DOM ağacı (#nameColorCard), ayrı bir
+        // Firebase alanı (users/{uid}/nameColor) ve ayrı bir yetki
+        // eşiği (sadece OG+, tema paletindeki "veteran" kademesinden
+        // habersiz) üzerinde çalışır. Profil Teması'nın --accent site
+        // vurgusuna bu blok HİÇ dokunmaz.
         // ==============================================================
 
         let nameColorRgbPendingColors = null;
 
         /**
          * Kullanıcının kaydedilmiş nameColor tercihini Firebase profil
-         * objesinden okur (localStorage KULLANILMAZ — isim rengi, tema
-         * renginden farklı olarak platformda HERKESE görünen bir veri
-         * olduğu için tek doğru kaynak sunucudur, cihaz-yerel değil).
+         * objesinden okur (localStorage KULLANILMAZ — isim rengi,
+         * platformda HERKESE görünen bir veri olduğu için tek doğru
+         * kaynak sunucudur, cihaz-yerel değil).
          */
         function getStoredNameColor(profile) {
             return normalizeNameColor(profile && profile.nameColor, profile);
@@ -8945,9 +8950,7 @@
         /**
          * Yeni nameColor tercihini doğrular, yetkiyi kontrol eder ve
          * Firebase'e yazar. mentionUserCache ve tüm açık görünümler
-         * canlı Firebase dinleyicisi üzerinden (startMentionUserCache /
-         * profile-updated event'i) otomatik güncellenir — ayrı bir
-         * "yayın" mekanizmasına gerek yoktur.
+         * canlı Firebase dinleyicisi üzerinden otomatik güncellenir.
          */
         function setNameColor(nameColorObj) {
             const profile = window.CommunityAuth && window.CommunityAuth.profile;
@@ -8996,13 +8999,38 @@
             if (window.CommunityAuth && window.CommunityAuth.profile) {
                 window.CommunityAuth.profile.nameColor = toSave;
             }
+            applyNameColorToLiveDom(toSave);
             renderNameColorPanel(window.CommunityAuth && window.CommunityAuth.profile);
         }
 
         /**
-         * RGB renk chip panelini çizer (Profil Teması'ndaki
-         * renderRgbColorPicker ile aynı görsel deseni kullanır, ama
-         * kendi bağımsız pending-liste state'i üzerinde çalışır).
+         * Kaydedilen nameColor'ı o an açık olan sayfadaki mini-profil ve
+         * profil başlığı isim alanlarına ANINDA yansıtır — sunucu
+         * round-trip'ini beklemeden canlı önizleme sağlar. Diğer tüm
+         * yerler (sohbet/forum/mention) zaten canlı mentionUserCache
+         * dinleyicisi üzerinden otomatik güncellenir.
+         */
+        function applyNameColorToLiveDom(nameColorObj) {
+            const profile = window.CommunityAuth && window.CommunityAuth.profile;
+            const miniNameEl = document.getElementById("hubMiniName");
+            if (miniNameEl && profile && window.CommunityRBAC) {
+                miniNameEl.innerHTML = window.CommunityRBAC.renderNameWithRank(
+                    profile.username,
+                    profile.role,
+                    profile.isVerified === true,
+                    nameColorObj
+                );
+            }
+            const headerNameEl = document.getElementById("profileUsernameText");
+            if (headerNameEl && profile && window.CommunityRBAC && window.NameColorSystem) {
+                const safeHeaderName = window.CommunityRBAC.escapeHtml(profile.username || "Kullanıcı");
+                const headerNameHtml = window.NameColorSystem.wrapNameWithColor(safeHeaderName, nameColorObj);
+                headerNameEl.innerHTML = window.CommunityRBAC.formatRankTagHtml(profile.role) + headerNameHtml;
+            }
+        }
+
+        /**
+         * RGB renk chip panelini çizer.
          */
         function renderNameColorRgbPicker(colors, enabled) {
             const chipsEl = document.getElementById("nameColorRgbChips");
@@ -9046,8 +9074,7 @@
 
         /**
          * Önizleme alanını (#nameColorPreviewName), panelde o an
-         * seçili/hazır olan renk moduna göre canlı günceller —
-         * kaydetmeden önce kullanıcı sonucu görebilsin diye.
+         * seçili/hazır olan renk moduna göre canlı günceller.
          */
         function updateNameColorPreview() {
             const previewEl = document.getElementById("nameColorPreviewName");
@@ -9076,9 +9103,7 @@
 
         /**
          * İsim Rengi kartını doldurur, kilit durumunu uygular ve (ilk
-         * çağrıda) tüm olay dinleyicilerini bağlar. profileThemeCard
-         * ile aynı yaşam döngüsünü izler: renderProfileView -> isSelf
-         * ise burası da çağrılır.
+         * çağrıda) tüm olay dinleyicilerini bağlar.
          */
         function renderNameColorPanel(profile) {
             const card = document.getElementById("nameColorCard");
@@ -9093,10 +9118,7 @@
 
             if (!canOg) {
                 // Rütbesi OG altında olan kullanıcılar için panel
-                // tamamen kilitli/yetkisiz görünür — kontrolleri hiç
-                // render etmiyoruz (sadece gizlemekle kalmıyoruz, ki
-                // devtools üzerinden görünür yapılsa bile setNameColor
-                // içindeki sunucu-taraflı-eşdeğer kontrol zaten reddeder).
+                // tamamen kilitli/yetkisiz görünür.
                 return;
             }
 
@@ -9228,6 +9250,7 @@
         window.NameColorSystem.renderPanel = renderNameColorPanel;
         window.NameColorSystem.set = setNameColor;
         window.NameColorSystem.getStored = getStoredNameColor;
+        window.NameColorSystem.applyToLiveDom = applyNameColorToLiveDom;
 
         // ---------- Hazır renk paletleri ----------
         const THEME_BASIC_PALETTE = [
@@ -10933,8 +10956,9 @@
             document.getElementById("profileRoleChip").textContent = profile.role || "Player";
 
             // --- MODÜL 6: İstatistikler + Rütbe Bazlı Profil Teması ---
-            // Not: tema SADECE kendi profilinde düzenlenebilir/görünür
-            // olmalı; başkasının profiline bakarken kart tamamen gizlenir.
+            // Not: hem Profil Teması hem İsim Rengi kartları SADECE kendi
+            // profilinde düzenlenebilir/görünür olmalı; başkasının
+            // profiline bakarken her iki kart da tamamen gizlenir.
             renderProfileStats(profile);
             const themeCardEl = document.getElementById("profileThemeCard");
             const nameColorCardEl = document.getElementById("nameColorCard");
