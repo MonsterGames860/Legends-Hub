@@ -5081,6 +5081,21 @@
         z-index: -1;
     }
 
+    /* ==========================================================
+       🪟 Profil arka planı (görsel/renk) aktifken kartların zemini
+       yarı saydam olur ki arkadaki görsel hafifçe görünsün, ama
+       yazılar backdrop-blur sayesinde yine okunabilir kalsın.
+       Not: .profile-hero, banner'ı varsa kendi ::before gradyanıyla
+       zaten okunabilirlik sağlıyor; burada sadece zemin rengini
+       şeffaflaştırıyoruz, o gradyanı değiştirmiyoruz.
+       ========================================================== */
+    .profile-page.has-custom-bg .profile-card,
+    .profile-page.has-custom-bg .profile-hero {
+        background: rgba(11, 12, 16, 0.55);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
     .profile-avatar-wrap {
         position: relative;
         flex-shrink: 0;
@@ -6136,7 +6151,7 @@
     }
 
     /* ==========================================================
-       🎨 İSİM RENGİ SİSTEMİ (OG ve üzeri) — Profil Temasından
+       🎨 İSİM RENGİ SİSTEMİ (OG ve üzeri) — Menü Temasından
        BAĞIMSIZ. Bu bölüm sadece kullanıcı adı metnini boyar;
        mention chip'in arka planı/kenarlığı/[TAG] rütbe etiketi
        BU SINIFLARDAN ETKİLENMEZ (onlar ayrı, sabit stillerdir).
@@ -8381,7 +8396,7 @@
 
                     <!-- MODÜL 6: PROFİL TEMASI — RÜTBE BAZLI RENK PALETİ -->
                     <div class="profile-card" id="profileThemeCard" style="display:none;">
-                        <div class="profile-card-header"><span>Profil Teması</span></div>
+                        <div class="profile-card-header"><span>Menü Teması</span></div>
                         <div class="profile-theme-scope-note">🌐 Seçtiğin tema, sadece profilinde değil <strong>tüm Hub arayüzünde</strong> (menü dahil) uygulanır.</div>
 
                         <div class="theme-locked-banner" id="profileThemeLockedBanner" style="display:none;">
@@ -8444,8 +8459,8 @@
                     </div>
 
                     <!-- ══════════════════════════════════════════════════════
-                         🎨 İSİM RENGİ SİSTEMİ — Profil Temasından TAMAMEN
-                         BAĞIMSIZ ayrı bir panel. Profil Teması sadece site
+                         🎨 İSİM RENGİ SİSTEMİ — Menü Temasından TAMAMEN
+                         BAĞIMSIZ ayrı bir panel. Menü Teması sadece site
                          geneli vurgu rengini (menü/çerçeve) değiştirir; bu
                          panel ise SADECE kullanıcı adını (sohbet, forum,
                          mention, profil kartı — her yerde) boyar. Sadece
@@ -8456,7 +8471,7 @@
                          ══════════════════════════════════════════════════ -->
                     <div class="profile-card" id="nameColorCard" style="display:none;">
                         <div class="profile-card-header"><span>İsim Rengi</span></div>
-                        <div class="profile-theme-scope-note">✨ Bu ayar <strong>Profil Teması</strong>'ndan bağımsızdır. Seçtiğin renk; sohbet, forum, profil kartı ve etiketlemelerde (@KullanıcıAdı) ismini boyar.</div>
+                        <div class="profile-theme-scope-note">✨ Bu ayar <strong>Menü Teması</strong>'ndan bağımsızdır. Seçtiğin renk; sohbet, forum, profil kartı ve etiketlemelerde (@KullanıcıAdı) ismini boyar.</div>
 
                         <div class="theme-locked-banner" id="nameColorLockedBanner" style="display:none;">
                             🔒 <span>Özel isim rengi ve RGB modu <strong>OG ve üzeri</strong> rütbelere özeldir.</span>
@@ -9015,7 +9030,7 @@
         // ==============================================================
         // 🎨 İSİM RENGİ SİSTEMİ (OG ve üzeri) — MODÜL: NameColorSystem
         // ==============================================================
-        // Profil Teması'ndan (--accent, site geneli vurgu rengi) TAMAMEN
+        // Menü Teması'ndan (--accent, site geneli vurgu rengi) TAMAMEN
         // BAĞIMSIZ ikinci bir kişiselleştirme katmanı. Bu sistem SADECE
         // kullanıcının GÖRÜNEN İSMİNİ boyar — [RÜTBE] etiketinin rengini
         // (getRankColor/formatRankTagHtml) HİÇ ETKİLEMEZ.
@@ -9026,7 +9041,7 @@
         //   null / yok -> renk yok, isim normal (varsayılan) renginde.
         //
         // Yetki kuralı: sadece OG ve üzeri (aynı eşik: resolveThemeTier
-        // === "og" — Profil Teması'nın 3. kademesiyle BİREBİR aynı rütbe
+        // === "og" — Menü Teması'nın 3. kademesiyle BİREBİR aynı rütbe
         // listesini kullanır, ki iki sistem arasında tutarsızlık olmasın).
         // ==============================================================
 
@@ -9188,12 +9203,12 @@
         // ==============================================================
         // 🎨 İSİM RENGİ — PROFİL PANELİ (UI olay bağlama + render)
         // ==============================================================
-        // Bu blok, Profil Teması'nın initProfileTheme() ile BENZER bir
+        // Bu blok, Menü Teması'nın initProfileTheme() ile BENZER bir
         // desen izler (tek seferlik olay bağlama, dataset.wired koruması)
         // ama TAMAMEN AYRI bir DOM ağacı (#nameColorCard), ayrı bir
         // Firebase alanı (users/{uid}/nameColor) ve ayrı bir yetki
         // eşiği (sadece OG+, tema paletindeki "veteran" kademesinden
-        // habersiz) üzerinde çalışır. Profil Teması'nın --accent site
+        // habersiz) üzerinde çalışır. Menü Teması'nın --accent site
         // vurgusuna bu blok HİÇ dokunmaz.
         // ==============================================================
 
@@ -9283,8 +9298,17 @@
                     nameColorObj
                 );
             }
+            // 🐛 BUGFIX güvenlik önlemi: profileUsernameText'i SADECE o an
+            // ekranda görüntülenen profil kendi profilimizse güncelle.
+            // (Bu fonksiyon zaten sadece kendi "İsim Rengi" panelimizden
+            // tetiklendiği için normal şartlarda başka türlü olmaz, ama
+            // başkasının ismini yanlışlıkla kendi rengimizle ezmemek için
+            // ekstra bir güvence olarak burada da kontrol ediyoruz.)
+            const myUidForNameColor = window.CommunityAuth.user && window.CommunityAuth.user.uid;
+            const viewedUidForNameColor = window.__currentlyViewedProfileUid;
+            const isViewingOwnProfileForNameColor = !viewedUidForNameColor || viewedUidForNameColor === myUidForNameColor;
             const headerNameEl = document.getElementById("profileUsernameText");
-            if (headerNameEl && profile && window.CommunityRBAC && window.NameColorSystem) {
+            if (headerNameEl && profile && window.CommunityRBAC && window.NameColorSystem && isViewingOwnProfileForNameColor) {
                 const safeHeaderName = window.CommunityRBAC.escapeHtml(profile.username || "Kullanıcı");
                 const headerNameHtml = window.NameColorSystem.wrapNameWithColor(safeHeaderName, nameColorObj);
                 headerNameEl.innerHTML = window.CommunityRBAC.formatRankTagHtml(profile.role) + headerNameHtml;
@@ -11162,9 +11186,24 @@
                     : "none";
             }
 
-            // Profil sekmesi açıksa canlı olarak da güncelle.
+            // Profil sekmesi açıksa canlı olarak da güncelle — AMA SADECE
+            // o an ekranda GÖRÜNTÜLENEN profil kendi profilimizse.
+            // 🐛 BUGFIX: bu fonksiyon, kendi profilimizin arka planda
+            // (Firebase security observer) her güncellenmesinde tetiklenir.
+            // Eskiden burada `window.renderProfileView(profile)` HER ZAMAN
+            // ve PARAMETRESİZ çağrılıyordu; parametresiz çağrıda isSelf
+            // varsayılan olarak true kabul edildiğinden, başkasının
+            // profiline bakarken bile ekran sessizce kendi profilimizle
+            // (ve dolayısıyla kendi isim rengimizle) EZİLİYORDU. Artık
+            // sadece o an görüntülenen profil gerçekten kendi profilimizse
+            // güncelliyoruz; başkasının profili açıksa dokunmuyoruz.
             if (typeof window.renderProfileView === "function") {
-                window.renderProfileView(profile);
+                const myUid = window.CommunityAuth.user && window.CommunityAuth.user.uid;
+                const viewedUid = window.__currentlyViewedProfileUid;
+                const isViewingOwnProfile = !viewedUid || viewedUid === myUid;
+                if (isViewingOwnProfile) {
+                    window.renderProfileView(profile, myUid, true);
+                }
             }
         }
 
@@ -11179,6 +11218,17 @@
 
         const RBAC = window.CommunityRBAC;
 
+        // ------------------------------------------------------------
+        // 🐛 BUGFIX: o an profil sekmesinde GÖRÜNTÜLENEN kullanıcının
+        // uid'ini takip eder. Arka planda kendi profilimiz (Firebase
+        // security observer) her değiştiğinde renderMiniProfile ->
+        // renderProfileView tetiklenir; bu state olmadan, başkasının
+        // profilini görüntülerken bu arka-plan tetiklemesi ekranı
+        // SESSİZCE kendi profilimizle EZERDİ (isim rengi dahil). Bkz.
+        // renderMiniProfile içindeki kullanım.
+        // ------------------------------------------------------------
+        window.__currentlyViewedProfileUid = null;
+
         /**
          * Profil sekmesini, verilen profil objesiyle doldurur.
          * @param {object} profile - görüntülenen kullanıcının profili
@@ -11192,6 +11242,9 @@
             const uid = viewedUid || (window.CommunityAuth.user && window.CommunityAuth.user.uid);
             const isSelf = isOwnProfile !== undefined ? isOwnProfile : true;
             const viewerProfile = window.CommunityAuth.profile;
+
+            // O an ekranda hangi profilin göründüğünü kaydet (bkz. yukarıki not).
+            window.__currentlyViewedProfileUid = uid || null;
 
             // --- Üst kart ---
             window.CommunityRBAC.applyAvatarToImg(document.getElementById("profileAvatarImg"), profile.avatarUrl);
@@ -11217,8 +11270,8 @@
 
             document.getElementById("profileRoleChip").textContent = profile.role || "Player";
 
-            // --- MODÜL 6: İstatistikler + Rütbe Bazlı Profil Teması ---
-            // Not: hem Profil Teması hem İsim Rengi hem Profil Arka Planı
+            // --- MODÜL 6: İstatistikler + Rütbe Bazlı Menü Teması ---
+            // Not: hem Menü Teması hem İsim Rengi hem Profil Arka Planı
             // kartları SADECE kendi profilinde düzenlenebilir/görünür
             // olmalı; başkasının profiline bakarken tüm bu kartlar
             // tamamen gizlenir.
@@ -11748,7 +11801,7 @@
         // görsel tarayıcıda <canvas> ile sıkıştırılıp base64 data URL
         // olarak doğrudan Realtime Database'e yazılır.
         //
-        // Yetki eşiği (resolveThemeTier — Profil Teması/İsim Rengi ile
+        // Yetki eşiği (resolveThemeTier — Menü Teması/İsim Rengi ile
         // AYNI kozmetik rütbe listesini kullanır):
         //   • Banner (kapak görseli)      -> sadece "og" (OG ve üzeri)
         //   • Profil Arka Planı (renk/görsel) -> "veteran" ve üzeri
