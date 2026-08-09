@@ -2384,6 +2384,15 @@
         color: var(--gold);
     }
 
+    .admin-badge-warned {
+        background: rgba(245, 197, 66, 0.15);
+        color: var(--gold);
+    }
+
+    /* Rol artık dropdown DEĞİL, salt-okunur düz metin (bkz. renderUserRow).
+       .admin-role-select kuralı eski görünüm bozulmasın diye korunuyor
+       (başka yerde kullanılıyor olabilir), ama admin panelde artık
+       .admin-row-role-readonly kullanılıyor. */
     .admin-role-select {
         background: var(--bg-void);
         border: 1px solid var(--line);
@@ -2392,6 +2401,33 @@
         padding: 5px 8px;
         font-size: 0.72rem;
         font-family: var(--font-display);
+    }
+
+    .admin-row-role-readonly {
+        display: inline-block;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        border-radius: 6px;
+        padding: 5px 10px;
+        font-size: 0.72rem;
+        font-family: var(--font-mono);
+        white-space: nowrap;
+    }
+
+    .admin-warn-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    .admin-warn-list-item {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        padding: 4px 8px;
+        border-left: 2px solid var(--gold);
+        background: rgba(245, 197, 66, 0.06);
     }
 
     @media (max-width: 720px) {
@@ -5132,6 +5168,49 @@
         flex-direction: column;
         gap: 4px;
         min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    /* ==========================================================
+       📱 MOBİL DÜZELTME — "Mesaj Gönder / Engelle / Şikâyet Et"
+       satırı sabit padding'li 3 buton yüzünden dar ekranlarda
+       .profile-hero'nun (overflow:hidden) sağından taşıp
+       görünmez/erişilemez hale geliyordu. Çözüm: dar ekranlarda
+       hero'yu dikeye çevir, aksiyon satırını sarmalı (wrap) yap
+       ve butonları eşit genişlikte, ekran içine sığacak şekilde
+       küçült. ========================================================== */
+    .profile-other-actions {
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+        .profile-hero {
+            flex-wrap: wrap;
+        }
+        .profile-hero-info {
+            width: 100%;
+            min-width: 100%;
+        }
+        .profile-other-actions {
+            width: 100%;
+            gap: 8px !important;
+        }
+        .profile-other-actions .forum-btn {
+            flex: 1 1 calc(50% - 8px);
+            min-width: 0;
+            padding: 8px 6px !important;
+            font-size: 0.72rem !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .profile-other-actions .forum-btn {
+            flex: 1 1 100%;
+        }
     }
 
     .profile-name-row {
@@ -8850,6 +8929,61 @@
         }
 
         /**
+         * Owner/Developer katmanı — şikayet silme, banı kaldırma ve
+         * başka bir yetkiliye (Helper ve üzeri) ceza uygulama gibi
+         * en-kritik aksiyonlar SADECE bu katmana açık.
+         */
+        function canManageStaff(profile) {
+            return hasMinimumTier(profile, "owner");
+        }
+
+        /**
+         * "Hedef bir yetkili mi?" kontrolü — Helper ve üzeri herhangi bir
+         * rütbe "yetkili" sayılır. Yetkililer birbirine ban/sustur/uyarı
+         * uygulayamaz; sadece Owner/Developer bunu yapabilir (bkz.
+         * assertCanSanction).
+         */
+        function isStaffProfile(profile) {
+            return hasMinimumTier(profile, "helper");
+        }
+
+        /**
+         * Bir moderasyon aksiyonunun (ban/sustur/uyarı) uygulanıp
+         * uygulanamayacağına karar veren TEK merkezi kural. Hem admin
+         * panelindeki buton görünürlüğü hem de asıl yazma işlemleri
+         * (handleBanToggle/handleMuteToggle/handleWarnUser) bu fonksiyonu
+         * kullanır ki iki yerde kural birbirinden sapmasın.
+         *   - Hiç kimse (Owner dahil) Owner rütbesindeki birini
+         *     cezalandıramaz (bkz. isOwnerProfile kontrolü ayrıca da var).
+         *   - Hedef bir yetkiliyse (Helper+), SADECE Owner/Developer
+         *     işlem yapabilir.
+         *   - Hedef sıradan bir kullanıcıysa, Helper ve üzeri herkes
+         *     işlem yapabilir (canModerate).
+         * Dönüş: true/false. Sebep metni için assertCanSanction kullanın.
+         */
+        function canSanctionTarget(actorProfile, targetProfile) {
+            if (!canModerate(actorProfile)) return false;
+            if (isOwnerProfile(targetProfile)) return false;
+            if (isStaffProfile(targetProfile)) {
+                return canManageStaff(actorProfile);
+            }
+            return true;
+        }
+
+        /**
+         * canSanctionTarget ile aynı kuralı uygular ama UI'da gösterilecek
+         * insan-okunur bir ret sebebi de döndürür (ya da null -> izinli).
+         */
+        function explainSanctionBlock(actorProfile, targetProfile) {
+            if (!canModerate(actorProfile)) return "Bu işlem için yetkiniz yok.";
+            if (isOwnerProfile(targetProfile)) return "Owner rütbesindeki bir kullanıcıya işlem uygulanamaz.";
+            if (isStaffProfile(targetProfile) && !canManageStaff(actorProfile)) {
+                return "Başka bir yetkiliye (Helper ve üzeri) ban, susturma veya uyarı işlemini sadece Owner / Developer uygulayabilir.";
+            }
+            return null;
+        }
+
+        /**
          * Bir kullanıcının profilinde ban durumu aktif mi kontrol eder.
          * Süreli ban desteği: `banned: true` + `banUntil: <timestamp>`
          * ise, o zaman geçtikten sonra ban KENDİLİĞİNDEN sona erer (admin
@@ -9126,6 +9260,10 @@
             hasMinimumTier,
             canManageVerification,
             canModerate,
+            canManageStaff,
+            isStaff: isStaffProfile,
+            canSanctionTarget,
+            explainSanctionBlock,
             isOwner: isOwnerProfile,
             isBanActiveNow,
             renderVerifiedBadge,
@@ -11533,20 +11671,25 @@
          * Ban kaldırmak için newValue=false, diğer parametreler yoksayılır.
          */
         async function handleBanToggle(targetUid, newValue, reason, durationMs) {
-            if (!RBAC.canModerate(window.CommunityAuth.profile)) {
-                alert("Bu işlem için yetkiniz yok.");
-                return;
-            }
-            // Owner'ı banlamaya kalkışma gibi bariz hataları client
-            // tarafında da engelleyelim (gerçek koruma yine Rules'da olmalı).
+            const myProfile = window.CommunityAuth.profile;
             // window.adminUsersCache, AdminPanel modülü tarafından panel
-            // açıldığında doldurulur (bkz. Modül 7 - startListeners). Panel
-            // hiç açılmamışsa bu fonksiyona zaten erişilemez (RBAC.canModerate
-            // yukarıda kontrol edildi), o yüzden boş cache'e düşmek güvenlidir.
+            // açıldığında doldurulur (bkz. Modül 7 - startListeners).
             const targetProfile = (window.adminUsersCache || {})[targetUid];
-            if (newValue && targetProfile && RBAC.isOwner(targetProfile)) {
-                alert("Owner rütbesindeki bir kullanıcı banlanamaz.");
-                return;
+
+            if (newValue) {
+                // Yeni ban uygulanıyor: hiyerarşi kuralı (Owner'a dokunulamaz,
+                // yetkiliye SADECE Owner/Developer ban atabilir) devreye girer.
+                const blockReason = RBAC.explainSanctionBlock(myProfile, targetProfile);
+                if (blockReason) {
+                    alert(blockReason);
+                    return;
+                }
+            } else {
+                // Ban KALDIRMA (unban) — SADECE Owner / Developer yapabilir.
+                if (!RBAC.canManageStaff(myProfile)) {
+                    alert("Banı kaldırma işlemini sadece Owner / Developer yapabilir.");
+                    return;
+                }
             }
             try {
                 if (newValue) {
@@ -11586,9 +11729,19 @@
          * "susturuldunuz" göstergesi ekstra kod gerekmeden otomatik çalışır.
          */
         async function handleMuteToggle(targetUid, newValue, reason, durationMs) {
-            if (!RBAC.canModerate(window.CommunityAuth.profile)) {
-                alert("Bu işlem için yetkiniz yok.");
-                return;
+            const myProfile = window.CommunityAuth.profile;
+            const targetProfile = (window.adminUsersCache || {})[targetUid];
+            if (newValue) {
+                const blockReason = RBAC.explainSanctionBlock(myProfile, targetProfile);
+                if (blockReason) {
+                    alert(blockReason);
+                    return;
+                }
+            } else {
+                if (!RBAC.canModerate(myProfile)) {
+                    alert("Bu işlem için yetkiniz yok.");
+                    return;
+                }
             }
             try {
                 if (newValue) {
@@ -11616,6 +11769,177 @@
                 console.error("[Admin] Susturma işlemi başarısız:", err);
                 alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
             }
+        }
+
+        /**
+         * ⚠️ UYARI (WARN) SİSTEMİ
+         * warnings/{targetUid}/{warnId}: { message, reason, issuedBy,
+         *   issuedByUsername, createdAt, acknowledged }
+         * Bir kullanıcıya uyarı yazıldığında:
+         *  1) warnings/{uid} altına yeni bir kayıt push edilir.
+         *  2) users/{uid}/warnCount bir artırılır (transaction ile —
+         *     eşzamanlı iki uyarı yarışına karşı güvenli).
+         *  3) Yeni warnCount 3'ü GEÇERSE (>3, yani 4. uyarıdan itibaren
+         *     istenirse "3'ü geçtiği anda" ifadesi >=4 anlamına gelir;
+         *     burada "3'ü geçti" = warnCount > 3 olarak uygulanmıştır)
+         *     kullanıcıya otomatik 1 günlük ban uygulanır.
+         *  4) Kullanıcı bildirimi: notifications/{uid} altına "warning"
+         *     tipinde bir kayıt yazılır. Kullanıcı siteye giriş yaptığında
+         *     (checkAndShowPendingWarnings) bunu bir modal olarak görür.
+         * Yetki: hedef sıradan kullanıcıysa Helper+, hedef bir yetkiliyse
+         * SADECE Owner/Developer (bkz. canSanctionTarget).
+         */
+        async function handleWarnUser(targetUid, message, reason) {
+            const myProfile = window.CommunityAuth.profile;
+            const targetProfile = (window.adminUsersCache || {})[targetUid];
+            const blockReason = RBAC.explainSanctionBlock(myProfile, targetProfile);
+            if (blockReason) {
+                alert(blockReason);
+                return;
+            }
+            if (!message || !message.trim()) {
+                alert("Uyarı mesajı boş olamaz.");
+                return;
+            }
+            try {
+                const warnRef = database.ref("warnings/" + targetUid).push();
+                await warnRef.set({
+                    message: message.trim(),
+                    reason: reason || "Belirtilmedi",
+                    issuedBy: window.CommunityAuth.user.uid,
+                    issuedByUsername: myProfile.username || "Yetkili",
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    acknowledged: false
+                });
+
+                // warnCount'u atomik olarak artır (transaction) ve 3'ü
+                // geçip geçmediğine bakarak otomatik ban tetikle.
+                const userRef = database.ref("users/" + targetUid);
+                const txResult = await userRef.child("warnCount").transaction((current) => (current || 0) + 1);
+                const newWarnCount = (txResult && txResult.snapshot && txResult.snapshot.val()) || 0;
+
+                let autoBanned = false;
+                if (newWarnCount > 3) {
+                    autoBanned = true;
+                    const banUntil = Date.now() + (24 * 60 * 60 * 1000); // 1 gün
+                    await userRef.update({
+                        banned: true,
+                        banUntil: banUntil,
+                        banReason: "Otomatik ban: 3'ten fazla uyarı (son sebep: " + (reason || "Belirtilmedi") + ")"
+                    });
+                    await database.ref("audit_logs").push({
+                        action: "auto_ban_warn_threshold",
+                        targetUid: targetUid,
+                        detail: `warnCount=${newWarnCount}`,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: myProfile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+
+                // Site-içi bildirim — kullanıcı giriş yaptığında modal
+                // olarak gösterilecek (bkz. checkAndShowPendingWarnings).
+                writeNotification(targetUid, {
+                    type: "warning",
+                    message: message.trim(),
+                    reason: reason || "Belirtilmedi",
+                    actorUsername: myProfile.username || "Yetkili",
+                    actorUid: window.CommunityAuth.user.uid,
+                    warnCount: newWarnCount,
+                    autoBanned: autoBanned
+                });
+
+                await database.ref("audit_logs").push({
+                    action: "warn_user",
+                    targetUid: targetUid,
+                    detail: message.trim(),
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: myProfile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                if (autoBanned) {
+                    alert(`Uyarı gönderildi. Kullanıcının uyarı sayısı ${newWarnCount}'e ulaştığı için otomatik olarak 1 günlük ban uygulandı.`);
+                } else {
+                    alert(`Uyarı gönderildi. (Toplam uyarı: ${newWarnCount})`);
+                }
+            } catch (err) {
+                console.error("[Admin] Uyarı gönderilemedi:", err);
+                alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+            }
+        }
+
+        /**
+         * Siteye girişte, kullanıcının henüz görmediği (acknowledged=false)
+         * uyarı bildirimlerini bir modal/popup olarak gösterir. Modal
+         * kapatıldığında ilgili notification "acknowledged: true" olarak
+         * işaretlenir ki bir daha çıkmasın. communitystudio:auth-ready
+         * olayında (showHubShell sonrası) bir kez çağrılır.
+         */
+        async function checkAndShowPendingWarnings(uid) {
+            try {
+                const snap = await database.ref("notifications/" + uid)
+                    .orderByChild("type").equalTo("warning").once("value");
+                const val = snap.val();
+                if (!val) return;
+                const pending = Object.keys(val)
+                    .map(id => Object.assign({ id }, val[id]))
+                    .filter(n => !n.acknowledged)
+                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                if (!pending.length) return;
+                showWarningModalQueue(pending, uid);
+            } catch (err) {
+                console.warn("[Warn] Bekleyen uyarılar okunamadı:", err);
+            }
+        }
+
+        /**
+         * Bekleyen uyarıları sırayla (birer birer) modal olarak gösterir.
+         * Her biri kapatıldığında notifications/{uid}/{id}/acknowledged
+         * true yapılır ve bir sonraki uyarı varsa o gösterilir.
+         */
+        function showWarningModalQueue(queue, uid) {
+            if (!queue.length) return;
+            const current = queue[0];
+            const rest = queue.slice(1);
+
+            let backdrop = document.getElementById("userWarningModalBackdrop");
+            if (!backdrop) {
+                backdrop = document.createElement("div");
+                backdrop.id = "userWarningModalBackdrop";
+                backdrop.className = "forum-modal-backdrop";
+                backdrop.innerHTML = `
+                    <div class="forum-modal">
+                        <div class="forum-modal-header">
+                            <span>⚠️ Uyarı Aldınız</span>
+                        </div>
+                        <div class="forum-modal-body">
+                            <p id="userWarningModalText" style="color: var(--text-primary); line-height:1.5;"></p>
+                            <p id="userWarningModalMeta" style="color: var(--text-dim); font-size:0.75rem; margin-top:10px;"></p>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-primary" id="userWarningModalAckBtn">Anladım</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(backdrop);
+            }
+            document.getElementById("userWarningModalText").textContent = current.message || "";
+            const metaParts = [];
+            if (current.actorUsername) metaParts.push("Yetkili: @" + current.actorUsername);
+            if (current.autoBanned) metaParts.push("Bu uyarı sonucu hesabınız 1 gün süreyle banlandı.");
+            document.getElementById("userWarningModalMeta").textContent = metaParts.join(" · ");
+            backdrop.style.display = "flex";
+
+            const ackBtn = document.getElementById("userWarningModalAckBtn");
+            ackBtn.onclick = async () => {
+                backdrop.style.display = "none";
+                try {
+                    await database.ref(`notifications/${uid}/${current.id}`).update({ acknowledged: true });
+                } catch (e) { /* sessiz hata — bir dahaki girişte tekrar denenir */ }
+                if (rest.length) {
+                    showWarningModalQueue(rest, uid);
+                }
+            };
         }
 
         /**
@@ -23107,7 +23431,11 @@
             // ------------------------------------------------------------
             // C) KULLANICI YÖNETİMİ (RBAC, Ban, Mute)
             // ------------------------------------------------------------
-            const ROLE_OPTIONS = ["Player", "Helper", "Moderator", "Admin"]; // Owner listede yok — bkz. handleRoleChange koruması
+            // NOT: Rol artık bu panelden DEĞİŞTİRİLMEZ. Rank alanı Firebase
+            // üzerinden elle yönetilir; panel sadece mevcut rank'ı
+            // salt-okunur (read-only) metin olarak gösterir (bkz. madde 3).
+            // handleRoleChange fonksiyonu geriye dönük uyumluluk için
+            // dosyada duruyor ama artık hiçbir UI elemanı onu çağırmıyor.
 
             function renderUserRow(uid) {
                 const u = adminUsersCache[uid];
@@ -23115,19 +23443,35 @@
                 const q = _userSearchQuery.trim().toLowerCase();
                 if (q && !(u.username || "").toLowerCase().includes(q)) return "";
 
+                const myProfile = window.CommunityAuth.profile;
                 const mute = adminMuteCache[uid];
                 const isMutedNow = mute && mute.mutedUntil && mute.mutedUntil > Date.now();
                 const isBannedNow = RBAC.isBanActiveNow(u);
+                const warnCount = u.warnCount || 0;
 
                 const badges = [
                     isBannedNow ? `<span class="admin-badge admin-badge-banned">🚫 Banlı</span>` : "",
-                    isMutedNow ? `<span class="admin-badge admin-badge-muted">🔇 Susturulmuş</span>` : ""
+                    isMutedNow ? `<span class="admin-badge admin-badge-muted">🔇 Susturulmuş</span>` : "",
+                    warnCount > 0 ? `<span class="admin-badge admin-badge-warned">⚠️ ${warnCount} Uyarı</span>` : ""
                 ].filter(Boolean).join(" ");
 
-                const roleSelectHtml = `
-                    <select class="admin-role-select" data-admin-role-select="${RBAC.escapeHtml(uid)}">
-                        ${ROLE_OPTIONS.map(r => `<option value="${r}" ${u.role === r ? "selected" : ""}>${r}</option>`).join("")}
-                    </select>`;
+                // Rank -- salt okunur düz metin (dropdown YOK).
+                const rankReadonlyHtml = `<span class="admin-row-role-readonly">${RBAC.escapeHtml(u.role || "Player")}</span>`;
+
+                // Bu satırdaki kullanıcıya (target) ceza uygulanabilir mi?
+                // Helper ve üzeri herkes butonları GÖRÜR, ama bir yetkiliye
+                // (Helper+) işlem yapma hakkı SADECE Owner/Developer'da.
+                // canModerate(myProfile) zaten panel açılmadan önce
+                // kontrol edildiği için burada tekrar sormaya gerek yok --
+                // aksiyon butonları Helper+ herkese görünür (spec madde 2).
+                const blockReason = RBAC.explainSanctionBlock(myProfile, u);
+                const actionsDisabled = !!blockReason;
+                const disabledAttr = actionsDisabled ? `disabled title="${RBAC.escapeHtml(blockReason)}"` : "";
+
+                const canUnban = RBAC.canManageStaff(myProfile);
+                const banBtnHtml = isBannedNow
+                    ? `<button type="button" class="forum-btn forum-btn-ghost" data-admin-action="ban" data-uid="${RBAC.escapeHtml(uid)}" ${canUnban ? "" : `disabled title="Banı kaldırma işlemini sadece Owner / Developer yapabilir."`}>✅ Yasağı Kaldır</button>`
+                    : `<button type="button" class="forum-btn forum-btn-ghost" data-admin-action="ban" data-uid="${RBAC.escapeHtml(uid)}" ${disabledAttr}>🚫 Banla</button>`;
 
                 return `
                     <div class="admin-row" data-admin-user-row="${RBAC.escapeHtml(uid)}">
@@ -23137,9 +23481,10 @@
                             <div class="admin-row-sub">${RBAC.escapeHtml(u.role || "Player")}${isBannedNow && u.banReason ? " · Sebep: " + RBAC.escapeHtml(u.banReason) : ""}</div>
                         </div>
                         <div class="admin-row-actions">
-                            ${roleSelectHtml}
-                            <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="ban" data-uid="${RBAC.escapeHtml(uid)}">${isBannedNow ? "✅ Yasağı Kaldır" : "🚫 Banla"}</button>
-                            <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="mute" data-uid="${RBAC.escapeHtml(uid)}">${isMutedNow ? "✅ Susturmayı Kaldır" : "🔇 Sustur"}</button>
+                            ${rankReadonlyHtml}
+                            ${banBtnHtml}
+                            <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="mute" data-uid="${RBAC.escapeHtml(uid)}" ${isMutedNow ? "" : disabledAttr}>${isMutedNow ? "✅ Susturmayı Kaldır" : "🔇 Sustur"}</button>
+                            <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="warn" data-uid="${RBAC.escapeHtml(uid)}" ${disabledAttr}>⚠️ Uyarı Ver</button>
                         </div>
                     </div>`;
             }
@@ -23162,9 +23507,23 @@
                 _pendingSanction = { kind, uid };
                 const titleEl = document.getElementById("adminSanctionModalTitle");
                 const u = adminUsersCache[uid];
-                if (titleEl) titleEl.textContent = `${kind === "ban" ? "Yasakla" : "Sustur"}: @${(u && u.username) || uid}`;
-                document.getElementById("adminSanctionDurationSelect").value = "86400000";
-                document.getElementById("adminSanctionReasonInput").value = "";
+                const kindLabel = kind === "ban" ? "Yasakla" : kind === "mute" ? "Sustur" : "Uyarı Ver";
+                if (titleEl) titleEl.textContent = `${kindLabel}: @${(u && u.username) || uid}`;
+                // Uyarı (warn) işleminde süre seçimi anlamsız -- sadece
+                // ban/mute için gösterilir, warn'da hem select hem de
+                // üzerindeki "Süre" etiketi gizlenir.
+                const durationSelect = document.getElementById("adminSanctionDurationSelect");
+                if (durationSelect) {
+                    const showDuration = kind !== "warn";
+                    durationSelect.style.display = showDuration ? "" : "none";
+                    if (durationSelect.previousElementSibling) {
+                        durationSelect.previousElementSibling.style.display = showDuration ? "" : "none";
+                    }
+                    durationSelect.value = "86400000";
+                }
+                const reasonInput = document.getElementById("adminSanctionReasonInput");
+                reasonInput.value = "";
+                reasonInput.placeholder = kind === "warn" ? "Uyarı mesajı (kullanıcıya gösterilecek)…" : "Ör. Tekrarlanan taciz…";
                 document.getElementById("adminSanctionError").style.display = "none";
                 document.getElementById("adminSanctionModalBackdrop").style.display = "flex";
             }
@@ -23184,8 +23543,15 @@
                 try {
                     if (kind === "ban") {
                         await handleBanToggle(uid, true, reason, durationMs);
-                    } else {
+                    } else if (kind === "mute") {
                         await handleMuteToggle(uid, true, reason, durationMs);
+                    } else if (kind === "warn") {
+                        if (!reason) {
+                            errorEl.textContent = "Uyarı mesajı boş olamaz.";
+                            errorEl.style.display = "block";
+                            return;
+                        }
+                        await handleWarnUser(uid, reason, reason);
                     }
                     closeSanctionModal();
                 } catch (err) {
@@ -23197,20 +23563,32 @@
             function onUserListClick(e) {
                 const banBtn = e.target.closest('[data-admin-action="ban"]');
                 const muteBtn = e.target.closest('[data-admin-action="mute"]');
+                const warnBtn = e.target.closest('[data-admin-action="warn"]');
+                const myProfile = window.CommunityAuth.profile;
+
                 if (banBtn) {
+                    if (banBtn.disabled) return;
                     const uid = banBtn.getAttribute("data-uid");
                     const u = adminUsersCache[uid];
                     if (RBAC.isBanActiveNow(u)) {
+                        if (!RBAC.canManageStaff(myProfile)) {
+                            alert("Banı kaldırma işlemini sadece Owner / Developer yapabilir.");
+                            return;
+                        }
                         if (confirm(`@${u.username || uid} için yasağı kaldırmak istediğine emin misin?`)) {
                             handleBanToggle(uid, false);
                         }
                     } else {
+                        const blockReason = RBAC.explainSanctionBlock(myProfile, u);
+                        if (blockReason) { alert(blockReason); return; }
                         openSanctionModal("ban", uid);
                     }
                     return;
                 }
                 if (muteBtn) {
+                    if (muteBtn.disabled) return;
                     const uid = muteBtn.getAttribute("data-uid");
+                    const u = adminUsersCache[uid];
                     const mute = adminMuteCache[uid];
                     const isMutedNow = mute && mute.mutedUntil && mute.mutedUntil > Date.now();
                     if (isMutedNow) {
@@ -23218,17 +23596,20 @@
                             handleMuteToggle(uid, false);
                         }
                     } else {
+                        const blockReason = RBAC.explainSanctionBlock(myProfile, u);
+                        if (blockReason) { alert(blockReason); return; }
                         openSanctionModal("mute", uid);
                     }
+                    return;
                 }
-            }
-
-            function onUserListChange(e) {
-                const select = e.target.closest("[data-admin-role-select]");
-                if (!select) return;
-                const uid = select.getAttribute("data-admin-role-select");
-                const newRole = select.value;
-                handleRoleChange(uid, newRole);
+                if (warnBtn) {
+                    if (warnBtn.disabled) return;
+                    const uid = warnBtn.getAttribute("data-uid");
+                    const u = adminUsersCache[uid];
+                    const blockReason = RBAC.explainSanctionBlock(myProfile, u);
+                    if (blockReason) { alert(blockReason); return; }
+                    openSanctionModal("warn", uid);
+                }
             }
 
             // ------------------------------------------------------------
@@ -23350,9 +23731,16 @@
                 }
                 reports.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
+                const canDeleteReports = RBAC.canManageStaff(window.CommunityAuth.profile);
+
                 listEl.innerHTML = reports.length ? reports.map(r => {
                     const reporter = adminUsersCache[r.reporterUid];
                     const isResolved = r.status === "resolved";
+                    // Şikâyet silme: SADECE çözülmüş/tamamlanmış şikayetler
+                    // için ve SADECE Owner/Developer rütbesine görünür.
+                    const deleteBtnHtml = (isResolved && canDeleteReports)
+                        ? `<button type="button" class="forum-btn forum-btn-ghost" data-report-action="delete" data-id="${RBAC.escapeHtml(r.id)}" style="color:var(--danger); border-color:rgba(255,77,77,0.4);">🗑 Sil</button>`
+                        : "";
                     return `
                     <div class="admin-row">
                         <div class="admin-row-main">
@@ -23369,9 +23757,43 @@
                         </div>
                         <div class="admin-row-actions">
                             ${!isResolved ? `<button type="button" class="forum-btn forum-btn-primary" data-report-action="resolve" data-id="${RBAC.escapeHtml(r.id)}">✅ Tamamla</button>` : ""}
+                            ${deleteBtnHtml}
                         </div>
                     </div>`;
                 }).join("") : `<div class="hub-placeholder">Şikâyet yok.</div>`;
+            }
+
+            /**
+             * Tamamlanmış bir şikâyeti kalıcı olarak siler. SADECE
+             * Owner/Developer çağırabilir — hem burada hem de (varsa)
+             * RTDB Security Rules'da aynı kural uygulanmalı, çünkü client
+             * kontrolü tek güvenlik katmanı değildir.
+             */
+            async function handleDeleteReport(reportId) {
+                const myProfile = window.CommunityAuth.profile;
+                if (!RBAC.canManageStaff(myProfile)) {
+                    alert("Şikâyet silme işlemini sadece Owner / Developer yapabilir.");
+                    return;
+                }
+                const report = adminReportsCache[reportId];
+                if (report && report.status !== "resolved") {
+                    alert("Sadece tamamlanmış (çözülmüş) şikâyetler silinebilir.");
+                    return;
+                }
+                if (!confirm("Bu şikâyeti kalıcı olarak silmek istediğine emin misin? Bu işlem geri alınamaz.")) return;
+                try {
+                    await database.ref("reports/" + reportId).remove();
+                    await database.ref("audit_logs").push({
+                        action: "delete_report",
+                        targetReportId: reportId,
+                        actorUid: window.CommunityAuth.user.uid,
+                        actorUsername: myProfile.username || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } catch (err) {
+                    console.error("[Admin] Şikâyet silinemedi:", err);
+                    alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+                }
             }
 
             let _pendingResolveReportId = null;
@@ -23440,9 +23862,15 @@
             }
 
             function onReportListClick(e) {
-                const btn = e.target.closest('[data-report-action="resolve"]');
-                if (!btn) return;
-                openResolveModal(btn.getAttribute("data-id"));
+                const resolveBtn = e.target.closest('[data-report-action="resolve"]');
+                if (resolveBtn) {
+                    openResolveModal(resolveBtn.getAttribute("data-id"));
+                    return;
+                }
+                const deleteBtn = e.target.closest('[data-report-action="delete"]');
+                if (deleteBtn) {
+                    handleDeleteReport(deleteBtn.getAttribute("data-id"));
+                }
             }
 
             // ------------------------------------------------------------
@@ -23562,7 +23990,8 @@
                     renderUserList();
                 });
                 document.getElementById("adminUserList")?.addEventListener("click", onUserListClick);
-                document.getElementById("adminUserList")?.addEventListener("change", onUserListChange);
+                // NOT: rol artık panelden değiştirilemediği için (bkz. madde 3)
+                // "change" olayına artık ihtiyaç yok — dropdown kaldırıldı.
 
                 document.getElementById("adminThreadList")?.addEventListener("click", onThreadListClick);
                 document.getElementById("adminMessageList")?.addEventListener("click", onMessageListClick);
@@ -23600,6 +24029,9 @@
             NotificationSystem.init(e.detail.user.uid);
             InboxSystem.init(e.detail.user.uid);
             MessagingSystem.init(e.detail.user.uid);
+            // ⚠️ UYARI SİSTEMİ: giriş yapılır yapılmaz bekleyen (henüz
+            // görülmemiş) uyarı bildirimlerini modal olarak göster.
+            checkAndShowPendingWarnings(e.detail.user.uid);
         });
 
         document.addEventListener("communitystudio:profile-updated", (e) => {
