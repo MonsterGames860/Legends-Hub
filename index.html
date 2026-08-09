@@ -9601,6 +9601,20 @@
         }
 
         /**
+         * Sadece #profilePage üzerindeki tema class'larını/CSS
+         * değişkenlerini temizler — :root (site geneli/sidebar) temasına
+         * DOKUNMAZ. Başkasının profiline geçildiğinde, önceden kendi
+         * profilimizde uygulanmış olabilecek has-custom-theme/
+         * is-rainbow-mode kalıntılarını silmek için kullanılır.
+         */
+        function clearProfilePageThemeClasses() {
+            const page = document.getElementById("profilePage");
+            if (!page) return;
+            page.classList.remove("has-custom-theme", "is-rainbow-mode");
+            page.style.removeProperty("--profile-theme-color");
+        }
+
+        /**
          * Seçilen temayı DOM'a uygular. İKİ farklı katmana yazar:
          *  1) #profilePage — profil sayfasına özel çerçeve/glow stilleri
          *     (has-custom-theme / is-rainbow-mode sınıfları).
@@ -9611,11 +9625,34 @@
          * RGB modunda, seçilen 2-6 renkten bir conic-gradient + düz
          * gradient string'i üretilip --profile-rgb-gradient /
          * --profile-rgb-gradient-flat değişkenlerine yazılır.
+         *
+         * 🐛 BUGFIX (kritik): #profilePage TEK bir DOM container'ı —
+         * içindeki .profile-hero/.profile-card/.profile-username o an
+         * KİM görüntüleniyorsa onun verisini taşıyor, ama bu fonksiyon
+         * her zaman KENDİ temanı (localStorage / kendi profile.profileTheme)
+         * ile çağrılıyordu ve has-custom-theme/is-rainbow-mode class'ını
+         * doğrudan #profilePage'e basıyordu. Sonuç: başkasının profiline
+         * bakarken bile kart kenarlığı, glow ve isim üzerindeki rainbow
+         * gradyanı SENİN kendi Menü Teması ayarınla boyanıyordu — çünkü
+         * CSS seçicileri (.profile-page.is-rainbow-mode .profile-username
+         * gibi) hangi kullanıcının görüntülendiğini bilemez, sadece class
+         * var mı yok mu diye bakar.
+         *
+         * Çözüm: has-custom-theme/is-rainbow-mode class'ı ve
+         * --profile-theme-color / --profile-rgb-gradient* değişkenleri
+         * ARTIK SADECE gerçekten kendi profilimiz görüntülenirken
+         * #profilePage'e uygulanıyor (bkz. isViewingOwnProfileForTheme).
+         * Site geneli (:root / sidebar) kısmı bundan etkilenmiyor, o her
+         * zaman kendi temamızı yansıtmaya devam ediyor (doğru davranış).
          */
         function applyProfileThemeToDom(themeObj) {
             const page = document.getElementById("profilePage"); // opsiyonel: profil sekmesi kapalıyken de site geneli uygulanabilsin diye zorunlu tutulmuyor
             const root = document.documentElement;
             if (!root) return;
+
+            const myUidForTheme = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+            const viewedUidForTheme = window.__currentlyViewedProfileUid;
+            const isViewingOwnProfileForTheme = !viewedUidForTheme || viewedUidForTheme === myUidForTheme;
 
             const isRainbow = !!(themeObj && themeObj.rainbow);
             const colors = isRainbow ? getRgbColorsFromTheme(themeObj) : null;
@@ -9639,28 +9676,31 @@
                 // Döngü kapanışı için ilk rengi sona ekliyoruz (pürüzsüz geçiş).
                 const loop = colors.concat([colors[0]]);
                 const gradientCss = loop.join(", ");
+                // Site geneli (:root) her zaman uygulanır — sidebar/menü
+                // kendi temamızı yansıtmalı, kimin profili açık olduğundan
+                // bağımsız.
                 root.style.setProperty("--profile-rgb-gradient", gradientCss);
                 root.style.setProperty("--profile-rgb-gradient-flat", gradientCss);
-                // Vurgu rengi olarak seçilen renklerin ilkini kullanıyoruz
-                // (glow, box-shadow gibi tek renk gereken yerler için).
                 root.style.setProperty("--accent", colors[0]);
                 root.style.setProperty("--accent-soft", hexToRgba(colors[0], 0.14));
-                if (page) {
+                root.classList.add("has-site-theme", "is-site-rgb-mode");
+                // #profilePage'e özel class/CSS-var SADECE kendi profilimiz
+                // görüntülenirken eklenir.
+                if (page && isViewingOwnProfileForTheme) {
                     page.style.setProperty("--profile-theme-color", colors[0]);
                     page.classList.add("has-custom-theme", "is-rainbow-mode");
                 }
-                root.classList.add("has-site-theme", "is-site-rgb-mode");
                 return;
             }
 
             if (themeObj.color && isValidHex(themeObj.color)) {
-                if (page) {
-                    page.style.setProperty("--profile-theme-color", themeObj.color);
-                    page.classList.add("has-custom-theme");
-                }
                 root.style.setProperty("--accent", themeObj.color);
                 root.style.setProperty("--accent-soft", hexToRgba(themeObj.color, 0.14));
                 root.classList.add("has-site-theme");
+                if (page && isViewingOwnProfileForTheme) {
+                    page.style.setProperty("--profile-theme-color", themeObj.color);
+                    page.classList.add("has-custom-theme");
+                }
             }
         }
 
@@ -11293,6 +11333,15 @@
                 if (nameColorCardEl) nameColorCardEl.style.display = "none";
                 if (profileBgCardEl) profileBgCardEl.style.display = "none";
                 if (bannerEditBtnEl) bannerEditBtnEl.style.display = "none";
+                // 🐛 BUGFIX: başkasının profiline bakarken, kendi Menü
+                // Temamızdan kalma has-custom-theme/is-rainbow-mode class'ı
+                // ve --profile-theme-color CSS değişkeni #profilePage
+                // üzerinde HİÇ TEMİZLENMİYORDU. Bu yüzden kart kenarlığı,
+                // glow ve isim üzerindeki rainbow gradyanı SENİN önceden
+                // ayarladığın temayla boyanmaya devam ediyordu. Burada
+                // sadece #profilePage'e özel class/değişkenleri temizliyoruz
+                // — site geneli (:root/sidebar) temasına dokunmuyoruz.
+                clearProfilePageThemeClasses();
             }
 
             // Banner ve kişisel arka plan: profil sahibi kim olursa olsun
