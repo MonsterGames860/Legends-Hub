@@ -15849,10 +15849,16 @@
          * bir kullanıcının profilini açmak için ortak fonksiyon. UID
          * geçerli değilse veya kullanıcı silinmişse sessizce hiçbir şey
          * yapmaz.
+         *
+         * 🐛 BUGFIX: switchView("profile") artık skipDefaultProfileRender
+         * ile çağrılıyor, böylece kendi profilimiz araya "flaş" gibi
+         * girmiyor; Firebase'den hedef kullanıcının verisi gelene kadar
+         * ekranda önceki içerik (veya en son render edilen doğru profil)
+         * kalıyor, sonra doğrudan hedef kullanıcıyla render ediliyor.
          */
         function openUserProfile(uid) {
             if (!uid) return;
-            switchView("profile");
+            switchView("profile", { skipDefaultProfileRender: true });
             database.ref('users/' + uid).once('value').then((snap) => {
                 const targetProfile = snap.val();
                 if (targetProfile) {
@@ -15997,7 +16003,9 @@
             });
         }
 
-        function switchView(view) {
+        function switchView(view, opts) {
+            const skipDefaultProfileRender = opts && opts.skipDefaultProfileRender === true;
+
             // Mesajlar/Gruplar dışında bir sekmeye geçiliyorsa, açık kalmış
             // olabilecek tam ekran sohbet görünümünü güvenli şekilde kapat
             // (aksi halde body class'ı takılı kalıp diğer sekmeleri de
@@ -16066,7 +16074,18 @@
             // ediyoruz. Daha önce bu hiç tetiklenmiyordu; sekme boş
             // görünüyordu çünkü renderProfileView sadece auth-ready /
             // profile-updated event'lerinde çağrılıyordu, tıklamada değil.
-            if (view === "profile" && window.CommunityAuth && window.CommunityAuth.profile) {
+            //
+            // 🐛 BUGFIX: bu blok ESKİDEN her switchView("profile") çağrısında
+            // KOŞULSUZ çalışıyordu — openUserProfile(uid) de "profile"
+            // sekmesine geçmek için switchView'ı kullandığından, önce burada
+            // KENDİ profilimiz basılıyor, ardından Firebase'den async olarak
+            // gelen hedef kullanıcının profili render ediliyordu. İki render
+            // arasındaki gecikme yüzünden ekranda kısa süreliğine (bazen daha
+            // uzun, yavaş bağlantılarda) başkasının ismi + KENDİ isim rengimiz
+            // görünüyordu. Artık openUserProfile, skipDefaultProfileRender
+            // opts'unu geçerek bu otomatik kendi-profil render'ını atlıyor;
+            // sadece sidebar/menüden doğrudan "Profilim" tıklanınca çalışır.
+            if (view === "profile" && !skipDefaultProfileRender && window.CommunityAuth && window.CommunityAuth.profile) {
                 window.renderProfileView(
                     window.CommunityAuth.profile,
                     window.CommunityAuth.user ? window.CommunityAuth.user.uid : null,
