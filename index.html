@@ -5212,6 +5212,252 @@
         color: var(--text-primary);
     }
 
+    /* ==========================================================
+       MODÜL 6 — PROFİL İSTATİSTİKLERİ PANELİ
+       ========================================================== */
+    .profile-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .profile-stat-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 16px 10px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .profile-stat-icon {
+        font-size: 1.4rem;
+        line-height: 1;
+    }
+
+    .profile-stat-value {
+        font-family: var(--font-mono);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    .profile-stat-label {
+        font-size: 0.68rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 480px) {
+        .profile-stats-grid { grid-template-columns: 1fr 1fr; }
+        .profile-stat-box:last-child { grid-column: span 2; }
+    }
+
+    /* ==========================================================
+       MODÜL 6 — RÜTBE BAZLI PROFİL TEMASI / RENK PALETİ SİSTEMİ
+       ========================================================== */
+    .theme-tier-block {
+        margin-bottom: 18px;
+    }
+    .theme-tier-block:last-child { margin-bottom: 0; }
+
+    .theme-tier-title {
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .theme-swatch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+        gap: 10px;
+    }
+
+    .theme-swatch {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 10px;
+        border: 2px solid rgba(255,255,255,0.08);
+        cursor: pointer;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 4px;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+        overflow: hidden;
+    }
+    .theme-swatch:hover:not(.is-locked) { transform: translateY(-2px); }
+
+    .theme-swatch.is-selected {
+        border-color: #fff;
+        box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 4px var(--accent);
+    }
+
+    .theme-swatch.is-locked {
+        cursor: not-allowed;
+        opacity: 0.55;
+        filter: grayscale(0.4);
+    }
+
+    .theme-swatch-lock {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        background: rgba(0,0,0,0.32);
+        backdrop-filter: blur(1px);
+    }
+
+    .theme-swatch-check {
+        color: #fff;
+        font-size: 0.85rem;
+        text-shadow: 0 0 4px rgba(0,0,0,0.8);
+        font-weight: 900;
+    }
+
+    .theme-lock-note {
+        margin-top: 8px;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Özel HEX seçici (OG ve üzeri) */
+    .theme-custom-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+
+    .theme-custom-row input[type="color"] {
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .theme-custom-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .theme-custom-row input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.15); border-radius: 8px; }
+
+    .theme-custom-hex {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        background: none;
+        border: none;
+        flex: 1;
+        min-width: 0;
+    }
+    .theme-custom-hex:focus { outline: none; }
+
+    /* RGB / Rainbow modu şalteri */
+    .theme-rainbow-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        margin-top: 10px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+
+    .theme-rainbow-label {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .theme-rainbow-label strong { font-size: 0.85rem; }
+    .theme-rainbow-label small { color: var(--text-dim); font-size: 0.7rem; }
+
+    /* Kilitli tema bölümü, rütbe yükseltmesi olmayanlara genel uyarı */
+    .theme-locked-banner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: rgba(255, 77, 77, 0.08);
+        border: 1px solid rgba(255, 77, 77, 0.25);
+        border-radius: 8px;
+        font-size: 0.76rem;
+        color: #ff9a9a;
+        margin-bottom: 14px;
+    }
+
+    /* ---------- Uygulanan tema: profil menüsü çerçevesi/vurguları ---------- */
+    .profile-page.has-custom-theme .profile-hero,
+    .profile-page.has-custom-theme .profile-card {
+        border-color: var(--profile-theme-color, var(--line));
+        transition: border-color 0.3s ease;
+    }
+    .profile-page.has-custom-theme .profile-card-header,
+    .profile-page.has-custom-theme .profile-role-chip {
+        color: var(--profile-theme-color, var(--accent));
+    }
+    .profile-page.has-custom-theme .profile-role-chip {
+        background: color-mix(in srgb, var(--profile-theme-color, var(--accent)) 15%, transparent);
+        border-color: var(--profile-theme-color, var(--line));
+    }
+
+    /* RGB / Rainbow modu: çerçeve + vurgu akan gradyan animasyonu */
+    @keyframes profileRainbowFlow {
+        0%   { filter: hue-rotate(0deg); }
+        100% { filter: hue-rotate(360deg); }
+    }
+    @keyframes profileRainbowBorder {
+        0%   { border-color: #ff005c; box-shadow: 0 0 10px #ff005c66; }
+        16%  { border-color: #ff9500; box-shadow: 0 0 10px #ff950066; }
+        33%  { border-color: #ffee00; box-shadow: 0 0 10px #ffee0066; }
+        50%  { border-color: #35ff00; box-shadow: 0 0 10px #35ff0066; }
+        66%  { border-color: #00e5ff; box-shadow: 0 0 10px #00e5ff66; }
+        83%  { border-color: #7a3bff; box-shadow: 0 0 10px #7a3bff66; }
+        100% { border-color: #ff005c; box-shadow: 0 0 10px #ff005c66; }
+    }
+    .profile-page.is-rainbow-mode .profile-hero,
+    .profile-page.is-rainbow-mode .profile-card {
+        animation: profileRainbowBorder 6s linear infinite;
+        border-width: 2px;
+    }
+    .profile-page.is-rainbow-mode .profile-role-chip {
+        animation: profileRainbowBorder 6s linear infinite;
+        background: rgba(255,255,255,0.04);
+    }
+    .profile-page.is-rainbow-mode .profile-username {
+        background: linear-gradient(90deg, #ff005c, #ff9500, #ffee00, #35ff00, #00e5ff, #7a3bff, #ff005c);
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: profileRainbowText 6s linear infinite;
+    }
+    @keyframes profileRainbowText {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+    }
+
     /* Basit toggle switch */
     .profile-toggle {
         position: relative;
@@ -7722,6 +7968,77 @@
                         </div>
                     </div>
 
+                    <!-- MODÜL 6: OYUNCU İSTATİSTİKLERİ -->
+                    <div class="profile-card" id="profileStatsCard">
+                        <div class="profile-card-header"><span>İstatistikler</span></div>
+                        <div class="profile-stats-grid">
+                            <div class="profile-stat-box">
+                                <span class="profile-stat-icon">⏱️</span>
+                                <span class="profile-stat-value" id="profileStatPlaytime">—</span>
+                                <span class="profile-stat-label">Oynama Süresi</span>
+                            </div>
+                            <div class="profile-stat-box">
+                                <span class="profile-stat-icon">🧊</span>
+                                <span class="profile-stat-value" id="profileStatVoxelLevel">—</span>
+                                <span class="profile-stat-label">Voksel Seviyesi</span>
+                            </div>
+                            <div class="profile-stat-box">
+                                <span class="profile-stat-icon">🏅</span>
+                                <span class="profile-stat-value" id="profileStatBadges">—</span>
+                                <span class="profile-stat-label">Kazanılan Rozet</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODÜL 6: PROFİL TEMASI — RÜTBE BAZLI RENK PALETİ -->
+                    <div class="profile-card" id="profileThemeCard" style="display:none;">
+                        <div class="profile-card-header"><span>Profil Teması</span></div>
+
+                        <div class="theme-locked-banner" id="profileThemeLockedBanner" style="display:none;">
+                            🔒 <span id="profileThemeLockedBannerText">Daha zengin renk paletlerinin kilidini açmak için rütbe yükseltmesi gerekir.</span>
+                        </div>
+
+                        <!-- Katman 1: Herkese açık temel renkler -->
+                        <div class="theme-tier-block">
+                            <div class="theme-tier-title">🎨 Standart Renkler</div>
+                            <div class="theme-swatch-grid" id="profileThemeBasicSwatches"></div>
+                        </div>
+
+                        <!-- Katman 2: Veteran ve üstü zengin palet -->
+                        <div class="theme-tier-block">
+                            <div class="theme-tier-title">✨ Zengin Palet <span style="opacity:.6;">— Veteran ve üzeri</span></div>
+                            <div class="theme-swatch-grid" id="profileThemeRichSwatches"></div>
+                            <div class="theme-lock-note" id="profileThemeRichLockNote" style="display:none;">
+                                🔒 Bu paleti kullanmak için en az <strong>Veteran</strong> rütbesine sahip olman gerekir.
+                            </div>
+                        </div>
+
+                        <!-- Katman 3: OG ve üstü — özel HEX + RGB modu -->
+                        <div class="theme-tier-block" id="profileThemeOgBlock">
+                            <div class="theme-tier-title">🌈 Özel Renk &amp; RGB Modu <span style="opacity:.6;">— OG ve üzeri</span></div>
+
+                            <div class="theme-custom-row" id="profileThemeCustomRow">
+                                <input type="color" id="profileThemeCustomColorInput" value="#66fcf1">
+                                <input type="text" class="theme-custom-hex" id="profileThemeCustomHexInput" placeholder="#66FCF1" maxlength="7">
+                                <button type="button" class="profile-btn profile-btn-ghost" id="profileThemeCustomApplyBtn" style="flex-shrink:0;">Uygula</button>
+                            </div>
+                            <div class="theme-lock-note" id="profileThemeOgLockNote" style="display:none;">
+                                🔒 Özel HEX renk seçici ve RGB modu için en az <strong>OG</strong> rütbesine sahip olman gerekir.
+                            </div>
+
+                            <div class="theme-rainbow-row">
+                                <div class="theme-rainbow-label">
+                                    <strong>🌀 RGB / Rainbow Modu</strong>
+                                    <small>Profil çerçevesine ve vurgularına akıcı, dönen renk animasyonu uygular.</small>
+                                </div>
+                                <label class="profile-toggle">
+                                    <input type="checkbox" id="profileThemeRainbowToggle">
+                                    <span class="profile-toggle-track"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- PWA İNDİRME KARTI -->
                     <div class="profile-card" id="pwaInstallCard" style="display:none;">
                         <div class="profile-card-header"><span>Uygulama</span></div>
@@ -8204,6 +8521,367 @@
             renderNameWithRank,
             renderCommunityMemberName
         };
+
+        // ==============================================================
+        // 🎨 MODÜL 6 — PROFİL İSTATİSTİKLERİ + RÜTBE BAZLI TEMA SİSTEMİ
+        // ==============================================================
+        // Katmanlar:
+        //   1) Herkes (rütbesiz "Player" dahil)  -> STANDART_PALETTE
+        //   2) hasMinimumTier(profile,'veteran')  -> ZENGIN_PALETTE erişimi
+        //   3) hasMinimumTier(profile,'og')       -> özel HEX + RGB modu
+        // Not: PERMISSION_TIERS (user/helper/admin/owner) yetki
+        // seviyesidir; buradaki "veteran"/"og" kontrolü KOZMETİK rütbe
+        // adına (profile.role) bakan AYRI bir eşik listesidir — mevcut
+        // yetki sistemine dokunmadan, sadece tema kilidini belirler.
+        // ==============================================================
+
+        // Rütbe adının en az bu listedeki bir seviyeye denk gelip
+        // gelmediğini kontrol eder. Sıra önemlidir: alttan üste.
+        const THEME_TIER_ORDER = ["normal", "veteran", "og"];
+
+        // Hangi kozmetik rütbe (profile.role) hangi tema kademesine denk
+        // gelir. "Veteran" ve üstü tüm ranklı rütbeler zengin paleti
+        // açar; "OG" ve üstü (site genelindeki SWEEP_RANKS ile aynı
+        // mantık) özel HEX + RGB modunu açar.
+        function resolveThemeTier(role) {
+            const trimmed = (role || "").trim();
+            if (!trimmed || trimmed.toLowerCase() === "player") return "normal";
+            // OG ve üzeri (yönetim/emek verenler dahil) en üst kademe.
+            const OG_AND_ABOVE = [
+                "OG", "Owner / Developer", "Admin / Developer", "Developer",
+                "Admin", "Mod", "Helper", "Beta Tester", "YouTube", "Twitch"
+            ];
+            if (OG_AND_ABOVE.includes(trimmed)) return "og";
+            // Veteran ve üzeri kozmetik rütbeler (rank'lı sayılan herkes).
+            const VETERAN_AND_ABOVE = [
+                "Veteran", "MVP", "VIP", "Champion", "Tiktoker", "TikToker"
+            ].concat(OG_AND_ABOVE);
+            if (VETERAN_AND_ABOVE.includes(trimmed)) return "veteran";
+            return "normal";
+        }
+
+        function themeTierAtLeast(currentTier, requiredTier) {
+            return THEME_TIER_ORDER.indexOf(currentTier) >= THEME_TIER_ORDER.indexOf(requiredTier);
+        }
+
+        // ---------- Hazır renk paletleri ----------
+        const THEME_BASIC_PALETTE = [
+            { id: "basic-black", name: "Koyu Siyah", color: "#0b0c10" },
+            { id: "basic-gray", name: "Koyu Gri", color: "#2b2f36" },
+            { id: "basic-blue", name: "Standart Mavi", color: "#3b82f6" }
+        ];
+
+        const THEME_RICH_PALETTE = [
+            { id: "rich-lava", name: "Lav Kırmızısı", color: "#ff3d3d" },
+            { id: "rich-neon-green", name: "Neon Yeşil", color: "#39ff14" },
+            { id: "rich-purple-magic", name: "Mor Büyü", color: "#9b30ff" },
+            { id: "rich-gold", name: "Altın Sarısı", color: "#ffd700" },
+            { id: "rich-turquoise", name: "Turkuaz", color: "#00e5cc" },
+            { id: "rich-cyber-orange", name: "Siber Turuncu", color: "#ff7a1a" }
+        ];
+
+        const THEME_STORAGE_KEY = "pl_profile_theme";
+
+        /**
+         * localStorage'da saklanan tema tercihini okur.
+         * Şekil: { mode: "basic"|"rich"|"custom", swatchId?, color, rainbow: bool }
+         */
+        function loadStoredProfileTheme() {
+            try {
+                const raw = localStorage.getItem(THEME_STORAGE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== "object") return null;
+                return parsed;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveStoredProfileTheme(themeObj) {
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeObj));
+            } catch (e) {
+                console.warn("[ProfileTheme] localStorage'a yazılamadı:", e);
+            }
+        }
+
+        /**
+         * Seçilen temayı gerçek DOM'a uygular: .profile-page üzerine
+         * --profile-theme-color CSS değişkeni + has-custom-theme /
+         * is-rainbow-mode sınıflarını basar.
+         */
+        function applyProfileThemeToDom(themeObj) {
+            const page = document.getElementById("profilePage");
+            if (!page) return;
+
+            if (!themeObj || (!themeObj.color && !themeObj.rainbow)) {
+                page.classList.remove("has-custom-theme", "is-rainbow-mode");
+                page.style.removeProperty("--profile-theme-color");
+                return;
+            }
+
+            if (themeObj.color) {
+                page.style.setProperty("--profile-theme-color", themeObj.color);
+                page.classList.add("has-custom-theme");
+            }
+            page.classList.toggle("is-rainbow-mode", !!themeObj.rainbow);
+        }
+
+        /**
+         * Rütbeye göre erişilebilir olan tüm renk kartlarını (basic +
+         * rich) çizer; kilitli olanlara 🔒 ve rütbe uyarısı ekler.
+         * Seçili tema varsa üzerinde ✓ işareti gösterir.
+         */
+        function renderProfileThemeSwatches(profile) {
+            const tier = resolveThemeTier(profile && profile.role);
+            const stored = loadStoredProfileTheme();
+            const selectedColor = stored && !stored.rainbow ? stored.color : null;
+
+            const basicGrid = document.getElementById("profileThemeBasicSwatches");
+            const richGrid = document.getElementById("profileThemeRichSwatches");
+            const richLockNote = document.getElementById("profileThemeRichLockNote");
+            const ogBlock = document.getElementById("profileThemeOgBlock");
+            const ogLockNote = document.getElementById("profileThemeOgLockNote");
+            const customRow = document.getElementById("profileThemeCustomRow");
+            const rainbowToggle = document.getElementById("profileThemeRainbowToggle");
+            const lockedBanner = document.getElementById("profileThemeLockedBanner");
+            const lockedBannerText = document.getElementById("profileThemeLockedBannerText");
+
+            if (!basicGrid || !richGrid) return;
+
+            const canRich = themeTierAtLeast(tier, "veteran");
+            const canOg = themeTierAtLeast(tier, "og");
+
+            // Üst uyarı bandı: sadece hiçbir kilitli katmana erişimi
+            // olmayan (normal) oyunculara gösterilir.
+            if (lockedBanner) {
+                if (tier === "normal") {
+                    lockedBanner.style.display = "flex";
+                    if (lockedBannerText) {
+                        lockedBannerText.textContent =
+                            "Zengin renk paleti ve özel RGB modu, Veteran ve üzeri rütbelere özeldir.";
+                    }
+                } else {
+                    lockedBanner.style.display = "none";
+                }
+            }
+
+            function buildSwatch(entry, isLocked) {
+                const el = document.createElement("div");
+                el.className = "theme-swatch" + (isLocked ? " is-locked" : "");
+                el.style.background = entry.color;
+                el.title = isLocked
+                    ? `${entry.name} (Kilitli — rütbe yetersiz)`
+                    : entry.name;
+                el.setAttribute("data-swatch-id", entry.id);
+
+                if (isLocked) {
+                    const lockSpan = document.createElement("span");
+                    lockSpan.className = "theme-swatch-lock";
+                    lockSpan.textContent = "🔒";
+                    el.appendChild(lockSpan);
+                } else {
+                    if (selectedColor && selectedColor.toLowerCase() === entry.color.toLowerCase()) {
+                        el.classList.add("is-selected");
+                        const check = document.createElement("span");
+                        check.className = "theme-swatch-check";
+                        check.textContent = "✓";
+                        el.appendChild(check);
+                    }
+                    el.addEventListener("click", () => {
+                        setProfileTheme({ mode: "swatch", swatchId: entry.id, color: entry.color, rainbow: false });
+                    });
+                }
+                return el;
+            }
+
+            // --- Katman 1: herkese açık ---
+            basicGrid.innerHTML = "";
+            THEME_BASIC_PALETTE.forEach((entry) => {
+                basicGrid.appendChild(buildSwatch(entry, false));
+            });
+
+            // --- Katman 2: Veteran+ ---
+            richGrid.innerHTML = "";
+            THEME_RICH_PALETTE.forEach((entry) => {
+                richGrid.appendChild(buildSwatch(entry, !canRich));
+            });
+            if (richLockNote) richLockNote.style.display = canRich ? "none" : "flex";
+
+            // --- Katman 3: OG+ özel HEX + RGB ---
+            if (ogBlock) {
+                if (customRow) {
+                    customRow.style.opacity = canOg ? "1" : "0.45";
+                    customRow.style.pointerEvents = canOg ? "auto" : "none";
+                }
+                if (rainbowToggle) {
+                    rainbowToggle.disabled = !canOg;
+                    rainbowToggle.checked = !!(stored && stored.rainbow) && canOg;
+                }
+                if (ogLockNote) ogLockNote.style.display = canOg ? "none" : "flex";
+            }
+
+            // Özel HEX inputlarını mevcut tema ile senkronla.
+            const colorInput = document.getElementById("profileThemeCustomColorInput");
+            const hexInput = document.getElementById("profileThemeCustomHexInput");
+            if (selectedColor && /^#[0-9a-f]{6}$/i.test(selectedColor)) {
+                if (colorInput) colorInput.value = selectedColor;
+                if (hexInput) hexInput.value = selectedColor.toUpperCase();
+            }
+        }
+
+        /**
+         * Yeni tema tercihini doğrular (rütbe yetkisi var mı), DOM'a
+         * uygular, localStorage'a kaydeder ve (mümkünse) Firebase
+         * profiline yansıtır ki başka cihazlarda da görünsün.
+         */
+        function setProfileTheme(themeObj) {
+            const profile = window.CommunityAuth && window.CommunityAuth.profile;
+            const tier = resolveThemeTier(profile && profile.role);
+
+            // Kilit kontrolü: rich palette Veteran+, custom/rainbow OG+ ister.
+            if (themeObj.mode === "swatch") {
+                const isRich = THEME_RICH_PALETTE.some((e) => e.id === themeObj.swatchId);
+                if (isRich && !themeTierAtLeast(tier, "veteran")) {
+                    alert("🔒 Bu renk paleti Veteran ve üzeri rütbelere özeldir.");
+                    return;
+                }
+            }
+            if ((themeObj.mode === "custom" || themeObj.rainbow) && !themeTierAtLeast(tier, "og")) {
+                alert("🔒 Özel renk seçici ve RGB modu OG ve üzeri rütbelere özeldir.");
+                return;
+            }
+
+            saveStoredProfileTheme(themeObj);
+            applyProfileThemeToDom(themeObj);
+            renderProfileThemeSwatches(profile);
+
+            // Cihazlar arası senkron için, izin varsa Firebase'e de yaz
+            // (opsiyonel — yoksa sadece localStorage ile çalışmaya devam eder).
+            try {
+                if (window.CommunityAuth && window.CommunityAuth.user && typeof database !== "undefined") {
+                    database.ref('users/' + window.CommunityAuth.user.uid + '/profileTheme').set(themeObj);
+                }
+            } catch (e) {
+                console.warn("[ProfileTheme] Firebase senkronu atlandı:", e);
+            }
+        }
+
+        /**
+         * Profil sekmesi ilk açıldığında / yenilendiğinde temayı
+         * localStorage'dan (varsa Firebase profilinden) okuyup uygular.
+         */
+        function initProfileTheme(profile) {
+            const themeCard = document.getElementById("profileThemeCard");
+            if (themeCard) themeCard.style.display = "block";
+
+            // Firebase'de kayıtlı bir tema varsa ve localStorage boşsa,
+            // onu localStorage'a senkronla (cihazlar arası ilk yükleme).
+            let stored = loadStoredProfileTheme();
+            if (!stored && profile && profile.profileTheme) {
+                stored = profile.profileTheme;
+                saveStoredProfileTheme(stored);
+            }
+
+            applyProfileThemeToDom(stored);
+            renderProfileThemeSwatches(profile);
+
+            // --- Olay dinleyicileri (tek seferlik kurulum) ---
+            const applyBtn = document.getElementById("profileThemeCustomApplyBtn");
+            const colorInput = document.getElementById("profileThemeCustomColorInput");
+            const hexInput = document.getElementById("profileThemeCustomHexInput");
+            const rainbowToggle = document.getElementById("profileThemeRainbowToggle");
+
+            if (applyBtn && !applyBtn.dataset.wired) {
+                applyBtn.dataset.wired = "1";
+                applyBtn.addEventListener("click", () => {
+                    const currentProfile = window.CommunityAuth && window.CommunityAuth.profile;
+                    const tier = resolveThemeTier(currentProfile && currentProfile.role);
+                    if (!themeTierAtLeast(tier, "og")) {
+                        alert("🔒 Özel HEX renk seçici OG ve üzeri rütbelere özeldir.");
+                        return;
+                    }
+                    let hex = (hexInput.value || colorInput.value || "").trim();
+                    if (!hex.startsWith("#")) hex = "#" + hex;
+                    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) {
+                        alert("Geçerli bir HEX renk kodu gir (örn. #66FCF1).");
+                        return;
+                    }
+                    setProfileTheme({ mode: "custom", color: hex.toLowerCase(), rainbow: false });
+                });
+            }
+
+            if (colorInput && !colorInput.dataset.wired) {
+                colorInput.dataset.wired = "1";
+                colorInput.addEventListener("input", () => {
+                    if (hexInput) hexInput.value = colorInput.value.toUpperCase();
+                });
+            }
+
+            if (rainbowToggle && !rainbowToggle.dataset.wired) {
+                rainbowToggle.dataset.wired = "1";
+                rainbowToggle.addEventListener("change", () => {
+                    const currentProfile = window.CommunityAuth && window.CommunityAuth.profile;
+                    const tier = resolveThemeTier(currentProfile && currentProfile.role);
+                    if (!themeTierAtLeast(tier, "og")) {
+                        rainbowToggle.checked = false;
+                        alert("🔒 RGB / Rainbow Modu OG ve üzeri rütbelere özeldir.");
+                        return;
+                    }
+                    if (rainbowToggle.checked) {
+                        setProfileTheme({ mode: "rainbow", color: null, rainbow: true });
+                    } else {
+                        // Rainbow kapatılınca, varsa son seçili düz renge dön;
+                        // yoksa tema tamamen temizlenir (varsayılana döner).
+                        const prev = loadStoredProfileTheme();
+                        const fallbackColor = prev && prev.color ? prev.color : null;
+                        setProfileTheme({ mode: fallbackColor ? "swatch" : "none", color: fallbackColor, rainbow: false });
+                    }
+                });
+            }
+        }
+
+        /**
+         * MODÜL 6: Oyuncu istatistik panelini doldurur. Gerçek veri
+         * kaynağı ileride `profile.stats.{playtimeMinutes,voxelLevel,
+         * badgesCount}` alanlarına bağlanabilir (Firebase). Alan yoksa
+         * kullanıcıya boş/varsayılan bir görünüm sunulur ("—" yerine 0
+         * tabanlı, kırık görünmeyen değerler).
+         */
+        function renderProfileStats(profile) {
+            const stats = (profile && profile.stats) || {};
+
+            const playtimeMinutes = Number(stats.playtimeMinutes) || 0;
+            const voxelLevel = Number(stats.voxelLevel) || 1;
+            const badgesCount = Number(stats.badgesCount) || 0;
+
+            const playtimeEl = document.getElementById("profileStatPlaytime");
+            const voxelEl = document.getElementById("profileStatVoxelLevel");
+            const badgesEl = document.getElementById("profileStatBadges");
+
+            if (playtimeEl) playtimeEl.textContent = formatPlaytime(playtimeMinutes);
+            if (voxelEl) voxelEl.textContent = "Lv. " + voxelLevel;
+            if (badgesEl) badgesEl.textContent = badgesCount;
+        }
+
+        function formatPlaytime(totalMinutes) {
+            if (!totalMinutes || totalMinutes <= 0) return "0 sa";
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            if (hours <= 0) return `${minutes} dk`;
+            if (minutes === 0) return `${hours} sa`;
+            return `${hours} sa ${minutes} dk`;
+        }
+
+        // Diğer modüllerden erişim için global'e açıyoruz.
+        window.ProfileThemeSystem = {
+            initProfileTheme,
+            renderProfileThemeSwatches,
+            setProfileTheme,
+            resolveThemeTier
+        };
+        window.ProfileStatsSystem = { renderProfileStats };
 
         // ==============================================================
         // 🔖 MODÜL 2 - BÖLÜM D: @MENTION MOTORU (kullanıcı cache + arama +
@@ -9289,6 +9967,17 @@
             }
 
             document.getElementById("profileRoleChip").textContent = profile.role || "Player";
+
+            // --- MODÜL 6: İstatistikler + Rütbe Bazlı Profil Teması ---
+            // Not: tema SADECE kendi profilinde düzenlenebilir/görünür
+            // olmalı; başkasının profiline bakarken kart tamamen gizlenir.
+            renderProfileStats(profile);
+            const themeCardEl = document.getElementById("profileThemeCard");
+            if (isSelf) {
+                initProfileTheme(profile);
+            } else if (themeCardEl) {
+                themeCardEl.style.display = "none";
+            }
 
             // --- Bio ---
             document.getElementById("profileBioText").textContent =
