@@ -9612,11 +9612,26 @@
                         renderNameColorRgbPicker(nameColorRgbPendingColors, true);
                         setNameColor({ mode: "rainbow", colors: nameColorRgbPendingColors.slice() });
                     } else {
-                        // RGB kapatıldığında, o an geçerli HEX alanı varsa
-                        // onu uygula; yoksa rengi tamamen kaldır.
-                        const hex = (hexInput.value || hexPicker.value || "").trim();
-                        if (isValidHexColor(hex)) {
-                            setNameColor({ mode: "hex", color: hex });
+                        // 🐛 BUGFIX: RGB kapatıldığında ESKİDEN "hexInput.value
+                        // || hexPicker.value" okunuyordu — ama hexPicker bir
+                        // <input type="color"> olduğu için TARAYICI TARAFINDAN
+                        // HER ZAMAN dolu/geçerli bir hex taşır (HTML'deki
+                        // varsayılanı #66fcf1). Bu yüzden kullanıcı hiçbir HEX
+                        // renk seçmemiş olsa bile isValidHexColor(hex) hep true
+                        // dönüyor ve "renksiz" yerine sessizce o varsayılan
+                        // hex'e (#66fcf1) geçiliyordu — toggle kapalı görünse
+                        // de isim hâlâ renkli kalıyordu.
+                        //
+                        // Doğru davranış: sadece kullanıcının DAHA ÖNCE
+                        // gerçekten kaydetmiş olduğu bir HEX modu varsa ona
+                        // dön; aksi halde (daha önce hiç HEX uygulamadıysa,
+                        // sadece RGB kullanıyorduysa) rengi tamamen kaldır.
+                        const profileForToggle = window.CommunityAuth && window.CommunityAuth.profile;
+                        const storedForToggle = getStoredNameColor(profileForToggle);
+                        if (storedForToggle && storedForToggle.mode === "hex") {
+                            setNameColor({ mode: "hex", color: storedForToggle.color });
+                            if (hexPicker) hexPicker.value = storedForToggle.color;
+                            if (hexInput) hexInput.value = storedForToggle.color.toUpperCase();
                         } else {
                             setNameColor(null);
                         }
@@ -11881,15 +11896,36 @@
                 const snap = await database.ref("notifications/" + uid)
                     .orderByChild("type").equalTo("warning").once("value");
                 const val = snap.val();
-                if (!val) return;
+                if (!val) {
+                    console.log("[Warn] notifications/" + uid + " içinde 'warning' tipinde kayıt yok.");
+                    return;
+                }
                 const pending = Object.keys(val)
                     .map(id => Object.assign({ id }, val[id]))
                     .filter(n => !n.acknowledged)
                     .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                if (!pending.length) return;
+                if (!pending.length) {
+                    console.log("[Warn] Uyarı kayıtları var ama hepsi zaten acknowledged=true.");
+                    return;
+                }
                 showWarningModalQueue(pending, uid);
             } catch (err) {
-                console.warn("[Warn] Bekleyen uyarılar okunamadı:", err);
+                // 🐛 TEŞHİS: bu hata eskiden sadece console.warn ile
+                // yutuluyordu ve kullanıcı arayüzünde HİÇBİR iz bırakmıyordu.
+                // En sık nedenleri: (a) notifications/{uid} için Firebase
+                // Rules'ta .read izni "auth.uid === $uid" değilse veya
+                // orderByChild("type") kullanan bir sorgu için ".indexOn":
+                // ["type"] tanımlı değilse PERMISSION_DENIED/index hatası
+                // fırlatır; (b) network/offline durumu. Artık PERMISSION_DENIED
+                // özel olarak ayırt ediliyor ki Rules/index eksikliği kolayca
+                // teşhis edilebilsin.
+                if (err && err.code === "PERMISSION_DENIED") {
+                    console.error("[Warn] notifications/" + uid + " okunamadı — Firebase Rules izin vermiyor. " +
+                        "Rules'ta \"notifications\": { \"$uid\": { \".read\": \"auth.uid === $uid\", \".indexOn\": [\"type\"] } } " +
+                        "tanımlı olduğundan emin olun.");
+                } else {
+                    console.error("[Warn] Bekleyen uyarılar okunamadı:", err && err.code, err && err.message, err);
+                }
             }
         }
 
@@ -16440,6 +16476,30 @@
             document.querySelectorAll(".hub-view").forEach((el) => {
                 el.classList.toggle("is-active", el.getAttribute("data-view") === view);
             });
+
+            // 🐛 BUGFIX (Bug 2 güvence): Menü Teması --accent/--accent-soft
+            // olarak zaten :root'a yazılıyor ve view değişse de kalıcı
+            // kalması gerekiyor — ama bazı sekmeler (ör. Admin Panel) kendi
+            // DOM'unu baştan oluştururken :root üzerinde stil resetleyen bir
+            // 3. parti kod/patch varsa sessizce kaybolabilir. Her sekme
+            // geçişinde temayı localStorage/Firebase'den tekrar okuyup
+            // yeniden basmak, bu tür kaynağı bulunamayan sıfırlanmaları da
+            // örtük şekilde telafi eder ve site geneli tutarlılığı garanti eder.
+            if (window.ProfileThemeSystem && typeof window.ProfileThemeSystem.applyProfileThemeToDom === "function") {
+                try {
+                    const currentProfile = window.CommunityAuth && window.CommunityAuth.profile;
+                    let stored = (function () {
+                        try {
+                            const raw = localStorage.getItem("pl_profile_theme");
+                            return raw ? JSON.parse(raw) : null;
+                        } catch (e) { return null; }
+                    })();
+                    if (!stored && currentProfile && currentProfile.profileTheme) stored = currentProfile.profileTheme;
+                    window.ProfileThemeSystem.applyProfileThemeToDom(stored);
+                } catch (e) {
+                    console.warn("[ProfileTheme] switchView'da yeniden uygulama atlandı:", e);
+                }
+            }
             const titles = {
                 forum:       ["Community",   "Forum"],
                 marketplace: ["Community",   "3D Model Pazarı"],
