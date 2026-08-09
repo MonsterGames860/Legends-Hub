@@ -15859,11 +15859,56 @@
         function openUserProfile(uid) {
             if (!uid) return;
             switchView("profile", { skipDefaultProfileRender: true });
+
+            // 🐛 BUGFIX (yarış durumu kapatma): hedef uid'i Firebase yanıtını
+            // BEKLEMEDEN, hemen şimdi "o an görüntülenen profil" olarak
+            // işaretliyoruz. Önceki haliyle bu state sadece renderProfileView
+            // içinde (yani Firebase yanıtı geldikten SONRA) set ediliyordu;
+            // arada kalan sürede (network gecikmesi) kendi profilimiz arka
+            // planda (security observer) tetiklenirse, guard hâlâ eski
+            // değerde olduğundan ekranı yine kendi profilimizle dolduruyor
+            // ve state'i de kendi uid'imize geri çeviriyordu — bu da asıl
+            // Firebase yanıtı çok gecikirse veya başarısız olursa ekranda
+            // KALICI olarak kendi profilimizin görünmesine yol açıyordu.
+            window.__currentlyViewedProfileUid = uid;
+
+            // 🐛 TEŞHİS: Firebase isteği tamamlanana kadar ekranda net bir
+            // "yükleniyor" durumu göster — böylece "ekranda hâlâ eski/kendi
+            // profilim duruyor" durumu ile "gerçekten render karışıyor"
+            // durumunu ayırt edebiliriz. İstek bittiğinde bu satır zaten
+            // renderProfileView tarafından eziliyor olacak.
+            const headerNameElLoading = document.getElementById("profileUsernameText");
+            if (headerNameElLoading) {
+                headerNameElLoading.innerHTML = "";
+                headerNameElLoading.textContent = "Yükleniyor…";
+            }
+
             database.ref('users/' + uid).once('value').then((snap) => {
+                // Kullanıcı bu Firebase yanıtı gelene kadar başka bir
+                // profile geçmiş olabilir (ör. hızlıca başka birine daha
+                // tıkladıysa); o durumda bu ESKİ yanıtı artık ekrana basma.
+                if (window.__currentlyViewedProfileUid !== uid) return;
                 const targetProfile = snap.val();
                 if (targetProfile) {
                     window.renderProfileView(targetProfile, uid, uid === window.CommunityAuth.user.uid);
+                } else {
+                    // 🐛 TEŞHİS: veri null döndü. Firebase Rules izin verip
+                    // düğüm gerçekten yoksa da bu olur, izin vermeyip
+                    // sessizce boş sonuç döndürdüğünde de (bazı Rules
+                    // yapılandırmalarında okuma reddi hata fırlatmaz,
+                    // sadece null/undefined verir). İkisini ayırt etmek için
+                    // konsola uyarı basıyoruz.
+                    console.warn("[openUserProfile] users/" + uid + " boş/erişilemez döndü. " +
+                        "Firebase Rules'ta başka kullanıcıların 'users/{uid}' düğümünü okuma izni " +
+                        "olmayabilir (örn. \".read\": \"auth.uid === $uid\"). Profil verisi çekilemedi.");
+                    if (headerNameElLoading) headerNameElLoading.textContent = "Kullanıcı bulunamadı.";
                 }
+            }).catch((err) => {
+                if (window.__currentlyViewedProfileUid !== uid) return;
+                // Rules reddi genelde burada PERMISSION_DENIED olarak yakalanır.
+                console.error("[openUserProfile] users/" + uid + " okunamadı — muhtemelen Firebase " +
+                    "Rules izin vermiyor (PERMISSION_DENIED). Detay:", err && err.code, err && err.message);
+                if (headerNameElLoading) headerNameElLoading.textContent = "Profil yüklenemedi (izin hatası).";
             });
         }
 
