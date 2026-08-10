@@ -20762,29 +20762,27 @@
                         updatedAt: clientNow,
                         unreadCount: 0
                     });
-                    // 🐛 BUGFIX: Önceden burada otherUid'in kendi
-                    // dm_inbox/{otherUid}/{dmId}/unreadCount değerini
-                    // .once("value") ile OKUMAYA çalışıyorduk. Ama
-                    // rules.json'da dm_inbox/$uid için ".read" kuralı sadece
-                    // "auth.uid === $uid" -- yani sadece kişinin KENDİ
-                    // dm_inbox'ını okumasına izin veriyor. Gönderen, alıcının
-                    // dm_inbox'ını okuyamadığı için bu satır PERMISSION_DENIED
-                    // ile patlıyordu; hata catch'e düşüyordu ama bu satırdan
-                    // SONRAKİ tüm kod (alıcının dm_inbox güncellemesi VE
-                    // dms/meta/members güncellemesi) hiç çalışmıyordu. Sonuç:
-                    // alıcı tarafında "Sohbetler" listesi hep boş kalıyordu.
-                    // Çözüm: ayrı bir okuma yapmadan, transaction() ile
-                    // doğrudan alıcının unreadCount'unu güncelle. Transaction
-                    // sadece ilgili .write kuralına tabi olduğu için ayrı bir
-                    // .read izni gerektirmez.
-                    await database.ref("dm_inbox/" + otherUid + "/" + dmId).transaction((current) => {
-                        return {
-                            otherUid: _myUid,
-                            lastMessage: preview,
-                            lastSenderUid: _myUid,
-                            updatedAt: clientNow,
-                            unreadCount: ((current && current.unreadCount) || 0) + 1
-                        };
+                    // 🐛 BUGFIX (2. deneme): İlk düzeltmede transaction()
+                    // kullanmıştık, ama Firebase RTDB'de transaction() da
+                    // "oku-değiştir-yaz" mantığıyla çalışıyor ve bu okuma adımı
+                    // YİNE ".read" kuralına tabi tutuluyor (Firebase'in resmi
+                    // dokümantasyonu: atomik okuma/yazma işlemleri .read izni
+                    // olmadan reddedilir). dm_inbox/$uid için ".read" kuralı
+                    // sadece "auth.uid === $uid" olduğundan, gönderenin
+                    // transaction() çağrısı da PERMISSION_DENIED alıyordu —
+                    // birebir aynı sorunu farklı bir API ile tekrarlamıştık.
+                    //
+                    // Asıl çözüm: hiç okuma yapmadan, ServerValue.increment()
+                    // ile unreadCount'u SUNUCU TARAFINDA artırmak. Bu tamamen
+                    // bir ".write" işlemidir, ayrı bir ".read" izni gerektirmez
+                    // -- yeni değer sunucuda hesaplanır, istemci mevcut değeri
+                    // hiç görmeden/okumadan sadece "+1 ekle" komutunu yollar.
+                    await database.ref("dm_inbox/" + otherUid + "/" + dmId).update({
+                        otherUid: _myUid,
+                        lastMessage: preview,
+                        lastSenderUid: _myUid,
+                        updatedAt: clientNow,
+                        unreadCount: firebase.database.ServerValue.increment(1)
                     });
                     await database.ref("dms/" + dmId + "/meta").update({
                         members: { [_myUid]: true, [otherUid]: true },
