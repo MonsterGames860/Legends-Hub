@@ -11424,8 +11424,21 @@
         // ------------------------------------------------------------
         // 9) SECURITY OBSERVER (canlı izleme)
         // ------------------------------------------------------------
+        // BUG NOTU: Bu dinleyici önceden hiç kapatılmıyordu. auth.signOut()
+        // çağrıldığında token anında geçersiz olur ama bu "users/{uid}"
+        // dinleyicisi hâlâ açık kalırdı; rules.json'daki ".read": "auth != null"
+        // kuralı yüzünden dinleyici bir permission_denied hatası alır ve bu,
+        // signOut() promise'inin/click handler'ının askıda kalmasına (Çıkış
+        // Yap butonunun "Çıkış yapılıyor…" durumunda donmasına) yol açardı.
+        // Çözüm: dinleyici referansını sakla, initLogout() signOut'tan ÖNCE
+        // stopSecurityObserver() ile bunu .off() ederek kapatsın.
+        let _securityObserverUid = null;
+        let _securityObserverCallback = null;
+
         function startSecurityObserver(uid) {
-            database.ref('users/' + uid).on('value', (snap) => {
+            stopSecurityObserver(); // varsa eski dinleyiciyi önce kapat
+
+            const callback = (snap) => {
                 const profile = snap.val();
 
                 if (!profile) {
@@ -11445,7 +11458,19 @@
                 document.dispatchEvent(new CustomEvent("communitystudio:profile-updated", {
                     detail: { profile }
                 }));
-            });
+            };
+
+            _securityObserverUid = uid;
+            _securityObserverCallback = callback;
+            database.ref('users/' + uid).on('value', callback);
+        }
+
+        function stopSecurityObserver() {
+            if (_securityObserverUid && _securityObserverCallback) {
+                database.ref('users/' + _securityObserverUid).off('value', _securityObserverCallback);
+            }
+            _securityObserverUid = null;
+            _securityObserverCallback = null;
         }
 
         // ------------------------------------------------------------
@@ -13771,6 +13796,10 @@
                 btn.disabled = true;
                 btn.textContent = "Çıkış yapılıyor…";
                 try {
+                    // Auth token'ı geçersiz olmadan ÖNCE users/{uid} dinleyicisini
+                    // kapat -- aksi halde permission_denied hatası signOut()
+                    // akışını askıda bırakabiliyordu (bkz. yukarıdaki BUG NOTU).
+                    stopSecurityObserver();
                     await auth.signOut();
                     // Auth state change yayılırken hub'ı hemen gizle ve giriş formunu göster
                     var shell = document.getElementById("hubShell");
@@ -20733,14 +20762,29 @@
                         updatedAt: clientNow,
                         unreadCount: 0
                     });
-                    const otherUnreadSnap = await database.ref("dm_inbox/" + otherUid + "/" + dmId + "/unreadCount").once("value");
-                    const otherUnread = (otherUnreadSnap.val() || 0) + 1;
-                    await database.ref("dm_inbox/" + otherUid + "/" + dmId).update({
-                        otherUid: _myUid,
-                        lastMessage: preview,
-                        lastSenderUid: _myUid,
-                        updatedAt: clientNow,
-                        unreadCount: otherUnread
+                    // 🐛 BUGFIX: Önceden burada otherUid'in kendi
+                    // dm_inbox/{otherUid}/{dmId}/unreadCount değerini
+                    // .once("value") ile OKUMAYA çalışıyorduk. Ama
+                    // rules.json'da dm_inbox/$uid için ".read" kuralı sadece
+                    // "auth.uid === $uid" -- yani sadece kişinin KENDİ
+                    // dm_inbox'ını okumasına izin veriyor. Gönderen, alıcının
+                    // dm_inbox'ını okuyamadığı için bu satır PERMISSION_DENIED
+                    // ile patlıyordu; hata catch'e düşüyordu ama bu satırdan
+                    // SONRAKİ tüm kod (alıcının dm_inbox güncellemesi VE
+                    // dms/meta/members güncellemesi) hiç çalışmıyordu. Sonuç:
+                    // alıcı tarafında "Sohbetler" listesi hep boş kalıyordu.
+                    // Çözüm: ayrı bir okuma yapmadan, transaction() ile
+                    // doğrudan alıcının unreadCount'unu güncelle. Transaction
+                    // sadece ilgili .write kuralına tabi olduğu için ayrı bir
+                    // .read izni gerektirmez.
+                    await database.ref("dm_inbox/" + otherUid + "/" + dmId).transaction((current) => {
+                        return {
+                            otherUid: _myUid,
+                            lastMessage: preview,
+                            lastSenderUid: _myUid,
+                            updatedAt: clientNow,
+                            unreadCount: ((current && current.unreadCount) || 0) + 1
+                        };
                     });
                     await database.ref("dms/" + dmId + "/meta").update({
                         members: { [_myUid]: true, [otherUid]: true },
