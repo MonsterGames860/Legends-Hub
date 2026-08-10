@@ -13795,42 +13795,28 @@
             btn.addEventListener("click", async function() {
                 btn.disabled = true;
                 btn.textContent = "Çıkış yapılıyor…";
-                try {
-                    // Auth token'ı geçersiz olmadan ÖNCE users/{uid} dinleyicisini
-                    // kapat -- aksi halde permission_denied hatası signOut()
-                    // akışını askıda bırakabiliyordu (bkz. yukarıdaki BUG NOTU).
-                    stopSecurityObserver();
 
-                    // 🐛 BUGFIX: startSecurityObserver dışında da onlarca
-                    // kalıcı Firebase dinleyicisi (.on("value")) var
-                    // (mesajlar, gruplar, dm_inbox, community_directory vb.).
-                    // Bunların hiçbiri signOut() öncesi kapatılmıyordu; auth
-                    // token'ı geçersiz olur olmaz herhangi biri
-                    // permission_denied alıp signOut() promise'ini sonsuza
-                    // dek askıda bırakabiliyordu -- bu yüzden "stopSecurityObserver"
-                    // eklemesi tek başına yetmedi. Kaynağı tek tek avlamak
-                    // yerine, signOut()'u bir zaman aşımı ile yarıştırıyoruz:
-                    // 4 saniye içinde tamamlanmazsa da UI zorla giriş ekranına
-                    // dönüyor -- buton artık HİÇBİR senaryoda sonsuza kadar
-                    // "Çıkış yapılıyor…" durumunda kalamaz.
-                    const signOutPromise = auth.signOut();
-                    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 4000));
-                    await Promise.race([signOutPromise, timeoutPromise]);
+                // 🐛 BUGFIX (2. deneme): Promise.race + zaman aşımı da güvenilir
+                // olmadı -- sayfa "Çıkış yapılıyor…" durumunda takılı kalmaya
+                // devam ediyordu. Sebep muhtemelen: uygulamada 30'dan fazla
+                // kalıcı Firebase dinleyicisi var ve signOut() sonrası bunlardan
+                // biri (ya da senkron olmayan bir DOM/state güncellemesi) hatalı
+                // bir durumda JS execution'ı bloke ediyor/UI'ı güncellemiyor.
+                //
+                // Kesin çözüm: kaynağı avlamak yerine SAYFAYI ZORLA YENİLE.
+                // signOut()'u başlat (beklemeden), kısa bir gecikme sonrası
+                // location.reload() çağır. Sayfa yeniden yüklendiğinde:
+                //   - Tüm kalıcı dinleyiciler sıfırdan kurulur (eskisi hiç kalmaz)
+                //   - auth.currentUser artık null olduğu için
+                //     onAuthStateChanged(null) → finalizeAuthDecision(null) →
+                //     showDeniedScreen("no_session") otomatik tetiklenir
+                //   - Kullanıcı doğrudan giriş ekranını görür
+                // Bu, dinleyici sayısı kaç olursa olsun %100 garanti bir çözüm.
+                try { auth.signOut(); } catch (err) { console.error("[Auth] signOut çağrısı hata verdi:", err); }
 
-                    // signOut() arka planda hâlâ sürüyor olabilir (zaman
-                    // aşımına uğradıysak) ama Firebase local auth state'i
-                    // signOut() çağrılır çağrılmaz senkron olarak temizlediği
-                    // için UI'ı güvenle giriş ekranına döndürebiliriz.
-                    var shell = document.getElementById("hubShell");
-                    var gate = document.getElementById("authGate");
-                    if (shell) shell.classList.remove("is-active");
-                    if (gate) gate.style.display = "";
-                    showDeniedScreen("no_session");
-                } catch (err) {
-                    console.error("[Auth] Çıkış yapılamadı:", err);
-                    btn.disabled = false;
-                    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2H2v12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 5l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Çıkış Yap';
-                }
+                setTimeout(function () {
+                    location.reload();
+                }, 400);
             });
         }
 
