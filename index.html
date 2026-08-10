@@ -14275,7 +14275,48 @@
          * @param {string} messageId - bildirimde referans verilecek mesaj ID'si
          * @param {string} textSnippet - bildirimde gösterilecek kısa metin
          */
+        // Helper ve üzeri kabul edilen roller (GROUP_MENTIONS'taki
+        // minTier: "helper" ile aynı eşik). notifyGroupMention() bu listeyi
+        // kullanarak database.ref("users") üzerinde rol başına tek seferlik
+        // (once) bir sorgu yapar -- kalıcı bir dinleyici AÇMAZ, bu yüzden
+        // her @LegendsSupport gönderiminde küçük bir maliyeti vardır ama
+        // sürekli açık bir "tüm kullanıcılar" cache'i gerektirmez.
+        const STAFF_ROLES_FOR_GROUP_MENTION = [
+            "Owner / Developer", "Admin / Developer", "Developer",
+            "Admin", "Mod", "Beta Tester", "Helper"
+        ];
+
+        /**
+         * @LegendsSupport ([mention:group:support]) fan-out'u: encodedText
+         * içinde bu token varsa, "users" düğümünü role göre tarayıp
+         * helper-ve-üzeri rolündeki HERKESE (gönderen hariç) writeNotification()
+         * çağırır. @everyone/@here'den farklı olarak hedef kitle üye listesi
+         * değil, rol bazlı bir sorgu -- bu yüzden ayrı bir fonksiyon.
+         */
+        function notifyGroupMention(encodedText, groupId, channelId, actorUid, actorUsername, messageId, textSnippet) {
+            if (!/\[mention:group:support\]/.test(encodedText)) return;
+
+            STAFF_ROLES_FOR_GROUP_MENTION.forEach((role) => {
+                database.ref("users").orderByChild("role").equalTo(role).once("value")
+                    .then((snap) => {
+                        const users = snap.val() || {};
+                        Object.keys(users).forEach((tUid) => {
+                            if (tUid === actorUid) return; // kendine bildirim yok
+                            writeNotification(tUid, {
+                                type: "mention", context: "group_support", actorUsername, actorUid,
+                                groupId, channelId, messageId, textSnippet
+                            });
+                        });
+                    })
+                    .catch(() => {}); // kritik değil — sessiz hata
+            });
+        }
+
         function notifyEveryoneOrHere(encodedText, groupId, channelId, actorUid, actorUsername, messageId, textSnippet) {
+            // @LegendsSupport ayrı bir hedef kitleye (rol bazlı) gittiği için
+            // kendi fan-out fonksiyonunda ele alınır; burada sadece tetiklenir.
+            notifyGroupMention(encodedText, groupId, channelId, actorUid, actorUsername, messageId, textSnippet);
+
             const hasEveryone = /\[mention:everyone\]/.test(encodedText);
             const hasHere = /\[mention:here\]/.test(encodedText);
             if (!hasEveryone && !hasHere) return;
