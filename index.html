@@ -8029,6 +8029,25 @@
                                 <div class="forum-modal-error" id="groupDetailVerifiedError" style="display:none;"></div>
                             </div>
 
+                            <!-- 🏷️ Topluluk Rozeti (CommunityBadge) -- sadece
+                                 topluluk SAHİBİNE ve sadece topluluk doğrulanmışsa
+                                 (mavi tikliyse) görünür. Üyeler bu rozeti kendi
+                                 profillerinde takıp çıkarabilir (bkz. Profil sekmesi). -->
+                            <div class="msg-group-detail-section" id="groupDetailBadgeSection" style="display:none;">
+                                <div class="msg-group-detail-section-title">🏷️ Topluluk Rozeti</div>
+                                <p style="font-size:12px;color:var(--text-dim,#9aa);margin:0 0 8px;">
+                                    Üyelerinin profilinde gösterebileceği, bir emoji + en fazla 4 karakterlik bir rozet oluştur.
+                                    Yalnızca doğrulanmış (mavi tikli) topluluklar rozet oluşturabilir.
+                                </p>
+                                <div class="community-badge-swatch-grid" id="groupDetailBadgeSwatchGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
+                                <div class="msg-group-detail-desc-row">
+                                    <input type="text" class="forum-text-input" id="groupDetailBadgeLabelInput" maxlength="4" placeholder="En fazla 4 karakter (örn. OYUN)" style="flex:1;">
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-save-btn" id="groupDetailBadgeSaveBtn">Kaydet</button>
+                                </div>
+                                <button type="button" class="forum-btn forum-btn-ghost" id="groupDetailBadgeRemoveBtn" style="margin-top:8px;display:none;">Rozeti Kaldır</button>
+                                <div class="forum-modal-error" id="groupDetailBadgeError" style="display:none;"></div>
+                            </div>
+
                             <!-- İzinler (sadece yönetici/kurucu görür) -->
                             <div class="msg-group-detail-section" id="groupDetailPermissionsSection">
                                 <div class="msg-group-detail-section-title" id="groupDetailPermissionsHeading">Grup İzinleri</div>
@@ -8557,6 +8576,20 @@
                                 <button type="button" class="forum-btn forum-btn-ghost" id="profileReportBtn" style="padding:7px 14px; font-size:0.78rem;">🚩 Şikâyet Et</button>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- 🏷️ TAKILI ROZET SEÇİMİ — sadece KENDİ profilimizde
+                         görünür (başkasının profiline bakarken gizli). Üyesi
+                         olduğumuz VE rozeti olan toplulukları listeler; hiçbir
+                         topluluğun rozeti yoksa kart tamamen gizlenir. -->
+                    <div class="profile-card" id="myBadgePickerCard" style="display:none;">
+                        <div class="profile-card-header">
+                            <span>🏷️ Topluluk Rozetim</span>
+                        </div>
+                        <p style="font-size:12px;color:var(--text-dim,#9aa);margin:0 0 10px;">
+                            Üyesi olduğun doğrulanmış toplulukların rozetlerinden birini takabilirsin. Rozetin her yerde (mesajlarında, profilinde) isminin yanında görünür.
+                        </p>
+                        <div id="myBadgePickerList" style="display:flex;flex-direction:column;gap:6px;"></div>
                     </div>
 
                     <!-- BIO -->
@@ -9231,9 +9264,10 @@
         }
 
         /**
-         * Rütbe etiketi + kullanıcı adı + (varsa) mavi tik — sohbet ve
-         * profil kartlarında kullanıcı isimlerinin gösterileceği TEK
-         * merkezi fonksiyon. Format: "[RÜTBE] KullanıcıAdı ✓"
+         * Rütbe etiketi + kullanıcı adı + (varsa) mavi tik + (varsa) topluluk
+         * rozeti — sohbet ve profil kartlarında kullanıcı isimlerinin
+         * gösterileceği TEK merkezi fonksiyon. Format:
+         * "[RÜTBE] KullanıcıAdı ✓ 🏷️OYUN"
          *
          * `nameColor` (opsiyonel, 5. parametre): normalize edilmiş
          * { mode:"hex", color } veya { mode:"rainbow", colors } objesi.
@@ -9242,13 +9276,20 @@
          * formatRankTagHtml burada ayrı çağrılır ve nameColor'dan
          * habersizdir. Bu, İstenen "sabit [TAG], dinamik isim" kuralının
          * garantisidir.
+         *
+         * `equippedBadgeGroupId` (opsiyonel, 6. parametre): kullanıcının
+         * users/{uid}/equippedBadgeGroupId değeri. Verilmezse (eski çağrı
+         * yerlerinde olduğu gibi) rozet basılmaz -- geriye dönük uyumludur.
          */
-        function renderNameWithRank(username, role, isVerified, nameColor) {
+        function renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId) {
             const safeName = escapeHtml(username || "Kullanıcı");
             const nameHtml = window.NameColorSystem
                 ? window.NameColorSystem.wrapNameWithColor(safeName, nameColor)
                 : safeName;
-            return `${formatRankTagHtml(role)}${nameHtml}${renderVerifiedBadge(isVerified)}`;
+            const badgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
+                ? renderCommunityBadge(equippedBadgeGroupId, "14px")
+                : "";
+            return `${formatRankTagHtml(role)}${nameHtml}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
         }
 
         /**
@@ -9258,13 +9299,19 @@
          * yerine varsa kullanıcının o topluluktaki EN YÜKSEK yerel
          * rütbesinin rengiyle ismi boyar. roleColor verilmezse (kullanıcının
          * o toplulukta rütbesi yoksa) isim normal renkte kalır.
+         *
+         * `equippedBadgeGroupId` (opsiyonel, 4. parametre): bkz.
+         * renderNameWithRank'teki aynı isimli parametrenin açıklaması.
          */
-        function renderCommunityMemberName(username, isVerified, roleColor) {
+        function renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId) {
             const safeName = escapeHtml(username || "Kullanıcı");
             const nameHtml = roleColor
                 ? `<span style="color:${escapeHtml(roleColor)}; font-weight:700;">${safeName}</span>`
                 : safeName;
-            return `${nameHtml}${renderVerifiedBadge(isVerified)}`;
+            const badgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
+                ? renderCommunityBadge(equippedBadgeGroupId, "14px")
+                : "";
+            return `${nameHtml}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
         }
 
         // ---------- MAVİ TİK (VERIFIED BADGE) — tek merkezi render ----------
@@ -9284,6 +9331,133 @@
             return `<span class="username-with-badge" style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="username-text">${safeName}</span>
                 ${renderVerifiedBadge(isVerified)}
+            </span>`;
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // 🏷️ TOPLULUK ROZETİ (CommunityBadge) — Discord tarzı, sadece mavi
+        // tikli (isVerified) topluluklara özel, tek rozet/topluluk.
+        // ════════════════════════════════════════════════════════════════
+        // Veri modeli:
+        //   group_chats/{gid}/meta/badge: { emojiId, label (≤4 karakter),
+        //                                    createdAt, updatedAt }
+        //   community_directory/{gid}/badge: aynı obje (üye olmayanların da
+        //     görebilmesi için meta'dan community_directory'e senkron kopya —
+        //     tıpkı memberCount/isVerified gibi diğer "keşif" alanları gibi)
+        //   users/{uid}/equippedBadgeGroupId: "{gid}" | null
+        //
+        // Rozet HİÇBİR YERDE kullanıcı objesine kopyalanmaz -- her render'da
+        // canlı olarak _communityDirectoryCache[gid].badge'den okunur. Bu
+        // sayede sahip rozeti silerse/değiştirirse ya da kullanıcı topluluktan
+        // ayrılırsa, rozet otomatik ve anında kaybolur (ayrı bir "temizlik"
+        // işlemi gerekmez).
+        const COMMUNITY_BADGE_EMOJIS = {
+            // id: { label (seçim ekranında gösterilecek isim), pixels: 8x8 renk matrisi }
+            // Basit "pixel-art" görünümü için 8x8 bir ızgara, her hücre bir
+            // renk kodu ("" = boş/şeffaf). image-rendering:pixelated ile
+            // net köşeli render edilir.
+            star: {
+                name: "Yıldız", color: "#ffd23f",
+                grid: [
+                    "..XX....","..XX....","XXXXXX..","..XXXX..","..XX.X..","..X..X..","..X..X..","........"
+                ]
+            },
+            controller: {
+                name: "Kontrolcü", color: "#66fcf1",
+                grid: [
+                    "........","..XXXX..",".XXXXXX.","XX.XX.XX","XXXXXXXX","XXXXXXXX",".XX..XX.","........"
+                ]
+            },
+            heart: {
+                name: "Kalp", color: "#ff4d6d",
+                grid: [
+                    "........",".XX..XX.","XXXXXXXX","XXXXXXXX",".XXXXXX.","..XXXX..","...XX...","........"
+                ]
+            },
+            crown: {
+                name: "Taç", color: "#ffb703",
+                grid: [
+                    "........","X.X.X.X.","XXXXXXX.","XXXXXXX.","XXXXXXX.","XXXXXXX.","........","........"
+                ]
+            },
+            skull: {
+                name: "Kafatası", color: "#e0e0e0",
+                grid: [
+                    "........",".XXXXXX.","XXXXXXXX","XX.XX.XX","XXXXXXXX",".X.XX.X.","..X..X..","........"
+                ]
+            },
+            bolt: {
+                name: "Şimşek", color: "#ffe066",
+                grid: [
+                    "....XX..","...XX...","..XX....",".XXXXXX.","...XX...","..XX....",".XX.....","........"
+                ]
+            },
+            gem: {
+                name: "Mücevher", color: "#7fd8ff",
+                grid: [
+                    "........",".XXXXXX.","XXXXXXXX",".XXXXXX.","..XXXX..","...XX...","........","........"
+                ]
+            },
+            flame: {
+                name: "Alev", color: "#ff7b00",
+                grid: [
+                    "...XX...","..XXXX..",".XXXXXX.",".XXXXXX.","XXXXXXXX","XXXXXXXX",".XXXXXX.","..XXXX.."
+                ]
+            }
+        };
+
+        function renderPixelEmojiSvg(emojiId, sizePx) {
+            const def = COMMUNITY_BADGE_EMOJIS[emojiId];
+            if (!def) return "";
+            const size = sizePx || 16;
+            const cells = [];
+            def.grid.forEach((row, y) => {
+                for (let x = 0; x < row.length; x++) {
+                    if (row[x] === "X") cells.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${def.color}"/>`);
+                }
+            });
+            return `<svg viewBox="0 0 8 8" width="${size}" height="${size}" style="image-rendering:pixelated;image-rendering:crisp-edges;shape-rendering:crispEdges;" xmlns="http://www.w3.org/2000/svg">${cells.join("")}</svg>`;
+        }
+
+        function renderCommunityBadgeSwatchGrid(selectedEmojiId) {
+            return Object.keys(COMMUNITY_BADGE_EMOJIS).map((id) => {
+                const isSelected = id === selectedEmojiId;
+                return `<button type="button" class="community-badge-swatch${isSelected ? " is-selected" : ""}" data-badge-emoji="${id}" title="${escapeAttr(COMMUNITY_BADGE_EMOJIS[id].name)}">
+                    ${renderPixelEmojiSvg(id, 22)}
+                </button>`;
+            }).join("");
+        }
+
+        /**
+         * Bir kullanıcının taktığı topluluk rozetini render eder (varsa).
+         * Rozet HER ZAMAN canlı community_directory cache'inden okunur --
+         * kalıcı bir kopya değildir. equippedGroupId artık var olmayan bir
+         * topluluğa, ya da rozeti silinmiş/kullanıcının artık üyesi olmadığı
+         * bir topluluğa işaret ediyorsa, hiçbir şey render edilmez (sessizce
+         * kaybolur).
+         *
+         * @param equippedGroupId  users/{uid}/equippedBadgeGroupId değeri
+         * @param memberGroupIds   kullanıcının üyesi olduğu grup id'leri seti
+         *                         (Set ya da {gid:true} objesi) -- opsiyonel,
+         *                         verilirse üyelik kontrolü de yapılır.
+         */
+        function renderCommunityBadge(equippedGroupId, size, memberGroupIds) {
+            if (!equippedGroupId) return "";
+            if (typeof window === "undefined" || !window.CommunityDirectoryCache) return "";
+            const dir = window.CommunityDirectoryCache[equippedGroupId];
+            if (!dir || !dir.badge || !dir.badge.emojiId || !dir.isVerified) return "";
+            // Üyelik kontrolü verildiyse ve kullanıcı artık üye değilse gösterme.
+            if (memberGroupIds) {
+                const isMember = memberGroupIds instanceof Set
+                    ? memberGroupIds.has(equippedGroupId)
+                    : !!memberGroupIds[equippedGroupId];
+                if (!isMember) return "";
+            }
+            const s = size || "16px";
+            const label = escapeHtml((dir.badge.label || "").slice(0, 4));
+            return `<span class="community-badge-pill" data-badge-group-id="${escapeAttr(equippedGroupId)}" title="${escapeAttr(dir.name || "Topluluk")}" style="display:inline-flex;align-items:center;gap:2px;cursor:pointer;vertical-align:middle;">
+                ${renderPixelEmojiSvg(dir.badge.emojiId, s.replace("px", ""))}
+                ${label ? `<span class="community-badge-label" style="font-size:11px;font-weight:700;letter-spacing:.02em;">${label}</span>` : ""}
             </span>`;
         }
 
@@ -9446,7 +9620,8 @@
             getRankColor,
             formatRankTagHtml,
             renderNameWithRank,
-            renderCommunityMemberName
+            renderCommunityMemberName,
+            renderCommunityBadge
         };
 
         // NameColorSystem: RBAC'tan ayrı ama onunla aynı dosyada, RBAC'ın
@@ -10547,6 +10722,12 @@
                         isVerified: u.isVerified === true,
                         avatarUrl: u.avatarUrl || "",
                         role: u.role || "user",
+                        // 🏷️ Takılı topluluk rozeti -- burada sadece HANGİ
+                        // topluluğun rozetini taktığı bilgisi tutulur, rozetin
+                        // kendisi (emoji/label) DEĞİL. Gerçek rozet verisi
+                        // her render'da canlı olarak window.CommunityDirectoryCache
+                        // üzerinden okunur (bkz. renderCommunityBadge).
+                        equippedBadgeGroupId: u.equippedBadgeGroupId || null,
                         nameColor: window.NameColorSystem
                             ? window.NameColorSystem.normalize(u.nameColor, fakeProfileForTierCheck)
                             : null
@@ -11682,7 +11863,19 @@
                     RBAC.formatRankTagHtml(profile.role) + headerNameHtml;
             }
             document.getElementById("profileVerifiedBadgeSlot").innerHTML =
-                RBAC.renderVerifiedBadge(profile.isVerified === true, "18px");
+                RBAC.renderVerifiedBadge(profile.isVerified === true, "18px") +
+                (typeof renderCommunityBadge === "function" ? renderCommunityBadge(profile.equippedBadgeGroupId, "18px") : "");
+
+            // 🏷️ Rozet seçim listesi (Profil sekmesi) sadece KENDİ
+            // profilimizde görünür/render edilir -- başkasının profiline
+            // bakarken bu kart tamamen gizli kalmalı (HTML'de default olarak
+            // zaten "display:none", burada sadece kendimizdeyken dolduruyoruz).
+            if (isSelf && typeof renderMyBadgePicker === "function") {
+                renderMyBadgePicker();
+            } else {
+                const pickerCard = document.getElementById("myBadgePickerCard");
+                if (pickerCard) pickerCard.style.display = "none";
+            }
 
             const originalNameEl = document.getElementById("profileOriginalNameText");
             if (profile.originalUsername && profile.originalUsername !== profile.username) {
@@ -20614,7 +20807,8 @@
                         ...e,
                         _username: candidate ? candidate.username : "Kullanıcı",
                         _avatarUrl: candidate ? candidate.avatarUrl : "",
-                        _isVerified: candidate ? candidate.isVerified : false
+                        _isVerified: candidate ? candidate.isVerified : false,
+                        _equippedBadgeGroupId: candidate ? candidate.equippedBadgeGroupId : null
                     };
                 });
 
@@ -20640,7 +20834,7 @@
                             <img class="msg-chat-item-avatar" ${RBAC.renderAvatarAttrs(e._avatarUrl)} alt="">
                             <div class="msg-chat-item-body">
                                 <div class="msg-chat-item-top">
-                                    <span class="msg-chat-item-name">${RBAC.renderNameWithRank ? escapeAttr(e._username) : escapeAttr(e._username)}${RBAC.renderVerifiedBadge(e._isVerified, "13px")}</span>
+                                    <span class="msg-chat-item-name">${RBAC.renderNameWithRank ? escapeAttr(e._username) : escapeAttr(e._username)}${RBAC.renderVerifiedBadge(e._isVerified, "13px")}${RBAC.renderCommunityBadge ? RBAC.renderCommunityBadge(e._equippedBadgeGroupId, "13px") : ""}</span>
                                     <span class="msg-chat-item-time">${relativeTimeShort(e.updatedAt)}</span>
                                 </div>
                                 <div class="msg-chat-item-preview">
@@ -20945,6 +21139,13 @@
                     // da bu cache'e bağlı olduğundan, üyelik her
                     // değiştiğinde onu da tazeliyoruz.
                     renderCommunityList();
+
+                    // 🏷️ Rozet seçim listem (Profil sekmesi) de üyelik
+                    // durumuna bağlı -- topluluktan ayrılınca/katılınca liste
+                    // güncellensin, ve topluluktan ayrılmışsak (ayrıldığımız
+                    // topluluğun rozetini takıyorsak) renderCommunityBadge()
+                    // zaten üyelik kontrolüyle otomatik gizleyecek.
+                    if (typeof renderMyBadgePicker === "function") renderMyBadgePicker();
 
                     // Artık üyesi olmadığımız grupların meta dinleyicilerini
                     // temizle (basit yaklaşım: cache'i filtrele, render'da
@@ -21697,6 +21898,39 @@
                     }
                 }
 
+                // 🏷️ Topluluk Rozeti -- sadece TOPLULUK SAHİBİNE ve sadece
+                // topluluk doğrulanmışsa (isVerified===true) görünür. Global
+                // Owner/Developer olmak burada yeterli DEĞİL -- rozeti
+                // sadece o topluluğun sahibi düzenleyebilir (rules.json'daki
+                // meta/badge .write kuralıyla birebir aynı yetki mantığı).
+                const badgeSection = document.getElementById("groupDetailBadgeSection");
+                if (badgeSection) {
+                    const iAmCommunityOwner = meta.ownerUid === _myUid;
+                    const canManageBadge = isCommunity && meta.isVerified === true && iAmCommunityOwner;
+                    badgeSection.style.display = canManageBadge ? "block" : "none";
+                    if (canManageBadge) {
+                        const currentBadge = meta.badge || null;
+                        const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
+                        if (swatchGrid) {
+                            swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(currentBadge ? currentBadge.emojiId : null);
+                            swatchGrid.dataset.selectedEmoji = currentBadge ? currentBadge.emojiId : "";
+                            swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((btn) => {
+                                btn.addEventListener("click", () => {
+                                    swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((b) => b.classList.remove("is-selected"));
+                                    btn.classList.add("is-selected");
+                                    swatchGrid.dataset.selectedEmoji = btn.getAttribute("data-badge-emoji");
+                                });
+                            });
+                        }
+                        const labelInput = document.getElementById("groupDetailBadgeLabelInput");
+                        if (labelInput) labelInput.value = currentBadge ? (currentBadge.label || "") : "";
+                        const removeBtn = document.getElementById("groupDetailBadgeRemoveBtn");
+                        if (removeBtn) removeBtn.style.display = currentBadge ? "inline-block" : "none";
+                        const badgeErr = document.getElementById("groupDetailBadgeError");
+                        if (badgeErr) badgeErr.style.display = "none";
+                    }
+                }
+
                 // Kimlik (resim + isim)
                 const avatarImg = document.getElementById("groupDetailAvatarImg");
                 const avatarFallback = document.getElementById("groupDetailAvatarFallback");
@@ -22016,7 +22250,90 @@
                 }
             }
 
-            // ── Mesaj sabitleme (sadece yönetici/kurucu) ─────────────────
+            // ── 🏷️ Topluluk Rozeti: kaydet / kaldır ──────────────────────
+            // Sadece topluluk SAHİBİ ve sadece doğrulanmış topluluklarda
+            // (rules.json bunu sunucu tarafında da zorunlu kılar). Hem
+            // group_chats/meta/badge hem community_directory/badge aynı anda
+            // yazılır -- üye olmayanların da (mesaj balonu, profil vb.
+            // yerlerde) rozeti görebilmesi için ikinci kopya şart (bkz.
+            // renderCommunityBadge'in başındaki not).
+            async function saveCommunityBadge() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                const errorEl = document.getElementById("groupDetailBadgeError");
+                if (!groupId || !meta || meta.isCommunity !== true) return;
+                if (meta.ownerUid !== _myUid) {
+                    if (errorEl) { errorEl.textContent = "Rozeti sadece topluluk sahibi düzenleyebilir."; errorEl.style.display = "block"; }
+                    return;
+                }
+                if (meta.isVerified !== true) {
+                    if (errorEl) { errorEl.textContent = "Rozet oluşturmak için topluluğun doğrulanmış (mavi tikli) olması gerekir."; errorEl.style.display = "block"; }
+                    return;
+                }
+                const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
+                const emojiId = swatchGrid ? swatchGrid.dataset.selectedEmoji : "";
+                const label = (document.getElementById("groupDetailBadgeLabelInput")?.value || "").trim().slice(0, 4);
+                if (!emojiId || !COMMUNITY_BADGE_EMOJIS[emojiId]) {
+                    if (errorEl) { errorEl.textContent = "Bir emoji seçmelisin."; errorEl.style.display = "block"; }
+                    return;
+                }
+                if (!label) {
+                    if (errorEl) { errorEl.textContent = "En fazla 4 karakterlik bir etiket yazmalısın."; errorEl.style.display = "block"; }
+                    return;
+                }
+                const now = firebase.database.ServerValue.TIMESTAMP;
+                const badgeObj = { emojiId, label, updatedAt: now, createdAt: (meta.badge && meta.badge.createdAt) || now };
+                try {
+                    await database.ref(`group_chats/${groupId}/meta/badge`).set(badgeObj);
+                    await database.ref(`community_directory/${groupId}/badge`).set(badgeObj);
+                    if (errorEl) errorEl.style.display = "none";
+                    document.getElementById("groupDetailBadgeRemoveBtn").style.display = "inline-block";
+                    showToastGlobal("Topluluk rozeti kaydedildi.");
+                } catch (err) {
+                    console.error("[Topluluk] Rozet kaydedilemedi:", err);
+                    if (errorEl) { errorEl.textContent = "Rozet kaydedilemedi. Tekrar dene."; errorEl.style.display = "block"; }
+                }
+            }
+
+            async function removeCommunityBadge() {
+                const groupId = _activeGroupDetailId;
+                const meta = _groupMetaCache[groupId];
+                const errorEl = document.getElementById("groupDetailBadgeError");
+                if (!groupId || !meta || meta.ownerUid !== _myUid) return;
+                try {
+                    await database.ref(`group_chats/${groupId}/meta/badge`).remove();
+                    await database.ref(`community_directory/${groupId}/badge`).remove();
+                    const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
+                    if (swatchGrid) {
+                        swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(null);
+                        swatchGrid.dataset.selectedEmoji = "";
+                        swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((btn) => {
+                            btn.addEventListener("click", () => {
+                                swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((b) => b.classList.remove("is-selected"));
+                                btn.classList.add("is-selected");
+                                swatchGrid.dataset.selectedEmoji = btn.getAttribute("data-badge-emoji");
+                            });
+                        });
+                    }
+                    const labelInput = document.getElementById("groupDetailBadgeLabelInput");
+                    if (labelInput) labelInput.value = "";
+                    document.getElementById("groupDetailBadgeRemoveBtn").style.display = "none";
+                    if (errorEl) errorEl.style.display = "none";
+                    showToastGlobal("Topluluk rozeti kaldırıldı.");
+                    // 🐛 NOT: users/{uid}/equippedBadgeGroupId bu topluluğa
+                    // işaret eden kullanıcılarda hâlâ eski gid'i tutabilir,
+                    // ama renderCommunityBadge() rozeti HER ZAMAN canlı
+                    // community_directory'den okuduğu için (kalıcı kopya
+                    // değil), badge silinince otomatik ve anında herkesin
+                    // profilinden kaybolur -- ayrı bir "toplu temizlik"
+                    // işlemine gerek yoktur.
+                } catch (err) {
+                    console.error("[Topluluk] Rozet kaldırılamadı:", err);
+                    if (errorEl) { errorEl.textContent = "Rozet kaldırılamadı. Tekrar dene."; errorEl.style.display = "block"; }
+                }
+            }
+
+
             // meta.pinnedMessageId + meta.pinnedMessageSnippet: paneldeki
             // önizleme için mesajın tamamını tekrar okumaya gerek kalmadan
             // hızlıca gösterilebilsin diye küçük bir kopya tutulur.
@@ -22390,6 +22707,8 @@
                 document.getElementById("groupDetailVerifiedToggle")?.addEventListener("change", (e) => {
                     toggleCommunityVerified(e.target.checked);
                 });
+                document.getElementById("groupDetailBadgeSaveBtn")?.addEventListener("click", saveCommunityBadge);
+                document.getElementById("groupDetailBadgeRemoveBtn")?.addEventListener("click", removeCommunityBadge);
                 document.getElementById("groupDetailUnpinBtn")?.addEventListener("click", unpinGroupMessage);
                 document.getElementById("groupDetailAddMemberBtn")?.addEventListener("click", toggleAddMemberPanel);
                 document.getElementById("groupDetailAddMemberSearchInput")?.addEventListener("input", (e) => {
@@ -22559,6 +22878,11 @@
                 _communityDirectoryRef = database.ref("community_directory");
                 _communityDirectoryRef.on("value", (snap) => {
                     _communityDirectoryCache = snap.val() || {};
+                    // Rozet render fonksiyonları (renderCommunityBadge) bu
+                    // cache'e global bir köprü üzerinden erişiyor -- bu IIFE
+                    // kapsamının dışından da (profil, mesaj balonu, DM listesi
+                    // render kodları) okunabilsin diye senkron tutuyoruz.
+                    window.CommunityDirectoryCache = _communityDirectoryCache;
                     renderCommunityList();
                     // Önizleme modalı açıkken directory güncellenirse
                     // (askıya alma, mavi tik, üye sayısı vb.) canlı yenile.
@@ -22568,6 +22892,10 @@
                         // Topluluk silindi, önizleme açıksa kapat.
                         closeCommunityPreviewModal();
                     }
+                    // Kendi rozet seçim listemiz (Profil sekmesi) topluluk
+                    // verisine bağlı olduğu için, dizin her güncellendiğinde
+                    // açıksa yeniden çizilir.
+                    if (typeof renderMyBadgePicker === "function") renderMyBadgePicker();
                 });
             }
 
@@ -22637,7 +22965,71 @@
             }
 
 
-            // ── C-2) Topluluk Oluştur modalı ────────────────────────────
+            // ── 🏷️ Kendi rozet seçim listem (Profil sekmesi) ────────────
+            // Üyesi olduğum VE rozeti olan toplulukları listeler; "Hiçbiri"
+            // (rozet takma) seçeneği her zaman en üstte durur. Seçim anında
+            // users/{uid}/equippedBadgeGroupId'ye yazılır -- rozetin kendisi
+            // hiçbir zaman kopyalanmaz, sadece "hangi topluluğun rozetini
+            // takıyorum" bilgisi tutulur (bkz. renderCommunityBadge notu).
+            function renderMyBadgePicker() {
+                const card = document.getElementById("myBadgePickerCard");
+                const listEl = document.getElementById("myBadgePickerList");
+                if (!card || !listEl || !_myUid) return;
+
+                const eligible = Object.keys(_userGroupsCache || {})
+                    .map((gid) => ({ gid, ...(_communityDirectoryCache[gid] || {}) }))
+                    .filter((c) => c.isVerified === true && c.badge && c.badge.emojiId);
+
+                if (eligible.length === 0) {
+                    card.style.display = "none";
+                    return;
+                }
+                card.style.display = "block";
+
+                const currentEquipped = (window.CommunityAuth.profile && window.CommunityAuth.profile.equippedBadgeGroupId) || null;
+
+                const noneRowHtml = `
+                    <label class="my-badge-picker-row" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${!currentEquipped ? "rgba(255,255,255,0.06)" : "transparent"};">
+                        <input type="radio" name="myBadgePicker" value="" ${!currentEquipped ? "checked" : ""}>
+                        <span style="font-size:13px;color:var(--text-dim,#9aa);">Hiçbiri (rozet takma)</span>
+                    </label>`;
+
+                const rowsHtml = eligible.map((c) => {
+                    const isChecked = currentEquipped === c.gid;
+                    return `
+                        <label class="my-badge-picker-row" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${isChecked ? "rgba(255,255,255,0.06)" : "transparent"};">
+                            <input type="radio" name="myBadgePicker" value="${escapeAttr(c.gid)}" ${isChecked ? "checked" : ""}>
+                            ${renderPixelEmojiSvg(c.badge.emojiId, 18)}
+                            <span style="font-size:13px;font-weight:700;">${escapeHtml(c.badge.label || "")}</span>
+                            <span style="font-size:12px;color:var(--text-dim,#9aa);">${escapeHtml(c.name || "")}</span>
+                        </label>`;
+                }).join("");
+
+                listEl.innerHTML = noneRowHtml + rowsHtml;
+
+                listEl.querySelectorAll('input[name="myBadgePicker"]').forEach((radio) => {
+                    radio.addEventListener("change", async (e) => {
+                        const chosenGid = e.target.value || null;
+                        try {
+                            await database.ref("users/" + _myUid + "/equippedBadgeGroupId").set(chosenGid);
+                            showToastGlobal(chosenGid ? "Rozet takıldı." : "Rozet kaldırıldı.");
+                            // Yeniden çizerek satırların vurgu (highlight)
+                            // durumunu ve olası gecikmeli profile güncellemesini
+                            // hemen yansıt.
+                            listEl.querySelectorAll(".my-badge-picker-row").forEach((row) => {
+                                row.style.background = "transparent";
+                            });
+                            e.target.closest(".my-badge-picker-row").style.background = "rgba(255,255,255,0.06)";
+                        } catch (err) {
+                            console.error("[Rozet] equippedBadgeGroupId yazılamadı:", err);
+                            showToastGlobal("Rozet güncellenemedi, tekrar dene.");
+                        }
+                    });
+                });
+            }
+            window.renderMyBadgePicker = renderMyBadgePicker;
+
+
             function openCreateCommunityModal() {
                 document.getElementById("communityCreateNameInput").value = "";
                 document.getElementById("communityCreateDescInput").value = "";
@@ -22812,6 +23204,22 @@
 
 
             // ── C-3) Topluluk Önizleme modalı (katılmadan önce gözden geçir) ──
+            // 🏷️ Rozet pill'lerine (data-badge-group-id) SAYFA GENELİNDE
+            // tıklama delegasyonu -- rozet profil, mesaj balonu, DM listesi
+            // gibi birçok farklı yerde dinamik olarak render edildiği için,
+            // her render noktasına ayrı ayrı listener eklemek yerine tek bir
+            // delegated listener kullanıyoruz. Mevcut topluluk önizleme
+            // modalını (logo/banner/açıklama/üye sayısı zaten hazır) aynen
+            // yeniden kullanıyoruz -- ayrı bir "rozet bilgi sheet'i" yazmaya
+            // gerek yok, aynı bilgiler zaten orada gösteriliyor.
+            document.addEventListener("click", (e) => {
+                const badgePill = e.target.closest("[data-badge-group-id]");
+                if (!badgePill) return;
+                e.stopPropagation();
+                const gid = badgePill.getAttribute("data-badge-group-id");
+                if (gid) openCommunityPreviewModal(gid);
+            });
+
             function openCommunityPreviewModal(groupId) {
                 _activeCommunityPreviewId = groupId;
                 renderCommunityPreviewModal(groupId);
@@ -23235,6 +23643,7 @@
                     const isVerified = candidate ? candidate.isVerified : false;
                     const role = candidate ? candidate.role : "";
                     const nameColor = candidate ? candidate.nameColor : null;
+                    const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
 
                     // Gruplama kararı: aynı gönderen, üst üste, aradaki süre
                     // pencere içinde, ve bir yanıt (replyTo) değilse (bir
@@ -23271,13 +23680,16 @@
                             if (nameColor && window.NameColorSystem) {
                                 const safeCommunityName = RBAC.escapeHtml(username || "Kullanıcı");
                                 const coloredCommunityName = window.NameColorSystem.wrapNameWithColor(safeCommunityName, nameColor);
-                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderVerifiedBadge(isVerified)}${timeInline}</div>`;
+                                const inlineBadgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
+                                    ? renderCommunityBadge(equippedBadgeGroupId, "14px")
+                                    : "";
+                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderVerifiedBadge(isVerified)}${inlineBadgeHtml}${timeInline}</div>`;
                             } else {
-                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor)}${timeInline}</div>`;
+                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId)}${timeInline}</div>`;
                             }
                         } else {
                             const groupRoleHtml = groupRoleBadgeHtml(activeMetaForBubble, m.authorUid, { forBubble: true });
-                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}${timeInline}</div>`;
+                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}${timeInline}</div>`;
                         }
                     }
 
