@@ -1870,6 +1870,67 @@
     }
     .forum-field-label:first-child { margin-top: 0; }
 
+    /* ==========================================================
+       🖼️ GÖRSEL KONUMLANDIRMA MODALI — avatar/banner/profil arka
+       planı için ortak sürükle + yakınlaştır arayüzü.
+       ========================================================== */
+    .img-pos-modal { max-width: 460px; }
+    .img-pos-modal-body { gap: 14px; }
+    .img-pos-hint {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        text-align: center;
+    }
+    .img-pos-viewport {
+        position: relative;
+        width: 100%;
+        aspect-ratio: var(--img-pos-ratio, 1 / 1);
+        max-height: 60vh;
+        overflow: hidden;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #000;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+    .img-pos-viewport.is-dragging { cursor: grabbing; }
+    /* Yuvarlak avatar önizlemesi için modal JS tarafından bu class eklenir. */
+    .img-pos-viewport.is-round { border-radius: 50%; }
+    .img-pos-viewport img {
+        position: absolute;
+        left: 0;
+        top: 0;
+        max-width: none;
+        max-height: none;
+        transform-origin: 0 0;
+        pointer-events: none;
+        -webkit-user-drag: none;
+    }
+    .img-pos-zoom-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .img-pos-zoom-icon {
+        color: var(--text-dim);
+        font-size: 1rem;
+        font-weight: 700;
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .img-pos-zoom-row input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+    }
+    .img-pos-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 4px;
+    }
+
     .forum-select,
     .forum-text-input,
     .forum-textarea-input {
@@ -7304,6 +7365,39 @@
             </div>
 
             <!-- ============================================================
+                 GÖRSEL KONUMLANDIRMA MODALI — avatar / banner / profil arka
+                 planı için ORTAK. Kullanıcı bir dosya seçtiğinde bu modal
+                 açılır; görseli sürükleyerek (pan) ve slider ile
+                 yakınlaştırarak hangi kısmın kırpılıp kaydedileceğini
+                 seçebilir. Hedef en-boy oranı JS tarafından çağrıldığı yere
+                 göre (avatar 1:1, banner 3:1, profil arka planı 1:1)
+                 dinamik ayarlanır — bkz. openImagePositionModal().
+                 ============================================================ -->
+            <div class="forum-modal-backdrop" id="imgPosModalBackdrop" style="display:none;">
+                <div class="forum-modal img-pos-modal">
+                    <div class="forum-modal-header">
+                        <span id="imgPosModalTitle">Görseli Konumlandır</span>
+                        <button class="forum-modal-close" id="imgPosModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body img-pos-modal-body">
+                        <div class="img-pos-hint">Görseli sürükleyerek konumlandır, kaydırıcıyla yakınlaştır.</div>
+                        <div class="img-pos-viewport" id="imgPosViewport">
+                            <img id="imgPosImg" alt="" draggable="false">
+                        </div>
+                        <div class="img-pos-zoom-row">
+                            <span class="img-pos-zoom-icon">−</span>
+                            <input type="range" id="imgPosZoomSlider" min="100" max="300" value="100" step="1">
+                            <span class="img-pos-zoom-icon">+</span>
+                        </div>
+                        <div class="img-pos-actions">
+                            <button type="button" class="forum-btn forum-btn-ghost" id="imgPosCancelBtn">Vazgeç</button>
+                            <button type="button" class="forum-btn forum-btn-primary" id="imgPosSaveBtn">Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
                  YENİ KONU MODALI (tüm kategorilerde kullanılır, thread
                  kategorisi dropdown'dan seçilir; kategori sekmesinden
                  açıldığında o kategori otomatik seçili gelir)
@@ -12146,6 +12240,201 @@
             });
         }
 
+        // ==============================================================
+        // 🎯 GÖRSEL KONUMLANDIRMA MODALI (ortak) — avatar/banner/profil
+        // arka planı editörlerinin ÜÇÜ DE bu modalı kullanır. Kullanıcı
+        // dosya seçtikten hemen SONRA (otomatik merkez-kırpma yerine) bu
+        // modal açılır: görseli sürükleyerek (pan) ve slider ile
+        // yakınlaştırarak (zoom) hangi bölgenin kırpılıp kaydedileceğini
+        // seçebilir. "Kaydet"e basıldığında, o an ekranda görünen kırpma
+        // alanı hedef piksel boyutuna göre <canvas>'a çizilip JPEG data
+        // URL olarak Promise ile döndürülür — sonrasında çağıran kod
+        // (initProfileAvatarEditor / initProfileBannerEditor /
+        // renderProfileBgPanel) bunu AYNI ŞEKİLDE Firebase'e yazar,
+        // sadece "hangi bölge" artık kullanıcı seçimi.
+        //
+        // openImagePositionModal(file, { targetW, targetH, round, title })
+        //   -> Promise<dataUrl> (kullanıcı Kaydet'e basarsa)
+        //   -> Promise<null>    (kullanıcı Vazgeç'e basarsa / modal kapatılırsa)
+        // ==============================================================
+        function openImagePositionModal(file, opts) {
+            const targetW = opts.targetW;
+            const targetH = opts.targetH;
+            const quality = opts.quality || 0.82;
+            const round = !!opts.round;
+            const title = opts.title || "Görseli Konumlandır";
+
+            return new Promise((resolve) => {
+                const backdrop = document.getElementById("imgPosModalBackdrop");
+                const titleEl = document.getElementById("imgPosModalTitle");
+                const viewport = document.getElementById("imgPosViewport");
+                const imgEl = document.getElementById("imgPosImg");
+                const zoomSlider = document.getElementById("imgPosZoomSlider");
+                const closeBtn = document.getElementById("imgPosModalClose");
+                const cancelBtn = document.getElementById("imgPosCancelBtn");
+                const saveBtn = document.getElementById("imgPosSaveBtn");
+                if (!backdrop || !viewport || !imgEl) { resolve(null); return; }
+
+                const objectUrl = URL.createObjectURL(file);
+                let settled = false;
+
+                function cleanupAndResolve(result) {
+                    if (settled) return;
+                    settled = true;
+                    URL.revokeObjectURL(objectUrl);
+                    backdrop.style.display = "none";
+                    viewport.removeEventListener("pointerdown", onPointerDown);
+                    window.removeEventListener("pointermove", onPointerMove);
+                    window.removeEventListener("pointerup", onPointerUp);
+                    zoomSlider.removeEventListener("input", onZoomInput);
+                    closeBtn.removeEventListener("click", onCancel);
+                    cancelBtn.removeEventListener("click", onCancel);
+                    saveBtn.removeEventListener("click", onSave);
+                    backdrop.removeEventListener("click", onBackdropClick);
+                    resolve(result);
+                }
+                function onCancel() { cleanupAndResolve(null); }
+                function onBackdropClick(e) { if (e.target === backdrop) onCancel(); }
+
+                // Görüntü alanı oranı (avatar/bg 1:1, banner 3:1 vb.) CSS
+                // custom property ile ayarlanır — viewport bu orana göre
+                // aspect-ratio uygular.
+                viewport.style.setProperty("--img-pos-ratio", `${targetW} / ${targetH}`);
+                viewport.classList.toggle("is-round", round);
+                titleEl.textContent = title;
+
+                // Sürükleme/yakınlaştırma durumu: baseScale görseli
+                // viewport'u TAM DOLDURACAK (cover) minimum ölçek; zoom
+                // slider'ı bunun üzerine 1.0-3.0 arası çarpan uygular.
+                let baseScale = 1;
+                let zoom = 1;
+                let offsetX = 0; // görselin sol-üst köşesinin viewport'a göre pikseldeki konumu
+                let offsetY = 0;
+                let naturalW = 0;
+                let naturalH = 0;
+
+                function clampOffset() {
+                    const scale = baseScale * zoom;
+                    const dispW = naturalW * scale;
+                    const dispH = naturalH * scale;
+                    const vpW = viewport.clientWidth;
+                    const vpH = viewport.clientHeight;
+                    // Görsel her zaman viewport'u tamamen kaplamalı — kenar boşluğu asla görünmesin.
+                    const minX = vpW - dispW;
+                    const minY = vpH - dispH;
+                    offsetX = Math.min(0, Math.max(minX, offsetX));
+                    offsetY = Math.min(0, Math.max(minY, offsetY));
+                }
+
+                function applyTransform() {
+                    const scale = baseScale * zoom;
+                    imgEl.style.width = naturalW + "px";
+                    imgEl.style.height = naturalH + "px";
+                    imgEl.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                }
+
+                function centerImage() {
+                    const scale = baseScale * zoom;
+                    const dispW = naturalW * scale;
+                    const dispH = naturalH * scale;
+                    offsetX = (viewport.clientWidth - dispW) / 2;
+                    offsetY = (viewport.clientHeight - dispH) / 2;
+                    clampOffset();
+                }
+
+                imgEl.onload = () => {
+                    naturalW = imgEl.naturalWidth;
+                    naturalH = imgEl.naturalHeight;
+                    const vpW = viewport.clientWidth;
+                    const vpH = viewport.clientHeight;
+                    // "cover" mantığı: görsel her iki eksende de viewport'u
+                    // dolduracak şekilde minimum ölçeği hesapla.
+                    baseScale = Math.max(vpW / naturalW, vpH / naturalH);
+                    zoom = 1;
+                    zoomSlider.value = "100";
+                    centerImage();
+                    applyTransform();
+                };
+                imgEl.src = objectUrl;
+
+                // --- Sürükleme (pan) ---
+                let dragging = false;
+                let dragStartX = 0, dragStartY = 0, dragOffsetStartX = 0, dragOffsetStartY = 0;
+
+                function onPointerDown(e) {
+                    dragging = true;
+                    viewport.classList.add("is-dragging");
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                    dragOffsetStartX = offsetX;
+                    dragOffsetStartY = offsetY;
+                    viewport.setPointerCapture && viewport.setPointerCapture(e.pointerId);
+                }
+                function onPointerMove(e) {
+                    if (!dragging) return;
+                    offsetX = dragOffsetStartX + (e.clientX - dragStartX);
+                    offsetY = dragOffsetStartY + (e.clientY - dragStartY);
+                    clampOffset();
+                    applyTransform();
+                }
+                function onPointerUp() {
+                    dragging = false;
+                    viewport.classList.remove("is-dragging");
+                }
+                viewport.addEventListener("pointerdown", onPointerDown);
+                window.addEventListener("pointermove", onPointerMove);
+                window.addEventListener("pointerup", onPointerUp);
+
+                // --- Yakınlaştırma slider'ı ---
+                function onZoomInput() {
+                    // Slider 100-300 -> zoom çarpanı 1.0-3.0. Odak noktası
+                    // viewport'un merkezinde kalacak şekilde offset'i
+                    // yeniden ölçekliyoruz ki yakınlaştırırken görsel
+                    // "zıplamasın".
+                    const oldScale = baseScale * zoom;
+                    const newZoom = Number(zoomSlider.value) / 100;
+                    const newScale = baseScale * newZoom;
+                    const vpCenterX = viewport.clientWidth / 2;
+                    const vpCenterY = viewport.clientHeight / 2;
+                    const imgCenterX = (vpCenterX - offsetX) / oldScale;
+                    const imgCenterY = (vpCenterY - offsetY) / oldScale;
+                    zoom = newZoom;
+                    offsetX = vpCenterX - imgCenterX * newScale;
+                    offsetY = vpCenterY - imgCenterY * newScale;
+                    clampOffset();
+                    applyTransform();
+                }
+                zoomSlider.addEventListener("input", onZoomInput);
+
+                function onSave() {
+                    const scale = baseScale * zoom;
+                    // viewport'taki (0,0)-(vpW,vpH) alanı, orijinal görsel
+                    // koordinatlarında karşılık geldiği dikdörtgene çevrilir.
+                    const vpW = viewport.clientWidth;
+                    const vpH = viewport.clientHeight;
+                    const srcX = -offsetX / scale;
+                    const srcY = -offsetY / scale;
+                    const srcW = vpW / scale;
+                    const srcH = vpH / scale;
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(imgEl, srcX, srcY, srcW, srcH, 0, 0, targetW, targetH);
+                    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+                    cleanupAndResolve(dataUrl);
+                }
+
+                closeBtn.addEventListener("click", onCancel);
+                cancelBtn.addEventListener("click", onCancel);
+                saveBtn.addEventListener("click", onSave);
+                backdrop.addEventListener("click", onBackdropClick);
+
+                backdrop.style.display = "flex";
+            });
+        }
+
         function initProfileAvatarEditor() {
             const editBtn = document.getElementById("profileAvatarEditBtn");
             const fileInput = document.getElementById("profileAvatarFileInput");
@@ -12174,11 +12463,24 @@
                 }
 
                 const uid = window.CommunityAuth.user.uid;
+
+                // 🎯 Artık otomatik merkez-kırpma yerine kullanıcıya
+                // Görsel Konumlandırma modalı açılır — sürükleyip
+                // yakınlaştırarak hangi bölgenin avatar olacağını seçer.
+                const dataUrlOrNull = await openImagePositionModal(file, {
+                    targetW: AVATAR_MAX_DIMENSION,
+                    targetH: AVATAR_MAX_DIMENSION,
+                    quality: AVATAR_JPEG_QUALITY,
+                    round: true,
+                    title: "Avatarı Konumlandır"
+                });
+                if (!dataUrlOrNull) return; // kullanıcı vazgeçti
+
                 editBtn.textContent = "⏳";
                 editBtn.disabled = true;
 
                 try {
-                    const dataUrl = await compressImageFileToDataUrl(file);
+                    const dataUrl = dataUrlOrNull;
 
                     // Sıkıştırılmış hâli hâlâ çok büyükse (nadir — çok
                     // detaylı/gürültülü görsellerde olabilir) kullanıcıyı
@@ -12335,12 +12637,23 @@
                     return;
                 }
 
+                // 🎯 Otomatik ölçekleme yerine kullanıcı, banner'ın hangi
+                // bölgesinin görüneceğini sürükleyip yakınlaştırarak seçer.
+                const dataUrlOrNull = await openImagePositionModal(file, {
+                    targetW: BANNER_MAX_WIDTH,
+                    targetH: BANNER_MAX_HEIGHT,
+                    quality: BANNER_JPEG_QUALITY,
+                    round: false,
+                    title: "Banner'ı Konumlandır"
+                });
+                if (!dataUrlOrNull) return; // kullanıcı vazgeçti
+
                 const uid = window.CommunityAuth.user.uid;
                 editBtn.textContent = "⏳";
                 editBtn.disabled = true;
 
                 try {
-                    const dataUrl = await compressImageFileToDataUrlFit(file, BANNER_MAX_WIDTH, BANNER_MAX_HEIGHT, BANNER_JPEG_QUALITY);
+                    const dataUrl = dataUrlOrNull;
                     const approxBytes = Math.ceil((dataUrl.length * 3) / 4);
                     if (approxBytes > BANNER_MAX_BASE64_BYTES) {
                         alert("Görsel sıkıştırıldıktan sonra bile çok büyük kaldı. Lütfen daha basit/düşük çözünürlüklü bir görsel deneyin.");
@@ -12457,10 +12770,23 @@
                         alert("Görsel çok büyük. Lütfen 15MB'tan küçük bir dosya seçin.");
                         return;
                     }
+
+                    // 🎯 Otomatik ölçekleme yerine kullanıcı, arka planın
+                    // hangi bölgesinin görüneceğini sürükleyip
+                    // yakınlaştırarak seçer.
+                    const dataUrlOrNull = await openImagePositionModal(file, {
+                        targetW: PROFILE_BG_MAX_WIDTH,
+                        targetH: PROFILE_BG_MAX_HEIGHT,
+                        quality: PROFILE_BG_JPEG_QUALITY,
+                        round: false,
+                        title: "Arka Planı Konumlandır"
+                    });
+                    if (!dataUrlOrNull) return; // kullanıcı vazgeçti
+
                     uploadBtn.disabled = true;
                     setStatus("Yükleniyor...", false);
                     try {
-                        const dataUrl = await compressImageFileToDataUrlFit(file, PROFILE_BG_MAX_WIDTH, PROFILE_BG_MAX_HEIGHT, PROFILE_BG_JPEG_QUALITY);
+                        const dataUrl = dataUrlOrNull;
                         const approxBytes = Math.ceil((dataUrl.length * 3) / 4);
                         if (approxBytes > PROFILE_BG_MAX_BASE64_BYTES) {
                             setStatus("Görsel çok büyük kaldı, daha basit bir görsel dene.", true);
