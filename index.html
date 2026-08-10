@@ -9894,13 +9894,27 @@
 
         const THEME_STORAGE_KEY = "pl_profile_theme";
 
+        // 🐛 BUGFIX: localStorage anahtarı önceden HER hesap için aynıydı
+        // ("pl_profile_theme"), yani cihaza bağlıydı, hesaba değil. RealMonster
+        // ile tema ayarlanınca bu anahtara yazılıyordu; sonra aynı cihazda
+        // Dreams ile giriş yapılınca kod ÖNCE localStorage'a bakıyordu (orada
+        // bir şey bulduğu için Dreams'in kendi Firebase profileTheme'ine hiç
+        // bakmıyordu) -- RealMonster'ın teması Dreams'e "sızıyordu". Çözüm:
+        // anahtarı uid'e özel yapıyoruz (pl_profile_theme:{uid}) ki her hesap
+        // kendi cache'ini kullansın; ayrıca çağıran taraflarda artık Firebase
+        // verisi HER ZAMAN localStorage'dan önce kontrol ediliyor (bkz.
+        // initProfileTheme ve diğer iki kullanım yeri).
+        function themeStorageKeyFor(uid) {
+            return uid ? (THEME_STORAGE_KEY + ":" + uid) : THEME_STORAGE_KEY;
+        }
+
         /**
-         * localStorage'da saklanan tema tercihini okur.
+         * localStorage'da saklanan tema tercihini okur (uid'e özel anahtar).
          * Şekil: { mode: "basic"|"rich"|"custom", swatchId?, color, rainbow: bool }
          */
-        function loadStoredProfileTheme() {
+        function loadStoredProfileTheme(uid) {
             try {
-                const raw = localStorage.getItem(THEME_STORAGE_KEY);
+                const raw = localStorage.getItem(themeStorageKeyFor(uid));
                 if (!raw) return null;
                 const parsed = JSON.parse(raw);
                 if (!parsed || typeof parsed !== "object") return null;
@@ -9910,9 +9924,9 @@
             }
         }
 
-        function saveStoredProfileTheme(themeObj) {
+        function saveStoredProfileTheme(themeObj, uid) {
             try {
-                localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeObj));
+                localStorage.setItem(themeStorageKeyFor(uid), JSON.stringify(themeObj));
             } catch (e) {
                 console.warn("[ProfileTheme] localStorage'a yazılamadı:", e);
             }
@@ -10287,7 +10301,8 @@
                 themeObj.colors = colors;
             }
 
-            saveStoredProfileTheme(themeObj);
+            const myUid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+            saveStoredProfileTheme(themeObj, myUid);
             applyProfileThemeToDom(themeObj);
             renderProfileThemeSwatches(profile);
 
@@ -10303,19 +10318,32 @@
         }
 
         /**
-         * Profil sekmesi ilk açıldığında / yenilendiğinde temayı
-         * localStorage'dan (varsa Firebase profilinden) okuyup uygular.
+         * Profil sekmesi ilk açıldığında / yenilendiğinde temayı uygular.
+         *
+         * 🐛 BUGFIX: Önceden önce localStorage'a (cihaz bazlı, hesap
+         * ayrımı yapmadan tek bir "pl_profile_theme" anahtarı), SADECE o
+         * boşsa Firebase'deki profile.profileTheme'e bakılıyordu. Bu yüzden
+         * bir hesapla tema ayarlayıp çıkış yapıp başka bir hesapla giriş
+         * yapıldığında, eski hesabın teması localStorage'da kaldığı için
+         * yeni hesaba "sızıyordu". Artık Firebase'deki profile.profileTheme
+         * HER ZAMAN esas kaynak (source of truth) ve önce o kontrol
+         * ediliyor; localStorage sadece o an bulunmazsa (örn. profileTheme
+         * hiç ayarlanmamışsa) devreye giren, uid'e özel bir yedek/cache.
          */
         function initProfileTheme(profile) {
             const themeCard = document.getElementById("profileThemeCard");
             if (themeCard) themeCard.style.display = "block";
 
-            // Firebase'de kayıtlı bir tema varsa ve localStorage boşsa,
-            // onu localStorage'a senkronla (cihazlar arası ilk yükleme).
-            let stored = loadStoredProfileTheme();
-            if (!stored && profile && profile.profileTheme) {
-                stored = profile.profileTheme;
-                saveStoredProfileTheme(stored);
+            const myUid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+
+            // Esas kaynak: Firebase'deki KENDİ profilimizin teması.
+            let stored = (profile && profile.profileTheme) || null;
+            if (stored) {
+                saveStoredProfileTheme(stored, myUid); // uid'e özel cache'i güncel tut
+            } else {
+                // Firebase'de hiç tema kaydı yoksa (örn. ilk kez giriş),
+                // uid'e özel localStorage cache'ine bak.
+                stored = loadStoredProfileTheme(myUid);
             }
 
             applyProfileThemeToDom(stored);
@@ -11552,15 +11580,21 @@
             // giriş yapılır yapılmaz burada (mini profil her zaman render
             // edilir) temayı bir kez uyguluyoruz. Profil sekmesi açıldığında
             // initProfileTheme() zaten tekrar aynı temayı basar, sorun olmaz.
+            //
+            // 🐛 BUGFIX: Aynı hesaba-değil-cihaza-bağlı tema sızıntısı burada
+            // da vardı (bkz. initProfileTheme'deki not) -- Firebase'deki
+            // profile.profileTheme artık localStorage'dan ÖNCE kontrol
+            // ediliyor, localStorage okuması da uid'e özel anahtarla yapılıyor.
             if (window.ProfileThemeSystem && typeof window.ProfileThemeSystem.applyProfileThemeToDom === "function") {
                 try {
-                    let stored = (function () {
+                    const myUid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+                    let stored = profile.profileTheme || null;
+                    if (!stored) {
                         try {
-                            const raw = localStorage.getItem("pl_profile_theme");
-                            return raw ? JSON.parse(raw) : null;
-                        } catch (e) { return null; }
-                    })();
-                    if (!stored && profile.profileTheme) stored = profile.profileTheme;
+                            const raw = localStorage.getItem(myUid ? ("pl_profile_theme:" + myUid) : "pl_profile_theme");
+                            stored = raw ? JSON.parse(raw) : null;
+                        } catch (e) { stored = null; }
+                    }
                     window.ProfileThemeSystem.applyProfileThemeToDom(stored);
                 } catch (e) {
                     console.warn("[ProfileTheme] Erken uygulama atlandı:", e);
@@ -17147,16 +17181,22 @@
             // geçişinde temayı localStorage/Firebase'den tekrar okuyup
             // yeniden basmak, bu tür kaynağı bulunamayan sıfırlanmaları da
             // örtük şekilde telafi eder ve site geneli tutarlılığı garanti eder.
+            //
+            // 🐛 BUGFIX: Aynı hesaba-değil-cihaza-bağlı tema sızıntısı burada
+            // da vardı -- Firebase'deki currentProfile.profileTheme artık
+            // localStorage'dan ÖNCE kontrol ediliyor, localStorage okuması
+            // da uid'e özel anahtarla yapılıyor.
             if (window.ProfileThemeSystem && typeof window.ProfileThemeSystem.applyProfileThemeToDom === "function") {
                 try {
                     const currentProfile = window.CommunityAuth && window.CommunityAuth.profile;
-                    let stored = (function () {
+                    const myUid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+                    let stored = (currentProfile && currentProfile.profileTheme) || null;
+                    if (!stored) {
                         try {
-                            const raw = localStorage.getItem("pl_profile_theme");
-                            return raw ? JSON.parse(raw) : null;
-                        } catch (e) { return null; }
-                    })();
-                    if (!stored && currentProfile && currentProfile.profileTheme) stored = currentProfile.profileTheme;
+                            const raw = localStorage.getItem(myUid ? ("pl_profile_theme:" + myUid) : "pl_profile_theme");
+                            stored = raw ? JSON.parse(raw) : null;
+                        } catch (e) { stored = null; }
+                    }
                     window.ProfileThemeSystem.applyProfileThemeToDom(stored);
                 } catch (e) {
                     console.warn("[ProfileTheme] switchView'da yeniden uygulama atlandı:", e);
@@ -18353,7 +18393,16 @@
          * "Mesaja Git" (scroll + highlight) özelliği sunar.
          */
         const InboxSystem = (() => {
-            const LS_LAST_READ = "pl_inbox_last_read";
+            // 🐛 BUGFIX: "Sana Gelenler" okuma zamanı önceden localStorage'da
+            // ("pl_inbox_last_read") tutuluyordu -- yani CİHAZA bağlıydı,
+            // HESABA değil. Bir hesapla "Tümünü Okundu İşaretle" yapıp başka
+            // bir hesaba geçildiğinde bu bilgi yanlış hesaba karışıyor ya da
+            // hiç senkron olmuyordu. Artık projede zaten var olan
+            // user_reads/{uid}/... deseniyle (bkz. UnreadSystem) tutarlı
+            // şekilde Firebase'e (user_reads/{uid}/inbox_general) yazılıyor
+            // -- hem hesaba bağlı hem cihazlar arası senkron.
+            let _myUid = null;
+            let _lastReadAt = 0;
             let _allNotifs = {};   // notifId -> obje
 
             // report_resolved bildirimlerinde "targetType" alanını okunabilir
@@ -18366,10 +18415,14 @@
             };
 
             function getLastReadTime() {
-                return parseInt(localStorage.getItem(LS_LAST_READ) || "0", 10);
+                return _lastReadAt || 0;
             }
             function markAllRead() {
-                localStorage.setItem(LS_LAST_READ, String(Date.now()));
+                if (!_myUid) return;
+                const now = Date.now();
+                _lastReadAt = now; // anında yerel yansıt (Firebase yankısını beklemeden)
+                database.ref("user_reads/" + _myUid + "/inbox_general").set(now)
+                    .catch((err) => console.error("[Inbox] okuma zamanı yazılamadı:", err));
                 updateBadge();
                 renderInbox();   // unread görünümünü temizle
             }
@@ -18577,6 +18630,15 @@
 
             // ── init ─────────────────────────────────────────────────
             function init(uid) {
+                _myUid = uid;
+                // Okuma zamanını Firebase'den canlı dinle (başka cihazdan
+                // "Tümünü Okundu İşaretle" yapılırsa burada da senkron kalsın).
+                database.ref("user_reads/" + uid + "/inbox_general").on("value", (snap) => {
+                    _lastReadAt = snap.val() || 0;
+                    updateBadge();
+                    const inboxView = document.querySelector('.hub-view[data-view="inbox"]');
+                    if (inboxView && inboxView.classList.contains("is-active")) renderInbox();
+                });
                 attachListener(uid);
                 document.getElementById("inboxMarkAllReadBtn")?.addEventListener("click", markAllRead);
             }
