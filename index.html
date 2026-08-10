@@ -1984,6 +1984,52 @@
         }
     }
 
+    /* MODÜL 5 EKLENTİ 1 — MASAÜSTÜ TOPLULUK TAM EKRAN MODU: Önceden bu
+       "sidebar'ı gizle, sohbeti tam ekran yap" davranışı SADECE 780px
+       altı (mobil) media query içindeydi -- masaüstünde bir topluluğa
+       girildiğinde ana Hub sidebar'ı (Forum/Mesajlar/Topluluklar menüsü)
+       VE "Gruplarım" listesi hep görünür kalıyordu, kullanıcı topluluğun
+       kendi kanal sidebar'ını dar bir alanda görüyordu. Artık ekran
+       genişliğinden bağımsız olarak: bir TOPLULUK sohbeti açıldığında
+       (.msg-shell.is-community.is-conversation-open) ana Hub sidebar'ı
+       gizlenir ve topluluk kendi kanal sidebar'ıyla birlikte tüm görünür
+       alanı kaplar. Normal (topluluk olmayan) DM/grup sohbetlerinde ana
+       sidebar masaüstünde GÖRÜNMEYE DEVAM EDER -- bu davranış SADECE
+       topluluklara özeldir. Geri (←) butonu, closeGroupConversation()
+       içinde topluluk ise "Topluluklar" sekmesine dönecek şekilde ayrıca
+       güncellenmiştir (bkz. ilgili JS notu). */
+    body:has(.msg-shell.is-community.is-conversation-open) .hub-sidebar {
+        display: none;
+    }
+    body:has(.msg-shell.is-community.is-conversation-open) #hubShell {
+        grid-template-columns: 1fr;
+    }
+    body:has(.msg-shell.is-community.is-conversation-open) .hub-topbar {
+        display: none;
+    }
+    body:has(.msg-shell.is-community.is-conversation-open) .hub-main {
+        padding: 0;
+    }
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-shell.is-community {
+        position: fixed;
+        inset: 0;
+        z-index: 500;
+        height: 100vh;
+        height: 100dvh;
+        margin: 0;
+    }
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-shell.is-community .msg-conversation-panel {
+        border-radius: 0;
+        border: none;
+        height: 100%;
+    }
+    /* Bu görünümde artık "Gruplarım" listesi anlamsız (topluluk zaten
+       kanal sidebar'ıyla tam ekran) -- gizliyoruz ki iki sidebar üst
+       üste binmesin. */
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-chat-list-panel {
+        display: none;
+    }
+
     /* ---------- HUB SHELL (auth doğrulanınca görünür olur) ---------- */
     #hubShell {
         display: none; /* Modül 1-B, auth-ready event'inde bunu açacak */
