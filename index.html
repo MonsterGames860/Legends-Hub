@@ -6590,6 +6590,34 @@
         letter-spacing: 0;
     }
 
+    /* WhatsApp tarzı "kırmızı nokta" -- sayı taşımaz, sadece "okunmamış
+       bir şey var" sinyali verir. Mesajlar/Gruplar/Topluluklar/Forum nav
+       öğelerinde kullanılır (bkz. UnreadSystem). */
+    .hub-nav-reddot {
+        margin-left: auto;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--danger);
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+        display: none; /* JS ile 'block' yapılır */
+        flex-shrink: 0;
+    }
+    .hub-nav-reddot.is-visible { display: block; }
+
+    /* DM/Grup sohbet listesindeki (sol panel) her satırın yanında görünen
+       küçük kırmızı nokta -- .msg-unread-badge (sayı gösteren) DM'de zaten
+       var; bu, sayı istenmeyen yerlerde (grup/kanal/forum listesi
+       satırları) kullanılan sade nokta versiyonu. */
+    .msg-chat-item-reddot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--danger);
+        flex-shrink: 0;
+        margin-left: 6px;
+    }
+
     /* Mesaj/yorum vurgu animasyonu (scroll-to hedefi) */
     @keyframes msgHighlight {
         0%   { box-shadow: 0 0 0 3px rgba(102,252,241,0.7),
@@ -7093,6 +7121,7 @@
                         <rect x="11" y="5" width="2" height="2" fill="var(--bg-panel)"/>
                     </svg>
                     Forum
+                    <span class="hub-nav-reddot" id="forumUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="marketplace">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -7127,6 +7156,7 @@
                         <path d="M2 4l6 5 6-5" stroke="var(--bg-panel)" stroke-width="1.6" fill="none"/>
                     </svg>
                     Mesajlar
+                    <span class="hub-nav-reddot" id="messagesUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="groups">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -7136,6 +7166,7 @@
                         <rect x="9" y="9" width="6" height="5" fill="currentColor" opacity="0.6"/>
                     </svg>
                     Grup Sohbetleri
+                    <span class="hub-nav-reddot" id="groupsUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="communities">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -7143,6 +7174,7 @@
                         <path d="M2 8h12M8 2c1.8 1.7 2.8 3.8 2.8 6s-1 4.3-2.8 6c-1.8-1.7-2.8-3.8-2.8-6s1-4.3 2.8-6z" stroke="currentColor" stroke-width="1.2" fill="none"/>
                     </svg>
                     Topluluklar
+                    <span class="hub-nav-reddot" id="communitiesUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="inbox">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -11723,6 +11755,20 @@
                             // sil ki NotificationSystem normal akışına
                             // (tarayıcı izin durumuna göre) geri dönsün.
                             localStorage.removeItem("pl_notif_decision");
+                            // Tarayıcı izni henüz hiç sorulmadıysa (default),
+                            // burada da DOĞRUDAN iste -- kullanıcı ilk
+                            // istem kartını kapatmış/kaçırmış olsa bile
+                            // profil ayarından manuel olarak izin isteme
+                            // yolu her zaman açık olsun.
+                            if ("Notification" in window && Notification.permission === "default") {
+                                Notification.requestPermission().then((perm) => {
+                                    localStorage.setItem("pl_notif_decision", perm === "granted" ? "granted" : "denied");
+                                    if (perm !== "granted") {
+                                        notifToggle.checked = false;
+                                        showToastGlobal("Tarayıcı bildirim izni verilmedi. Tarayıcı ayarlarından değiştirebilirsin.");
+                                    }
+                                }).catch(() => {});
+                            }
                         } else {
                             localStorage.setItem("pl_notif_decision", "off");
                         }
@@ -14101,6 +14147,7 @@
                 if (replyToAuthorUid && replyToAuthorUid !== _senderUid) {
                     writeNotification(replyToAuthorUid, { type: "reply", context: "message", actorUsername: _senderName, actorUid: _senderUid, messageId: _msgNotifId, textSnippet: _msgSnippet });
                 }
+                maybeNotifySelfMention(encodedText); // kendi kendini etiketlese bile ses/toast çalsın
             } catch (err) {
                 console.error("[Forum] Mesaj gönderilemedi:", err);
                 // Firebase Realtime Database Rules izin vermiyorsa err.code
@@ -14172,9 +14219,106 @@
             const re = /\[mention:([A-Za-z0-9_-]+)\]/g;
             let m;
             while ((m = re.exec(encodedText)) !== null) {
+                // "everyone" / "here" / "group:*" gerçek bir kullanıcı UID'i
+                // DEĞİL -- özel token'lar. Bunları normal mention gibi
+                // writeNotification(uid,...) ile tek bir kullanıcıya "UID"
+                // olarak yazmaya çalışmak sessizce başarısız olur (kimseye
+                // bildirim gitmez). Bu yüzden burada AYIKLANIRLAR;
+                // @everyone/@here bildirimleri ayrı bir fan-out fonksiyonuyla
+                // (bkz. notifyEveryoneOrHere) gerçek üye listesine yazılır.
+                if (m[1] === "everyone" || m[1] === "here" || m[1].startsWith("group:")) continue;
                 if (!uids.includes(m[1])) uids.push(m[1]);
             }
             return uids;
+        }
+
+        /**
+         * Kullanıcı kendi kendini etiketlediğinde (@KendiKullanıcıAdı) bile
+         * ses efekti + kısa bildirim tetiklensin isteniyor. writeNotification()
+         * kasıtlı olarak kendine bildirim YAZMIYOR (targetUid===myUid ise
+         * sessizce çıkıyor) -- bu doğru davranış, çünkü "Sana Gelenler"
+         * listesinde kendi mesajını görmek anlamsız. Ama SES/toast farklı
+         * bir şey: anlık bir geri bildirim, DB'ye kalıcı yazılmasına gerek
+         * yok. Bu yüzden encodedText'te kendi UID'imiz mention edilmişse,
+         * NotificationSystem.trigger() DOĞRUDAN (Firebase'e hiç dokunmadan)
+         * çağrılır -- sadece ses çalar + toast gösterir, kalıcı bildirim
+         * yazmaz ve "Sana Gelenler" listesini kirletmez.
+         */
+        function maybeNotifySelfMention(encodedText) {
+            const myUid = window.CommunityAuth.user && window.CommunityAuth.user.uid;
+            if (!myUid) return;
+            const re = /\[mention:([A-Za-z0-9_-]+)\]/g;
+            let m;
+            while ((m = re.exec(encodedText)) !== null) {
+                if (m[1] === myUid) {
+                    const myName = (window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "Sen";
+                    if (window.NotificationSystem && typeof window.NotificationSystem.trigger === "function") {
+                        window.NotificationSystem.trigger("mention", myName);
+                    }
+                    return;
+                }
+            }
+        }
+
+        /**
+         * @everyone / @here fan-out: encodedText içinde bu özel token'lardan
+         * hangileri varsa, hedef kitleye (tüm topluluk üyeleri ya da sadece o
+         * kanalı görebilenler) TEK TEK writeNotification() çağırır. Bu,
+         * normal mention akışından ayrı tutulur çünkü hedef kitle tek bir
+         * kullanıcı değil, potansiyel olarak yüzlerce kullanıcı olabilir.
+         *
+         * @param {string} encodedText - [mention:everyone]/[mention:here] içerebilecek kodlanmış metin
+         * @param {string} groupId - topluluğun (group_chats) ID'si
+         * @param {string} channelId - mesajın gönderildiği kanal ID'si (yetki kontrolü için)
+         * @param {string} actorUid - gönderen kullanıcının UID'si (bildirim almaz)
+         * @param {string} actorUsername - gönderen kullanıcının adı
+         * @param {string} messageId - bildirimde referans verilecek mesaj ID'si
+         * @param {string} textSnippet - bildirimde gösterilecek kısa metin
+         */
+        function notifyEveryoneOrHere(encodedText, groupId, channelId, actorUid, actorUsername, messageId, textSnippet) {
+            const hasEveryone = /\[mention:everyone\]/.test(encodedText);
+            const hasHere = /\[mention:here\]/.test(encodedText);
+            if (!hasEveryone && !hasHere) return;
+            if (!window.CommunityChannels || !groupId) return;
+
+            const meta = (window.MessagingSystem && window.MessagingSystem._groupMetaCache) || {};
+            const groupMeta = meta[groupId];
+            const memberUids = Object.keys((groupMeta && groupMeta.members) || {});
+
+            memberUids.forEach((tUid) => {
+                if (tUid === actorUid) return; // kendine bildirim yok
+
+                if (hasEveryone) {
+                    // @everyone: topluluğun TÜM üyelerine gider (kanal
+                    // görünürlüğünden bağımsız).
+                    writeNotification(tUid, {
+                        type: "mention", context: "everyone", actorUsername, actorUid,
+                        groupId, channelId, messageId, textSnippet
+                    });
+                    return;
+                }
+
+                if (hasHere) {
+                    // @here: SADECE o kanalı görme/okuma yetkisi olan
+                    // üyelere gider. Bu topluluk yapısında kanallar için
+                    // ayrı bir "görünürlük" izni yok -- erişim, kanalın
+                    // salt-okunur (read_only) + allowed_roles ayarına göre
+                    // belirleniyor (bkz. canSendInActiveChannel). Bu yüzden
+                    // "kanalı görebiliyor mu" sorusunu AYNI kurala göre
+                    // yanıtlıyoruz: owner/manage_channels her zaman görür;
+                    // salt-okunur değilse herkes görür; salt-okunursa sadece
+                    // izinli rütbeler görür. Yetkisi olmayan üyeye ses/
+                    // bildirim tetiklenmez.
+                    const canView = window.CommunityChannels.canMemberAccessChannel
+                        ? window.CommunityChannels.canMemberAccessChannel(groupId, channelId, tUid)
+                        : true;
+                    if (!canView) return;
+                    writeNotification(tUid, {
+                        type: "mention", context: "here", actorUsername, actorUid,
+                        groupId, channelId, messageId, textSnippet
+                    });
+                }
+            });
         }
 
         /**
@@ -15022,6 +15166,7 @@
                 extractMentionedUids(encodedBody).forEach((tUid) => {
                     writeNotification(tUid, { type: "mention", context: "thread", actorUsername: _threadAuthorName, actorUid: _threadAuthorUid, threadId: newRef.key, textSnippet: _threadSnippet });
                 });
+                maybeNotifySelfMention(encodedBody);
             } catch (err) {
                 console.error("[Forum] Konu oluşturulamadı:", err);
                 showNewThreadError("Konu oluşturulamadı. Lütfen tekrar deneyin.");
@@ -15396,6 +15541,7 @@
                 if (replyToInfo && replyToInfo.replyToAuthorUid && replyToInfo.replyToAuthorUid !== _replySenderUid) {
                     writeNotification(replyToInfo.replyToAuthorUid, { type: "reply", context: "reply", actorUsername: _replySenderName, actorUid: _replySenderUid, threadId, replyId: _replyNotifId, textSnippet: _replySnippet });
                 }
+                maybeNotifySelfMention(encodedText);
             } catch (err) {
                 console.error("[Forum] Yorum gönderilemedi:", err);
                 alert("Yorum gönderilemedi. Lütfen tekrar deneyin.");
@@ -16980,6 +17126,23 @@
                         forumListEl.scrollTop = forumListEl.scrollHeight;
                     });
                 }
+                // Kırmızı Nokta: Forum sekmesine girildiğinde hem Genel
+                // Sohbet hem de yeni konular okunmuş sayılır. Kategori
+                // bazlı ayrım (switchForumCategory) daha ince taneli bir
+                // deneyim ister isteğe göre eklenebilir; şimdilik "Forum"
+                // sekmesine her girişte ikisi de temizlenir.
+                if (window.UnreadSystem) {
+                    window.UnreadSystem.markForumGeneralRead();
+                    window.UnreadSystem.markForumThreadsRead();
+                }
+            }
+
+            // Mesajlar/Gruplar sekmesine girildiğinde de (henüz açık bir
+            // sohbet seçilmemiş olsa bile) nav noktasını güncel tut --
+            // asıl "okundu" işaretleme ilgili sohbeti AÇINCA olur
+            // (openDmConversation/openGroupConversation/selectChannel).
+            if ((view === "messages" || view === "groups" || view === "communities") && window.UnreadSystem) {
+                window.UnreadSystem.renderNavDots();
             }
 
             // "Oyuncular" sekmesi açıldığında listeyi (yeniden) yükle.
@@ -18520,6 +18683,27 @@
                 return { allowed: false, reason: "Bu kanal salt okunur — sadece yetkili rütbeler yazabilir." };
             }
 
+            /**
+             * canSendInActiveChannel ile AYNI erişim kuralını, herhangi bir
+             * (groupId, channelId, uid) üçlüsü için genelleştirir. @here
+             * fan-out'unda "bu üye bu kanalı görebiliyor mu" sorusuna cevap
+             * vermek için kullanılır -- aktif kanaldan bağımsız çalışır.
+             */
+            function canMemberAccessChannel(groupId, channelId, uid) {
+                if (!uid || !channelId) return false;
+                const g = ensureGroupCache(groupId);
+                const ch = g.channels[channelId];
+                if (!ch) return false;
+                if (!hasPermission(groupId, uid, "send_messages") && !hasPermission(groupId, uid, "manage_channels")) {
+                    return false;
+                }
+                if (!ch.settings || !ch.settings.read_only) return true;
+                if (hasPermission(groupId, uid, "manage_channels")) return true;
+                const allowed = (ch.settings.allowed_roles) || {};
+                const myRoleIds = Object.keys(g.memberRoles[uid] || {});
+                return myRoleIds.some((rid) => allowed[rid]);
+            }
+
             function getActiveChannelId(groupId) {
                 return _activeChannelByGroup[groupId] || null;
             }
@@ -18673,6 +18857,16 @@
                 updateComposerLockSafe(groupId);
                 closeSidebarDrawer(); // mobilde bir kanal seçilince drawer otomatik kapansın
 
+                // Kırmızı Nokta: bu kanalı seçtik -- takip başlat + okundu işaretle.
+                if (window.UnreadSystem) {
+                    window.UnreadSystem.attachChannelReadTracking(groupId, channelId);
+                    window.UnreadSystem.markChannelRead(groupId, channelId);
+                    // Topluluktaki diğer (henüz görülmemiş) kanalları da tara
+                    // ki sidebar'daki nokta sadece aktif kanalı değil, TÜM
+                    // kanalları yansıtsın.
+                    setTimeout(() => window.UnreadSystem.scanVisibleChannelsForTracking(groupId), 150);
+                }
+
                 // Kanal başlığını üst bara yansıt.
                 const ch = ensureGroupCache(groupId).channels[channelId];
                 const subEl = document.getElementById("groupHeaderSub");
@@ -18739,6 +18933,7 @@
                         <div class="cch-channel-item ${id === activeId ? "is-active" : ""}" data-cch-channel="${escAttr(id)}">
                             <span class="cch-channel-item-icon">${icon}</span>
                             <span class="cch-channel-item-name">${escAttr(ch.name || "kanal")}</span>
+                            <span class="msg-chat-item-reddot cch-channel-reddot" data-cch-reddot="${escAttr(id)}" style="display:none;"></span>
                             ${locked}
                             ${canManage ? `<button type="button" class="cch-channel-item-menu-btn" data-cch-edit-channel="${escAttr(id)}" title="Düzenle">⚙</button>` : ""}
                         </div>
@@ -18779,6 +18974,8 @@
                 listEl.querySelectorAll("[data-cch-channel]").forEach((el) => {
                     el.addEventListener("click", () => selectChannel(groupId, el.getAttribute("data-cch-channel")));
                 });
+                // Kırmızı Nokta: kanal listesi yeniden çizildi, noktaları uygula.
+                if (window.UnreadSystem) window.UnreadSystem.decorateChannelList(groupId);
                 listEl.querySelectorAll("[data-cch-edit-channel]").forEach((btn) => {
                     btn.addEventListener("click", (e) => {
                         e.stopPropagation();
@@ -19585,6 +19782,7 @@
                 onOpenCommunity,
                 onCloseCommunity,
                 getActiveChannelId,
+                canMemberAccessChannel,
                 canSendInActiveChannel,
                 hasPermission,
                 renderManagePanel,
@@ -20708,6 +20906,9 @@
                 listEl.querySelectorAll(".msg-chat-item").forEach((btn) => {
                     btn.addEventListener("click", () => openGroupConversation(btn.getAttribute("data-group-id")));
                 });
+
+                // Kırmızı Nokta: satırlara okunmamış nokta ekle/kaldır.
+                if (window.UnreadSystem) window.UnreadSystem.decorateGroupChatList();
             }
 
             // ── Grup rolleri & izinleri: yardımcı fonksiyonlar ───────────
@@ -20781,6 +20982,12 @@
                 if (isCommunity) {
                     if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
                     window.CommunityChannels.onOpenCommunity(groupId);
+                    // Kırmızı Nokta: topluluk açıldığında görünür kanalları
+                    // taramaya başla (aktif kanal ayrıca selectChannel
+                    // içinde okundu işaretlenir -- bkz. CommunityChannels).
+                    if (window.UnreadSystem) {
+                        setTimeout(() => window.UnreadSystem.scanVisibleChannelsForTracking(groupId), 300);
+                    }
                     return;
                 }
                 window.CommunityChannels && window.CommunityChannels.onCloseCommunity();
@@ -20792,6 +20999,9 @@
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
                 });
+
+                // Kırmızı Nokta: bu grubu açtık, okunmamış sayacı temizle.
+                if (window.UnreadSystem) window.UnreadSystem.markGroupRead(groupId);
             }
 
             // Üst bilgi çubuğunu (isim, üye sayısı, avatar, davet kodu rozeti)
@@ -21008,26 +21218,52 @@
                     console.error("[Messaging] Grup meta güncellenemedi (mesaj yine de gönderildi):", err);
                 }
 
-                // İKİNCİL İŞLEM: gruptaki diğer üyelere bildirim yaz
-                // (forum thread'lerindeki mention akışına benzer şekilde
-                // -- ama burada tüm mesaj tüm üyeleri "etiketliyor" sayılır).
-                // writeNotification() gönderenin kendisini zaten atlıyor.
+                // İKİNCİL İŞLEM: bildirimler.
+                // - NORMAL gruplarda (isCommunity=false): eskisi gibi HER
+                //   mesaj tüm üyelere "group" tipi bildirim yazar (küçük
+                //   üye sayılı özel/arkadaş grupları için mantıklı).
+                // - TOPLULUK kanallarında (isCommunity=true): artık her
+                //   mesaj otomatik olarak tüm üyelere bildirim YAZMAZ --
+                //   bu, yüzlerce üyeli topluluklarda her mesajda herkese
+                //   ses/bildirim tetiklemek anlamına gelirdi. Bunun yerine
+                //   sadece normal @mention (extractMentionedUids, yukarıda
+                //   zaten tetiklendi) ve @everyone/@here (aşağıda,
+                //   notifyEveryoneOrHere ile) gerçek bildirim üretir.
                 // Bildirim yazımı başarısız olsa bile mesaj yine de
                 // gönderilmiş sayılır — hata sessizce loglanır.
                 try {
                     const _senderName = (window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "Biri";
                     const _groupSnippet = makeNotifSnippet(encoded);
-                    const memberUids = Object.keys((activeMeta && activeMeta.members) || {});
-                    memberUids.forEach((tUid) => {
-                        writeNotification(tUid, {
-                            type: "group",
-                            actorUsername: _senderName,
-                            actorUid: _myUid,
-                            groupId: groupId,
-                            messageId: msgRef.key,
-                            textSnippet: _groupSnippet
+
+                    if (!isCommunity) {
+                        const memberUids = Object.keys((activeMeta && activeMeta.members) || {});
+                        memberUids.forEach((tUid) => {
+                            writeNotification(tUid, {
+                                type: "group",
+                                actorUsername: _senderName,
+                                actorUid: _myUid,
+                                groupId: groupId,
+                                messageId: msgRef.key,
+                                textSnippet: _groupSnippet
+                            });
                         });
-                    });
+                    } else {
+                        // Topluluk kanalındaki normal @kullanıcı mention'ları
+                        // (extractMentionedUids ile) zaten forum/thread
+                        // akışındaki AYNI fonksiyonla yazılmalı -- burada da
+                        // aynı şekilde tetikliyoruz.
+                        extractMentionedUids(encoded).forEach((tUid) => {
+                            writeNotification(tUid, {
+                                type: "mention", context: "message",
+                                actorUsername: _senderName, actorUid: _myUid,
+                                groupId, messageId: msgRef.key, textSnippet: _groupSnippet
+                            });
+                        });
+                        // @everyone / @here fan-out (Yetki Kontrolü dahil).
+                        const _activeChannelId = window.CommunityChannels.getActiveChannelId(groupId);
+                        notifyEveryoneOrHere(encoded, groupId, _activeChannelId, _myUid, _senderName, msgRef.key, _groupSnippet);
+                    }
+                    maybeNotifySelfMention(encoded); // kendi kendini etiketlese bile ses/toast çalsın
                 } catch (err) {
                     console.error("[Messaging] Grup bildirimi yazılamadı (mesaj yine de gönderildi):", err);
                 }
@@ -23696,6 +23932,7 @@
                 openDmConversation, iBlocked, blockedMe, toggleBlockUser,
                 // MODÜL 5 EKLENTİ 1 (CommunityChannels) için dışa açılan köprüler:
                 get _groupMetaCache() { return _groupMetaCache; },
+                get _userGroupsCache() { return _userGroupsCache; },
                 get _activeGroupDetailId() { return _activeGroupDetailId; },
                 refreshMemberList: (groupId) => renderGroupMemberList(groupId),
                 renderBubbleList
@@ -23703,6 +23940,294 @@
         })();
         window.MessagingSystem = MessagingSystem;
         window.renderBubbleList = MessagingSystem.renderBubbleList;
+
+        // ════════════════════════════════════════════════════════════════
+        // OKUNMAMIŞ İÇERİK / KIRMIZI NOKTA SİSTEMİ (UnreadSystem)
+        // ════════════════════════════════════════════════════════════════
+        /**
+         * DM'lerde okunmamış sayacı zaten dm_inbox/{uid}/{dmId}/unreadCount
+         * ile çözülmüştü (bkz. MessagingSystem). Bu modül AYNI mantığı
+         * Gruplar, Topluluk Kanalları ve Forum (Genel Sohbet + yeni konular)
+         * için de kurar: her alan için "en son ne zaman okudum" (lastReadAt)
+         * ile "en son ne zaman mesaj geldi" (lastActivityAt) karşılaştırılır;
+         * ikincisi büyükse o öğe "okunmamış" sayılır.
+         *
+         * Veri şeması (Firebase):
+         *   user_reads/{myUid}/groups/{groupId}            -> timestamp
+         *   user_reads/{myUid}/channels/{groupId}_{chId}    -> timestamp
+         *   user_reads/{myUid}/forum_general                -> timestamp
+         *   user_reads/{myUid}/forum_threads                -> timestamp
+         *
+         * NOT: dm_inbox zaten kendi unreadCount alanını sunucu tarafı gibi
+         * (mesaj gönderirken increment edilerek) tuttuğu için ayrıca burada
+         * yeniden üretilmiyor -- UnreadSystem sadece DM'in genel "var/yok"
+         * durumunu sidebar rozetine yansıtmak için dm_inbox'ı okur.
+         */
+        const UnreadSystem = (() => {
+            let _myUid = null;
+
+            // Her alan tipi için canlı durum: { key: { lastActivityAt, lastReadAt } }
+            const _dmState = {};        // dmId -> { unreadCount }
+            const _groupState = {};     // groupId -> { lastActivityAt, lastReadAt }
+            const _channelState = {};   // "groupId_channelId" -> { lastActivityAt, lastReadAt }
+            const _forumGeneralState = { lastActivityAt: 0, lastReadAt: 0 };
+            const _forumThreadsState = { lastActivityAt: 0, lastReadAt: 0 };
+
+            const _channelListeners = {}; // "groupId_channelId" -> firebase ref (cleanup için)
+            const _groupReadListeners = {};
+            const _channelReadListeners = {};
+
+            // ── Yardımcılar ──────────────────────────────────────────
+            function anyDmUnread() {
+                return Object.values(_dmState).some((s) => (s.unreadCount || 0) > 0);
+            }
+            function anyGroupUnread() {
+                return Object.values(_groupState).some((s) => (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+            }
+            function anyChannelUnread() {
+                return Object.values(_channelState).some((s) => (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+            }
+            function forumGeneralUnread() {
+                return (_forumGeneralState.lastActivityAt || 0) > (_forumGeneralState.lastReadAt || 0);
+            }
+            function forumThreadsUnread() {
+                return (_forumThreadsState.lastActivityAt || 0) > (_forumThreadsState.lastReadAt || 0);
+            }
+
+            // ── Render: nav rozetleri ────────────────────────────────
+            function renderNavDots() {
+                setDot("messagesUnreadDot", anyDmUnread() || anyGroupUnread());
+                setDot("groupsUnreadDot", anyGroupUnread());
+                setDot("communitiesUnreadDot", anyChannelUnread());
+                setDot("forumUnreadDot", forumGeneralUnread() || forumThreadsUnread());
+            }
+            function setDot(elId, visible) {
+                const el = document.getElementById(elId);
+                if (!el) return;
+                el.classList.toggle("is-visible", !!visible);
+            }
+
+            // ── Render: sohbet listesi satırlarındaki nokta (Gruplar) ──
+            // DM'de zaten .msg-unread-badge var (MessagingSystem.renderDmChatList
+            // içinde) -- burada sadece GRUP listesindeki satırlara da aynı
+            // görsel dili (kırmızı nokta) eklemek için, mevcut renderGroupChatList
+            // render'ından SONRA çalışıp ilgili satırlara nokta ekliyoruz.
+            function decorateGroupChatList() {
+                const listEl = document.getElementById("groupChatList");
+                if (!listEl) return;
+                listEl.querySelectorAll(".msg-chat-item[data-group-id]").forEach((btn) => {
+                    const gid = btn.getAttribute("data-group-id");
+                    const s = _groupState[gid];
+                    const unread = !!(s && (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+                    let dot = btn.querySelector(".msg-chat-item-reddot");
+                    if (unread && !dot) {
+                        dot = document.createElement("span");
+                        dot.className = "msg-chat-item-reddot";
+                        btn.appendChild(dot);
+                    } else if (!unread && dot) {
+                        dot.remove();
+                    }
+                });
+            }
+
+            // ── Render: topluluk kanal listesindeki (sol panel) nokta ──
+            function decorateChannelList(groupId) {
+                const listEl = document.getElementById("cchChannelList");
+                if (!listEl) return;
+                listEl.querySelectorAll("[data-cch-reddot]").forEach((dotEl) => {
+                    const chId = dotEl.getAttribute("data-cch-reddot");
+                    const key = groupId + "_" + chId;
+                    const s = _channelState[key];
+                    const unread = !!(s && (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+                    dotEl.style.display = unread ? "inline-block" : "none";
+                });
+            }
+
+            // ── GRUPLAR: her grup için okuma zamanı + son aktivite ────
+            function attachGroupReadTracking() {
+                if (!window.MessagingSystem) return;
+                const meta = window.MessagingSystem._groupMetaCache || {};
+                Object.keys(meta).forEach((gid) => {
+                    const g = meta[gid];
+                    if (!g || g.isCommunity === true) return; // topluluklar ayrı izleniyor (kanal bazlı)
+
+                    // Son aktivite: grup meta'sındaki updatedAt zaten her
+                    // mesajda güncelleniyor (bkz. Grup meta önizlemesi yazımı).
+                    _groupState[gid] = _groupState[gid] || { lastActivityAt: 0, lastReadAt: 0 };
+                    _groupState[gid].lastActivityAt = g.updatedAt || g.createdAt || 0;
+
+                    // Okuma zamanını bir kez dinle (canlı -- başka bir
+                    // cihazdan okunursa da senkron kalsın).
+                    if (!_groupReadListeners[gid]) {
+                        const ref = database.ref("user_reads/" + _myUid + "/groups/" + gid);
+                        _groupReadListeners[gid] = ref;
+                        ref.on("value", (snap) => {
+                            _groupState[gid] = _groupState[gid] || { lastActivityAt: 0, lastReadAt: 0 };
+                            _groupState[gid].lastReadAt = snap.val() || 0;
+                            renderNavDots();
+                            decorateGroupChatList();
+                        });
+                    }
+                });
+                renderNavDots();
+                decorateGroupChatList();
+            }
+
+            /** Bir grup sohbeti açıldığında çağrılır -- okunmamışı temizler. */
+            function markGroupRead(groupId) {
+                if (!_myUid || !groupId) return;
+                database.ref("user_reads/" + _myUid + "/groups/" + groupId)
+                    .set(Date.now())
+                    .catch((err) => console.error("[UnreadSystem] grup okuma zamanı yazılamadı:", err));
+            }
+
+            // ── TOPLULUK KANALLARI: kanal bazlı son mesaj + okuma zamanı ─
+            function attachChannelReadTracking(groupId, channelId) {
+                if (!groupId || !channelId) return;
+                const key = groupId + "_" + channelId;
+                if (_channelListeners[key]) return; // zaten dinleniyor
+
+                // Kanalın en son mesajının zaman damgasını dinle (hafif:
+                // sadece son 1 mesaj çekilir).
+                const msgRef = database.ref("group_chats/" + groupId + "/channels/" + channelId + "/messages")
+                    .orderByChild("createdAt").limitToLast(1);
+                _channelListeners[key] = msgRef;
+                msgRef.on("value", (snap) => {
+                    let lastAt = 0;
+                    snap.forEach((child) => { lastAt = (child.val() && child.val().createdAt) || 0; });
+                    _channelState[key] = _channelState[key] || { lastActivityAt: 0, lastReadAt: 0 };
+                    _channelState[key].lastActivityAt = lastAt;
+                    renderNavDots();
+                    decorateChannelList(groupId);
+                });
+
+                if (!_channelReadListeners[key]) {
+                    const readRef = database.ref("user_reads/" + _myUid + "/channels/" + key);
+                    _channelReadListeners[key] = readRef;
+                    readRef.on("value", (snap) => {
+                        _channelState[key] = _channelState[key] || { lastActivityAt: 0, lastReadAt: 0 };
+                        _channelState[key].lastReadAt = snap.val() || 0;
+                        renderNavDots();
+                        decorateChannelList(groupId);
+                    });
+                }
+            }
+
+            /** Bir topluluk kanalı açıldığında/seçildiğinde çağrılır. */
+            function markChannelRead(groupId, channelId) {
+                if (!_myUid || !groupId || !channelId) return;
+                const key = groupId + "_" + channelId;
+                database.ref("user_reads/" + _myUid + "/channels/" + key)
+                    .set(Date.now())
+                    .catch((err) => console.error("[UnreadSystem] kanal okuma zamanı yazılamadı:", err));
+            }
+
+            // Bir topluluk açıldığında (onOpenCommunity), üyesi olduğumuz
+            // TÜM kanallarını izlemeye başlamak için CommunityChannels'a
+            // küçük bir "kanal listesi değişti" kancası lazım -- bunun
+            // yerine, kanal sidebar'ı her render edildiğinde DOM'daki
+            // [data-cch-channel] öğelerinden kanal ID'lerini okuyup
+            // tracking'i tembel (lazy) şekilde başlatıyoruz. Bu, mevcut
+            // CommunityChannels koduna dokunmadan entegre olmayı sağlar.
+            function scanVisibleChannelsForTracking(groupId) {
+                const listEl = document.getElementById("cchChannelList");
+                if (!listEl) return;
+                listEl.querySelectorAll("[data-cch-channel]").forEach((el) => {
+                    const chId = el.getAttribute("data-cch-channel");
+                    attachChannelReadTracking(groupId, chId);
+                });
+            }
+
+            // ── FORUM: Genel Sohbet + yeni konular ───────────────────
+            function attachForumReadTracking() {
+                // Genel Sohbet: forum_messages'taki en son mesaj zamanı.
+                database.ref("forum_messages").orderByChild("createdAt").limitToLast(1)
+                    .on("value", (snap) => {
+                        let lastAt = 0;
+                        snap.forEach((child) => { lastAt = (child.val() && child.val().createdAt) || 0; });
+                        _forumGeneralState.lastActivityAt = lastAt;
+                        renderNavDots();
+                    });
+
+                // Yeni konular: forum_threads'teki en son createdAt.
+                database.ref("forum_threads").orderByChild("createdAt").limitToLast(1)
+                    .on("value", (snap) => {
+                        let lastAt = 0;
+                        snap.forEach((child) => { lastAt = (child.val() && child.val().createdAt) || 0; });
+                        _forumThreadsState.lastActivityAt = lastAt;
+                        renderNavDots();
+                    });
+
+                database.ref("user_reads/" + _myUid + "/forum_general").on("value", (snap) => {
+                    _forumGeneralState.lastReadAt = snap.val() || 0;
+                    renderNavDots();
+                });
+                database.ref("user_reads/" + _myUid + "/forum_threads").on("value", (snap) => {
+                    _forumThreadsState.lastReadAt = snap.val() || 0;
+                    renderNavDots();
+                });
+            }
+
+            function markForumGeneralRead() {
+                if (!_myUid) return;
+                database.ref("user_reads/" + _myUid + "/forum_general").set(Date.now()).catch(() => {});
+            }
+            function markForumThreadsRead() {
+                if (!_myUid) return;
+                database.ref("user_reads/" + _myUid + "/forum_threads").set(Date.now()).catch(() => {});
+            }
+
+            // ── DM: sidebar rozeti için dm_inbox'ı ayrıca dinle ───────
+            // (renderDmChatList zaten kendi satır rozetini çiziyor --
+            // burada sadece "genel var/yok" durumunu _dmState'e yansıtıp
+            // sidebar nav noktasını tetikliyoruz.)
+            function attachDmReadTracking() {
+                database.ref("dm_inbox/" + _myUid).on("value", (snap) => {
+                    const all = snap.val() || {};
+                    Object.keys(_dmState).forEach((k) => { if (!all[k]) delete _dmState[k]; });
+                    Object.keys(all).forEach((dmId) => {
+                        _dmState[dmId] = { unreadCount: all[dmId].unreadCount || 0 };
+                    });
+                    renderNavDots();
+                });
+            }
+
+            // ── init ─────────────────────────────────────────────────
+            function init(uid) {
+                _myUid = uid;
+                attachDmReadTracking();
+                attachForumReadTracking();
+
+                // Grup okuma takibini başlat, ve grup listesi her
+                // değiştiğinde (üyelik/meta güncellemesi) yeniden tara.
+                attachGroupReadTracking();
+                // MessagingSystem'in kendi grup meta dinleyicisi periyodik
+                // olarak _groupMetaCache'i güncelliyor -- her değişiklikte
+                // bizim de yeniden taramamız gerekiyor. Basit bir polling
+                // (1.5sn) ile bunu güvenceye alıyoruz; canlı Firebase event'i
+                // MessagingSystem'in kapalı kapsamında olduğu için doğrudan
+                // hook edilemiyor.
+                setInterval(() => {
+                    attachGroupReadTracking();
+                    renderNavDots();
+                    decorateGroupChatList();
+                }, 1500);
+            }
+
+            return {
+                init,
+                markGroupRead,
+                markChannelRead,
+                attachChannelReadTracking,
+                scanVisibleChannelsForTracking,
+                markForumGeneralRead,
+                markForumThreadsRead,
+                renderNavDots,
+                decorateGroupChatList,
+                decorateChannelList
+            };
+        })();
+        window.UnreadSystem = UnreadSystem;
 
         // ════════════════════════════════════════════════════════════════
         // BİLDİRİM SİSTEMİ (NotificationSystem)
@@ -23755,16 +24280,44 @@
                 } catch (_) { /* ses desteklenmiyorsa sessizce geç */ }
             }
 
-            // ── Tarayıcı bildirimi gönder ────────────────────────────
-            function sendBrowserNotif(title, body) {
+            // ── Tarayıcı bildirimi gönder (WhatsApp tarzı) ───────────
+            // `meta` opsiyonel: { avatarUrl, dmId, otherUid, groupId, type }.
+            // Verilirse bildirim gönderenin profil fotoğrafıyla gösterilir
+            // ve bildirime TIKLANDIĞINDA doğrudan ilgili sohbet açılır
+            // (bkz. n.onclick altında openDmConversation/switchView çağrıları).
+            function sendBrowserNotif(title, body, meta) {
                 if (Notification.permission !== "granted") return;
                 try {
-                    const n = new Notification(title, {
+                    const opts = {
                         body,
-                        icon: "https://play-legends.com/favicon.ico",
-                        tag:  "pl-mention-" + Date.now()
-                    });
-                    setTimeout(() => n.close(), 5000);
+                        icon: (meta && meta.avatarUrl) || "./icons/icon-192.png",
+                        badge: "./icons/icon-192.png",
+                        tag:  "pl-mention-" + Date.now(),
+                        // Aynı kişiden art arda mesaj gelirse eski bildirimin
+                        // yerine geçmesin diye her seferinde benzersiz tag
+                        // kullanılıyor (WhatsApp'ta olduğu gibi üst üste yığılabilsin).
+                        renotify: false
+                    };
+                    const n = new Notification(title, opts);
+
+                    // Bildirime tıklanınca: pencereye odaklan ve varsa ilgili
+                    // sohbeti (DM) doğrudan aç.
+                    n.onclick = () => {
+                        try { window.focus(); } catch (_) {}
+                        if (meta && meta.type === "dm" && meta.dmId && meta.otherUid) {
+                            switchView("messages");
+                            if (window.MessagingSystem && window.MessagingSystem.openDmConversation) {
+                                window.MessagingSystem.openDmConversation(meta.dmId, meta.otherUid);
+                            }
+                        } else if (meta && meta.type === "group" && meta.groupId) {
+                            switchView("groups");
+                        } else if (meta && (meta.type === "mention" || meta.type === "reply")) {
+                            switchView("inbox");
+                        }
+                        n.close();
+                    };
+
+                    setTimeout(() => n.close(), 8000);
                 } catch (_) {}
             }
 
@@ -23786,7 +24339,12 @@
             }
 
             // ── Ana tetikleyici ──────────────────────────────────────
-            function trigger(type, actorUsername) {
+            // `meta` opsiyonel bir obje: { avatarUrl, dmId, otherUid, groupId,
+            // textSnippet }. Firebase dinleyicisinden (attachListener) ya da
+            // maybeNotifySelfMention gibi client-side çağrılardan gelebilir.
+            // Verilmezse eskisi gibi generik body metniyle çalışır (geriye
+            // dönük uyumluluk).
+            function trigger(type, actorUsername, meta) {
                 // Kullanıcı bildirimleri kapatmışsa (bkz. profil sayfasındaki
                 // "Bildirimler" toggle'ı) hiçbir şey çalma/gösterme.
                 if (getDecision() === "off") return;
@@ -23795,29 +24353,36 @@
                 playSound();
 
                 const actor = `<strong>@${actorUsername}</strong>`;
+                const _meta = Object.assign({ type }, meta || {});
+                const snippetSuffix = (meta && meta.textSnippet) ? `: "${meta.textSnippet}"` : "";
+
                 if (type === "mention") {
                     showPingToast("🔔", `${actor} seni etiketledi`);
                     sendBrowserNotif(
-                        "Play Legends — Etiketlendin!",
-                        `@${actorUsername} seni bir mesajda etiketledi.`
+                        `${actorUsername} — Etiketlendin!`,
+                        `Seni bir mesajda etiketledi${snippetSuffix}`,
+                        _meta
                     );
                 } else if (type === "dm") {
                     showPingToast("✉️", `${actor} sana mesaj gönderdi`);
                     sendBrowserNotif(
-                        "Play Legends — Yeni mesaj!",
-                        `@${actorUsername} sana bir mesaj gönderdi.`
+                        actorUsername,
+                        `${meta && meta.textSnippet ? meta.textSnippet : "Sana bir mesaj gönderdi."}`,
+                        _meta
                     );
                 } else if (type === "group") {
                     showPingToast("👥", `${actor} grupta mesaj yazdı`);
                     sendBrowserNotif(
-                        "Play Legends — Yeni grup mesajı!",
-                        `@${actorUsername} grupta bir mesaj gönderdi.`
+                        `${actorUsername} (grup)`,
+                        `${meta && meta.textSnippet ? meta.textSnippet : "Grupta bir mesaj gönderdi."}`,
+                        _meta
                     );
                 } else {
                     showPingToast("💬", `${actor} sana yanıt verdi`);
                     sendBrowserNotif(
-                        "Play Legends — Yeni yanıt!",
-                        `@${actorUsername} mesajına yanıt verdi.`
+                        `${actorUsername} — Yeni yanıt!`,
+                        `Mesajına yanıt verdi${snippetSuffix}`,
+                        _meta
                     );
                 }
             }
@@ -23833,7 +24398,22 @@
                         if (!n || !n.actorUsername) return;
                         // Kendi gönderdiğimiz bildirimleri yoksay
                         if (n.actorUid === uid) return;
-                        trigger(n.type || "mention", n.actorUsername);
+
+                        // Gönderenin profil fotoğrafını mention cache'inden
+                        // çözmeye çalış (varsa) -- WhatsApp tarzı bildirimde
+                        // avatar göstermek için. Bulunamazsa sendBrowserNotif
+                        // zaten varsayılan uygulama ikonuna düşer.
+                        const actorProfile = window.CommunityMentions && window.CommunityMentions.getByUid
+                            ? window.CommunityMentions.getByUid(n.actorUid)
+                            : null;
+
+                        trigger(n.type || "mention", n.actorUsername, {
+                            avatarUrl: actorProfile ? actorProfile.avatarUrl : "",
+                            dmId: n.dmId || null,
+                            otherUid: n.dmId ? n.actorUid : null,
+                            groupId: n.groupId || null,
+                            textSnippet: n.textSnippet || ""
+                        });
                     });
             }
 
@@ -23896,6 +24476,7 @@
 
             return { init, trigger, playSound };
         })();
+        window.NotificationSystem = NotificationSystem;
 
         // ==============================================================
         // 🛡️ MODÜL 7: YÖNETİCİ PANELİ (Admin & Moderasyon)
@@ -24572,6 +25153,7 @@
             NotificationSystem.init(e.detail.user.uid);
             InboxSystem.init(e.detail.user.uid);
             MessagingSystem.init(e.detail.user.uid);
+            if (window.UnreadSystem) window.UnreadSystem.init(e.detail.user.uid);
             // ⚠️ UYARI SİSTEMİ: giriş yapılır yapılmaz bekleyen (henüz
             // görülmemiş) uyarı bildirimlerini modal olarak göster.
             checkAndShowPendingWarnings(e.detail.user.uid);
@@ -24705,6 +25287,27 @@
                     .catch(function (err) {
                         console.warn("[SW] Kayıt başarısız:", err);
                     });
+
+                // Service worker'dan gelen "notif-click" mesajını dinle
+                // (bkz. sw.js -> notificationclick). Sekme arka planda
+                // gösterilmiş bir bildirime tıklanınca buraya, ilgili
+                // sohbeti/DM'i doğrudan açmamız için bilgi gelir --
+                // WhatsApp'taki "bildirime tıkla, sohbet açılsın" davranışı.
+                navigator.serviceWorker.addEventListener("message", function (event) {
+                    const msg = event.data;
+                    if (!msg || msg.type !== "notif-click") return;
+                    const payload = msg.payload || {};
+                    if (payload.type === "dm" && payload.dmId && payload.otherUid) {
+                        switchView("messages");
+                        if (window.MessagingSystem && window.MessagingSystem.openDmConversation) {
+                            window.MessagingSystem.openDmConversation(payload.dmId, payload.otherUid);
+                        }
+                    } else if (payload.type === "group" && payload.groupId) {
+                        switchView("groups");
+                    } else if (payload.type === "mention" || payload.type === "reply") {
+                        switchView("inbox");
+                    }
+                });
             });
         }
     })();
