@@ -13800,8 +13800,27 @@
                     // kapat -- aksi halde permission_denied hatası signOut()
                     // akışını askıda bırakabiliyordu (bkz. yukarıdaki BUG NOTU).
                     stopSecurityObserver();
-                    await auth.signOut();
-                    // Auth state change yayılırken hub'ı hemen gizle ve giriş formunu göster
+
+                    // 🐛 BUGFIX: startSecurityObserver dışında da onlarca
+                    // kalıcı Firebase dinleyicisi (.on("value")) var
+                    // (mesajlar, gruplar, dm_inbox, community_directory vb.).
+                    // Bunların hiçbiri signOut() öncesi kapatılmıyordu; auth
+                    // token'ı geçersiz olur olmaz herhangi biri
+                    // permission_denied alıp signOut() promise'ini sonsuza
+                    // dek askıda bırakabiliyordu -- bu yüzden "stopSecurityObserver"
+                    // eklemesi tek başına yetmedi. Kaynağı tek tek avlamak
+                    // yerine, signOut()'u bir zaman aşımı ile yarıştırıyoruz:
+                    // 4 saniye içinde tamamlanmazsa da UI zorla giriş ekranına
+                    // dönüyor -- buton artık HİÇBİR senaryoda sonsuza kadar
+                    // "Çıkış yapılıyor…" durumunda kalamaz.
+                    const signOutPromise = auth.signOut();
+                    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 4000));
+                    await Promise.race([signOutPromise, timeoutPromise]);
+
+                    // signOut() arka planda hâlâ sürüyor olabilir (zaman
+                    // aşımına uğradıysak) ama Firebase local auth state'i
+                    // signOut() çağrılır çağrılmaz senkron olarak temizlediği
+                    // için UI'ı güvenle giriş ekranına döndürebiliriz.
                     var shell = document.getElementById("hubShell");
                     var gate = document.getElementById("authGate");
                     if (shell) shell.classList.remove("is-active");
