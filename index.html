@@ -5146,6 +5146,62 @@
         height: 22px;
     }
 
+    /* Küçük emoji seçici buton (input ile Kaydet arasında) -- tıklanınca
+       popover'ı açar/kapatır, seçili emojiyi küçük önizleme olarak gösterir. */
+    .community-badge-picker-toggle {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 8px;
+        border: 1.5px solid rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.04);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .community-badge-picker-toggle:hover {
+        border-color: rgba(255,255,255,0.32);
+        background: rgba(255,255,255,0.08);
+    }
+    .community-badge-picker-toggle.is-open {
+        border-color: var(--accent, #ff2d78);
+        background: rgba(255,45,120,0.12);
+    }
+    .community-badge-picker-preview-empty {
+        font-size: 18px;
+        line-height: 1;
+        color: var(--text-dim, #9aa);
+        font-weight: 300;
+    }
+    .community-badge-picker-toggle svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Popover: toggle butonunun hemen altında açılan pixel-art emoji
+       ızgarası. position:relative olan .msg-group-detail-desc-row'a göre
+       konumlanır. */
+    .community-badge-swatch-popover {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: 40;
+        background: var(--bg-panel-solid, #1a1a22);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .community-badge-swatch-popover .community-badge-swatch-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 152px; /* 4 sütun x (44px + gap) civarı */
+    }
+
     .community-badge-pill {
         line-height: 1;
     }
@@ -8088,10 +8144,21 @@
                                     Üyelerinin profilinde gösterebileceği, bir emoji + en fazla 4 karakterlik bir rozet oluştur.
                                     Yalnızca doğrulanmış (mavi tikli) topluluklar rozet oluşturabilir.
                                 </p>
-                                <div class="community-badge-swatch-grid" id="groupDetailBadgeSwatchGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
-                                <div class="msg-group-detail-desc-row">
+                                <!-- Emoji seçici: küçük kare buton -- tıklanınca
+                                     aşağıdaki pixel-art ızgara (popover gibi)
+                                     açılır/kapanır. Seçilen emoji butonun
+                                     içinde küçük önizleme olarak kalır. -->
+                                <div class="msg-group-detail-desc-row" style="position:relative;">
+                                    <button type="button" class="community-badge-picker-toggle" id="groupDetailBadgePickerToggle" title="Emoji seç" aria-haspopup="true" aria-expanded="false">
+                                        <span id="groupDetailBadgePickerPreview" class="community-badge-picker-preview-empty">＋</span>
+                                    </button>
                                     <input type="text" class="forum-text-input" id="groupDetailBadgeLabelInput" maxlength="4" placeholder="En fazla 4 karakter (örn. OYUN)" style="flex:1;">
                                     <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-save-btn" id="groupDetailBadgeSaveBtn">Kaydet</button>
+
+                                    <!-- Popover: varsayılan gizli, toggle butonuna tıklanınca açılır. -->
+                                    <div class="community-badge-swatch-popover" id="groupDetailBadgeSwatchPopover" style="display:none;">
+                                        <div class="community-badge-swatch-grid" id="groupDetailBadgeSwatchGrid"></div>
+                                    </div>
                                 </div>
                                 <button type="button" class="forum-btn forum-btn-ghost" id="groupDetailBadgeRemoveBtn" style="margin-top:8px;display:none;">Rozeti Kaldır</button>
                                 <div class="forum-modal-error" id="groupDetailBadgeError" style="display:none;"></div>
@@ -9475,6 +9542,21 @@
                     ${renderPixelEmojiSvg(id, 22)}
                 </button>`;
             }).join("");
+        }
+
+        // 🏷️ Topluluk Rozeti etiketi: emoji zaten AYRI bir seçiciyle
+        // (pixel-art ızgara) seçiliyor -- bu metin alanı SADECE kısa bir
+        // yazı etiketi için (örn. "OYUN"). Kullanıcı buraya emoji
+        // yapıştırırsa/yazarsa (klavye emoji paneli, kopyala-yapıştır vb.)
+        // burada temizleniyor. Unicode emoji aralıklarını (Emoticons,
+        // Misc Symbols, Dingbats, Transport, Supplemental Symbols, flag
+        // regional indicators, varyasyon seçiciler, ZWJ) kapsayan bir regex
+        // ile emoji karakterleri siliniyor; harf/rakam/boşluk/temel
+        // noktalama olduğu gibi kalıyor.
+        const BADGE_LABEL_EMOJI_REGEX = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}\u{FE0F}\u{200D}\u{20E3}]/gu;
+        function sanitizeBadgeLabelInput(raw) {
+            if (!raw) return "";
+            return raw.replace(BADGE_LABEL_EMOJI_REGEX, "").trim();
         }
 
         /**
@@ -22002,6 +22084,7 @@
                 _activeGroupDetailId = null;
                 const backdrop = document.getElementById("groupDetailModalBackdrop");
                 if (backdrop) backdrop.style.display = "none";
+                closeBadgeEmojiPopover();
             }
 
             function renderGroupDetailPanel(groupId) {
@@ -22098,8 +22181,26 @@
                     const canManageBadge = isCommunity && meta.isVerified === true && iAmCommunityOwner;
                     badgeSection.style.display = canManageBadge ? "block" : "none";
                     const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
+                    const pickerToggle = document.getElementById("groupDetailBadgePickerToggle");
+                    const pickerPreview = document.getElementById("groupDetailBadgePickerPreview");
+                    const popover = document.getElementById("groupDetailBadgeSwatchPopover");
                     if (canManageBadge) {
                         const currentBadge = meta.badge || null;
+                        const selectedEmojiId = currentBadge ? currentBadge.emojiId : null;
+
+                        // Küçük seçici butonun içindeki önizlemeyi güncelle:
+                        // emoji seçiliyse pixel-art'ı küçük boyutta göster,
+                        // seçili değilse "+" işareti kalsın.
+                        if (pickerPreview) {
+                            try {
+                                pickerPreview.innerHTML = selectedEmojiId ? renderPixelEmojiSvg(selectedEmojiId, 22) : "＋";
+                                pickerPreview.className = selectedEmojiId ? "" : "community-badge-picker-preview-empty";
+                            } catch (err) {
+                                console.error("[Topluluk Rozeti] Önizleme render edilemedi:", err);
+                                pickerPreview.textContent = "＋";
+                            }
+                        }
+
                         if (swatchGrid) {
                             // 🐛 BUGFIX: renderCommunityBadgeSwatchGrid içinde
                             // beklenmedik bir hata (ör. ileride emoji listesi
@@ -22110,8 +22211,8 @@
                             // try/catch ile hatayı konsola basıp en azından
                             // görünür bir durum bırakıyoruz.
                             try {
-                                swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(currentBadge ? currentBadge.emojiId : null);
-                                swatchGrid.dataset.selectedEmoji = currentBadge ? currentBadge.emojiId : "";
+                                swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(selectedEmojiId);
+                                swatchGrid.dataset.selectedEmoji = selectedEmojiId || "";
                             } catch (err) {
                                 console.error("[Topluluk Rozeti] Emoji ızgarası render edilemedi:", err);
                                 swatchGrid.innerHTML = "";
@@ -22121,7 +22222,17 @@
                                 btn.addEventListener("click", () => {
                                     swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((b) => b.classList.remove("is-selected"));
                                     btn.classList.add("is-selected");
-                                    swatchGrid.dataset.selectedEmoji = btn.getAttribute("data-badge-emoji");
+                                    const chosenId = btn.getAttribute("data-badge-emoji");
+                                    swatchGrid.dataset.selectedEmoji = chosenId;
+                                    // Seçim yapılır yapılmaz küçük buton
+                                    // içindeki önizlemeyi de güncelle ve
+                                    // popover'ı kapat -- kullanıcı emojiye
+                                    // basar basmaz seçtiğini görsün.
+                                    if (pickerPreview) {
+                                        pickerPreview.innerHTML = renderPixelEmojiSvg(chosenId, 22);
+                                        pickerPreview.className = "";
+                                    }
+                                    closeBadgeEmojiPopover();
                                 });
                             });
                         }
@@ -22131,13 +22242,17 @@
                         if (removeBtn) removeBtn.style.display = currentBadge ? "inline-block" : "none";
                         const badgeErr = document.getElementById("groupDetailBadgeError");
                         if (badgeErr) badgeErr.style.display = "none";
-                    } else if (swatchGrid) {
-                        // Bölüm gizliyken de grid'i boşaltıyoruz ki bir
-                        // sonraki topluluk açıldığında (canManageBadge
-                        // tekrar true olursa) eski/yanlış bir seçili emoji
-                        // görünmesin.
-                        swatchGrid.innerHTML = "";
-                        swatchGrid.dataset.selectedEmoji = "";
+                    } else {
+                        if (swatchGrid) {
+                            // Bölüm gizliyken de grid'i boşaltıyoruz ki bir
+                            // sonraki topluluk açıldığında (canManageBadge
+                            // tekrar true olursa) eski/yanlış bir seçili emoji
+                            // görünmesin.
+                            swatchGrid.innerHTML = "";
+                            swatchGrid.dataset.selectedEmoji = "";
+                        }
+                        if (popover) popover.style.display = "none";
+                        if (pickerToggle) pickerToggle.classList.remove("is-open");
                     }
                 }
 
@@ -22482,7 +22597,7 @@
                 }
                 const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
                 const emojiId = swatchGrid ? swatchGrid.dataset.selectedEmoji : "";
-                const label = (document.getElementById("groupDetailBadgeLabelInput")?.value || "").trim().slice(0, 4);
+                const label = sanitizeBadgeLabelInput(document.getElementById("groupDetailBadgeLabelInput")?.value || "").slice(0, 4);
                 if (!emojiId || !COMMUNITY_BADGE_EMOJIS[emojiId]) {
                     if (errorEl) { errorEl.textContent = "Bir emoji seçmelisin."; errorEl.style.display = "block"; }
                     return;
@@ -22521,10 +22636,24 @@
                             btn.addEventListener("click", () => {
                                 swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((b) => b.classList.remove("is-selected"));
                                 btn.classList.add("is-selected");
-                                swatchGrid.dataset.selectedEmoji = btn.getAttribute("data-badge-emoji");
+                                const chosenId = btn.getAttribute("data-badge-emoji");
+                                swatchGrid.dataset.selectedEmoji = chosenId;
+                                const pickerPreview = document.getElementById("groupDetailBadgePickerPreview");
+                                if (pickerPreview) {
+                                    pickerPreview.innerHTML = renderPixelEmojiSvg(chosenId, 22);
+                                    pickerPreview.className = "";
+                                }
+                                closeBadgeEmojiPopover();
                             });
                         });
                     }
+                    // Küçük seçici butonu da "+" durumuna geri döndür.
+                    const pickerPreview = document.getElementById("groupDetailBadgePickerPreview");
+                    if (pickerPreview) {
+                        pickerPreview.innerHTML = "＋";
+                        pickerPreview.className = "community-badge-picker-preview-empty";
+                    }
+                    closeBadgeEmojiPopover();
                     const labelInput = document.getElementById("groupDetailBadgeLabelInput");
                     if (labelInput) labelInput.value = "";
                     document.getElementById("groupDetailBadgeRemoveBtn").style.display = "none";
@@ -22890,9 +23019,61 @@
                 await postGroupSystemMessage(groupId, `➕ ${added ? added.username : "Yeni bir üye"} gruba eklendi.`);
             }
 
+            // ── 🏷️ Topluluk Rozeti: emoji seçici popover ─────────────────
+            // Küçük kare buton (groupDetailBadgePickerToggle) tıklanınca
+            // pixel-art emoji ızgarasını (popover) açar/kapatır. Bir emoji
+            // seçilince (bkz. renderGroupDetailPanel'deki click listener)
+            // ya da dışarıya tıklanınca otomatik kapanır.
+            function openBadgeEmojiPopover() {
+                const popover = document.getElementById("groupDetailBadgeSwatchPopover");
+                const toggle = document.getElementById("groupDetailBadgePickerToggle");
+                if (popover) popover.style.display = "block";
+                if (toggle) toggle.classList.add("is-open");
+                if (toggle) toggle.setAttribute("aria-expanded", "true");
+            }
+            function closeBadgeEmojiPopover() {
+                const popover = document.getElementById("groupDetailBadgeSwatchPopover");
+                const toggle = document.getElementById("groupDetailBadgePickerToggle");
+                if (popover) popover.style.display = "none";
+                if (toggle) toggle.classList.remove("is-open");
+                if (toggle) toggle.setAttribute("aria-expanded", "false");
+            }
+            function toggleBadgeEmojiPopover() {
+                const popover = document.getElementById("groupDetailBadgeSwatchPopover");
+                if (!popover) return;
+                if (popover.style.display === "block") closeBadgeEmojiPopover();
+                else openBadgeEmojiPopover();
+            }
+
             function wireGroupDetailPanelEvents() {
                 document.getElementById("groupHeaderOpenSettingsBtn")?.addEventListener("click", () => {
                     if (_activeGroupId) openGroupDetailPanel(_activeGroupId);
+                });
+                document.getElementById("groupDetailBadgePickerToggle")?.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    toggleBadgeEmojiPopover();
+                });
+                // Popover dışına tıklanınca kapansın (ama popover'ın
+                // içine ya da toggle butonuna tıklanınca kapanmasın --
+                // onlar zaten kendi click handler'larında durduruluyor
+                // ya da bir emoji seçtiğinde closeBadgeEmojiPopover
+                // zaten çağrılıyor).
+                document.addEventListener("click", (e) => {
+                    const popover = document.getElementById("groupDetailBadgeSwatchPopover");
+                    if (!popover || popover.style.display !== "block") return;
+                    const toggle = document.getElementById("groupDetailBadgePickerToggle");
+                    if (popover.contains(e.target) || (toggle && toggle.contains(e.target))) return;
+                    closeBadgeEmojiPopover();
+                });
+                // Rozet etiketi (isim) alanına emoji girilmesini engelle --
+                // emoji seçimi zaten ayrı, yukarıdaki pixel-art seçici ile
+                // yapılıyor. Hem klavyeden yazarken hem yapıştırırken canlı
+                // olarak temizleniyor (maxlength=4 zaten HTML'de var, ama
+                // emoji çoklu-code-point olduğundan tek başına yetersiz
+                // kalabiliyordu).
+                document.getElementById("groupDetailBadgeLabelInput")?.addEventListener("input", (e) => {
+                    const cleaned = sanitizeBadgeLabelInput(e.target.value).slice(0, 4);
+                    if (cleaned !== e.target.value) e.target.value = cleaned;
                 });
                 document.getElementById("groupDetailModalClose")?.addEventListener("click", closeGroupDetailPanel);
                 document.getElementById("groupDetailCloseBtn")?.addEventListener("click", closeGroupDetailPanel);
