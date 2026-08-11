@@ -5188,12 +5188,14 @@
        değerlerini burada set ediyor. */
     .community-badge-swatch-popover {
         position: fixed;
-        z-index: 9999;
+        z-index: 999999;
         background: var(--bg-panel-solid, #1a1a22);
         border: 1px solid rgba(255,255,255,0.14);
         border-radius: 12px;
         padding: 10px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        max-height: 80vh;
+        overflow-y: auto;
     }
     .community-badge-swatch-popover .community-badge-swatch-grid {
         display: flex;
@@ -23027,33 +23029,70 @@
             function openBadgeEmojiPopover() {
                 const popover = document.getElementById("groupDetailBadgeSwatchPopover");
                 const toggle = document.getElementById("groupDetailBadgePickerToggle");
-                if (!popover || !toggle) return;
+                if (!popover || !toggle) {
+                    console.error("[Rozet Emoji] popover veya toggle bulunamadı", { popover, toggle });
+                    return;
+                }
+
+                // Grid boşsa (ör. renderGroupDetailPanel henüz çalışmadıysa
+                // veya sessizce hata verdiyse) burada da bir güvenlik ağı
+                // olarak yeniden dolduruyoruz -- kullanıcı boş bir popover
+                // görmesin.
+                const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
+                if (swatchGrid && !swatchGrid.children.length) {
+                    try {
+                        const currentSelected = swatchGrid.dataset.selectedEmoji || null;
+                        swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(currentSelected);
+                        swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((btn) => {
+                            btn.addEventListener("click", () => {
+                                swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((b) => b.classList.remove("is-selected"));
+                                btn.classList.add("is-selected");
+                                const chosenId = btn.getAttribute("data-badge-emoji");
+                                swatchGrid.dataset.selectedEmoji = chosenId;
+                                const pickerPreview = document.getElementById("groupDetailBadgePickerPreview");
+                                if (pickerPreview) {
+                                    pickerPreview.innerHTML = renderPixelEmojiSvg(chosenId, 22);
+                                    pickerPreview.className = "";
+                                }
+                                closeBadgeEmojiPopover();
+                            });
+                        });
+                    } catch (err) {
+                        console.error("[Rozet Emoji] güvenlik ağı render hatası:", err);
+                    }
+                }
 
                 // position:fixed kullanıldığından (bkz. CSS notu), popover'ı
                 // toggle butonunun GERÇEK ekran koordinatına göre kendimiz
                 // yerleştiriyoruz. Ekranın altına/sağına taşarsa otomatik
                 // olarak yukarı/sola kayacak şekilde sınır kontrolü yapılır.
                 popover.style.display = "block";
+                popover.style.visibility = "hidden"; // ölçüm sırasında flicker olmasın
                 const btnRect = toggle.getBoundingClientRect();
-                const popoverWidth = 172; // grid genişliği (152) + padding (20)
+                const popRect = popover.getBoundingClientRect();
+                const popoverWidth = popRect.width || 172;
+                const popoverHeight = popRect.height || 200;
                 let left = btnRect.left;
                 let top = btnRect.bottom + 6;
 
                 if (left + popoverWidth > window.innerWidth - 8) {
                     left = Math.max(8, window.innerWidth - popoverWidth - 8);
                 }
-                // Alt tarafta yeterli yer yoksa (popover ~200px yükseklikte
-                // varsayılıyor) toggle'ın ÜSTÜNE aç.
-                const estimatedHeight = 200;
-                if (top + estimatedHeight > window.innerHeight - 8) {
-                    top = Math.max(8, btnRect.top - estimatedHeight - 6);
+                if (left < 8) left = 8;
+                // Alt tarafta yeterli yer yoksa toggle'ın ÜSTÜNE aç.
+                if (top + popoverHeight > window.innerHeight - 8) {
+                    const above = btnRect.top - popoverHeight - 6;
+                    top = above >= 8 ? above : Math.max(8, window.innerHeight - popoverHeight - 8);
                 }
 
                 popover.style.left = left + "px";
                 popover.style.top = top + "px";
+                popover.style.visibility = "visible";
 
                 toggle.classList.add("is-open");
                 toggle.setAttribute("aria-expanded", "true");
+
+                console.log("[Rozet Emoji] popover açıldı", { left, top, btnRect, popoverWidth, popoverHeight, gridChildren: swatchGrid ? swatchGrid.children.length : null });
             }
             function closeBadgeEmojiPopover() {
                 const popover = document.getElementById("groupDetailBadgeSwatchPopover");
