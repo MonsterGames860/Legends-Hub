@@ -8636,50 +8636,6 @@
                 </div>
 
                 <!-- ════════════════════════════════════════════════════
-                     TOPLULUK ÖNİZLEME MODALI (katılmadan önce gözden geçir)
-                     ════════════════════════════════════════════════════ -->
-                <div class="forum-modal-backdrop grp-preview-sheet-backdrop" id="communityPreviewModalBackdrop" style="display:none;">
-                    <div class="forum-modal grp-preview-modal grp-preview-sheet">
-                        <div class="forum-modal-header">
-                            <span>Topluluk</span>
-                            <button class="forum-modal-close" id="communityPreviewModalClose">✕</button>
-                        </div>
-
-                        <!-- MODÜL 5 EKLENTİ 3: Kapak fotoğrafı (varsa) -- Discord'daki
-                             topluluk önizleme kartındaki banner'ın karşılığı. Kapağı
-                             olmayan topluluklarda bu bölüm tamamen gizlenir, hero
-                             (avatar) alanı eskisi gibi üstte kalır. -->
-                        <div class="grp-preview-banner" id="communityPreviewBannerWrap" style="display:none;">
-                            <img id="communityPreviewBannerImg" alt="">
-                        </div>
-
-                        <div class="grp-preview-hero" id="communityPreviewHero">
-                            <div class="grp-preview-avatar" id="communityPreviewAvatar">🌐</div>
-                            <div class="grp-preview-name-row">
-                                <span id="communityPreviewName">—</span>
-                                <span id="communityPreviewVerifiedSlot"></span>
-                            </div>
-                            <div class="grp-preview-meta" id="communityPreviewMeta">0 üye</div>
-                        </div>
-
-                        <div class="grp-preview-desc" id="communityPreviewDesc"></div>
-
-                        <div class="forum-modal-error" id="communityPreviewError" style="display:none; margin: 0 20px;"></div>
-
-                        <div class="grp-preview-actions">
-                            <button type="button" class="grp-preview-join-btn" id="communityPreviewJoinBtn">Katıl</button>
-                            <button type="button" class="grp-preview-report-btn" id="communityPreviewReportBtn">🚩 Şikâyet Et</button>
-                        </div>
-
-                        <!-- Helper ve üzeri roller için moderasyon aksiyonları -->
-                        <div class="grp-preview-staff-row" id="communityPreviewStaffRow" style="display:none;">
-                            <button type="button" class="forum-btn forum-btn-ghost" id="communityPreviewSuspendBtn">⏸ Askıya Al</button>
-                            <button type="button" class="forum-btn forum-btn-ghost" id="communityPreviewDeleteBtn">🗑 Sil</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ════════════════════════════════════════════════════
                      TOPLULUK ŞİKÂYET FORMU MODALI
                      ════════════════════════════════════════════════════ -->
                 <div class="forum-modal-backdrop" id="communityReportModalBackdrop" style="display:none;">
@@ -8709,6 +8665,59 @@
                     </div>
                 </div>
             </section>
+
+            <!-- ════════════════════════════════════════════════════
+                 TOPLULUK ÖNİZLEME MODALI (katılmadan önce gözden geçir)
+                 — Rozete (community-badge-pill) HER YERDEN tıklanabildiği
+                 için (forum, DM, grup sohbeti vb.) bu modal artık
+                 .hub-view[data-view="communities"] section'ının İÇİNDE
+                 DEĞİL: .hub-view { display:none } sadece o sekme aktif
+                 değilken kuralı, section içindeyken modalı da (position:
+                 fixed olsa dahi) görünmez kılıyordu -- bu yüzden rozet
+                 sadece "Topluluklar" sekmesindeyken çalışıyordu. Artık
+                 section'ın dışında, diğer global modallerle aynı seviyede
+                 durduğu için hangi sekmede olursak olalım açılabiliyor.
+                 ════════════════════════════════════════════════════ -->
+            <div class="forum-modal-backdrop grp-preview-sheet-backdrop" id="communityPreviewModalBackdrop" style="display:none;">
+                <div class="forum-modal grp-preview-modal grp-preview-sheet">
+                    <div class="forum-modal-header">
+                        <span>Topluluk</span>
+                        <button class="forum-modal-close" id="communityPreviewModalClose">✕</button>
+                    </div>
+
+                    <!-- MODÜL 5 EKLENTİ 3: Kapak fotoğrafı (varsa) -- Discord'daki
+                         topluluk önizleme kartındaki banner'ın karşılığı. Kapağı
+                         olmayan topluluklarda bu bölüm tamamen gizlenir, hero
+                         (avatar) alanı eskisi gibi üstte kalır. -->
+                    <div class="grp-preview-banner" id="communityPreviewBannerWrap" style="display:none;">
+                        <img id="communityPreviewBannerImg" alt="">
+                    </div>
+
+                    <div class="grp-preview-hero" id="communityPreviewHero">
+                        <div class="grp-preview-avatar" id="communityPreviewAvatar">🌐</div>
+                        <div class="grp-preview-name-row">
+                            <span id="communityPreviewName">—</span>
+                            <span id="communityPreviewVerifiedSlot"></span>
+                        </div>
+                        <div class="grp-preview-meta" id="communityPreviewMeta">0 üye</div>
+                    </div>
+
+                    <div class="grp-preview-desc" id="communityPreviewDesc"></div>
+
+                    <div class="forum-modal-error" id="communityPreviewError" style="display:none; margin: 0 20px;"></div>
+
+                    <div class="grp-preview-actions">
+                        <button type="button" class="grp-preview-join-btn" id="communityPreviewJoinBtn">Katıl</button>
+                        <button type="button" class="grp-preview-report-btn" id="communityPreviewReportBtn">🚩 Şikâyet Et</button>
+                    </div>
+
+                    <!-- Helper ve üzeri roller için moderasyon aksiyonları -->
+                    <div class="grp-preview-staff-row" id="communityPreviewStaffRow" style="display:none;">
+                        <button type="button" class="forum-btn forum-btn-ghost" id="communityPreviewSuspendBtn">⏸ Askıya Al</button>
+                        <button type="button" class="forum-btn forum-btn-ghost" id="communityPreviewDeleteBtn">🗑 Sil</button>
+                    </div>
+                </div>
+            </div>
 
 
             <!-- ════════════════════════════════════════════════════════════
@@ -26378,8 +26387,6 @@
         // handleVerifiedToggle) çağırır -- kendi başına yeni bir yetki
         // yolu AÇMAZ, sadece var olanlara metin arayüzü sağlar.
         const ConsolePanel = (() => {
-            let _wired = false;
-
             const COMMANDS = [
                 {
                     name: "help",
@@ -26443,7 +26450,15 @@
                     if (outEl) outEl.innerHTML = `<div class="console-line console-line-err">Bu bölüme erişim yetkin yok.</div>`;
                     return;
                 }
-                if (!_wired) wireEvents();
+                // 🐛 BUGFIX: eskiden burada `if (!_wired) wireEvents();`
+                // vardı. Eğer wireEvents() ilk çağrıldığında elementler her
+                // nasılsa hazır değilse (ör. çok erken bir render sırası)
+                // _wired yine de true'ya set ediliyordu ve bir daha ASLA
+                // yeniden denenmiyordu -- input/buton tamamen tepkisiz
+                // kalıyordu. Artık wireEvents() HER open() çağrısında
+                // çalışıyor; kendi içindeki data-wired işaretiyle aynı
+                // elemana birden fazla dinleyici eklenmesini engelliyor.
+                wireEvents();
             }
 
             function printLine(text, kind) {
@@ -26589,39 +26604,57 @@
             }
 
             function wireEvents() {
-                _wired = true;
                 const input = document.getElementById("consoleInput");
                 const runBtn = document.getElementById("consoleRunBtn");
                 const helpBtn = document.getElementById("consoleHelpBtn");
                 const helpModalBackdrop = document.getElementById("consoleHelpModalBackdrop");
                 const helpModalClose = document.getElementById("consoleHelpModalClose");
 
-                const submit = () => {
-                    if (!input) return;
-                    const raw = input.value;
+                // Her open() çağrısında elementler yeniden sorgulanıyor
+                // ama dinleyiciler sadece HENÜZ bağlanmamışsa ekleniyor
+                // (data-wired işareti ile) -- böylece art arda görünüme
+                // her girişte aynı butona 2-3 dinleyici birden yığılmıyor.
+                if (input && !input.dataset.wired) {
+                    input.dataset.wired = "1";
+                    input.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            submit();
+                        }
+                    });
+                }
+                if (runBtn && !runBtn.dataset.wired) {
+                    runBtn.dataset.wired = "1";
+                    runBtn.addEventListener("click", submit);
+                }
+                if (helpBtn && !helpBtn.dataset.wired) {
+                    helpBtn.dataset.wired = "1";
+                    helpBtn.addEventListener("click", () => {
+                        renderHelp();
+                        if (helpModalBackdrop) helpModalBackdrop.style.display = "flex";
+                    });
+                }
+                if (helpModalClose && !helpModalClose.dataset.wired) {
+                    helpModalClose.dataset.wired = "1";
+                    helpModalClose.addEventListener("click", () => {
+                        if (helpModalBackdrop) helpModalBackdrop.style.display = "none";
+                    });
+                }
+                if (helpModalBackdrop && !helpModalBackdrop.dataset.wired) {
+                    helpModalBackdrop.dataset.wired = "1";
+                    helpModalBackdrop.addEventListener("click", (e) => {
+                        if (e.target.id === "consoleHelpModalBackdrop") helpModalBackdrop.style.display = "none";
+                    });
+                }
+
+                function submit() {
+                    const inputEl = document.getElementById("consoleInput");
+                    if (!inputEl) return;
+                    const raw = inputEl.value;
                     if (!raw || !raw.trim()) return;
-                    input.value = "";
+                    inputEl.value = "";
                     runCommand(raw);
-                };
-
-                runBtn?.addEventListener("click", submit);
-                input?.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        submit();
-                    }
-                });
-
-                helpBtn?.addEventListener("click", () => {
-                    renderHelp();
-                    if (helpModalBackdrop) helpModalBackdrop.style.display = "flex";
-                });
-                helpModalClose?.addEventListener("click", () => {
-                    if (helpModalBackdrop) helpModalBackdrop.style.display = "none";
-                });
-                helpModalBackdrop?.addEventListener("click", (e) => {
-                    if (e.target.id === "consoleHelpModalBackdrop") helpModalBackdrop.style.display = "none";
-                });
+                }
             }
 
             return { open };
