@@ -5182,13 +5182,13 @@
     }
 
     /* Popover: toggle butonunun hemen altında açılan pixel-art emoji
-       ızgarası. position:relative olan .msg-group-detail-desc-row'a göre
-       konumlanır. */
+       ızgarası. position:fixed kullanılıyor (position:absolute + ata
+       modalın overflow-y:auto olması popover'ı kırpıyordu) -- JS
+       (openBadgeEmojiPopover) ekran koordinatlarını hesaplayıp top/left
+       değerlerini burada set ediyor. */
     .community-badge-swatch-popover {
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 0;
-        z-index: 40;
+        position: fixed;
+        z-index: 9999;
         background: var(--bg-panel-solid, #1a1a22);
         border: 1px solid rgba(255,255,255,0.14);
         border-radius: 12px;
@@ -23027,9 +23027,33 @@
             function openBadgeEmojiPopover() {
                 const popover = document.getElementById("groupDetailBadgeSwatchPopover");
                 const toggle = document.getElementById("groupDetailBadgePickerToggle");
-                if (popover) popover.style.display = "block";
-                if (toggle) toggle.classList.add("is-open");
-                if (toggle) toggle.setAttribute("aria-expanded", "true");
+                if (!popover || !toggle) return;
+
+                // position:fixed kullanıldığından (bkz. CSS notu), popover'ı
+                // toggle butonunun GERÇEK ekran koordinatına göre kendimiz
+                // yerleştiriyoruz. Ekranın altına/sağına taşarsa otomatik
+                // olarak yukarı/sola kayacak şekilde sınır kontrolü yapılır.
+                popover.style.display = "block";
+                const btnRect = toggle.getBoundingClientRect();
+                const popoverWidth = 172; // grid genişliği (152) + padding (20)
+                let left = btnRect.left;
+                let top = btnRect.bottom + 6;
+
+                if (left + popoverWidth > window.innerWidth - 8) {
+                    left = Math.max(8, window.innerWidth - popoverWidth - 8);
+                }
+                // Alt tarafta yeterli yer yoksa (popover ~200px yükseklikte
+                // varsayılıyor) toggle'ın ÜSTÜNE aç.
+                const estimatedHeight = 200;
+                if (top + estimatedHeight > window.innerHeight - 8) {
+                    top = Math.max(8, btnRect.top - estimatedHeight - 6);
+                }
+
+                popover.style.left = left + "px";
+                popover.style.top = top + "px";
+
+                toggle.classList.add("is-open");
+                toggle.setAttribute("aria-expanded", "true");
             }
             function closeBadgeEmojiPopover() {
                 const popover = document.getElementById("groupDetailBadgeSwatchPopover");
@@ -23053,6 +23077,13 @@
                     e.stopPropagation();
                     toggleBadgeEmojiPopover();
                 });
+                // Modal içeriği kaydırılırsa (position:fixed popover ile
+                // birlikte kaymadığından, toggle butonunun konumundan
+                // kopabilir) popover'ı basitçe kapatıyoruz. Asıl kaydırılan
+                // element .forum-modal (id'siz, class üzerinden seçiliyor).
+                document.querySelector("#groupDetailModalBackdrop .forum-modal")?.addEventListener("scroll", () => {
+                    closeBadgeEmojiPopover();
+                }, { passive: true });
                 // Popover dışına tıklanınca kapansın (ama popover'ın
                 // içine ya da toggle butonuna tıklanınca kapanmasın --
                 // onlar zaten kendi click handler'larında durduruluyor
