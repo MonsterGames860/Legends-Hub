@@ -19167,6 +19167,18 @@
             let _lastRenderedMessagesArr = null;
 
             function renderActiveMessageList(groupId, channelId, arr) {
+                // 🐛 BUGFIX: Firebase'in .off() çağrısına rağmen "uçuşta"
+                // olan bir eski dinleyici callback'i (nadir bir yarış
+                // durumu -- kullanıcı çok hızlı iki topluluk/kanal arasında
+                // geçiş yaptığında) hâlâ tetiklenip BAŞKA bir topluluğun
+                // mesajlarını ekrana yazabiliyordu. Bu, "bir topluluğu
+                // kullandıktan sonra başka bir topluluğun mesajlarını
+                // görme" hatasının kök nedeniydi. Artık render'dan hemen
+                // önce bu groupId/channelId'nin GERÇEKTEN hâlâ ekranda
+                // açık olan topluluk/kanal olup olmadığını doğruluyoruz;
+                // değilse bu geç kalmış veriyi sessizce atıyoruz.
+                if (groupId !== _openGroupId) return;
+                if (channelId !== getActiveChannelId(groupId)) return;
                 _lastRenderedGroupId = groupId;
                 _lastRenderedChannelId = channelId;
                 _lastRenderedMessagesArr = arr;
@@ -21426,6 +21438,12 @@
                 if (_groupMessagesRef) _groupMessagesRef.off();
                 _groupMessagesRef = database.ref("group_chats/" + groupId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _groupMessagesRef.on("value", (snap) => {
+                    // 🐛 BUGFIX: aynı yarış durumu koruması -- .off()'a
+                    // rağmen "uçuşta" kalmış bir eski callback, kullanıcı
+                    // başka bir gruba/topluluğa geçtikten SONRA tetiklenip
+                    // yanlış grubun mesajlarını ekrana yazabiliyordu. Bu
+                    // groupId artık ekranda açık olan grup değilse yoksay.
+                    if (groupId !== _activeGroupId) return;
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
@@ -21904,7 +21922,20 @@
 
             function openGroupDetailPanel(groupId) {
                 const meta = _groupMetaCache[groupId];
-                if (!meta) return;
+
+                // 🐛 BUGFIX: modalı HER ZAMAN önce sıfırlıyoruz (backdrop
+                // açılmadan önce). Önceki davranışta meta eksikse fonksiyon
+                // sessizce çıkıyordu ("if (!meta) return") ve modal DOM'u
+                // BİR ÖNCEKİ açılan grubun render edilmiş haliyle (isim,
+                // avatar, açıklama input değerleri) kalabiliyordu. Kullanıcı
+                // sonra doğru groupId ile tekrar açtığında bile input'lar
+                // henüz yeniden render edilmediği için eski (başka bir
+                // topluluğa ait) veriyi göstermeye devam ediyordu -- "Monster
+                // Studios açıldı ama shit post'un ismi/fotoğrafı görünüyordu"
+                // hatası tam olarak buydu. Şimdi HER açılışta önce tüm
+                // kimlik alanları boşaltılıp "Yükleniyor…" durumuna
+                // çekiliyor, gerçek veri (meta) geldiğinde renderGroupDetailPanel
+                // bunun üzerine doğru değerleri yazıyor.
                 _activeGroupDetailId = groupId;
                 document.getElementById("groupDetailModalBackdrop").style.display = "flex";
                 document.getElementById("groupDetailAddMemberPanel").style.display = "none";
@@ -21912,7 +21943,59 @@
                 document.getElementById("groupDetailAvatarUrlInput").value = "";
                 document.getElementById("groupDetailIdentityError").style.display = "none";
                 document.getElementById("groupDetailGeneralError").style.display = "none";
-                renderGroupDetailPanel(groupId);
+
+                const nameInputEl = document.getElementById("groupDetailNameInput");
+                const descInputEl = document.getElementById("groupDetailDescInput");
+                const titleEl = document.getElementById("groupDetailModalTitle");
+                const avatarImgEl = document.getElementById("groupDetailAvatarImg");
+                const avatarFallbackEl = document.getElementById("groupDetailAvatarFallback");
+                const bannerImgEl = document.getElementById("groupDetailBannerImg");
+                const bannerFallbackEl = document.getElementById("groupDetailBannerFallback");
+                if (nameInputEl) nameInputEl.value = "";
+                if (descInputEl) descInputEl.value = "";
+                if (titleEl) titleEl.textContent = "Yükleniyor…";
+                if (avatarImgEl) avatarImgEl.style.display = "none";
+                if (avatarFallbackEl) avatarFallbackEl.style.display = "flex";
+                if (bannerImgEl) { bannerImgEl.src = ""; bannerImgEl.style.display = "none"; }
+                if (bannerFallbackEl) bannerFallbackEl.style.display = "flex";
+                const memberListEl = document.getElementById("groupDetailMemberList");
+                if (memberListEl) memberListEl.innerHTML = "";
+
+                if (meta) {
+                    renderGroupDetailPanel(groupId);
+                } else {
+                    // Cache'te henüz yoksa (ör. bu topluluğu daha önce hiç
+                    // açmadıysak / meta dinleyicisi henüz Firebase'den
+                    // cevap almadıysa) elle BİR KEZLİK taze veri çek. Meta
+                    // dinleyicisi (attachUserGroupsListener) zaten arka
+                    // planda kurulu olduğundan, bu çağrı sadece "ilk anlık
+                    // görüntüyü daha hızlı almak" için var; gelen veri
+                    // kesinlikle bu groupId'ye ait olacak (başka gruba
+                    // KARIŞAMAZ), çünkü ref'in path'i groupId ile sabit.
+                    database.ref("group_chats/" + groupId + "/meta").once("value")
+                        .then((snap) => {
+                            const freshMeta = snap.val();
+                            if (freshMeta) _groupMetaCache[groupId] = freshMeta;
+                            // Kullanıcı bu sırada modalı kapatmış ya da
+                            // BAŞKA bir topluluğun ayarlarını açmış olabilir
+                            // -- o zaman bu geç gelen cevabı ASLA render'a
+                            // uygulamıyoruz (aksi halde tam da düzeltmeye
+                            // çalıştığımız karışma hatasını burada yeniden
+                            // üretiriz).
+                            if (_activeGroupDetailId !== groupId) return;
+                            if (freshMeta) {
+                                renderGroupDetailPanel(groupId);
+                            } else if (titleEl) {
+                                titleEl.textContent = "Topluluk/Grup bulunamadı";
+                            }
+                        })
+                        .catch((err) => {
+                            console.error("[GroupDetail] Meta okunamadı:", err, "groupId:", groupId);
+                            if (_activeGroupDetailId === groupId && titleEl) {
+                                titleEl.textContent = "Yüklenemedi (bağlantı hatası)";
+                            }
+                        });
+                }
             }
 
             function closeGroupDetailPanel() {
@@ -21922,6 +22005,15 @@
             }
 
             function renderGroupDetailPanel(groupId) {
+                // 🐛 BUGFIX: bu fonksiyon hem senkron (openGroupDetailPanel
+                // içinden) hem de asenkron/gecikmeli tetikleyicilerden
+                // (meta listener, once("value") sonucu) çağrılabiliyor.
+                // Kullanıcı bu aradan başka bir topluluğun panelini açmış
+                // olabilir -- o durumda ESKİ groupId'nin verisiyle render
+                // yapmak, tam olarak "yanlış topluluğun ismi/fotoğrafı
+                // görünüyor" hatasını üretir. Bu yüzden groupId artık aktif
+                // panel DEĞİLSE burada sessizce çıkıyoruz.
+                if (_activeGroupDetailId !== groupId) return;
                 const meta = _groupMetaCache[groupId];
                 if (!meta) return;
                 const iAmAdmin = groupIsAdmin(meta, _myUid);
@@ -22005,12 +22097,26 @@
                     const iAmCommunityOwner = meta.ownerUid === _myUid;
                     const canManageBadge = isCommunity && meta.isVerified === true && iAmCommunityOwner;
                     badgeSection.style.display = canManageBadge ? "block" : "none";
+                    const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
                     if (canManageBadge) {
                         const currentBadge = meta.badge || null;
-                        const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
                         if (swatchGrid) {
-                            swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(currentBadge ? currentBadge.emojiId : null);
-                            swatchGrid.dataset.selectedEmoji = currentBadge ? currentBadge.emojiId : "";
+                            // 🐛 BUGFIX: renderCommunityBadgeSwatchGrid içinde
+                            // beklenmedik bir hata (ör. ileride emoji listesi
+                            // değişirse) sessizce atlanıp swatchGrid boş
+                            // kalabiliyordu -- bölüm görünür ama pixel-art
+                            // seçim ızgarası hiç render edilmemiş oluyordu
+                            // (kullanıcı sadece metin alanını görüyordu).
+                            // try/catch ile hatayı konsola basıp en azından
+                            // görünür bir durum bırakıyoruz.
+                            try {
+                                swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(currentBadge ? currentBadge.emojiId : null);
+                                swatchGrid.dataset.selectedEmoji = currentBadge ? currentBadge.emojiId : "";
+                            } catch (err) {
+                                console.error("[Topluluk Rozeti] Emoji ızgarası render edilemedi:", err);
+                                swatchGrid.innerHTML = "";
+                                swatchGrid.dataset.selectedEmoji = "";
+                            }
                             swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((btn) => {
                                 btn.addEventListener("click", () => {
                                     swatchGrid.querySelectorAll("[data-badge-emoji]").forEach((b) => b.classList.remove("is-selected"));
@@ -22025,6 +22131,13 @@
                         if (removeBtn) removeBtn.style.display = currentBadge ? "inline-block" : "none";
                         const badgeErr = document.getElementById("groupDetailBadgeError");
                         if (badgeErr) badgeErr.style.display = "none";
+                    } else if (swatchGrid) {
+                        // Bölüm gizliyken de grid'i boşaltıyoruz ki bir
+                        // sonraki topluluk açıldığında (canManageBadge
+                        // tekrar true olursa) eski/yanlış bir seçili emoji
+                        // görünmesin.
+                        swatchGrid.innerHTML = "";
+                        swatchGrid.dataset.selectedEmoji = "";
                     }
                 }
 
