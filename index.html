@@ -2543,6 +2543,84 @@
     }
 
     /* ================================================================
+       🖥️ MODÜL 7 EKLENTİ: KONSOL (Owner/Developer'a özel komut satırı)
+       Yönetim Paneli'nin altında ayrı bir sekme. Terminal görünümlü bir
+       çıktı alanı + komut girişi + "Komutlar" yardım butonu.
+       ================================================================ */
+    .console-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .console-output {
+        background: #0b0c10;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.6;
+        height: 48vh;
+        min-height: 220px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .console-line { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 4px 0; }
+    .console-line:last-child { border-bottom: none; }
+    .console-line-input { color: var(--accent); }
+    .console-line-input::before { content: "❯ "; opacity: 0.7; }
+    .console-line-ok { color: #66fcf1; }
+    .console-line-err { color: #ff6b6b; }
+    .console-line-info { color: var(--text-dim); }
+
+    .console-input-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .console-input {
+        flex: 1;
+        background: #0b0c10;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        padding: 10px 12px;
+    }
+    .console-input:focus { outline: none; border-color: var(--accent); }
+
+    .console-help-modal .forum-modal-body { max-height: 60vh; overflow-y: auto; }
+    .console-cmd-item {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        margin-bottom: 8px;
+    }
+    .console-cmd-name {
+        font-family: var(--font-mono);
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+    .console-cmd-desc {
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        margin-top: 4px;
+    }
+
+    @media (max-width: 720px) {
+        .console-output { height: 42vh; }
+    }
+
+    /* ================================================================
        MODÜL 4 — 3D STUDIO EDİTÖR (Dashboard) & 3D MODEL PAZARI
        Sınırsız/esnek: hiçbir bileşende sabit px genişlik/yükseklik yok,
        tamamen flexbox/grid + % + vw/vh ile cihaza göre şekilleniyor.
@@ -3650,6 +3728,7 @@
     .grp-preview-sheet-backdrop {
         align-items: flex-end;
         padding: 0;
+        z-index: 1000000;
     }
     .grp-preview-sheet {
         width: 100%;
@@ -7347,6 +7426,19 @@
                     </svg>
                     Yönetim Paneli
                 </div>
+
+                <!-- 🖥️ KONSOL: sadece Owner/Developer (permission tier "owner")
+                     görebilir ve girebilir. Yönetim Paneli'nin hemen altında,
+                     aynı gizle/göster desenini kullanır (bkz. adminNavItem
+                     görünürlük mantığı, applyProfileToDom içinde). -->
+                <div class="hub-nav-item" data-view="console" data-restricted="true" data-min-role="owner">
+                    <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="2" width="14" height="12" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M3.5 5.5l3 2.5-3 2.5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="8" y="9.5" width="4.5" height="1.3" fill="currentColor"/>
+                    </svg>
+                    Konsol
+                </div>
             </nav>
 
             <div class="hub-nav-spacer"></div>
@@ -9107,6 +9199,42 @@
                     </div>
                 </div>
             </section>
+
+            <!-- ════════════════════════════════════════════════════════════
+                 🖥️ KONSOL — sadece Owner/Developer erişebilir. Metin
+                 komutlarıyla, zaten var olan admin fonksiyonlarını
+                 (ban/mute/uyar/mavi tik) tetikler. handleConsoleCommand
+                 fonksiyonu (bkz. ilgili JS bloğu) dispatcher'ı içerir.
+                 ════════════════════════════════════════════════════════════ -->
+            <section class="hub-view" data-view="console">
+                <div class="console-header">
+                    <div>
+                        <div class="admin-panel-title">🖥️ Konsol</div>
+                        <div class="admin-panel-subtitle">Metin komutlarıyla hızlı yönetim — sadece Owner/Developer</div>
+                    </div>
+                    <button type="button" class="forum-btn forum-btn-ghost" id="consoleHelpBtn">📖 Komutlar</button>
+                </div>
+
+                <div class="console-output" id="consoleOutput">
+                    <div class="console-line console-line-info">Konsola hoş geldin. Komut listesi için sağ üstteki "📖 Komutlar" butonuna bas, ya da <b>help</b> yaz.</div>
+                </div>
+
+                <div class="console-input-row">
+                    <input type="text" class="console-input" id="consoleInput" placeholder="Bir komut yaz… (örn. help)" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="forum-btn forum-btn-primary" id="consoleRunBtn">Çalıştır</button>
+                </div>
+            </section>
+
+            <!-- KONSOL: Komutlar yardım modalı -->
+            <div class="forum-modal-backdrop" id="consoleHelpModalBackdrop" style="display:none;">
+                <div class="forum-modal console-help-modal">
+                    <div class="forum-modal-header">
+                        <span>Konsol Komutları</span>
+                        <button class="forum-modal-close" id="consoleHelpModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body" id="consoleHelpBody"></div>
+                </div>
+            </div>
 
             <!-- ADMIN: Şikâyeti tamamlama modalı (açıklama girip kapatma) -->
             <div class="forum-modal-backdrop" id="adminResolveReportModalBackdrop" style="display:none;">
@@ -11963,14 +12091,16 @@
                 }
             }
 
-            // Admin/Yönetim menü öğesini, RBAC'a göre göster/gizle.
-            const adminNavItem = document.querySelector('.hub-nav-item[data-view="admin"]');
-            if (adminNavItem) {
-                const minRole = adminNavItem.getAttribute("data-min-role") || "helper";
-                adminNavItem.style.display = window.CommunityRBAC.hasMinimumTier(profile, minRole)
+            // Kısıtlı ("data-restricted") menü öğelerini RBAC'a göre
+            // göster/gizle. Tek tek seçmek yerine tüm kısıtlı öğeleri
+            // döngüyle işliyoruz -- Konsol (owner) eklendiğinde de aynı
+            // mantık otomatik uygulanır.
+            document.querySelectorAll('.hub-nav-item[data-restricted="true"]').forEach((navEl) => {
+                const minRole = navEl.getAttribute("data-min-role") || "helper";
+                navEl.style.display = window.CommunityRBAC.hasMinimumTier(profile, minRole)
                     ? "flex"
                     : "none";
-            }
+            });
 
             // Profil sekmesi açıksa canlı olarak da güncelle — AMA SADECE
             // o an ekranda GÖRÜNTÜLENEN profil kendi profilimizse.
@@ -14268,7 +14398,7 @@
             // 3dstudio.html'den "index.html#studio" ile dönüldüğünde
             // otomatik olarak studio sekmesini aç.
             const hashView = window.location.hash.replace("#", "").trim();
-            const validViews = ["forum","marketplace","studio","messages","groups","communities","inbox","profile","admin"];
+            const validViews = ["forum","marketplace","studio","messages","groups","communities","inbox","profile","admin","console"];
             if (hashView && validViews.includes(hashView)) {
                 // Auth hazır olduktan sonra geçiş yapabilmek için kısa gecikme.
                 setTimeout(() => switchView(hashView), 300);
@@ -15096,12 +15226,13 @@
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
+            const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const canPin = RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
             return `
                 <div class="forum-pinned-item">
                     <div class="forum-message-header">
                         <span class="forum-message-username">
-                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
+                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
                         </span>
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
@@ -15117,6 +15248,7 @@
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
+            const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isWhisper = !!m.whisperToUid;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
@@ -15157,7 +15289,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-message-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
                     ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
@@ -15512,6 +15644,7 @@
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
+            const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
 
             const tagsHtml = `
                 ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
@@ -15529,7 +15662,7 @@
                             ${tagsHtml}
                         </div>
                         <div class="forum-thread-meta">
-                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}</span>
+                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}</span>
                             <span class="forum-thread-meta-sep">·</span>
                             <span>${formatMessageTime(t.createdAt)}</span>
                         </div>
@@ -15690,6 +15823,7 @@
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
+            const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const viewerProfile = window.CommunityAuth.profile;
             const myUid = window.CommunityAuth.user.uid;
             const canModerateThread = RBAC.hasMinimumTier(viewerProfile, "helper");
@@ -15711,7 +15845,7 @@
                 </div>
                 <div class="forum-thread-detail-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(t.createdAt)}</span>
                 </div>
@@ -15818,6 +15952,7 @@
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
+            const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
             const thread = forumThreadsCache[threadId];
@@ -15845,7 +15980,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-reply-header">
                     <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
                     </span>
                     <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
                 </div>`;
@@ -17465,7 +17600,7 @@
                 const visible = this._filtered.slice(0, this._visibleCount);
                 const html = visible.map((u) => {
                     const nameHtml = window.CommunityRBAC
-                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor)
+                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor, u.equippedBadgeGroupId)
                         : RBAC.escapeHtml(u.username);
                     const avatarAttrs = window.CommunityRBAC ? window.CommunityRBAC.renderAvatarAttrs(u.avatarUrl) : `src=""`;
                     return `
@@ -17586,7 +17721,8 @@
                 inbox:       ["Community",   "Mentions & Replies"],
                 players:     ["Community",   "Oyuncular"],
                 profile:     ["Community",   "Profilim"],
-                admin:       ["Yönetim",     "Panel"]
+                admin:       ["Yönetim",     "Panel"],
+                console:     ["Yönetim",     "Konsol"]
             };
             const [eyebrow, title] = titles[view] || ["Community", view];
             const eyebrowEl = document.getElementById("hubPageEyebrow");
@@ -17657,6 +17793,15 @@
             // için AdminPanel.open kendi içinde de yetki kontrolü yapar).
             if (view === "admin" && window.AdminPanel && typeof window.AdminPanel.open === "function") {
                 window.AdminPanel.open();
+            }
+
+            // 🖥️ Konsol sekmesine her girişte çift-güvenlik RBAC kontrolü
+            // (nav öğesi zaten Owner/Developer olmayana gizli, ama sekmeye
+            // hash/URL üzerinden doğrudan gelinmeye çalışılırsa da içerik
+            // render edilmesin diye burada ikinci kez kontrol ediliyor --
+            // AdminPanel.open() ile aynı desen).
+            if (view === "console" && window.ConsolePanel && typeof window.ConsolePanel.open === "function") {
+                window.ConsolePanel.open();
             }
 
             // "Profilim" sekmesine geçildiğinde, kendi profilimizi render
@@ -26221,6 +26366,267 @@
             return { open, initEvents };
         })();
         window.AdminPanel = AdminPanel;
+
+        // ==============================================================
+        // 🖥️ MODÜL 7 EKLENTİ: KONSOL (metin komutlarıyla yönetim)
+        // ==============================================================
+        // Sadece Owner/Developer (permission tier "owner") erişebilir --
+        // hem nav öğesi hem de bu modülün open() fonksiyonu ayrı ayrı
+        // RBAC kontrolü yapar (AdminPanel'deki aynı çift-güvenlik deseni).
+        // Komutlar, panelde ZATEN var olan admin fonksiyonlarını
+        // (handleBanToggle, handleMuteToggle, handleWarnUser,
+        // handleVerifiedToggle) çağırır -- kendi başına yeni bir yetki
+        // yolu AÇMAZ, sadece var olanlara metin arayüzü sağlar.
+        const ConsolePanel = (() => {
+            let _wired = false;
+
+            const COMMANDS = [
+                {
+                    name: "help",
+                    usage: "help",
+                    desc: "Tüm komutları ve nasıl kullanılacaklarını listeler."
+                },
+                {
+                    name: "whoami",
+                    usage: "whoami",
+                    desc: "Kendi kullanıcı adını, rütbeni ve yetki seviyeni gösterir."
+                },
+                {
+                    name: "find",
+                    usage: "find <kullanıcıAdı>",
+                    desc: "Bir kullanıcıyı arar; uid, rütbe, mavi tik ve ban/susturma durumunu gösterir."
+                },
+                {
+                    name: "ban",
+                    usage: "ban <kullanıcıAdı> [sebep]",
+                    desc: "Kullanıcıyı süresiz banlar. Hiyerarşi kuralları (Owner'a dokunulamaz vb.) geçerlidir."
+                },
+                {
+                    name: "unban",
+                    usage: "unban <kullanıcıAdı>",
+                    desc: "Kullanıcının banını kaldırır. Sadece Owner/Developer yapabilir."
+                },
+                {
+                    name: "mute",
+                    usage: "mute <kullanıcıAdı> <dakika> [sebep]",
+                    desc: "Kullanıcıyı belirtilen süre (dakika) boyunca susturur."
+                },
+                {
+                    name: "unmute",
+                    usage: "unmute <kullanıcıAdı>",
+                    desc: "Kullanıcının susturmasını kaldırır."
+                },
+                {
+                    name: "warn",
+                    usage: "warn <kullanıcıAdı> <mesaj>",
+                    desc: "Kullanıcıya bir uyarı kaydı düşer. 3'ü geçerse otomatik 24 saatlik ban tetiklenir."
+                },
+                {
+                    name: "verify",
+                    usage: "verify <kullanıcıAdı> <on|off>",
+                    desc: "Kullanıcının mavi tikini (isVerified) açar/kapatır."
+                },
+                {
+                    name: "clear",
+                    usage: "clear",
+                    desc: "Konsol çıktı ekranını temizler."
+                }
+            ];
+
+            function open() {
+                // Çift güvenlik: nav öğesi zaten owner olmayana gizli, ama
+                // hash/URL ile doğrudan gelinmeye çalışılırsa da içerik
+                // çalışmasın diye burada da kontrol ediyoruz.
+                const profile = window.CommunityAuth && window.CommunityAuth.profile;
+                if (!window.CommunityRBAC.isOwnerProfile(profile)) {
+                    const outEl = document.getElementById("consoleOutput");
+                    if (outEl) outEl.innerHTML = `<div class="console-line console-line-err">Bu bölüme erişim yetkin yok.</div>`;
+                    return;
+                }
+                if (!_wired) wireEvents();
+            }
+
+            function printLine(text, kind) {
+                const outEl = document.getElementById("consoleOutput");
+                if (!outEl) return;
+                const line = document.createElement("div");
+                line.className = "console-line" + (kind ? (" console-line-" + kind) : "");
+                line.textContent = text;
+                outEl.appendChild(line);
+                outEl.scrollTop = outEl.scrollHeight;
+            }
+
+            function renderHelp() {
+                const body = document.getElementById("consoleHelpBody");
+                if (!body) return;
+                body.innerHTML = COMMANDS.map((c) => `
+                    <div class="console-cmd-item">
+                        <div class="console-cmd-name">${RBAC.escapeHtml(c.usage)}</div>
+                        <div class="console-cmd-desc">${RBAC.escapeHtml(c.desc)}</div>
+                    </div>
+                `).join("");
+            }
+
+            // Basit shell-benzeri argüman ayrıştırma: boşluklarla böler,
+            // ilk iki parça komut+kullanıcı adı, kalan her şey (sebep/mesaj
+            // gibi) TEK bir parça olarak birleştirilir.
+            function parseCommand(raw) {
+                const trimmed = (raw || "").trim();
+                if (!trimmed) return null;
+                const parts = trimmed.split(/\s+/);
+                const cmd = parts[0].toLowerCase();
+                return { cmd, parts, rest: parts.slice(1) };
+            }
+
+            async function runCommand(raw) {
+                const parsed = parseCommand(raw);
+                printLine(raw, "input");
+                if (!parsed) return;
+                const { cmd, rest } = parsed;
+
+                const profile = window.CommunityAuth && window.CommunityAuth.profile;
+                if (!window.CommunityRBAC.isOwnerProfile(profile)) {
+                    printLine("Yetkin yok.", "err");
+                    return;
+                }
+
+                try {
+                    switch (cmd) {
+                        case "help": {
+                            renderHelp();
+                            document.getElementById("consoleHelpModalBackdrop").style.display = "flex";
+                            printLine("Komut listesi açıldı.", "info");
+                            break;
+                        }
+                        case "clear": {
+                            const outEl = document.getElementById("consoleOutput");
+                            if (outEl) outEl.innerHTML = "";
+                            break;
+                        }
+                        case "whoami": {
+                            const tier = window.CommunityRBAC.resolvePermissionTier(profile.role);
+                            printLine(`${profile.username || "?"} — rütbe: ${profile.role || "—"} — yetki seviyesi: ${tier}`, "ok");
+                            break;
+                        }
+                        case "find": {
+                            const uname = rest[0];
+                            if (!uname) { printLine("Kullanım: find <kullanıcıAdı>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            printLine(
+                                `${candidate.username} — uid:${candidate.uid} — rütbe:${candidate.role || "—"} — mavi tik:${candidate.isVerified ? "evet" : "hayır"}`,
+                                "ok"
+                            );
+                            break;
+                        }
+                        case "ban": {
+                            const uname = rest[0];
+                            const reason = rest.slice(1).join(" ") || "Belirtilmedi";
+                            if (!uname) { printLine("Kullanım: ban <kullanıcıAdı> [sebep]", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleBanToggle(candidate.uid, true, reason, null);
+                            printLine(`${candidate.username} banlandı. Sebep: ${reason}`, "ok");
+                            break;
+                        }
+                        case "unban": {
+                            const uname = rest[0];
+                            if (!uname) { printLine("Kullanım: unban <kullanıcıAdı>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleBanToggle(candidate.uid, false, null, null);
+                            printLine(`${candidate.username} banı kaldırıldı.`, "ok");
+                            break;
+                        }
+                        case "mute": {
+                            const uname = rest[0];
+                            const minutes = parseInt(rest[1], 10);
+                            const reason = rest.slice(2).join(" ") || "Belirtilmedi";
+                            if (!uname || !minutes || minutes <= 0) { printLine("Kullanım: mute <kullanıcıAdı> <dakika> [sebep]", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleMuteToggle(candidate.uid, true, reason, minutes * 60 * 1000);
+                            printLine(`${candidate.username} ${minutes} dakika susturuldu. Sebep: ${reason}`, "ok");
+                            break;
+                        }
+                        case "unmute": {
+                            const uname = rest[0];
+                            if (!uname) { printLine("Kullanım: unmute <kullanıcıAdı>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleMuteToggle(candidate.uid, false, null, null);
+                            printLine(`${candidate.username} susturması kaldırıldı.`, "ok");
+                            break;
+                        }
+                        case "warn": {
+                            const uname = rest[0];
+                            const message = rest.slice(1).join(" ");
+                            if (!uname || !message) { printLine("Kullanım: warn <kullanıcıAdı> <mesaj>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleWarnUser(candidate.uid, message, "console");
+                            printLine(`${candidate.username} kullanıcısına uyarı gönderildi.`, "ok");
+                            break;
+                        }
+                        case "verify": {
+                            const uname = rest[0];
+                            const state = (rest[1] || "").toLowerCase();
+                            if (!uname || (state !== "on" && state !== "off")) { printLine("Kullanım: verify <kullanıcıAdı> <on|off>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleVerifiedToggle(candidate.uid, state === "on");
+                            printLine(`${candidate.username} mavi tik: ${state === "on" ? "açıldı" : "kapatıldı"}.`, "ok");
+                            break;
+                        }
+                        default: {
+                            printLine(`Bilinmeyen komut: ${cmd} — komut listesi için "help" yaz.`, "err");
+                        }
+                    }
+                } catch (err) {
+                    console.error("[Konsol] Komut hatası:", err);
+                    printLine("İşlem sırasında bir hata oluştu.", "err");
+                }
+            }
+
+            function wireEvents() {
+                _wired = true;
+                const input = document.getElementById("consoleInput");
+                const runBtn = document.getElementById("consoleRunBtn");
+                const helpBtn = document.getElementById("consoleHelpBtn");
+                const helpModalBackdrop = document.getElementById("consoleHelpModalBackdrop");
+                const helpModalClose = document.getElementById("consoleHelpModalClose");
+
+                const submit = () => {
+                    if (!input) return;
+                    const raw = input.value;
+                    if (!raw || !raw.trim()) return;
+                    input.value = "";
+                    runCommand(raw);
+                };
+
+                runBtn?.addEventListener("click", submit);
+                input?.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        submit();
+                    }
+                });
+
+                helpBtn?.addEventListener("click", () => {
+                    renderHelp();
+                    if (helpModalBackdrop) helpModalBackdrop.style.display = "flex";
+                });
+                helpModalClose?.addEventListener("click", () => {
+                    if (helpModalBackdrop) helpModalBackdrop.style.display = "none";
+                });
+                helpModalBackdrop?.addEventListener("click", (e) => {
+                    if (e.target.id === "consoleHelpModalBackdrop") helpModalBackdrop.style.display = "none";
+                });
+            }
+
+            return { open };
+        })();
+        window.ConsolePanel = ConsolePanel;
 
         document.addEventListener("communitystudio:auth-ready", (e) => {
             showHubShell(e.detail.user, e.detail.profile);
