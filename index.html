@@ -17801,7 +17801,11 @@
             // olmayanlar zaten nav öğesini göremez, ama çift güvenlik
             // için AdminPanel.open kendi içinde de yetki kontrolü yapar).
             if (view === "admin" && window.AdminPanel && typeof window.AdminPanel.open === "function") {
-                window.AdminPanel.open();
+                try {
+                    window.AdminPanel.open();
+                } catch (err) {
+                    console.error("[AdminPanel] open() sırasında hata:", err);
+                }
             }
 
             // 🖥️ Konsol sekmesine her girişte çift-güvenlik RBAC kontrolü
@@ -17809,8 +17813,21 @@
             // hash/URL üzerinden doğrudan gelinmeye çalışılırsa da içerik
             // render edilmesin diye burada ikinci kez kontrol ediliyor --
             // AdminPanel.open() ile aynı desen).
+            // 🐛 BUGFIX: ConsolePanel.open() içinde önceden yakalanmamış bir
+            // hata (window.CommunityRBAC.isOwnerProfile — yanlış isim,
+            // artık .isOwner olarak düzeltildi) fırladığında, bu hata
+            // switchView()'ın SENKRON akışını burada keserek altındaki
+            // "Profilim" render'ını ve mobil sidebar'ı otomatik kapatan
+            // closeMobileSidebar() çağrısını hiç çalıştırmıyordu -- Konsol
+            // sekmesine girince sidebar'ın kapanmaması bunun sonucuydu.
+            // try/catch ile artık ConsolePanel içinde çıkabilecek herhangi
+            // bir hata switchView'ın geri kalanını asla durduramaz.
             if (view === "console" && window.ConsolePanel && typeof window.ConsolePanel.open === "function") {
-                window.ConsolePanel.open();
+                try {
+                    window.ConsolePanel.open();
+                } catch (err) {
+                    console.error("[Konsol] open() sırasında hata:", err);
+                }
             }
 
             // "Profilim" sekmesine geçildiğinde, kendi profilimizi render
@@ -26445,7 +26462,14 @@
                 // hash/URL ile doğrudan gelinmeye çalışılırsa da içerik
                 // çalışmasın diye burada da kontrol ediyoruz.
                 const profile = window.CommunityAuth && window.CommunityAuth.profile;
-                if (!window.CommunityRBAC.isOwnerProfile(profile)) {
+                // 🐛 BUGFIX: window.CommunityRBAC dışa açık interface'inde
+                // fonksiyon "isOwner" adıyla export ediliyor ("isOwnerProfile"
+                // sadece iç/private isim). Yanlış isimle çağrıldığında
+                // "undefined is not a function" hatası fırlıyor, bu hata
+                // open() içinde YAKALANMADIĞI için wireEvents() hiç
+                // çalışmıyordu -- "Çalıştır" ve "📖 Komutlar" butonlarının
+                // tamamen tepkisiz kalmasının kök nedeni buydu.
+                if (!window.CommunityRBAC.isOwner(profile)) {
                     const outEl = document.getElementById("consoleOutput");
                     if (outEl) outEl.innerHTML = `<div class="console-line console-line-err">Bu bölüme erişim yetkin yok.</div>`;
                     return;
@@ -26500,7 +26524,7 @@
                 const { cmd, rest } = parsed;
 
                 const profile = window.CommunityAuth && window.CommunityAuth.profile;
-                if (!window.CommunityRBAC.isOwnerProfile(profile)) {
+                if (!window.CommunityRBAC.isOwner(profile)) {
                     printLine("Yetkin yok.", "err");
                     return;
                 }
