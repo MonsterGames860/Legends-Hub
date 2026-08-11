@@ -5197,6 +5197,51 @@
         max-height: 80vh;
         overflow-y: auto;
     }
+
+    /* ---------- GEÇİCİ DEBUG PANELİ (sadece topluluk kurucusuna görünür,
+       "+ " rozet emoji butonu için) — açılıp kapanabilir, ekranın altında
+       sabit durur. Sorun çözülünce bu blok ve ilgili JS kaldırılabilir. ---------- */
+    #badgeDebugToggle {
+        position: fixed;
+        bottom: 14px;
+        right: 14px;
+        z-index: 999999;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #ff2d78;
+        color: #fff;
+        border: none;
+        font-size: 14px;
+        font-weight: 700;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    #badgeDebugPanel {
+        position: fixed;
+        bottom: 56px;
+        right: 14px;
+        left: 14px;
+        max-height: 55vh;
+        overflow-y: auto;
+        z-index: 999999;
+        background: #0b0c10;
+        border: 1px solid #ff2d78;
+        border-radius: 10px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 11px;
+        color: #e4e6eb;
+        display: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    #badgeDebugPanel .badge-debug-line { border-bottom: 1px solid rgba(255,255,255,0.08); padding: 4px 0; }
+    #badgeDebugPanel .badge-debug-err { color: #ff6b6b; }
+    #badgeDebugPanel .badge-debug-ok { color: #66fcf1; }
     .community-badge-swatch-popover .community-badge-swatch-grid {
         display: flex;
         flex-wrap: wrap;
@@ -8165,6 +8210,12 @@
                                 <button type="button" class="forum-btn forum-btn-ghost" id="groupDetailBadgeRemoveBtn" style="margin-top:8px;display:none;">Rozeti Kaldır</button>
                                 <div class="forum-modal-error" id="groupDetailBadgeError" style="display:none;"></div>
                             </div>
+
+                            <!-- GEÇİCİ DEBUG PANELİ: sadece topluluk kurucusuna
+                                 (canManageBadge=true) görünür, açılıp kapanabilir.
+                                 Rozet emoji sorunları çözüldüğünde kaldırılabilir. -->
+                            <button type="button" id="badgeDebugToggle" title="Rozet Emoji Debug">🐞</button>
+                            <div id="badgeDebugPanel"></div>
 
                             <!-- İzinler (sadece yönetici/kurucu görür) -->
                             <div class="msg-group-detail-section" id="groupDetailPermissionsSection">
@@ -22182,6 +22233,10 @@
                     const iAmCommunityOwner = meta.ownerUid === _myUid;
                     const canManageBadge = isCommunity && meta.isVerified === true && iAmCommunityOwner;
                     badgeSection.style.display = canManageBadge ? "block" : "none";
+
+                    // GEÇİCİ DEBUG: butonu sadece kurucuya göster.
+                    const debugToggleBtn = document.getElementById("badgeDebugToggle");
+                    if (debugToggleBtn) debugToggleBtn.style.display = canManageBadge ? "flex" : "none";
                     const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
                     const pickerToggle = document.getElementById("groupDetailBadgePickerToggle");
                     const pickerPreview = document.getElementById("groupDetailBadgePickerPreview");
@@ -23026,20 +23081,45 @@
             // pixel-art emoji ızgarasını (popover) açar/kapatır. Bir emoji
             // seçilince (bkz. renderGroupDetailPanel'deki click listener)
             // ya da dışarıya tıklanınca otomatik kapanır.
+            // GEÇİCİ DEBUG PANELİ yardımcıları -- sadece rozet emoji sorunu
+            // teşhis edilirken kullanılıyor, sonra kaldırılabilir.
+            function badgeDebugLog(msg, isErr) {
+                const panel = document.getElementById("badgeDebugPanel");
+                if (!panel) return;
+                const line = document.createElement("div");
+                line.className = "badge-debug-line " + (isErr ? "badge-debug-err" : "badge-debug-ok");
+                const time = new Date().toLocaleTimeString("tr-TR");
+                line.textContent = "[" + time + "] " + msg;
+                panel.appendChild(line);
+                panel.scrollTop = panel.scrollHeight;
+            }
+            (function wireBadgeDebugToggle() {
+                const btn = document.getElementById("badgeDebugToggle");
+                const panel = document.getElementById("badgeDebugPanel");
+                if (!btn || !panel) return;
+                btn.addEventListener("click", () => {
+                    panel.style.display = panel.style.display === "block" ? "none" : "block";
+                });
+            })();
+
             function openBadgeEmojiPopover() {
                 const popover = document.getElementById("groupDetailBadgeSwatchPopover");
                 const toggle = document.getElementById("groupDetailBadgePickerToggle");
                 if (!popover || !toggle) {
                     console.error("[Rozet Emoji] popover veya toggle bulunamadı", { popover, toggle });
+                    badgeDebugLog("HATA: popover=" + !!popover + " toggle=" + !!toggle + " (element(ler) DOM'da bulunamadı)", true);
                     return;
                 }
+                badgeDebugLog("Buton tıklandı, popover açılıyor...");
 
                 // Grid boşsa (ör. renderGroupDetailPanel henüz çalışmadıysa
                 // veya sessizce hata verdiyse) burada da bir güvenlik ağı
                 // olarak yeniden dolduruyoruz -- kullanıcı boş bir popover
                 // görmesin.
                 const swatchGrid = document.getElementById("groupDetailBadgeSwatchGrid");
+                badgeDebugLog("Grid bulundu mu: " + !!swatchGrid + ", mevcut çocuk sayısı: " + (swatchGrid ? swatchGrid.children.length : "yok"));
                 if (swatchGrid && !swatchGrid.children.length) {
+                    badgeDebugLog("Grid boş, güvenlik ağı devreye giriyor (yeniden render deneniyor)...");
                     try {
                         const currentSelected = swatchGrid.dataset.selectedEmoji || null;
                         swatchGrid.innerHTML = renderCommunityBadgeSwatchGrid(currentSelected);
@@ -23057,8 +23137,10 @@
                                 closeBadgeEmojiPopover();
                             });
                         });
+                        badgeDebugLog("Güvenlik ağı render TAMAMLANDI, yeni çocuk sayısı: " + swatchGrid.children.length);
                     } catch (err) {
                         console.error("[Rozet Emoji] güvenlik ağı render hatası:", err);
+                        badgeDebugLog("HATA (güvenlik ağı render): " + (err && err.message ? err.message : String(err)), true);
                     }
                 }
 
@@ -23093,6 +23175,26 @@
                 toggle.setAttribute("aria-expanded", "true");
 
                 console.log("[Rozet Emoji] popover açıldı", { left, top, btnRect, popoverWidth, popoverHeight, gridChildren: swatchGrid ? swatchGrid.children.length : null });
+                badgeDebugLog(
+                    "AÇILDI → left=" + Math.round(left) + " top=" + Math.round(top) +
+                    " | popover boyutu=" + Math.round(popoverWidth) + "x" + Math.round(popoverHeight) +
+                    " | buton konumu(rect)=" + JSON.stringify({t: Math.round(btnRect.top), l: Math.round(btnRect.left), b: Math.round(btnRect.bottom), r: Math.round(btnRect.right)}) +
+                    " | ekran=" + window.innerWidth + "x" + window.innerHeight +
+                    " | display=" + popover.style.display +
+                    " | computed display=" + getComputedStyle(popover).display +
+                    " | computed visibility=" + getComputedStyle(popover).visibility +
+                    " | computed opacity=" + getComputedStyle(popover).opacity +
+                    " | gridÇocukSayısı=" + (swatchGrid ? swatchGrid.children.length : "yok")
+                );
+                if (swatchGrid && swatchGrid.children.length) {
+                    const firstBtn = swatchGrid.children[0];
+                    const svgInside = firstBtn.querySelector("svg");
+                    badgeDebugLog(
+                        "İlk swatch buton HTML uzunluğu=" + firstBtn.outerHTML.length +
+                        " | içinde svg var mı=" + !!svgInside +
+                        (svgInside ? " | svg rect sayısı=" + svgInside.querySelectorAll("rect").length + " | svg computed w/h=" + getComputedStyle(svgInside).width + "/" + getComputedStyle(svgInside).height : "")
+                    );
+                }
             }
             function closeBadgeEmojiPopover() {
                 const popover = document.getElementById("groupDetailBadgeSwatchPopover");
