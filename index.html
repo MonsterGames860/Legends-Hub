@@ -12737,6 +12737,217 @@
         }
 
         /**
+         * 🖥️ KONSOL "title" komutu: bir kullanıcıya (ya da "All" ile
+         * herkese) büyük, ortalanmış bir duyuru modalı gösterir.
+         *
+         * Satır atlama biçimi: mesaj metninde "/n/n/" -> İKİ satır atlama
+         * (aralarında boş satır), "/n/" -> TEK satır atlama. "/n/n/" daha
+         * spesifik olduğundan regex'te ÖNCE o değiştiriliyor (aksi halde
+         * "/n/n/" içindeki ilk "/n/" yanlışlıkla tek eşleşme olarak
+         * yakalanıp ortada fazladan bir "/" karakteri kalırdı).
+         */
+        function formatBroadcastMessage(raw) {
+            const escaped = (raw || "");
+            // Önce /n/n/ (çift satır -> aralarında boş satır bırak),
+            // sonra kalan tek /n/ (normal satır sonu).
+            return escaped
+                .split("/n/n/").join("\n\n")
+                .split("/n/").join("\n");
+        }
+
+        /**
+         * "title" komutunun hedefini çözer: "all" (büyük/küçük harf
+         * duyarsız) ise özel "all" hedefi; aksi halde CommunityMentions
+         * üzerinden kullanıcı adına göre gerçek bir kullanıcı arar.
+         * Bulunamazsa null döner (çağıran taraf hata basar).
+         */
+        function resolveBroadcastTarget(targetRaw) {
+            if ((targetRaw || "").trim().toLowerCase() === "all") {
+                return { type: "all", uid: null, label: "Herkese (All)" };
+            }
+            const candidate = window.CommunityMentions.getByUsername(targetRaw);
+            if (!candidate) return null;
+            return { type: "user", uid: candidate.uid, label: candidate.username };
+        }
+
+        /**
+         * Konsol "title" komutunun asıl işlevi: broadcasts/{id} altına
+         * yeni bir duyuru yazar. "all" hedefinde targetUid=null (herkese
+         * anlamına gelir); tekil hedefte targetUid o kullanıcının uid'i.
+         * Kalıcılık: broadcasts otomatik silinmiyor (30 gün sonra manuel
+         * temizlik önerilir -- rules.json'da TTL kurulmadıysa Realtime DB
+         * bunu kendiliğinden yapmaz), ama her kullanıcı görünce
+         * broadcast_seen/{uid}/{id}=true işaretlenip bir daha gösterilmez.
+         *
+         * Gönderen kişiye de (siz istediniz) AYNI modal, kendi ekranında
+         * anında gösterilir -- bu, kalıcı bir "seen" kaydı YARATMAZ, sadece
+         * anlık bir önizleme/doğrulamadır (aksi halde gönderen "all" hedefli
+         * bir duyuru attığında kendi broadcast_seen kaydı yüzünden ileride
+         * AYNI duyuruyu normal bir kullanıcı olarak tekrar görmesi
+         * beklenirdi ama görmeyecekti -- bu karışıklığı önlemek için
+         * kaydı hiç yazmıyoruz, sadece göstermekle yetiniyoruz).
+         */
+        async function handleTitleBroadcastCommand(targetRaw, messageRaw, senderProfile, printLine) {
+            const target = resolveBroadcastTarget(targetRaw);
+            if (!target) {
+                if (printLine) printLine(`Kullanıcı bulunamadı: ${targetRaw}`, "err");
+                return;
+            }
+            const formattedMessage = formatBroadcastMessage(messageRaw);
+            if (!formattedMessage.trim()) {
+                if (printLine) printLine("Mesaj boş olamaz.", "err");
+                return;
+            }
+            try {
+                const broadcastRef = database.ref("broadcasts").push();
+                await broadcastRef.set({
+                    targetType: target.type,               // "all" | "user"
+                    targetUid: target.type === "user" ? target.uid : null,
+                    message: formattedMessage,
+                    senderUid: window.CommunityAuth.user.uid,
+                    senderUsername: senderProfile.username || "Yetkili",
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+                if (printLine) printLine(`Duyuru gönderildi → ${target.label}`, "ok");
+
+                // Komutu yazan kişiye de (siz) aynı duyuru anında gösterilsin
+                // -- gönderdiğinizi doğrulayabilmeniz için.
+                showBroadcastModalQueue([{
+                    id: broadcastRef.key,
+                    message: formattedMessage,
+                    senderUsername: senderProfile.username || "Yetkili"
+                }], window.CommunityAuth.user.uid, /* markSeenOnClose */ false);
+            } catch (err) {
+                console.error("[Konsol] title komutu hata:", err);
+                if (printLine) printLine("Duyuru gönderilemedi (bkz. konsol/network hatası).", "err");
+            }
+        }
+
+        /**
+         * Bekleyen (henüz görülmemiş) duyuruları sırayla modal olarak
+         * gösterir -- showWarningModalQueue ile AYNI kuyruk deseni.
+         * markSeenOnClose=true ise (normal kullanım) her biri kapatıldığında
+         * broadcast_seen/{uid}/{id}=true yazılır ki bir daha gösterilmesin.
+         * Konsolu yazan kişiye ANLIK önizleme gösterirken false geçilir
+         * (bkz. handleTitleBroadcastCommand notu).
+         */
+        function showBroadcastModalQueue(queue, uid, markSeenOnClose) {
+            if (!queue.length) return;
+            const current = queue[0];
+            const rest = queue.slice(1);
+
+            let backdrop = document.getElementById("broadcastModalBackdrop");
+            if (!backdrop) {
+                backdrop = document.createElement("div");
+                backdrop.id = "broadcastModalBackdrop";
+                backdrop.className = "forum-modal-backdrop";
+                backdrop.style.zIndex = "9700"; // uyarı modalından bile üstte olsun
+                backdrop.innerHTML = `
+                    <div class="forum-modal" style="max-width:480px;">
+                        <div class="forum-modal-header">
+                            <span>📢 Duyuru</span>
+                        </div>
+                        <div class="forum-modal-body">
+                            <p id="broadcastModalText" style="color: var(--text-primary); line-height:1.6; white-space: pre-wrap; font-size: 1.02rem;"></p>
+                            <p id="broadcastModalMeta" style="color: var(--text-dim); font-size:0.75rem; margin-top:14px;"></p>
+                        </div>
+                        <div class="forum-modal-footer">
+                            <button class="forum-btn forum-btn-primary" id="broadcastModalAckBtn">Kapat</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(backdrop);
+            }
+            document.getElementById("broadcastModalText").textContent = current.message || "";
+            document.getElementById("broadcastModalMeta").textContent =
+                current.senderUsername ? ("Gönderen: @" + current.senderUsername) : "";
+            backdrop.style.display = "flex";
+
+            const ackBtn = document.getElementById("broadcastModalAckBtn");
+            ackBtn.onclick = async () => {
+                backdrop.style.display = "none";
+                if (markSeenOnClose) {
+                    try {
+                        await database.ref(`broadcast_seen/${uid}/${current.id}`).set(true);
+                    } catch (e) { /* sessiz hata — bir dahaki girişte tekrar denenir */ }
+                }
+                if (rest.length) {
+                    showBroadcastModalQueue(rest, uid, markSeenOnClose);
+                }
+            };
+        }
+
+        /**
+         * Kullanıcı giriş yaptığında (auth-ready) çağrılır: hem kendisine
+         * özel (targetType="user", targetUid=uid) hem de "all" hedefli,
+         * henüz görülmemiş (broadcast_seen'de kaydı olmayan) duyuruları
+         * bulup sırayla gösterir. "All" duyuruları KALICI kabul edildiği
+         * için (siz öyle istediniz) burada bir tarih/süre filtresi
+         * uygulanmıyor -- ileride çok eski duyuruların birikmesini
+         * istemezseniz Konsol'a ayrı bir "title-expire" ya da otomatik
+         * temizlik eklenebilir.
+         */
+        async function checkAndShowPendingBroadcasts(uid) {
+            try {
+                const [allSnap, userSnap, seenSnap] = await Promise.all([
+                    database.ref("broadcasts").orderByChild("targetType").equalTo("all").once("value"),
+                    database.ref("broadcasts").orderByChild("targetUid").equalTo(uid).once("value"),
+                    database.ref("broadcast_seen/" + uid).once("value")
+                ]);
+                const seen = seenSnap.val() || {};
+                const merged = {};
+                const allVal = allSnap.val() || {};
+                const userVal = userSnap.val() || {};
+                Object.keys(allVal).forEach((id) => { merged[id] = Object.assign({ id }, allVal[id]); });
+                Object.keys(userVal).forEach((id) => { merged[id] = Object.assign({ id }, userVal[id]); });
+
+                const pending = Object.values(merged)
+                    .filter((b) => !seen[b.id])
+                    // Kendi gönderdiği duyuruyu kuyruğa tekrar eklemesin
+                    // (zaten handleTitleBroadcastCommand anlık gösterdi).
+                    .filter((b) => b.senderUid !== uid)
+                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+                if (!pending.length) return;
+                showBroadcastModalQueue(pending, uid, /* markSeenOnClose */ true);
+            } catch (err) {
+                if (err && err.code === "PERMISSION_DENIED") {
+                    console.error("[Duyuru] broadcasts/broadcast_seen okunamadı — Firebase Rules izin vermiyor. " +
+                        "Rules'ta \"broadcasts\": { \".read\": \"auth != null\", \".indexOn\": [\"targetType\",\"targetUid\"] } " +
+                        "ve \"broadcast_seen\": { \"$uid\": { \".read\": \"auth.uid === $uid\", \".write\": \"auth.uid === $uid\" } } tanımlı olduğundan emin olun.");
+                } else {
+                    console.error("[Duyuru] Bekleyen duyurular okunamadı:", err && err.code, err && err.message, err);
+                }
+            }
+        }
+
+        /**
+         * Kullanıcı sitede AÇIKKEN yeni bir "title" duyurusu gelirse
+         * (Owner/Developer o anda birine mesaj atarsa) anında görsün diye
+         * canlı dinleyici. Sadece bu oturum başladıktan SONRA eklenen
+         * kayıtları yakalamak için startAt(oturum başlangıcı) kullanılıyor
+         * -- aksi halde checkAndShowPendingBroadcasts'ın zaten gösterdiği
+         * eski duyurular burada İKİNCİ KEZ tetiklenirdi.
+         */
+        function attachLiveBroadcastListener(uid) {
+            const sessionStartAt = Date.now();
+            database.ref("broadcasts")
+                .orderByChild("createdAt")
+                .startAt(sessionStartAt)
+                .on("child_added", async (snap) => {
+                    const b = snap.val();
+                    if (!b) return;
+                    if (b.senderUid === uid) return; // kendi gönderdiğini tekrar gösterme
+                    if (b.targetType === "all" || (b.targetType === "user" && b.targetUid === uid)) {
+                        try {
+                            const seenSnap = await database.ref(`broadcast_seen/${uid}/${snap.key}`).once("value");
+                            if (seenSnap.val()) return;
+                        } catch (e) { /* okunamazsa yine de göstermeyi dene */ }
+                        showBroadcastModalQueue([Object.assign({ id: snap.key }, b)], uid, true);
+                    }
+                });
+        }
+
+        /**
          * Bir kullanıcının rütbesini (role) değiştirir. Sadece admin/owner
          * çağırabilir. Owner rütbesi SADECE mevcut owner'lar tarafından
          * verilip alınabilir (bir admin başka birini owner yapamaz veya
@@ -26454,6 +26665,14 @@
                     name: "clear",
                     usage: "clear",
                     desc: "Konsol çıktı ekranını temizler."
+                },
+                {
+                    name: "title",
+                    usage: "title <kullanıcıAdı|All> <mesaj>",
+                    desc: "Hedef kullanıcıya (ya da herkese) ekranda büyük bir duyuru modalı gösterir. " +
+                          "Kullanıcı o an sitede değilse, siteye girdiğinde gösterilir. Satır atlamak için " +
+                          "mesaj içinde /n/ (tek satır atla) veya /n/n/ (iki satır atla, boş satırlı) kullan. " +
+                          "Örn: title All Bakım/n/n/Sistem 5 dakika içinde kapanacak"
                 }
             ];
 
@@ -26540,6 +26759,26 @@
                         case "clear": {
                             const outEl = document.getElementById("consoleOutput");
                             if (outEl) outEl.innerHTML = "";
+                            break;
+                        }
+                        case "title": {
+                            // NOT: rest (boşlukla split+join edilmiş) yerine
+                            // "raw" stringinden elle ayrıştırıyoruz ki mesaj
+                            // içindeki orijinal boşluklar/biçim bozulmasın.
+                            // Format: title <hedef> <mesaj...>
+                            const afterCmd = raw.trim().replace(/^title\s+/i, "");
+                            const firstSpaceIdx = afterCmd.indexOf(" ");
+                            if (firstSpaceIdx === -1) {
+                                printLine("Kullanım: title <kullanıcıAdı|All> <mesaj>  (satır atlamak için /n/ veya /n/n/)", "err");
+                                break;
+                            }
+                            const targetRaw = afterCmd.slice(0, firstSpaceIdx).trim();
+                            const messageRaw = afterCmd.slice(firstSpaceIdx + 1).trim();
+                            if (!targetRaw || !messageRaw) {
+                                printLine("Kullanım: title <kullanıcıAdı|All> <mesaj>  (satır atlamak için /n/ veya /n/n/)", "err");
+                                break;
+                            }
+                            await handleTitleBroadcastCommand(targetRaw, messageRaw, profile, printLine);
                             break;
                         }
                         case "whoami": {
@@ -26694,6 +26933,11 @@
             // ⚠️ UYARI SİSTEMİ: giriş yapılır yapılmaz bekleyen (henüz
             // görülmemiş) uyarı bildirimlerini modal olarak göster.
             checkAndShowPendingWarnings(e.detail.user.uid);
+            // 📢 DUYURU SİSTEMİ ("title" konsol komutu): giriş yapılır
+            // yapılmaz bekleyen (henüz görülmemiş) duyuruları göster, ve
+            // oturum boyunca yeni gelenleri canlı olarak dinle.
+            checkAndShowPendingBroadcasts(e.detail.user.uid);
+            attachLiveBroadcastListener(e.detail.user.uid);
         });
 
         document.addEventListener("communitystudio:profile-updated", (e) => {
