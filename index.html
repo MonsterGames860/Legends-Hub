@@ -9656,6 +9656,10 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function escapeAttr(str) {
+            return escapeHtml(str == null ? "" : String(str));
+        }
+
         // ---------- AVATAR: yoksa/bozuksa düz siyah göster ----------
         // Tüm avatar <img> elemanlarının CSS'i zaten background:#000
         // olarak ayarlı. Bu fonksiyon, src boşsa veya yükleme başarısız
