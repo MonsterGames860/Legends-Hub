@@ -9486,6 +9486,18 @@
             return profile.banUntil > Date.now();
         }
 
+        /**
+         * 🔒 ASKI (HANGER) DURUMU — ban'dan farklı: kullanıcı siteye giriş
+         * yapabilir, mesaj atabilir vb. ama belirli "ayrıcalıklı" işlemler
+         * (profil özelleştirme, topluluk kurma, 3D model pazarı, emoji/tepki)
+         * askı süresince kilitlenir. Süresizdir — sadece "unhanger" komutuyla
+         * kaldırılır (banUntil benzeri bir zaman aşımı YOKTUR, kasıtlı).
+         * users/{uid}: { hangered: true, hangerReason, hangeredAt, hangeredBy }
+         */
+        function isHangerActiveNow(profile) {
+            return !!(profile && profile.hangered === true);
+        }
+
         // ---------- RÜTBE (RANK) RENK + ETİKET SİSTEMİ ----------
         // index-29-1.html (oyun sitesi) içindeki getRankColor /
         // RANK_ABBREVIATIONS / formatRankTagHtml ile BİREBİR AYNI kaynak.
@@ -9930,6 +9942,7 @@
             explainSanctionBlock,
             isOwner: isOwnerProfile,
             isBanActiveNow,
+            isHangerActiveNow,
             renderVerifiedBadge,
             renderUsernameWithBadge,
             renderAvatarAttrs,
@@ -10034,6 +10047,10 @@
          */
         function setNameColor(nameColorObj) {
             const profile = window.CommunityAuth && window.CommunityAuth.profile;
+            if (RBAC.isHangerActiveNow(profile)) {
+                alert("Hesabınız askıya alındığı için isim rengi ayarlarınızı değiştiremezsiniz.");
+                return;
+            }
             if (!canUseNameColor(profile)) {
                 alert("🔒 Özel isim rengi ve RGB modu OG ve üzeri rütbelere özeldir.");
                 return;
@@ -11495,16 +11512,23 @@
             const dbKey = safeReactionDbKey(emojiKey);
             const reactionsRef = firebase.database().ref(messagePath + "/reactions");
             let blockedByLimit = false;
+            let blockedByHanger = false;
             await reactionsRef.transaction((current) => {
                 const obj = current || {};
                 const hasType = !!obj[dbKey];
                 if (hasType && obj[dbKey][myUid]) {
+                    // Geri çekme (kendi tepkini kaldırma) askıdayken de serbest.
                     const nextType = { ...obj[dbKey] };
                     delete nextType[myUid];
                     const next = { ...obj };
                     if (Object.keys(nextType).length) next[dbKey] = nextType;
                     else delete next[dbKey];
                     return next;
+                }
+                // Yeni tepki EKLEME askıdayken engellenir.
+                if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth && window.CommunityAuth.profile)) {
+                    blockedByHanger = true;
+                    return; // undefined dönmek transaction'ı iptal eder.
                 }
                 if (!hasType && Object.keys(obj).length >= MAX_REACTION_TYPES) {
                     blockedByLimit = true;
@@ -11514,7 +11538,9 @@
                 next[dbKey] = { ...(obj[dbKey] || {}), [myUid]: true };
                 return next;
             });
-            if (blockedByLimit) {
+            if (blockedByHanger) {
+                showToastGlobal("Hesabınız askıya alındığı için tepki veremezsiniz.");
+            } else if (blockedByLimit) {
                 showToastGlobal("Bu mesajda en fazla " + MAX_REACTION_TYPES + " farklı tepki türü olabilir.");
             }
         }
@@ -12545,6 +12571,87 @@
         }
 
         /**
+         * 🔒 ASKI (HANGER) — ban gibi hesaba erişimi kapatmaz, ama şu
+         * ayrıcalıkları geçici olarak kilitler: isim/renk/avatar gibi
+         * profil özelleştirmeleri, yeni topluluk kurma (var olanlar da
+         * askıya alınır), 3D Model Pazarı'na yükleme/indirme, emoji ve
+         * tepki kullanımı. users/{uid} üzerine yazılır, isBanActiveNow
+         * ile AYNI okuma deseniyle her ilgili noktada kontrol edilir.
+         * Süresizdir — sadece "unhanger" ile kaldırılır.
+         *
+         * newValue=true: hanger uygulanır + kullanıcının SAHİBİ olduğu
+         *   tüm topluluklar community_directory üzerinden bulunup
+         *   group_chats/{id}/meta/isSuspended=true yapılır (askı kalkınca
+         *   bu tekrar false'a çekilmez — bilinçli tasarım: topluluklar
+         *   ayrıca "unsuspend" ile açılmalı, otomatik geri açılmaz).
+         * newValue=false: sadece users/{uid}.hangered=false yapılır,
+         *   topluluklara DOKUNULMAZ (onlar ayrı yönetilir).
+         */
+        async function handleHangerToggle(targetUid, newValue, reason) {
+            const myProfile = window.CommunityAuth.profile;
+            const targetProfile = (window.adminUsersCache || {})[targetUid];
+
+            if (newValue) {
+                const blockReason = RBAC.explainSanctionBlock(myProfile, targetProfile);
+                if (blockReason) {
+                    alert(blockReason);
+                    return;
+                }
+            } else {
+                if (!RBAC.canModerate(myProfile)) {
+                    alert("Bu işlem için yetkiniz yok.");
+                    return;
+                }
+            }
+
+            try {
+                if (newValue) {
+                    await database.ref('users/' + targetUid).update({
+                        hangered: true,
+                        hangerReason: reason || "Belirtilmedi",
+                        hangeredAt: firebase.database.ServerValue.TIMESTAMP,
+                        hangeredBy: window.CommunityAuth.user.uid
+                    });
+
+                    // Kullanıcının sahibi olduğu toplulukları bul ve askıya al.
+                    try {
+                        const dirSnap = await database.ref('community_directory')
+                            .orderByChild('ownerUid')
+                            .equalTo(targetUid)
+                            .once('value');
+                        const ownedGroups = dirSnap.val() || {};
+                        const suspendUpdates = {};
+                        Object.keys(ownedGroups).forEach((groupId) => {
+                            suspendUpdates[`group_chats/${groupId}/meta/isSuspended`] = true;
+                        });
+                        if (Object.keys(suspendUpdates).length) {
+                            await database.ref().update(suspendUpdates);
+                        }
+                    } catch (groupErr) {
+                        console.error("[Admin] Askı sırasında topluluklar askıya alınamadı:", groupErr);
+                    }
+                } else {
+                    await database.ref('users/' + targetUid).update({
+                        hangered: false,
+                        hangerReason: null
+                    });
+                }
+
+                await database.ref('audit_logs').push({
+                    action: newValue ? "hanger_user" : "unhanger_user",
+                    targetUid: targetUid,
+                    detail: newValue ? (reason || "Belirtilmedi") : null,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: myProfile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (err) {
+                console.error("[Admin] Askı işlemi başarısız:", err);
+                alert("İşlem başarısız oldu. Yetkiniz veya bağlantınız kontrol edin.");
+            }
+        }
+
+        /**
          * ⚠️ UYARI (WARN) SİSTEMİ
          * warnings/{targetUid}/{warnId}: { message, reason, issuedBy,
          *   issuedByUsername, createdAt, acknowledged }
@@ -12947,6 +13054,246 @@
                 });
         }
 
+        // ==============================================================
+        // 🗓️ EVENT (ETKİNLİK DUYURUSU) SİSTEMİ — Konsol "event" komutu
+        // ==============================================================
+        // "title" duyuru sisteminin kardeşi ama farkı: hedef seçimi yok
+        // (her zaman herkese), ve modal içinde büyük punto event adının
+        // altında görüntüleyen kişinin KENDİ tarayıcı saatine göre canlı
+        // (saniyede güncellenen) bir geri sayım gösterilir. Etkinlik
+        // zamanı, verilen gün/ay/yıl/saat + IANA saat dilimi (örn.
+        // "Europe/Istanbul") kullanılarak MUTLAK bir UTC zaman damgasına
+        // çevrilip öyle saklanır -- bu sayede her kullanıcı kendi yerel
+        // saatine göre doğru geri sayımı görür.
+        //
+        // Kalıcılık: events/{id} otomatik silinmiyor (broadcasts ile aynı
+        // mantık). event_seen/{uid}/{id}=true ile bir daha gösterilmiyor.
+        //
+        // NOT (Firebase Rules): broadcasts/broadcast_seen ile AYNI şekilde
+        // "events" ve "event_seen" düğümleri de Rules'a eklenmeli:
+        //   "events": { ".read": "auth != null", ".indexOn": ["createdAt"] }
+        //   "event_seen": { "$uid": { ".read": "auth.uid === $uid", ".write": "auth.uid === $uid" } }
+
+        /**
+         * "DD MM YYYY HH:mm Bölge/Adı" bileşenlerini, o saat diliminde
+         * yaşayan biri için doğru mutlak UTC epoch ms'e çevirir.
+         * Yöntem: Intl.DateTimeFormat ile hedef bölgede "şu anki" saatin
+         * ne göründüğünü ölçüp, istenen yerel zamanla arasındaki farkı
+         * (offset) hesaplayıp bir kez düzeltiyoruz -- DST'yi (yaz saati)
+         * de otomatik doğru ele alır çünkü offset'i AYNI takvim gününe
+         * yakın bir referans noktasından ölçüyoruz.
+         * Geçersiz tarih veya tanınmayan bölge ise null döner.
+         */
+        function resolveEventTimestampUTC(day, month, year, hourStr, timezone) {
+            const d = parseInt(day, 10);
+            const m = parseInt(month, 10);
+            const y = parseInt(year, 10);
+            const timeMatch = /^(\d{1,2}):(\d{2})$/.exec((hourStr || "").trim());
+            if (!d || !m || !y || !timeMatch) return null;
+            const hh = parseInt(timeMatch[1], 10);
+            const mm = parseInt(timeMatch[2], 10);
+            if (hh > 23 || mm > 59) return null;
+
+            try {
+                // 1) Naif UTC olarak varsay (ilk tahmin).
+                const naiveUTC = Date.UTC(y, m - 1, d, hh, mm, 0);
+
+                // 2) Bu naif zamanın, hedef bölgede hangi yerel saate denk
+                //    geldiğini ölç, farkı (offset) bul, düzelt.
+                const dtf = new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
+                    year: "numeric", month: "2-digit", day: "2-digit",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit",
+                    hour12: false
+                });
+                const parts = dtf.formatToParts(new Date(naiveUTC));
+                const get = (type) => parseInt(parts.find(p => p.type === type).value, 10);
+                const shownAsUTC = Date.UTC(
+                    get("year"), get("month") - 1, get("day"),
+                    get("hour") === 24 ? 0 : get("hour"), get("minute"), get("second")
+                );
+                const offset = shownAsUTC - naiveUTC;
+                return naiveUTC - offset;
+            } catch (err) {
+                // Intl bilinmeyen bir timeZone string'i ile hata fırlatır
+                // (örn. kullanıcı "Istanbul" yazmış, "Europe/Istanbul" değil).
+                return null;
+            }
+        }
+
+        /**
+         * Konsol "event" komutunun asıl işlevi: events/{id} altına yeni
+         * bir etkinlik yazar. Format: event <ad> <gün> <ay> <yıl> <saat> <bölge>
+         */
+        async function handleEventAnnounceCommand(name, day, month, year, hourStr, timezone, senderProfile, printLine) {
+            if (!name || !name.trim()) {
+                if (printLine) printLine("Etkinlik adı boş olamaz.", "err");
+                return;
+            }
+            const eventTimestampUTC = resolveEventTimestampUTC(day, month, year, hourStr, timezone);
+            if (eventTimestampUTC === null) {
+                if (printLine) printLine(
+                    "Geçersiz tarih/saat/bölge. Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>  " +
+                    "(Bölge IANA formatında olmalı, örn: Europe/Istanbul, America/New_York)", "err");
+                return;
+            }
+            try {
+                const eventRef = database.ref("events").push();
+                await eventRef.set({
+                    name: name.trim(),
+                    eventTimestampUTC,
+                    timezone,
+                    createdBy: window.CommunityAuth.user.uid,
+                    createdByUsername: senderProfile.username || "Yetkili",
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+                if (printLine) printLine(`Etkinlik duyurusu gönderildi → "${name.trim()}"`, "ok");
+
+                // Gönderene de anında önizleme göster (broadcast ile aynı
+                // mantık — kalıcı bir "seen" kaydı YARATMAZ).
+                showEventModalQueue([{
+                    id: eventRef.key,
+                    name: name.trim(),
+                    eventTimestampUTC
+                }], window.CommunityAuth.user.uid, /* markSeenOnClose */ false);
+            } catch (err) {
+                console.error("[Konsol] event komutu hata:", err);
+                if (printLine) printLine("Etkinlik gönderilemedi (bkz. konsol/network hatası).", "err");
+            }
+        }
+
+        let _eventCountdownInterval = null;
+
+        /**
+         * Bekleyen etkinlik duyurularını sırayla modal olarak gösterir.
+         * showBroadcastModalQueue ile AYNI kuyruk deseni, ama modal içinde
+         * event adı büyük punto ve altında canlı (saniyede güncellenen)
+         * geri sayım var. Etkinlik zamanı geçmişse geri sayım yerine
+         * "Etkinlik başladı!" gösterilir.
+         */
+        function showEventModalQueue(queue, uid, markSeenOnClose) {
+            if (!queue.length) return;
+            const current = queue[0];
+            const rest = queue.slice(1);
+
+            let backdrop = document.getElementById("eventModalBackdrop");
+            if (!backdrop) {
+                backdrop = document.createElement("div");
+                backdrop.id = "eventModalBackdrop";
+                backdrop.className = "forum-modal-backdrop";
+                backdrop.style.zIndex = "9750"; // duyuru modalından bile üstte
+                backdrop.innerHTML = `
+                    <div class="forum-modal" style="max-width:520px; text-align:center;">
+                        <div class="forum-modal-header" style="justify-content:center;">
+                            <span>🗓️ Etkinlik Duyurusu</span>
+                        </div>
+                        <div class="forum-modal-body" style="text-align:center; padding: 28px 20px;">
+                            <p id="eventModalName" style="color: var(--accent); font-weight:800; font-size:1.6rem; line-height:1.3; margin-bottom:18px; word-break:break-word;"></p>
+                            <p id="eventModalCountdown" style="color: var(--text-primary); font-family: var(--font-mono); font-size:1.15rem; letter-spacing:0.03em;"></p>
+                        </div>
+                        <div class="forum-modal-footer" style="justify-content:center;">
+                            <button class="forum-btn forum-btn-primary" id="eventModalAckBtn">Kapat</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(backdrop);
+            }
+            document.getElementById("eventModalName").textContent = current.name || "";
+            backdrop.style.display = "flex";
+
+            const countdownEl = document.getElementById("eventModalCountdown");
+            if (_eventCountdownInterval) clearInterval(_eventCountdownInterval);
+            function renderCountdown() {
+                const diff = current.eventTimestampUTC - Date.now();
+                if (diff <= 0) {
+                    countdownEl.textContent = "🎉 Etkinlik başladı!";
+                    clearInterval(_eventCountdownInterval);
+                    return;
+                }
+                const totalSec = Math.floor(diff / 1000);
+                const days = Math.floor(totalSec / 86400);
+                const hours = Math.floor((totalSec % 86400) / 3600);
+                const mins = Math.floor((totalSec % 3600) / 60);
+                const secs = totalSec % 60;
+                const parts = [];
+                if (days) parts.push(days + "g");
+                parts.push(String(hours).padStart(2, "0") + "s");
+                parts.push(String(mins).padStart(2, "0") + "d");
+                parts.push(String(secs).padStart(2, "0") + "sn");
+                countdownEl.textContent = parts.join(" ");
+            }
+            renderCountdown();
+            _eventCountdownInterval = setInterval(renderCountdown, 1000);
+
+            const ackBtn = document.getElementById("eventModalAckBtn");
+            ackBtn.onclick = async () => {
+                backdrop.style.display = "none";
+                if (_eventCountdownInterval) { clearInterval(_eventCountdownInterval); _eventCountdownInterval = null; }
+                if (markSeenOnClose) {
+                    try {
+                        await database.ref(`event_seen/${uid}/${current.id}`).set(true);
+                    } catch (e) { /* sessiz hata — bir dahaki girişte tekrar denenir */ }
+                }
+                if (rest.length) {
+                    showEventModalQueue(rest, uid, markSeenOnClose);
+                }
+            };
+        }
+
+        /**
+         * Kullanıcı giriş yaptığında çağrılır: henüz görülmemiş TÜM
+         * etkinlik duyurularını bulup sırayla gösterir (checkAndShowPendingBroadcasts
+         * ile aynı desen, ama hedef filtresi yok — event her zaman herkese).
+         */
+        async function checkAndShowPendingEvents(uid) {
+            try {
+                const [eventsSnap, seenSnap] = await Promise.all([
+                    database.ref("events").once("value"),
+                    database.ref("event_seen/" + uid).once("value")
+                ]);
+                const seen = seenSnap.val() || {};
+                const eventsVal = eventsSnap.val() || {};
+                const pending = Object.keys(eventsVal)
+                    .map((id) => Object.assign({ id }, eventsVal[id]))
+                    .filter((ev) => !seen[ev.id])
+                    .filter((ev) => ev.createdBy !== uid) // kendi gönderdiğini tekrar gösterme
+                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+                if (!pending.length) return;
+                showEventModalQueue(pending, uid, /* markSeenOnClose */ true);
+            } catch (err) {
+                if (err && err.code === "PERMISSION_DENIED") {
+                    console.error("[Etkinlik] events/event_seen okunamadı — Firebase Rules izin vermiyor. " +
+                        "Rules'ta \"events\": { \".read\": \"auth != null\", \".indexOn\": [\"createdAt\"] } " +
+                        "ve \"event_seen\": { \"$uid\": { \".read\": \"auth.uid === $uid\", \".write\": \"auth.uid === $uid\" } } tanımlı olduğundan emin olun.");
+                } else {
+                    console.error("[Etkinlik] Bekleyen etkinlikler okunamadı:", err && err.code, err && err.message, err);
+                }
+            }
+        }
+
+        /**
+         * Kullanıcı sitede AÇIKKEN yeni bir "event" duyurusu gelirse anında
+         * görsün diye canlı dinleyici — attachLiveBroadcastListener ile
+         * AYNI desen (startAt(oturum başlangıcı) ile eski kayıtların
+         * tekrar tetiklenmesi engellenir).
+         */
+        function attachLiveEventListener(uid) {
+            const sessionStartAt = Date.now();
+            database.ref("events")
+                .orderByChild("createdAt")
+                .startAt(sessionStartAt)
+                .on("child_added", async (snap) => {
+                    const ev = snap.val();
+                    if (!ev) return;
+                    if (ev.createdBy === uid) return; // kendi gönderdiğini tekrar gösterme
+                    try {
+                        const seenSnap = await database.ref(`event_seen/${uid}/${snap.key}`).once("value");
+                        if (seenSnap.val()) return;
+                    } catch (e) { /* okunamazsa yine de göstermeyi dene */ }
+                    showEventModalQueue([Object.assign({ id: snap.key }, ev)], uid, true);
+                });
+        }
+
         /**
          * Bir kullanıcının rütbesini (role) değiştirir. Sadece admin/owner
          * çağırabilir. Owner rütbesi SADECE mevcut owner'lar tarafından
@@ -13010,6 +13357,10 @@
             });
 
             saveBtn.addEventListener("click", async () => {
+                if (RBAC.isHangerActiveNow(window.CommunityAuth.profile)) {
+                    alert("Hesabınız askıya alındığı için profil ayarlarınızı değiştiremezsiniz.");
+                    return;
+                }
                 const newBio = RBAC.escapeHtml(inputEl.value.trim()).slice(0, 280);
                 try {
                     await database.ref('users/' + window.CommunityAuth.user.uid).update({ bio: newBio });
@@ -13033,6 +13384,10 @@
 
             editBtn.addEventListener("click", async () => {
                 const currentProfile = window.CommunityAuth.profile;
+                if (RBAC.isHangerActiveNow(currentProfile)) {
+                    alert("Hesabınız askıya alındığı için profil ayarlarınızı (isim dahil) değiştiremezsiniz.");
+                    return;
+                }
                 const proposed = prompt("Yeni kullanıcı adınızı girin:", currentProfile.username || "");
                 if (!proposed || !proposed.trim()) return;
 
@@ -13319,7 +13674,13 @@
             // accept="image/*" sayesinde mobil tarayıcılar bunu native
             // "Kamera ile çek / Galeriden seç / Dosyalar" seçim menüsü
             // olarak açar — URL yazmaya gerek kalmaz.
-            editBtn.addEventListener("click", () => fileInput.click());
+            editBtn.addEventListener("click", () => {
+                if (RBAC.isHangerActiveNow(window.CommunityAuth.profile)) {
+                    alert("Hesabınız askıya alındığı için profil ayarlarınızı (avatar dahil) değiştiremezsiniz.");
+                    return;
+                }
+                fileInput.click();
+            });
 
             fileInput.addEventListener("change", async () => {
                 const file = fileInput.files && fileInput.files[0];
@@ -13490,7 +13851,13 @@
             if (editBtn.dataset.wired) return; // tek seferlik kurulum
             editBtn.dataset.wired = "1";
 
-            editBtn.addEventListener("click", () => fileInput.click());
+            editBtn.addEventListener("click", () => {
+                if (RBAC.isHangerActiveNow(window.CommunityAuth.profile)) {
+                    alert("Hesabınız askıya alındığı için profil ayarlarınızı (banner dahil) değiştiremezsiniz.");
+                    return;
+                }
+                fileInput.click();
+            });
 
             fileInput.addEventListener("change", async () => {
                 const file = fileInput.files && fileInput.files[0];
@@ -16952,8 +17319,17 @@
             openEmojiPickerGeneric(anchorBtn, activeGroupId, (picked) => {
                 const textarea = textareaId ? document.getElementById(textareaId) : null;
                 if (!textarea) return;
-                if (picked.kind === "unicode") insertTextAtCursor(textarea, picked.char);
-                else insertTextAtCursor(textarea, `:${picked.name}:`);
+                if (picked.kind === "unicode") {
+                    insertTextAtCursor(textarea, picked.char);
+                    return;
+                }
+                // Özel (topluluk) emojiler askı süresince kullanılamaz —
+                // standart unicode emojiler serbest kalır.
+                if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth && window.CommunityAuth.profile)) {
+                    showToastGlobal("Hesabınız askıya alındığı için özel emojileri kullanamazsınız.");
+                    return;
+                }
+                insertTextAtCursor(textarea, `:${picked.name}:`);
             });
         }
         window.openCommunityEmojiPicker = openCommunityEmojiPicker;
@@ -18837,6 +19213,10 @@
 
         // ── İndir ─────────────────────────────────────────────────────
         function mktDownloadModel(listing) {
+            if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth && window.CommunityAuth.profile)) {
+                showToastGlobal("Hesabınız askıya alındığı için 3D Model Pazarı'ndan indirme yapamazsınız.");
+                return;
+            }
             const gltf = listing.gltfData;
             if (!gltf) {
                 showToastGlobal("Bu modelin GLTF verisi mevcut değil.");
@@ -18925,6 +19305,10 @@
         }
 
         function mktSubmitSellListing() {
+            if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth && window.CommunityAuth.profile)) {
+                showToastGlobal("Hesabınız askıya alındığı için 3D Model Pazarı'na model yükleyemezsiniz.");
+                return;
+            }
             const modelId = document.getElementById("mktSellModelSelect").value;
             if (!modelId) {
                 alert("Lütfen paylaşacağın bir model seç.");
@@ -23690,6 +24074,11 @@
             async function submitCreateGroup() {
                 const nameInput = document.getElementById("groupCreateNameInput");
                 const errorEl = document.getElementById("groupCreateError");
+                if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth.profile)) {
+                    errorEl.textContent = "Hesabınız askıya alındığı için yeni bir topluluk oluşturamazsınız.";
+                    errorEl.style.display = "block";
+                    return;
+                }
                 const name = nameInput.value.trim();
                 if (!name) {
                     errorEl.textContent = "Lütfen bir grup adı yaz.";
@@ -23951,6 +24340,11 @@
                 const nameInput = document.getElementById("communityCreateNameInput");
                 const descInput = document.getElementById("communityCreateDescInput");
                 const errorEl = document.getElementById("communityCreateError");
+                if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth.profile)) {
+                    errorEl.textContent = "Hesabınız askıya alındığı için yeni bir topluluk oluşturamazsınız.";
+                    errorEl.style.display = "block";
+                    return;
+                }
                 const name = nameInput.value.trim();
                 const description = descInput.value.trim();
 
@@ -26662,6 +27056,19 @@
                     desc: "Kullanıcının mavi tikini (isVerified) açar/kapatır."
                 },
                 {
+                    name: "hanger",
+                    usage: "hanger <kullanıcıAdı> <sebep>",
+                    desc: "Kullanıcıyı askıya alır: profil özelleştirme (isim/renk/avatar/banner/bio), yeni topluluk " +
+                          "kurma, 3D Model Pazarı'na yükleme/indirme ve özel emoji/tepki kullanımı kilitlenir. " +
+                          "Sahip olduğu topluluklar da otomatik askıya alınır. Süresizdir, sadece unhanger kaldırır."
+                },
+                {
+                    name: "unhanger",
+                    usage: "unhanger <kullanıcıAdı>",
+                    desc: "Kullanıcının askı durumunu kaldırır. NOT: askıya alınmış topluluklarını YENİDEN AÇMAZ, " +
+                          "bunlar ayrıca yönetilmelidir."
+                },
+                {
                     name: "clear",
                     usage: "clear",
                     desc: "Konsol çıktı ekranını temizler."
@@ -26673,6 +27080,13 @@
                           "Kullanıcı o an sitede değilse, siteye girdiğinde gösterilir. Satır atlamak için " +
                           "mesaj içinde /n/ (tek satır atla) veya /n/n/ (iki satır atla, boş satırlı) kullan. " +
                           "Örn: title All Bakım/n/n/Sistem 5 dakika içinde kapanacak"
+                },
+                {
+                    name: "event",
+                    usage: "event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>",
+                    desc: "Herkese, büyük punto etkinlik adı ve kişinin kendi saatine göre canlı geri sayımlı " +
+                          "bir duyuru modalı gösterir. Bölge IANA formatında olmalı (örn: Europe/Istanbul, " +
+                          "America/New_York). Örn: event Sezon 2 Başlangıcı 15 3 2027 20:00 Europe/Istanbul"
                 }
             ];
 
@@ -26781,6 +27195,29 @@
                             await handleTitleBroadcastCommand(targetRaw, messageRaw, profile, printLine);
                             break;
                         }
+                        case "event": {
+                            // Format: event <EventAdı...> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>
+                            // Sondan 5 parça sabit (gün/ay/yıl/saat/bölge), geri
+                            // kalan her şey (boşluk içerebilir) event adı olarak
+                            // birleştirilir -- "title" komutundaki mesaj ayrıştırma
+                            // mantığının tersten uygulanmış hali.
+                            if (rest.length < 6) {
+                                printLine("Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>  (örn: event Sezon2 15 3 2027 20:00 Europe/Istanbul)", "err");
+                                break;
+                            }
+                            const region = rest[rest.length - 1];
+                            const hourStr = rest[rest.length - 2];
+                            const year = rest[rest.length - 3];
+                            const month = rest[rest.length - 4];
+                            const day = rest[rest.length - 5];
+                            const eventName = rest.slice(0, rest.length - 5).join(" ").trim();
+                            if (!eventName) {
+                                printLine("Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>  (örn: event Sezon2 15 3 2027 20:00 Europe/Istanbul)", "err");
+                                break;
+                            }
+                            await handleEventAnnounceCommand(eventName, day, month, year, hourStr, region, profile, printLine);
+                            break;
+                        }
                         case "whoami": {
                             const tier = window.CommunityRBAC.resolvePermissionTier(profile.role);
                             printLine(`${profile.username || "?"} — rütbe: ${profile.role || "—"} — yetki seviyesi: ${tier}`, "ok");
@@ -26854,6 +27291,25 @@
                             if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
                             await handleVerifiedToggle(candidate.uid, state === "on");
                             printLine(`${candidate.username} mavi tik: ${state === "on" ? "açıldı" : "kapatıldı"}.`, "ok");
+                            break;
+                        }
+                        case "hanger": {
+                            const uname = rest[0];
+                            const reason = rest.slice(1).join(" ") || "Belirtilmedi";
+                            if (!uname) { printLine("Kullanım: hanger <kullanıcıAdı> <sebep>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleHangerToggle(candidate.uid, true, reason);
+                            printLine(`${candidate.username} askıya alındı. Sebep: ${reason}`, "ok");
+                            break;
+                        }
+                        case "unhanger": {
+                            const uname = rest[0];
+                            if (!uname) { printLine("Kullanım: unhanger <kullanıcıAdı>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleHangerToggle(candidate.uid, false, null);
+                            printLine(`${candidate.username} askıdan indirildi.`, "ok");
                             break;
                         }
                         default: {
@@ -26938,6 +27394,10 @@
             // oturum boyunca yeni gelenleri canlı olarak dinle.
             checkAndShowPendingBroadcasts(e.detail.user.uid);
             attachLiveBroadcastListener(e.detail.user.uid);
+            // 🗓️ ETKİNLİK SİSTEMİ ("event" konsol komutu): aynı desen —
+            // bekleyen etkinlikleri göster, oturum boyunca yenilerini dinle.
+            checkAndShowPendingEvents(e.detail.user.uid);
+            attachLiveEventListener(e.detail.user.uid);
         });
 
         document.addEventListener("communitystudio:profile-updated", (e) => {
