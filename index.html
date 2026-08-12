@@ -13053,6 +13053,7 @@
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
                 if (printLine) printLine(`Duyuru gönderildi → ${target.label}`, "ok");
+                if (printLine) printLine(`Duyuru ID: ${broadcastRef.key}  (silmek için: cleartitle ${broadcastRef.key})`, "ok");
 
                 // Komutu yazan kişiye de (siz) aynı duyuru anında gösterilsin
                 // -- gönderdiğinizi doğrulayabilmeniz için.
@@ -13064,6 +13065,31 @@
             } catch (err) {
                 console.error("[Konsol] title komutu hata:", err);
                 if (printLine) printLine("Duyuru gönderilemedi (bkz. konsol/network hatası).", "err");
+            }
+        }
+
+        /**
+         * "cleartitle <duyuruID|All>" komutunun asıl işlevi. broadcasts/{id}
+         * düğümünü tamamen siler -- broadcast_seen kayıtlarına DOKUNULMAZ
+         * (bkz. handleClearEventCommand'daki aynı gerekçe).
+         */
+        async function handleClearTitleCommand(targetIdOrAll, printLine) {
+            try {
+                if (targetIdOrAll.toLowerCase() === "all") {
+                    await database.ref("broadcasts").remove();
+                    printLine("Tüm duyurular silindi.", "ok");
+                    return;
+                }
+                const snap = await database.ref("broadcasts/" + targetIdOrAll).once("value");
+                if (!snap.exists()) {
+                    printLine(`Duyuru bulunamadı: ${targetIdOrAll}`, "err");
+                    return;
+                }
+                await database.ref("broadcasts/" + targetIdOrAll).remove();
+                printLine(`Duyuru silindi: ${targetIdOrAll}`, "ok");
+            } catch (err) {
+                console.error("[Konsol] cleartitle komutu hata:", err);
+                printLine("Duyuru silinemedi (bkz. konsol/Rules hatası).", "err");
             }
         }
 
@@ -13198,10 +13224,11 @@
         // (her zaman herkese), ve modal içinde büyük punto event adının
         // altında görüntüleyen kişinin KENDİ tarayıcı saatine göre canlı
         // (saniyede güncellenen) bir geri sayım gösterilir. Etkinlik
-        // zamanı, verilen gün/ay/yıl/saat + IANA saat dilimi (örn.
-        // "Europe/Istanbul") kullanılarak MUTLAK bir UTC zaman damgasına
-        // çevrilip öyle saklanır -- bu sayede her kullanıcı kendi yerel
-        // saatine göre doğru geri sayımı görür.
+        // zamanı, komutu YAZAN kişinin (yani senin) o anki tarayıcı saat
+        // dilimine göre yorumlanıp MUTLAK bir UTC zaman damgasına
+        // çevrilir -- bölge belirtmen gerekmez. Her kullanıcı (sen dahil)
+        // bu mutlak zamanı KENDİ yerel saatine göre görür, bu yüzden
+        // herkes için doğru geri sayım otomatik garanti edilir.
         //
         // Kalıcılık: events/{id} otomatik silinmiyor (broadcasts ile aynı
         // mantık). event_seen/{uid}/{id}=true ile bir daha gösterilmiyor.
@@ -13212,16 +13239,14 @@
         //   "event_seen": { "$uid": { ".read": "auth.uid === $uid", ".write": "auth.uid === $uid" } }
 
         /**
-         * "DD MM YYYY HH:mm Bölge/Adı" bileşenlerini, o saat diliminde
-         * yaşayan biri için doğru mutlak UTC epoch ms'e çevirir.
-         * Yöntem: Intl.DateTimeFormat ile hedef bölgede "şu anki" saatin
-         * ne göründüğünü ölçüp, istenen yerel zamanla arasındaki farkı
-         * (offset) hesaplayıp bir kez düzeltiyoruz -- DST'yi (yaz saati)
-         * de otomatik doğru ele alır çünkü offset'i AYNI takvim gününe
-         * yakın bir referans noktasından ölçüyoruz.
-         * Geçersiz tarih veya tanınmayan bölge ise null döner.
+         * "DD MM YYYY HH:mm" bileşenlerini, TARAYICIYI ÇALIŞTIRAN KİŞİNİN
+         * (yani komutu yazanın) o anki yerel saat dilimine göre yorumlayıp
+         * mutlak UTC epoch ms'e çevirir. new Date(y, m-1, d, hh, mm) zaten
+         * JS motorunun kendi yerel saat dilimini (DST dahil, otomatik)
+         * kullanarak bunu doğru hesaplar -- Intl/timeZone hesaplamasına
+         * gerek kalmaz. Geçersiz tarih/saat ise null döner.
          */
-        function resolveEventTimestampUTC(day, month, year, hourStr, timezone) {
+        function resolveEventTimestampUTC(day, month, year, hourStr) {
             const d = parseInt(day, 10);
             const m = parseInt(month, 10);
             const y = parseInt(year, 10);
@@ -13230,48 +13255,33 @@
             const hh = parseInt(timeMatch[1], 10);
             const mm = parseInt(timeMatch[2], 10);
             if (hh > 23 || mm > 59) return null;
+            if (m < 1 || m > 12 || d < 1 || d > 31) return null;
 
-            try {
-                // 1) Naif UTC olarak varsay (ilk tahmin).
-                const naiveUTC = Date.UTC(y, m - 1, d, hh, mm, 0);
-
-                // 2) Bu naif zamanın, hedef bölgede hangi yerel saate denk
-                //    geldiğini ölç, farkı (offset) bul, düzelt.
-                const dtf = new Intl.DateTimeFormat("en-US", {
-                    timeZone: timezone,
-                    year: "numeric", month: "2-digit", day: "2-digit",
-                    hour: "2-digit", minute: "2-digit", second: "2-digit",
-                    hour12: false
-                });
-                const parts = dtf.formatToParts(new Date(naiveUTC));
-                const get = (type) => parseInt(parts.find(p => p.type === type).value, 10);
-                const shownAsUTC = Date.UTC(
-                    get("year"), get("month") - 1, get("day"),
-                    get("hour") === 24 ? 0 : get("hour"), get("minute"), get("second")
-                );
-                const offset = shownAsUTC - naiveUTC;
-                return naiveUTC - offset;
-            } catch (err) {
-                // Intl bilinmeyen bir timeZone string'i ile hata fırlatır
-                // (örn. kullanıcı "Istanbul" yazmış, "Europe/Istanbul" değil).
+            // Yerel saat dilimine göre oluştur (tarayıcının kendi TZ'si).
+            const localDate = new Date(y, m - 1, d, hh, mm, 0, 0);
+            // JS otomatik taşan tarihleri (örn. 31 Şubat) bir sonraki aya
+            // kaydırır -- bunu geçersiz sayıp reddediyoruz.
+            if (localDate.getDate() !== d || localDate.getMonth() !== m - 1 || localDate.getFullYear() !== y) {
                 return null;
             }
+            return localDate.getTime();
         }
 
         /**
          * Konsol "event" komutunun asıl işlevi: events/{id} altına yeni
-         * bir etkinlik yazar. Format: event <ad> <gün> <ay> <yıl> <saat> <bölge>
+         * bir etkinlik yazar. Format: event <ad> <gün> <ay> <yıl> <saat>
+         * (saat dilimi komutu yazanın tarayıcısından otomatik alınır).
          */
-        async function handleEventAnnounceCommand(name, day, month, year, hourStr, timezone, senderProfile, printLine) {
+        async function handleEventAnnounceCommand(name, day, month, year, hourStr, senderProfile, printLine) {
             if (!name || !name.trim()) {
                 if (printLine) printLine("Etkinlik adı boş olamaz.", "err");
                 return;
             }
-            const eventTimestampUTC = resolveEventTimestampUTC(day, month, year, hourStr, timezone);
+            const eventTimestampUTC = resolveEventTimestampUTC(day, month, year, hourStr);
             if (eventTimestampUTC === null) {
                 if (printLine) printLine(
-                    "Geçersiz tarih/saat/bölge. Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>  " +
-                    "(Bölge IANA formatında olmalı, örn: Europe/Istanbul, America/New_York)", "err");
+                    "Geçersiz tarih/saat. Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd>  " +
+                    "(saat dilimi senin tarayıcından otomatik alınır)", "err");
                 return;
             }
             try {
@@ -13279,12 +13289,14 @@
                 await eventRef.set({
                     name: name.trim(),
                     eventTimestampUTC,
-                    timezone,
                     createdBy: window.CommunityAuth.user.uid,
                     createdByUsername: senderProfile.username || "Yetkili",
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
-                if (printLine) printLine(`Etkinlik duyurusu gönderildi → "${name.trim()}"`, "ok");
+                if (printLine) {
+                    printLine(`Etkinlik duyurusu gönderildi → "${name.trim()}"`, "ok");
+                    printLine(`Etkinlik ID: ${eventRef.key}  (silmek için: clearevent ${eventRef.key})`, "ok");
+                }
 
                 // Gönderene de anında önizleme göster (broadcast ile aynı
                 // mantık — kalıcı bir "seen" kaydı YARATMAZ).
@@ -13296,6 +13308,32 @@
             } catch (err) {
                 console.error("[Konsol] event komutu hata:", err);
                 if (printLine) printLine("Etkinlik gönderilemedi (bkz. konsol/network hatası).", "err");
+            }
+        }
+
+        /**
+         * "clearevent <eventID|All>" komutunun asıl işlevi. events/{id}
+         * düğümünü tamamen siler -- event_seen kayıtlarına DOKUNULMAZ
+         * (zaten silinen bir event bir daha hiç sorgulanmayacağı için
+         * o kayıtlar zararsız/anlamsız kalır, temizlemeye gerek yok).
+         */
+        async function handleClearEventCommand(targetIdOrAll, printLine) {
+            try {
+                if (targetIdOrAll.toLowerCase() === "all") {
+                    await database.ref("events").remove();
+                    printLine("Tüm etkinlik duyuruları silindi.", "ok");
+                    return;
+                }
+                const snap = await database.ref("events/" + targetIdOrAll).once("value");
+                if (!snap.exists()) {
+                    printLine(`Etkinlik bulunamadı: ${targetIdOrAll}`, "err");
+                    return;
+                }
+                await database.ref("events/" + targetIdOrAll).remove();
+                printLine(`Etkinlik silindi: ${targetIdOrAll}`, "ok");
+            } catch (err) {
+                console.error("[Konsol] clearevent komutu hata:", err);
+                printLine("Etkinlik silinemedi (bkz. konsol/Rules hatası).", "err");
             }
         }
 
@@ -13429,6 +13467,198 @@
                     } catch (e) { /* okunamazsa yine de göstermeyi dene */ }
                     showEventModalQueue([Object.assign({ id: snap.key }, ev)], uid, true);
                 });
+        }
+
+        // ==============================================================
+        // 🟢 PRESENCE (ÇEVRİMİÇİ / SON GÖRÜLME) SİSTEMİ
+        // ==============================================================
+        // Konsolun "stats" (aktif oturum sayısı) ve "lastseen" komutları
+        // için temel veri kaynağı. Standart Firebase RTDB presence
+        // deseni: .info/connected + onDisconnect(). Her bağlantı,
+        // user_presence/{uid} altına "online: true" yazar ve bağlantı
+        // koptuğunda (sekme kapatma, ağ kopması, vb.) sunucu OTOMATİK
+        // olarak onDisconnect ile "online: false" + son görülme zamanını
+        // yazar -- istemci tarafında hiçbir "kapanış" kodu çalışmasa bile
+        // güvenilir çalışır.
+        //
+        // NOT (Firebase Rules): aşağıdaki düğüm de Rules'a eklenmeli:
+        //   "user_presence": {
+        //     ".read": "auth != null",
+        //     "$uid": { ".write": "auth != null && auth.uid === $uid" }
+        //   }
+        function attachPresenceSystem(uid) {
+            const myPresenceRef = database.ref("user_presence/" + uid);
+            const connectedRef = database.ref(".info/connected");
+            connectedRef.on("value", (snap) => {
+                if (snap.val() !== true) return;
+                // Bağlantı kopunca sunucu bunu otomatik uygulasın.
+                myPresenceRef.onDisconnect().set({
+                    online: false,
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    // onDisconnect kaydı garanti altına alındıktan SONRA
+                    // "online: true" yaz -- sıralama önemli, aksi halde
+                    // yarış durumu oluşabilir.
+                    myPresenceRef.set({
+                        online: true,
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
+                });
+            });
+        }
+
+        /**
+         * "lastseen <kullanıcıAdı>" komutunun asıl işlevi. Kullanıcı o an
+         * çevrimiçiyse bunu belirtir; değilse user_presence'teki son
+         * görülme zaman damgasını okunaklı bir "X önce" biçiminde basar.
+         */
+        async function handleLastSeenCommand(targetUid, targetUsername, printLine) {
+            try {
+                const snap = await database.ref("user_presence/" + targetUid).once("value");
+                const presence = snap.val();
+                if (!presence) {
+                    printLine(`${targetUsername}: hiç bağlantı kaydı yok (belki hiç giriş yapmadı).`, "err");
+                    return;
+                }
+                if (presence.online === true) {
+                    printLine(`${targetUsername}: şu anda ÇEVRİMİÇİ.`, "ok");
+                    return;
+                }
+                if (!presence.lastSeen) {
+                    printLine(`${targetUsername}: son görülme bilgisi yok.`, "err");
+                    return;
+                }
+                const diffMs = Date.now() - presence.lastSeen;
+                printLine(`${targetUsername}: son görülme ${formatDurationTR(diffMs)} önce (${new Date(presence.lastSeen).toLocaleString("tr-TR")})`, "ok");
+            } catch (err) {
+                console.error("[Konsol] lastseen komutu hata:", err);
+                printLine("Son görülme bilgisi okunamadı (bkz. konsol/Rules hatası).", "err");
+            }
+        }
+
+        /** ms cinsinden bir süreyi "3 gün 4 saat" gibi kısa TR metne çevirir. */
+        function formatDurationTR(ms) {
+            const totalMin = Math.floor(ms / 60000);
+            if (totalMin < 1) return "az önce";
+            if (totalMin < 60) return `${totalMin} dakika`;
+            const totalHour = Math.floor(totalMin / 60);
+            if (totalHour < 24) return `${totalHour} saat ${totalMin % 60} dakika`;
+            const totalDay = Math.floor(totalHour / 24);
+            return `${totalDay} gün ${totalHour % 24} saat`;
+        }
+
+        /**
+         * "stats" komutunun asıl işlevi: toplam kullanıcı sayısı, şu anki
+         * aktif (online) oturum sayısı, toplam topluluk sayısı ve toplam
+         * forum mesajı/konu sayısı gibi anlık istatistikleri tek seferde
+         * çekip konsola basar. Büyük veri setlerinde .once('value') tüm
+         * düğümü indirebileceği için sadece admin panelinde/az sıklıkla
+         * kullanılması beklenir (konsol komutu zaten manuel tetiklenir).
+         */
+        async function handleStatsCommand(printLine) {
+            printLine("İstatistikler toplanıyor…", "info");
+            try {
+                const [usersSnap, presenceSnap, groupsSnap, threadsSnap] = await Promise.all([
+                    database.ref("users").once("value"),
+                    database.ref("user_presence").once("value"),
+                    database.ref("community_directory").once("value"),
+                    database.ref("forum_threads").once("value")
+                ]);
+
+                const users = usersSnap.val() || {};
+                const userCount = Object.keys(users).length;
+                const bannedCount = Object.values(users).filter(u => u.banned === true).length;
+                const hangeredCount = Object.values(users).filter(u => u.hangered === true).length;
+
+                const presence = presenceSnap.val() || {};
+                const onlineCount = Object.values(presence).filter(p => p.online === true).length;
+
+                const groups = groupsSnap.val() || {};
+                const groupCount = Object.keys(groups).length;
+
+                const threads = threadsSnap.val() || {};
+                const threadCount = Object.keys(threads).length;
+
+                printLine("── 📊 Site İstatistikleri ──", "ok");
+                printLine(`Toplam kullanıcı: ${userCount}`, "ok");
+                printLine(`Şu an çevrimiçi: ${onlineCount}`, "ok");
+                printLine(`Banlı kullanıcı: ${bannedCount}`, "ok");
+                printLine(`Askıya alınmış kullanıcı: ${hangeredCount}`, "ok");
+                printLine(`Toplam topluluk: ${groupCount}`, "ok");
+                printLine(`Toplam forum konusu: ${threadCount}`, "ok");
+            } catch (err) {
+                console.error("[Konsol] stats komutu hata:", err);
+                printLine("İstatistikler okunamadı (bkz. konsol/Rules hatası).", "err");
+            }
+        }
+
+        /**
+         * "logs <kullanıcıAdı>" komutunun asıl işlevi: audit_logs'u
+         * targetUid'e göre filtreleyip en son N kaydı (yeniden eskiye)
+         * konsola basar. audit_logs indexOn olmadan tüm düğümü çekip
+         * client-side filtreler -- bu düğüm zaten sadece yetkililerin
+         * eriştiği, görece küçük kalması beklenen bir düğüm.
+         */
+        async function handleLogsCommand(targetUid, targetUsername, printLine) {
+            try {
+                const snap = await database.ref("audit_logs")
+                    .orderByChild("targetUid")
+                    .equalTo(targetUid)
+                    .limitToLast(15)
+                    .once("value");
+                const logs = snap.val() || {};
+                const entries = Object.values(logs).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                if (!entries.length) {
+                    printLine(`${targetUsername} için audit log kaydı bulunamadı.`, "err");
+                    return;
+                }
+                printLine(`── 📜 ${targetUsername} — Son ${entries.length} İşlem ──`, "ok");
+                entries.forEach((log) => {
+                    const when = log.timestamp ? new Date(log.timestamp).toLocaleString("tr-TR") : "?";
+                    const by = log.actorUsername || "bilinmiyor";
+                    const extra = log.detail ? ` (${log.detail})` : "";
+                    printLine(`[${when}] ${log.action}${extra} — @${by}`, "ok");
+                });
+            } catch (err) {
+                console.error("[Konsol] logs komutu hata:", err);
+                if (err && err.code === "PERMISSION_DENIED") {
+                    printLine("audit_logs okunamadı — Rules'ta \".indexOn\": \"targetUid\" tanımlı olduğundan emin olun.", "err");
+                } else {
+                    printLine("Loglar okunamadı (bkz. konsol/network hatası).", "err");
+                }
+            }
+        }
+
+        /**
+         * "forcename <kullanıcıAdı> <yeniAd>" komutunun asıl işlevi.
+         * handleBanToggle ile AYNI desen: users/{uid}.username üzerine
+         * doğrudan yaz + audit_logs kaydı. originalUsername'a DOKUNULMAZ
+         * (kullanıcının orijinal/ilk seçtiği adı korunur, sadece görünen
+         * ad değişir) -- bu, birinin daha sonra normale döndürülmesi
+         * gerektiğinde referans olarak kalır.
+         */
+        async function handleForceNameCommand(targetUid, oldUsername, newUsername, actorProfile, printLine) {
+            const trimmed = (newUsername || "").trim();
+            if (!trimmed || trimmed.length < 3 || trimmed.length > 24) {
+                printLine("Yeni isim 3-24 karakter arasında olmalı.", "err");
+                return;
+            }
+            try {
+                await database.ref("users/" + targetUid).update({ username: trimmed });
+                await database.ref("audit_logs").push({
+                    action: "force_rename",
+                    targetUid: targetUid,
+                    detail: `"${oldUsername}" → "${trimmed}"`,
+                    actorUid: window.CommunityAuth.user.uid,
+                    actorUsername: actorProfile.username || "unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                printLine(`İsim değiştirildi: "${oldUsername}" → "${trimmed}"`, "ok");
+            } catch (err) {
+                console.error("[Konsol] forcename komutu hata:", err);
+                printLine("İsim değiştirilemedi (bkz. konsol/Rules hatası).", "err");
+            }
         }
 
         /**
@@ -27217,6 +27447,29 @@
                           "bunlar ayrıca yönetilmelidir."
                 },
                 {
+                    name: "stats",
+                    usage: "stats",
+                    desc: "Toplam kullanıcı, şu an çevrimiçi olan, banlı/askıya alınmış kullanıcı, topluluk ve " +
+                          "forum konusu sayısı gibi anlık site istatistiklerini gösterir."
+                },
+                {
+                    name: "lastseen",
+                    usage: "lastseen <kullanıcıAdı>",
+                    desc: "Kullanıcının şu an çevrimiçi olup olmadığını, değilse en son ne zaman görüldüğünü gösterir."
+                },
+                {
+                    name: "logs",
+                    usage: "logs <kullanıcıAdı>",
+                    desc: "Kullanıcıya uygulanan son işlemleri (ban, mute, warn, hanger, forcename vb.) audit_logs " +
+                          "üzerinden, kim tarafından ve ne zaman yapıldığıyla birlikte listeler."
+                },
+                {
+                    name: "forcename",
+                    usage: "forcename <kullanıcıAdı> <yeniAd>",
+                    desc: "Kullanıcının görünen adını anında değiştirir (uygunsuz isimler için). Orijinal " +
+                          "kullanıcı adı (originalUsername) korunur, sadece görünen ad güncellenir."
+                },
+                {
                     name: "clear",
                     usage: "clear",
                     desc: "Konsol çıktı ekranını temizler."
@@ -27227,14 +27480,28 @@
                     desc: "Hedef kullanıcıya (ya da herkese) ekranda büyük bir duyuru modalı gösterir. " +
                           "Kullanıcı o an sitede değilse, siteye girdiğinde gösterilir. Satır atlamak için " +
                           "mesaj içinde /n/ (tek satır atla) veya /n/n/ (iki satır atla, boş satırlı) kullan. " +
-                          "Örn: title All Bakım/n/n/Sistem 5 dakika içinde kapanacak"
+                          "Örn: title All Bakım/n/n/Sistem 5 dakika içinde kapanacak. Gönderince konsolda " +
+                          "duyuru ID'si verilir (cleartitle ile silmek için)."
+                },
+                {
+                    name: "cleartitle",
+                    usage: "cleartitle <duyuruID|All>",
+                    desc: "Belirtilen ID'ye sahip duyuruyu (title ile gönderilen) siler. \"All\" yazılırsa " +
+                          "TÜM duyurular silinir. ID'yi title komutunu çalıştırdığında konsoldan alabilirsin."
                 },
                 {
                     name: "event",
-                    usage: "event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>",
+                    usage: "event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd>",
                     desc: "Herkese, büyük punto etkinlik adı ve kişinin kendi saatine göre canlı geri sayımlı " +
-                          "bir duyuru modalı gösterir. Bölge IANA formatında olmalı (örn: Europe/Istanbul, " +
-                          "America/New_York). Örn: event Sezon 2 Başlangıcı 15 3 2027 20:00 Europe/Istanbul"
+                          "bir duyuru modalı gösterir. Saat dilimi SENİN (komutu yazanın) tarayıcından otomatik " +
+                          "alınır, ayrıca belirtmene gerek yok. Örn: event Sezon 2 Başlangıcı 15 3 2027 20:00. " +
+                          "Gönderince konsolda etkinlik ID'si verilir (clearevent ile silmek için)."
+                },
+                {
+                    name: "clearevent",
+                    usage: "clearevent <eventID|All>",
+                    desc: "Belirtilen ID'ye sahip etkinlik duyurusunu siler. \"All\" yazılırsa TÜM etkinlikler " +
+                          "silinir. ID'yi event komutunu çalıştırdığında konsoldan alabilirsin."
                 }
             ];
 
@@ -27343,27 +27610,40 @@
                             await handleTitleBroadcastCommand(targetRaw, messageRaw, profile, printLine);
                             break;
                         }
+                        case "cleartitle": {
+                            const targetId = rest[0];
+                            if (!targetId) { printLine("Kullanım: cleartitle <duyuruID|All>", "err"); break; }
+                            await handleClearTitleCommand(targetId, printLine);
+                            break;
+                        }
                         case "event": {
-                            // Format: event <EventAdı...> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>
-                            // Sondan 5 parça sabit (gün/ay/yıl/saat/bölge), geri
+                            // Format: event <EventAdı...> <Gün> <Ay> <Yıl> <SS:dd>
+                            // Sondan 4 parça sabit (gün/ay/yıl/saat), geri
                             // kalan her şey (boşluk içerebilir) event adı olarak
                             // birleştirilir -- "title" komutundaki mesaj ayrıştırma
-                            // mantığının tersten uygulanmış hali.
-                            if (rest.length < 6) {
-                                printLine("Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>  (örn: event Sezon2 15 3 2027 20:00 Europe/Istanbul)", "err");
+                            // mantığının tersten uygulanmış hali. Saat dilimi
+                            // parametresi YOK -- bunu yazan kişinin (senin)
+                            // tarayıcı saat dilimi otomatik kullanılır.
+                            if (rest.length < 5) {
+                                printLine("Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd>  (örn: event Sezon2 15 3 2027 20:00)", "err");
                                 break;
                             }
-                            const region = rest[rest.length - 1];
-                            const hourStr = rest[rest.length - 2];
-                            const year = rest[rest.length - 3];
-                            const month = rest[rest.length - 4];
-                            const day = rest[rest.length - 5];
-                            const eventName = rest.slice(0, rest.length - 5).join(" ").trim();
+                            const hourStr = rest[rest.length - 1];
+                            const year = rest[rest.length - 2];
+                            const month = rest[rest.length - 3];
+                            const day = rest[rest.length - 4];
+                            const eventName = rest.slice(0, rest.length - 4).join(" ").trim();
                             if (!eventName) {
-                                printLine("Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd> <Bölge>  (örn: event Sezon2 15 3 2027 20:00 Europe/Istanbul)", "err");
+                                printLine("Kullanım: event <EventAdı> <Gün> <Ay> <Yıl> <SS:dd>  (örn: event Sezon2 15 3 2027 20:00)", "err");
                                 break;
                             }
-                            await handleEventAnnounceCommand(eventName, day, month, year, hourStr, region, profile, printLine);
+                            await handleEventAnnounceCommand(eventName, day, month, year, hourStr, profile, printLine);
+                            break;
+                        }
+                        case "clearevent": {
+                            const targetId = rest[0];
+                            if (!targetId) { printLine("Kullanım: clearevent <eventID|All>", "err"); break; }
+                            await handleClearEventCommand(targetId, printLine);
                             break;
                         }
                         case "whoami": {
@@ -27460,6 +27740,35 @@
                             printLine(`${candidate.username} askıdan indirildi.`, "ok");
                             break;
                         }
+                        case "stats": {
+                            await handleStatsCommand(printLine);
+                            break;
+                        }
+                        case "lastseen": {
+                            const uname = rest[0];
+                            if (!uname) { printLine("Kullanım: lastseen <kullanıcıAdı>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleLastSeenCommand(candidate.uid, candidate.username, printLine);
+                            break;
+                        }
+                        case "logs": {
+                            const uname = rest[0];
+                            if (!uname) { printLine("Kullanım: logs <kullanıcıAdı>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleLogsCommand(candidate.uid, candidate.username, printLine);
+                            break;
+                        }
+                        case "forcename": {
+                            const uname = rest[0];
+                            const newName = rest.slice(1).join(" ");
+                            if (!uname || !newName) { printLine("Kullanım: forcename <kullanıcıAdı> <yeniAd>", "err"); break; }
+                            const candidate = window.CommunityMentions.getByUsername(uname);
+                            if (!candidate) { printLine(`Kullanıcı bulunamadı: ${uname}`, "err"); break; }
+                            await handleForceNameCommand(candidate.uid, candidate.username, newName, profile, printLine);
+                            break;
+                        }
                         default: {
                             printLine(`Bilinmeyen komut: ${cmd} — komut listesi için "help" yaz.`, "err");
                         }
@@ -27546,6 +27855,9 @@
             // bekleyen etkinlikleri göster, oturum boyunca yenilerini dinle.
             checkAndShowPendingEvents(e.detail.user.uid);
             attachLiveEventListener(e.detail.user.uid);
+            // 🟢 PRESENCE: çevrimiçi/son görülme takibi ("stats" ve
+            // "lastseen" konsol komutları için).
+            attachPresenceSystem(e.detail.user.uid);
         });
 
         document.addEventListener("communitystudio:profile-updated", (e) => {
