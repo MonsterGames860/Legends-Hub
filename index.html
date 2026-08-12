@@ -9644,8 +9644,12 @@
          * `equippedBadgeGroupId` (opsiyonel, 6. parametre): kullanıcının
          * users/{uid}/equippedBadgeGroupId değeri. Verilmezse (eski çağrı
          * yerlerinde olduğu gibi) rozet basılmaz -- geriye dönük uyumludur.
+         *
+         * `isHangered` (opsiyonel, 7. parametre): kullanıcının askı
+         * (hanger) durumu. true ise, mavi tikten ÖNCE kırmızı 🪝 rozeti
+         * basılır -- bkz. renderHangerBadge.
          */
-        function renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId) {
+        function renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered) {
             const safeName = escapeHtml(username || "Kullanıcı");
             const nameHtml = window.NameColorSystem
                 ? window.NameColorSystem.wrapNameWithColor(safeName, nameColor)
@@ -9653,7 +9657,7 @@
             const badgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
                 ? renderCommunityBadge(equippedBadgeGroupId, "14px")
                 : "";
-            return `${formatRankTagHtml(role)}${nameHtml}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
+            return `${formatRankTagHtml(role)}${nameHtml}${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
         }
 
         /**
@@ -9666,8 +9670,9 @@
          *
          * `equippedBadgeGroupId` (opsiyonel, 4. parametre): bkz.
          * renderNameWithRank'teki aynı isimli parametrenin açıklaması.
+         * `isHangered` (opsiyonel, 5. parametre): bkz. renderNameWithRank.
          */
-        function renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId) {
+        function renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId, isHangered) {
             const safeName = escapeHtml(username || "Kullanıcı");
             const nameHtml = roleColor
                 ? `<span style="color:${escapeHtml(roleColor)}; font-weight:700;">${safeName}</span>`
@@ -9675,7 +9680,7 @@
             const badgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
                 ? renderCommunityBadge(equippedBadgeGroupId, "14px")
                 : "";
-            return `${nameHtml}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
+            return `${nameHtml}${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
         }
 
         // ---------- MAVİ TİK (VERIFIED BADGE) — tek merkezi render ----------
@@ -9708,11 +9713,11 @@
             </span>`;
         }
 
-        function renderUsernameWithBadge(username, isVerified) {
+        function renderUsernameWithBadge(username, isVerified, isHangered) {
             const safeName = escapeHtml(username || "Kullanıcı");
             return `<span class="username-with-badge" style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="username-text">${safeName}</span>
-                ${renderVerifiedBadge(isVerified)}
+                ${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}
             </span>`;
         }
 
@@ -10201,7 +10206,9 @@
                     profile.username,
                     profile.role,
                     profile.isVerified === true,
-                    nameColorObj
+                    nameColorObj,
+                    profile.equippedBadgeGroupId,
+                    profile.hangered === true
                 );
             }
             // 🐛 BUGFIX güvenlik önlemi: profileUsernameText'i SADECE o an
@@ -11141,6 +11148,7 @@
                         username: u.username || u.originalUsername || "Kullanıcı",
                         originalUsername: u.originalUsername || u.username || "",
                         isVerified: u.isVerified === true,
+                        hangered: u.hangered === true,
                         avatarUrl: u.avatarUrl || "",
                         role: u.role || "user",
                         // 🏷️ Takılı topluluk rozeti -- burada sadece HANGİ
@@ -11367,6 +11375,7 @@
                     : `<span class="mention-chip-name" data-user-color="${candidate.nameColor ? (candidate.nameColor.mode) : 'none'}">${mentionNameCore}</span>`;
                 return `<span class="mention-chip" data-mention-uid="${uid}"${colorStyle}>` +
                     mentionNameHtml +
+                    renderHangerBadge(candidate.hangered) +
                     renderVerifiedBadge(candidate.isVerified) +
                     `</span>`;
             });
@@ -11472,7 +11481,7 @@
                     return `<div class="mention-suggestion${i === 0 ? ' is-active' : ''}" data-index="${i}">
                         <img class="mention-suggestion-avatar" src="${escapeHtml(c.avatarUrl || '')}" alt="">
                         <span class="mention-suggestion-name">${escapeHtml(c.username)}</span>
-                        ${renderVerifiedBadge(c.isVerified)}
+                        ${renderHangerBadge(c.hangered)}${renderVerifiedBadge(c.isVerified)}
                     </div>`;
                 }).join("");
                 dropdownEl.style.display = "block";
@@ -12180,7 +12189,9 @@
                     profile.username,
                     profile.role,
                     profile.isVerified === true,
-                    nameColor
+                    nameColor,
+                    profile.equippedBadgeGroupId,
+                    profile.hangered === true
                 );
             }
             if (roleEl) roleEl.textContent = (profile.role || "Player").toUpperCase();
@@ -15940,12 +15951,13 @@
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
+            const isHangered = candidate ? candidate.hangered : false;
             const canPin = RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
             return `
                 <div class="forum-pinned-item">
                     <div class="forum-message-header">
                         <span class="forum-message-username">
-                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
+                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
                         </span>
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
@@ -15962,6 +15974,7 @@
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
+            const isHangered = candidate ? candidate.hangered : false;
             const isWhisper = !!m.whisperToUid;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
@@ -16002,7 +16015,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-message-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
                     ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
@@ -16358,6 +16371,7 @@
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
+            const isHangered = candidate ? candidate.hangered : false;
 
             const tagsHtml = `
                 ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
@@ -16375,7 +16389,7 @@
                             ${tagsHtml}
                         </div>
                         <div class="forum-thread-meta">
-                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}</span>
+                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}</span>
                             <span class="forum-thread-meta-sep">·</span>
                             <span>${formatMessageTime(t.createdAt)}</span>
                         </div>
@@ -16537,6 +16551,7 @@
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
+            const isHangered = candidate ? candidate.hangered : false;
             const viewerProfile = window.CommunityAuth.profile;
             const myUid = window.CommunityAuth.user.uid;
             const canModerateThread = RBAC.hasMinimumTier(viewerProfile, "helper");
@@ -16558,7 +16573,7 @@
                 </div>
                 <div class="forum-thread-detail-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(t.createdAt)}</span>
                 </div>
@@ -16666,6 +16681,7 @@
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
+            const isHangered = candidate ? candidate.hangered : false;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
             const thread = forumThreadsCache[threadId];
@@ -16693,7 +16709,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-reply-header">
                     <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
                     </span>
                     <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
                 </div>`;
@@ -18286,6 +18302,8 @@
                                 role: u.role || "",
                                 avatarUrl: u.avatarUrl || "",
                                 isVerified: u.isVerified === true,
+                                hangered: u.hangered === true,
+                                equippedBadgeGroupId: u.equippedBadgeGroupId || null,
                                 nameColor: window.NameColorSystem
                                     ? window.NameColorSystem.normalize(u.nameColor, { role: u.role || "user" })
                                     : null
@@ -18322,7 +18340,7 @@
                 const visible = this._filtered.slice(0, this._visibleCount);
                 const html = visible.map((u) => {
                     const nameHtml = window.CommunityRBAC
-                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor, u.equippedBadgeGroupId)
+                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor, u.equippedBadgeGroupId, u.hangered)
                         : RBAC.escapeHtml(u.username);
                     const avatarAttrs = window.CommunityRBAC ? window.CommunityRBAC.renderAvatarAttrs(u.avatarUrl) : `src=""`;
                     return `
@@ -19044,6 +19062,7 @@
                 const verifiedBadge = RBAC.renderVerifiedBadge(
                     sellerCandidate ? sellerCandidate.isVerified : !!l.sellerVerified, "13px"
                 );
+                const hangerBadge = RBAC.renderHangerBadge(sellerCandidate ? sellerCandidate.hangered : false, "13px");
                 const sellerDisplayName = (sellerCandidate && sellerCandidate.username) || l.sellerUsername;
                 const avg = mktAvgRating(l.id);
                 const stars = avg ? `<span style="color:var(--gold);font-size:0.7rem;">★ ${avg}</span>` : "";
@@ -19068,7 +19087,7 @@
                     <div class="mkt-card-body">
                         <div class="mkt-card-name" title="${studioEscapeHtml(l.name)}">${studioEscapeHtml(l.name)}</div>
                         <div class="mkt-card-seller" data-seller-uid="${studioEscapeHtml(l.sellerUid || "")}">
-                            @${studioEscapeHtml(sellerDisplayName)}${verifiedBadge}
+                            @${studioEscapeHtml(sellerDisplayName)}${hangerBadge}${verifiedBadge}
                         </div>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px;">
                             <div class="mkt-card-tags">
@@ -19141,7 +19160,8 @@
             // CANLI okunur (kayıt anındaki eski snapshot yerine).
             const sellerLink = document.getElementById("mktDetailSellerLink");
             const sellerCandidate = listing.sellerUid ? window.CommunityMentions.getByUid(listing.sellerUid) : null;
-            const sellerBadge = RBAC.renderVerifiedBadge(
+            const sellerBadge = RBAC.renderHangerBadge(sellerCandidate ? sellerCandidate.hangered : false, "15px") +
+                RBAC.renderVerifiedBadge(
                 sellerCandidate ? sellerCandidate.isVerified : !!listing.sellerVerified, "15px"
             );
             sellerLink.innerHTML = `@${studioEscapeHtml((sellerCandidate && sellerCandidate.username) || listing.sellerUsername)}${sellerBadge}`;
@@ -21903,6 +21923,7 @@
                         _username: candidate ? candidate.username : "Kullanıcı",
                         _avatarUrl: candidate ? candidate.avatarUrl : "",
                         _isVerified: candidate ? candidate.isVerified : false,
+                        _hangered: candidate ? candidate.hangered : false,
                         _equippedBadgeGroupId: candidate ? candidate.equippedBadgeGroupId : null
                     };
                 });
@@ -21929,7 +21950,7 @@
                             <img class="msg-chat-item-avatar" ${RBAC.renderAvatarAttrs(e._avatarUrl)} alt="">
                             <div class="msg-chat-item-body">
                                 <div class="msg-chat-item-top">
-                                    <span class="msg-chat-item-name">${RBAC.renderNameWithRank ? escapeAttr(e._username) : escapeAttr(e._username)}${RBAC.renderVerifiedBadge(e._isVerified, "13px")}${RBAC.renderCommunityBadge ? RBAC.renderCommunityBadge(e._equippedBadgeGroupId, "13px") : ""}</span>
+                                    <span class="msg-chat-item-name">${RBAC.renderNameWithRank ? escapeAttr(e._username) : escapeAttr(e._username)}${RBAC.renderHangerBadge(e._hangered, "13px")}${RBAC.renderVerifiedBadge(e._isVerified, "13px")}${RBAC.renderCommunityBadge ? RBAC.renderCommunityBadge(e._equippedBadgeGroupId, "13px") : ""}</span>
                                     <span class="msg-chat-item-time">${relativeTimeShort(e.updatedAt)}</span>
                                 </div>
                                 <div class="msg-chat-item-preview">
@@ -21954,7 +21975,7 @@
                 const username = candidate ? candidate.username : "Kullanıcı";
                 const avatarUrl = candidate ? candidate.avatarUrl : "";
                 const RBAC = window.CommunityRBAC;
-                document.getElementById("dmHeaderName").innerHTML = escapeAttr(username) + RBAC.renderVerifiedBadge(candidate ? candidate.isVerified : false, "14px");
+                document.getElementById("dmHeaderName").innerHTML = escapeAttr(username) + RBAC.renderHangerBadge(candidate ? candidate.hangered : false, "14px") + RBAC.renderVerifiedBadge(candidate ? candidate.isVerified : false, "14px");
                 document.getElementById("dmHeaderSub").textContent = "Özel Mesaj";
                 RBAC.applyAvatarToImg(document.getElementById("dmHeaderAvatar"), avatarUrl);
                 updateDmHeaderBlockUi();
@@ -22203,7 +22224,7 @@
                 resultsEl.innerHTML = candidates.map((c) => `
                     <div class="msg-user-picker-item" data-uid="${escapeAttr(c.uid)}">
                         <img ${RBAC.renderAvatarAttrs(c.avatarUrl)} alt="">
-                        <span>${escapeAttr(c.username)}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
+                        <span>${escapeAttr(c.username)}${RBAC.renderHangerBadge(c.hangered, "13px")}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
                     </div>
                 `).join("");
                 resultsEl.querySelectorAll(".msg-user-picker-item").forEach((item) => {
@@ -23293,7 +23314,7 @@
                             <img ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                             <div class="msg-group-member-info">
                                 <span class="msg-group-member-name">
-                                    ${escapeAttr(username)}${RBAC.renderVerifiedBadge(c ? c.isVerified : false, "13px")}
+                                    ${escapeAttr(username)}${RBAC.renderHangerBadge(c ? c.hangered : false, "13px")}${RBAC.renderVerifiedBadge(c ? c.isVerified : false, "13px")}
                                     ${groupRoleBadgeHtml(meta, uid)}${localRolesBadge}
                                 </span>
                             </div>
@@ -23926,7 +23947,7 @@
                 resultsEl.innerHTML = candidates.map((c) => `
                     <div class="msg-user-picker-item" data-uid="${escapeAttr(c.uid)}">
                         <img ${RBAC.renderAvatarAttrs(c.avatarUrl)} alt="">
-                        <span>${escapeAttr(c.username)}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
+                        <span>${escapeAttr(c.username)}${RBAC.renderHangerBadge(c.hangered, "13px")}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
                     </div>
                 `).join("");
                 resultsEl.querySelectorAll(".msg-user-picker-item").forEach((item) => {
@@ -24162,7 +24183,7 @@
                 resultsEl.innerHTML = candidates.map((c) => `
                     <div class="msg-user-picker-item" data-uid="${escapeAttr(c.uid)}">
                         <img ${RBAC.renderAvatarAttrs(c.avatarUrl)} alt="">
-                        <span>${escapeAttr(c.username)}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
+                        <span>${escapeAttr(c.username)}${RBAC.renderHangerBadge(c.hangered, "13px")}${RBAC.renderVerifiedBadge(c.isVerified, "13px")}</span>
                     </div>
                 `).join("");
                 resultsEl.querySelectorAll(".msg-user-picker-item").forEach((item) => {
@@ -25056,6 +25077,7 @@
                     const role = candidate ? candidate.role : "";
                     const nameColor = candidate ? candidate.nameColor : null;
                     const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
+            const isHangered = candidate ? candidate.hangered : false;
 
                     // Gruplama kararı: aynı gönderen, üst üste, aradaki süre
                     // pencere içinde, ve bir yanıt (replyTo) değilse (bir
@@ -25095,13 +25117,13 @@
                                 const inlineBadgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
                                     ? renderCommunityBadge(equippedBadgeGroupId, "14px")
                                     : "";
-                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderVerifiedBadge(isVerified)}${inlineBadgeHtml}${timeInline}</div>`;
+                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderHangerBadge(isHangered)}${RBAC.renderVerifiedBadge(isVerified)}${inlineBadgeHtml}${timeInline}</div>`;
                             } else {
-                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId)}${timeInline}</div>`;
+                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId, isHangered)}${timeInline}</div>`;
                             }
                         } else {
                             const groupRoleHtml = groupRoleBadgeHtml(activeMetaForBubble, m.authorUid, { forBubble: true });
-                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId)}${timeInline}</div>`;
+                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}${timeInline}</div>`;
                         }
                     }
 
