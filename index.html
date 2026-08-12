@@ -3661,11 +3661,27 @@
         align-items: center;
         justify-content: center;
         font-size: 1.2rem;
-        overflow: hidden;
+        overflow: visible;
         color: var(--text-dim);
         flex-shrink: 0;
+        position: relative;
     }
-    .grp-community-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .grp-community-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    /* 🔴 Kırmızı Nokta: hangi topluluk kartının okunmamış mesajı olduğunu
+       gösterir -- avatarın sağ üst köşesine bindirilir, WhatsApp/Discord
+       tarzı tanıdık bir görsel dil. */
+    .grp-community-reddot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--danger);
+        border: 2px solid var(--bg-panel);
+        z-index: 2;
+    }
 
     .grp-community-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .grp-community-name-row {
@@ -6900,6 +6916,153 @@
         margin-left: 6px;
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       🔕 BİLDİRİM KAPATMA (MUTE) SİSTEMİ — görsel bileşenler
+       ══════════════════════════════════════════════════════════════ */
+
+    /* DM/Grup satırlarındaki "bildirim ayarı" butonu -- varsayılan
+       durumda gizli, satır hover edilince veya satır zaten susturulmuşsa
+       (is-muted) görünür olur. Tıklanınca MuteSystem seviye menüsünü açar. */
+    .msg-chat-item-mute-btn {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text-dim);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity .12s ease, background .12s ease, color .12s ease;
+    }
+    .msg-chat-item-mute-btn::before { content: "🔔"; }
+    .msg-chat-item:hover .msg-chat-item-mute-btn { opacity: .55; }
+    .msg-chat-item-mute-btn:hover { opacity: 1 !important; background: var(--accent-soft); color: var(--accent); }
+    /* Tamamen susturulmuş: her zaman görünür + kırmızımsı vurgu, satır
+       hover edilmese bile kullanıcı hangi sohbetlerin sessizde olduğunu
+       görebilsin. */
+    .msg-chat-item-mute-btn.is-muted-full {
+        opacity: .9;
+        color: var(--danger);
+    }
+    .msg-chat-item-mute-btn.is-muted-full::before { content: "🔕"; }
+    /* Kısmi susturma ("Sadece Etiket/Yanıt") -- farklı bir ikonla ayırt
+       edilir, kullanıcı tam sessiz mi yoksa sadece mention-only mı
+       olduğunu ikona bakarak anlayabilsin. */
+    .msg-chat-item-mute-btn.is-muted-mentions-only {
+        opacity: .9;
+        color: var(--gold);
+    }
+    .msg-chat-item-mute-btn.is-muted-mentions-only::before { content: "🔖"; }
+
+    /* Topluluk kanal sidebar'ındaki bildirim-ayarı butonu -- kanal
+       satırının sağında, düzenle (⚙) butonunun solunda yer alır. */
+    .cch-channel-mute-btn {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        border: none;
+        background: transparent;
+        color: var(--text-dim);
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity .12s ease, color .12s ease;
+    }
+    .cch-channel-mute-btn::before { content: "🔔"; }
+    .cch-channel-item:hover .cch-channel-mute-btn { opacity: .5; }
+    .cch-channel-mute-btn:hover { opacity: 1 !important; color: var(--accent); }
+    .cch-channel-mute-btn.is-muted-full { opacity: .9; color: var(--danger); }
+    .cch-channel-mute-btn.is-muted-full::before { content: "🔕"; }
+    .cch-channel-mute-btn.is-muted-mentions-only { opacity: .9; color: var(--gold); }
+    .cch-channel-mute-btn.is-muted-mentions-only::before { content: "🔖"; }
+
+    /* Hub sidebar nav öğesindeki (Forum) küçük mute butonu. */
+    .hub-nav-mute-btn {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin-left: 4px;
+        border-radius: 5px;
+        border: none;
+        background: transparent;
+        color: var(--text-dim);
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity .12s ease, color .12s ease;
+    }
+    .hub-nav-mute-btn::before { content: "🔔"; }
+    .hub-nav-item:hover .hub-nav-mute-btn { opacity: .5; }
+    .hub-nav-mute-btn:hover { opacity: 1 !important; color: var(--accent); }
+    .hub-nav-mute-btn.is-muted-full { opacity: .9; color: var(--danger); }
+    .hub-nav-mute-btn.is-muted-full::before { content: "🔕"; }
+    .hub-nav-mute-btn.is-muted-mentions-only { opacity: .9; color: var(--gold); }
+    .hub-nav-mute-btn.is-muted-mentions-only::before { content: "🔖"; }
+
+    /* Mute seviyesi seçim menüsü (popover) -- bildirim butonuna
+       tıklanınca açılır: "Tüm Bildirimleri Kapat" / "Sadece Etiketler ve
+       Yanıtlar" / "Bildirimleri Aç" seçenekleri. */
+    .mute-menu-popover {
+        position: fixed;
+        z-index: 4200;
+        min-width: 240px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .mute-menu-title {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--text-dim);
+        padding: 6px 10px 4px;
+        font-family: var(--font-mono);
+    }
+    .mute-menu-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 7px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        text-align: left;
+        cursor: pointer;
+        transition: background .12s ease;
+    }
+    .mute-menu-option:hover { background: var(--accent-soft); }
+    .mute-menu-option.is-selected {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 700;
+    }
+    .mute-menu-option-icon { flex-shrink: 0; font-size: 1rem; }
+    .mute-menu-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 4190;
+        background: transparent;
+    }
+
     /* Mesaj/yorum vurgu animasyonu (scroll-to hedefi) */
     @keyframes msgHighlight {
         0%   { box-shadow: 0 0 0 3px rgba(102,252,241,0.7),
@@ -7404,6 +7567,7 @@
                     </svg>
                     Forum
                     <span class="hub-nav-reddot" id="forumUnreadDot"></span>
+                    <button type="button" class="hub-nav-mute-btn" id="forumMuteBtn" title="Forum bildirim ayarı"></button>
                 </div>
                 <div class="hub-nav-item" data-view="marketplace">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15942,6 +16106,15 @@
         function writeNotification(targetUid, data) {
             const myUid = window.CommunityAuth.user && window.CommunityAuth.user.uid;
             if (!targetUid || targetUid === myUid) return;
+            // 🔕 MUTE SİSTEMİ ENTEGRASYONU: hedef kullanıcı bu kaynağı
+            // (DM/Grup/Kanal/Forum) susturmuşsa, bildirimi KAYNAĞINDA hiç
+            // yazma. Bu tek kontrol sayesinde ses (playSound), toast,
+            // tarayıcı bildirimi ve "Sana Gelenler" kırmızı noktası aynı
+            // anda susar -- ayrı ayrı her tüketim noktasında tekrar
+            // kontrol etmeye gerek kalmaz. Etiket/yanıt (mention/reply)
+            // seviyesinde muaf tutma kararı isMutedForNotification içinde
+            // verilir (bkz. MuteSystem modülü).
+            if (window.MuteSystem && window.MuteSystem.isMutedForNotification(targetUid, data)) return;
             database.ref("notifications/" + targetUid).push(
                 Object.assign({ createdAt: firebase.database.ServerValue.TIMESTAMP }, data)
             ).catch(() => {}); // kritik değil — sessiz hata
@@ -20629,6 +20802,7 @@
                             <span class="cch-channel-item-name">${escAttr(ch.name || "kanal")}</span>
                             <span class="msg-chat-item-reddot cch-channel-reddot" data-cch-reddot="${escAttr(id)}" style="display:none;"></span>
                             ${locked}
+                            <button type="button" class="cch-channel-mute-btn" data-cch-mute-channel="${escAttr(id)}" data-cch-mute-key="${escAttr(groupId + "_" + id)}" title="Bildirim ayarı"></button>
                             ${canManage ? `<button type="button" class="cch-channel-item-menu-btn" data-cch-edit-channel="${escAttr(id)}" title="Düzenle">⚙</button>` : ""}
                         </div>
                     `;
@@ -20680,6 +20854,18 @@
                     btn.addEventListener("click", (e) => {
                         e.stopPropagation();
                         openCategoryEditModal(groupId, btn.getAttribute("data-cch-edit-category"));
+                    });
+                });
+                // 🔕 MUTE: her kanal satırındaki bildirim-ayarı butonuna
+                // tıklanınca MuteSystem'in seviye seçim menüsünü aç.
+                listEl.querySelectorAll("[data-cch-mute-channel]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (window.MuteSystem) {
+                            window.MuteSystem.openMuteMenu(btn, "channel", groupId + "_" + btn.getAttribute("data-cch-mute-channel"), {
+                                groupId, channelId: btn.getAttribute("data-cch-mute-channel")
+                            });
+                        }
                     });
                 });
                 // Kategori başlığına tıklayınca aç/kapa (katlanabilir liste).
@@ -22218,6 +22404,7 @@
                                 </div>
                             </div>
                             ${unread ? `<span class="msg-unread-badge">${e.unreadCount > 9 ? "9+" : e.unreadCount}</span>` : ''}
+                            <button type="button" class="msg-chat-item-mute-btn" data-dm-mute="${escapeAttr(e.dmId)}" title="Bildirim ayarı"></button>
                         </button>
                     `;
                 }).join("");
@@ -22227,6 +22414,15 @@
                         openDmConversation(btn.getAttribute("data-dm-id"), btn.getAttribute("data-other-uid"));
                     });
                 });
+                // 🔕 MUTE: DM satırındaki bildirim-ayarı butonu (tıklama
+                // sohbeti açmasın diye stopPropagation).
+                listEl.querySelectorAll("[data-dm-mute]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (window.MuteSystem) window.MuteSystem.openMuteMenu(btn, "dm", btn.getAttribute("data-dm-mute"), { scopeLabel: "levelless" });
+                    });
+                });
+                if (window.MuteSystem) window.MuteSystem.decorateDmMuteIcons(listEl);
             }
 
             function renderDmHeaderInfo(otherUid) {
@@ -22647,11 +22843,19 @@
                                 <span>${escapeAttr(makePreviewSnippet(e.lastMessage) || (Object.keys(e.members || {}).length + " üye"))}</span>
                             </div>
                         </div>
+                        <button type="button" class="msg-chat-item-mute-btn" data-group-mute="${escapeAttr(e.groupId)}" title="Bildirim ayarı"></button>
                     </button>
                 `).join("");
 
                 listEl.querySelectorAll(".msg-chat-item").forEach((btn) => {
                     btn.addEventListener("click", () => openGroupConversation(btn.getAttribute("data-group-id")));
+                });
+                // 🔕 MUTE: grup satırındaki bildirim-ayarı butonu.
+                listEl.querySelectorAll("[data-group-mute]").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (window.MuteSystem) window.MuteSystem.openMuteMenu(btn, "group", btn.getAttribute("data-group-mute"), { scopeLabel: "group_or_forum" });
+                    });
                 });
 
                 // Kırmızı Nokta: satırlara okunmamış nokta ekle/kaldır.
@@ -22961,6 +23165,17 @@
                 // aktif olarak zorla tazeliyoruz.
                 if (isCommunity && window.CommunityChannels && window.CommunityChannels.forceRefreshActiveMessages) {
                     window.CommunityChannels.forceRefreshActiveMessages(groupId);
+                    // 🐛 BUGFIX: kendi gönderdiğin mesaj, gönderim anında
+                    // channel'ın lastActivityAt'ini ilerlettiği için (bkz.
+                    // UnreadSystem.attachChannelReadTracking), SEN mesaj
+                    // attığında bile sidebar/nav'da "okunmamış" kırmızı
+                    // nokta belirebiliyordu -- kendi mesajın seni "okumamış"
+                    // gösteremez, o yüzden gönderim anında bu kanalı da
+                    // hemen okundu işaretliyoruz.
+                    if (window.UnreadSystem) {
+                        const sentChannelId = window.CommunityChannels.getActiveChannelId(groupId);
+                        if (sentChannelId) window.UnreadSystem.markChannelRead(groupId, sentChannelId);
+                    }
                 } else if (!isCommunity && _groupMessagesRef && _activeGroupId === groupId) {
                     // Normal (topluluk olmayan) gruplarda da aynı garanti:
                     // .on("value") dinleyicisinin kendisi zaten tetiklenecek
@@ -24620,10 +24835,24 @@
                     const actionHtml = iAmMember
                         ? `<span class="grp-community-joined-tag">✓ Üyesin</span>`
                         : `<button type="button" class="grp-community-join-btn" data-preview-gid="${escapeAttr(c.gid)}">Görüntüle</button>`;
+                    // 🔴 Kırmızı Nokta: hangi topluluktan geldiği belli
+                    // olsun diye artık her kartın kendi noktası var (sadece
+                    // üyesi olduğun topluluklarda, çünkü sadece onların
+                    // kanal içeriğini görebilirsin).
+                    const unreadDotHtml = (iAmMember && window.UnreadSystem && window.UnreadSystem.groupHasUnreadChannel(c.gid))
+                        ? `<span class="grp-community-reddot" title="Okunmamış mesaj var"></span>`
+                        : "";
+                    // Üyesi olduğun bir topluluğa tıklayınca artık ÖNİZLEME
+                    // modalı yerine DOĞRUDAN sohbete girer (data-enter-gid) --
+                    // "tıklayınca gitmiyor" şikayetinin çözümü. Üyesi
+                    // olmadığın topluluklarda eski önizleme akışı (data-preview-gid) kalır.
+                    const cardAttr = iAmMember
+                        ? `data-enter-gid="${escapeAttr(c.gid)}"`
+                        : `data-preview-gid="${escapeAttr(c.gid)}"`;
 
                     return `
-                        <div class="grp-community-card" data-preview-gid="${escapeAttr(c.gid)}">
-                            <div class="grp-community-avatar">${avatarHtml}</div>
+                        <div class="grp-community-card" ${cardAttr}>
+                            <div class="grp-community-avatar">${avatarHtml}${unreadDotHtml}</div>
                             <div class="grp-community-info">
                                 <div class="grp-community-name-row">
                                     <span>${escapeHtml(c.name || "İsimsiz Topluluk")}</span>
@@ -24640,6 +24869,15 @@
                     `;
                 }).join("");
 
+                // Üye olduğum toplulukların okunmamış kanal durumunu arka
+                // planda tara (kart render edilir edilmez), böylece kırmızı
+                // nokta topluluk hiç açılmamış olsa bile doğru görünsün.
+                if (window.UnreadSystem) {
+                    entries.forEach((c) => {
+                        if (_userGroupsCache[c.gid]) window.UnreadSystem.ensureChannelTrackingForGroup(c.gid);
+                    });
+                }
+
                 // Kart tıklamaları (avatar dahil tüm satır) önizlemeyi açsın;
                 // "Görüntüle" butonu da aynı işi yapar (event bubbling zaten
                 // kartın kendisine ulaşır, ayrıca dinleyiciye gerek yok).
@@ -24647,6 +24885,20 @@
                     el.addEventListener("click", (e) => {
                         e.stopPropagation();
                         openCommunityPreviewModal(el.getAttribute("data-preview-gid"));
+                    });
+                });
+
+                // Üyesi olduğum topluluklara tıklayınca ÖNİZLEME AÇMADAN
+                // doğrudan "Grup Sohbetleri" sekmesine geçip ilgili
+                // topluluğun sohbet ekranını açar -- "tıklayınca gitmiyor"
+                // şikayetinin çözümü. (openGroupConversation aynı
+                // MessagingSystem kapsamında tanımlı, doğrudan çağrılabilir.)
+                listEl.querySelectorAll("[data-enter-gid]").forEach((el) => {
+                    el.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        const gid = el.getAttribute("data-enter-gid");
+                        if (typeof switchView === "function") switchView("groups");
+                        openGroupConversation(gid);
                     });
                 });
             }
@@ -26199,6 +26451,330 @@
         window.openCommunityPreviewModal = MessagingSystem.openCommunityPreviewModal;
 
         // ════════════════════════════════════════════════════════════════
+        // 🔕 BİLDİRİM KAPATMA (MUTE) SİSTEMİ (MuteSystem)
+        // ════════════════════════════════════════════════════════════════
+        /**
+         * Kullanıcı bazlı, kaynak-bazlı bildirim susturma. DM / Grup /
+         * Topluluk Kanalı / Forum (Genel Sohbet, Yeni Konular) için ayrı
+         * ayrı, iki seviyeli bir tercih sunar:
+         *
+         *   "off"            -> susturma yok, normal bildirim davranışı.
+         *   "all"             -> "Tüm Bildirimleri Kapat": bu kaynaktan HİÇBİR
+         *                        bildirim (ses/toast/push/kırmızı nokta) üretilmez.
+         *   "mentions_only"   -> "Sadece Etiketler/Yanıtlar": sadece kendisine
+         *                        doğrudan mention (@kullanıcı), @everyone,
+         *                        @here veya reply (yanıt) bildirimleri geçer;
+         *                        düz mesajlar sessiz kalır. (DM'lerde her mesaj
+         *                        zaten "dm" tipinde sayıldığından bu mod DM'de
+         *                        "all" ile aynı davranır -- DM'in kendisi bir
+         *                        mention'dır.)
+         *
+         * Veri şeması (Firebase):
+         *   user_mutes/{myUid}/dm/{dmId}                 -> "all" | "mentions_only"
+         *   user_mutes/{myUid}/group/{groupId}            -> "all" | "mentions_only"
+         *   user_mutes/{myUid}/channel/{groupId}_{chId}    -> "all" | "mentions_only"
+         *   user_mutes/{myUid}/forum_general/general       -> "all" | "mentions_only"
+         *   user_mutes/{myUid}/forum_threads/threads       -> "all" | "mentions_only"
+         *
+         * Kayıt yoksa (anahtar hiç yazılmamışsa) susturma yok kabul edilir.
+         * Karar YEREL bir cache'te (in-memory) tutulur ve init() sırasında
+         * tek seferlik (once) okunur + canlı (on value) dinlenir, böylece
+         * başka bir cihazdan yapılan değişiklik de anında yansır.
+         */
+        const MuteSystem = (() => {
+            let _myUid = null;
+
+            // scope -> { id: "all"|"mentions_only" }
+            // scope değerleri: "dm", "group", "channel", "forum_general", "forum_threads"
+            const _cache = { dm: {}, group: {}, channel: {}, forum_general: {}, forum_threads: {} };
+
+            let _openMenuEl = null; // açık mute menüsü (varsa) - dışarı tıklayınca kapatmak için
+
+            // ── Firebase okuma / yazma ───────────────────────────────
+            function init(uid) {
+                _myUid = uid;
+                database.ref("user_mutes/" + uid).on("value", (snap) => {
+                    const all = snap.val() || {};
+                    ["dm", "group", "channel", "forum_general", "forum_threads"].forEach((scope) => {
+                        _cache[scope] = all[scope] || {};
+                    });
+                    // Tercihler değişince tüm görsel göstergeleri (nav
+                    // noktaları + satır ikonları) yeniden hesapla.
+                    if (window.UnreadSystem) {
+                        window.UnreadSystem.renderNavDots();
+                        window.UnreadSystem.decorateGroupChatList();
+                    }
+                    refreshAllMuteIcons();
+                });
+
+                // Forum nav butonu tek seferlik bağlanır (statik DOM öğesi).
+                const forumBtn = document.getElementById("forumMuteBtn");
+                if (forumBtn) {
+                    forumBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        openMuteMenu(forumBtn, "forum_general", "general", { scopeLabel: "forum" });
+                    });
+                }
+            }
+
+            function getLevel(scope, id) {
+                if (!id) return "off";
+                return (_cache[scope] && _cache[scope][id]) || "off";
+            }
+
+            function setLevel(scope, id, level) {
+                if (!_myUid || !id) return;
+                const path = "user_mutes/" + _myUid + "/" + scope + "/" + id;
+                if (level === "off") {
+                    database.ref(path).remove().catch((err) => console.error("[MuteSystem] silinemedi:", err));
+                } else {
+                    database.ref(path).set(level).catch((err) => console.error("[MuteSystem] yazılamadı:", err));
+                }
+                // Optimistik yerel güncelleme -- Firebase yankısını beklemeden
+                // arayüz anında tepki versin.
+                _cache[scope] = _cache[scope] || {};
+                if (level === "off") { delete _cache[scope][id]; } else { _cache[scope][id] = level; }
+                if (window.UnreadSystem) {
+                    window.UnreadSystem.renderNavDots();
+                    window.UnreadSystem.decorateGroupChatList();
+                }
+                refreshAllMuteIcons();
+            }
+
+            // ── Sorgu yardımcıları ───────────────────────────────────
+            /** Bu kaynak "Tüm Bildirimleri Kapat" (all) seviyesinde mi? */
+            function isFullyMuted(scope, id) {
+                return getLevel(scope, id) === "all";
+            }
+            /** "channel" kapsamı için "groupId_channelId" anahtarını doğrudan kabul eden kısayol. */
+            function isChannelKeyFullyMuted(key) {
+                return getLevel("channel", key) === "all";
+            }
+
+            /**
+             * writeNotification() ve NotificationSystem.trigger() tarafından
+             * çağrılır. `targetUid` bildirim gidecek kullanıcı, `data` ise
+             * { type, dmId, groupId, channelId, context } içerebilir.
+             * SADECE hedef kullanıcı BEN isem (yani kendi mute tercihlerim
+             * geçerliyse) anlamlıdır -- targetUid karşılaştırması burada
+             * yapılmaz çünkü çağıran taraflar zaten "bu bildirim kime
+             * gidiyor" bağlamında çalışır; MuteSystem sadece "bu bildirim
+             * hedefin kendi tercihlerine göre bastırılmalı mı" sorusuna
+             * cevap verir (targetUid parametresi ileride çok-kullanıcılı
+             * sunucu-taraf mute kontrolüne genişletilebilsin diye tutulur,
+             * şu an için _myUid ile aynı varsayılır çünkü mute tercihleri
+             * her zaman İZLEYEN kullanıcının kendi node'unda tutulur ve
+             * client-side hesaplanır).
+             */
+            function isMutedForNotification(targetUid, data) {
+                if (!data) return false;
+                const type = data.type;
+                // Etiket/yanıt sayılan tipler: mention (@kullanıcı, @everyone,
+                // @here dahil -- hepsi writeNotification'a type:"mention" ile
+                // geliyor, bkz. notifyEveryoneOrHere) ve reply.
+                const isMentionOrReply = (type === "mention" || type === "reply");
+
+                if (data.dmId) {
+                    const level = getLevel("dm", data.dmId);
+                    if (level === "off") return false;
+                    // DM'de "mentions_only" da "all" gibi davranır: bir DM
+                    // mesajının kendisi zaten doğrudan kullanıcıya yönelik
+                    // bir "etiket" niteliğindedir, bu yüzden ayrım anlamsız
+                    // -- her iki seviye de DM akışını tamamen susturur.
+                    return true;
+                }
+                if (data.channelId && data.groupId) {
+                    const key = data.groupId + "_" + data.channelId;
+                    const level = getLevel("channel", key);
+                    if (level === "off") return false;
+                    if (level === "all") return true;
+                    if (level === "mentions_only") return !isMentionOrReply; // mention/reply DEĞİLSE bastır
+                    return false;
+                }
+                if (data.groupId) {
+                    const level = getLevel("group", data.groupId);
+                    if (level === "off") return false;
+                    if (level === "all") return true;
+                    if (level === "mentions_only") return !isMentionOrReply;
+                    return false;
+                }
+                // Forum (Genel Sohbet / Konular) -- context alanına göre
+                // hangi forum alt-kapsamına ait olduğunu ayırt ediyoruz.
+                // context === "message" -> Genel Sohbet canlı akışı.
+                // context === "thread" | "reply" -> Yeni Konular (thread'ler).
+                if (data.context === "message" || (!data.groupId && !data.dmId && type !== "mention" && type !== "reply" && !data.context)) {
+                    const level = getLevel("forum_general", "general");
+                    if (level === "off") return false;
+                    if (level === "all") return true;
+                    if (level === "mentions_only") return !isMentionOrReply;
+                }
+                if (data.context === "thread" || data.context === "reply" || data.threadId) {
+                    const level = getLevel("forum_threads", "threads");
+                    if (level === "off") return false;
+                    if (level === "all") return true;
+                    if (level === "mentions_only") return !isMentionOrReply;
+                }
+                return false;
+            }
+
+            // ── Görsel: satır/nav ikonlarını güncelle ────────────────
+            function applyIconClass(el, level) {
+                if (!el) return;
+                el.classList.remove("is-muted-full", "is-muted-mentions-only");
+                if (level === "all") el.classList.add("is-muted-full");
+                else if (level === "mentions_only") el.classList.add("is-muted-mentions-only");
+            }
+
+            function decorateMuteIcon(rowEl, scope, id) {
+                const btn = rowEl.querySelector("[data-dm-mute], [data-group-mute]");
+                if (btn) applyIconClass(btn, getLevel(scope, id));
+            }
+
+            function decorateDmMuteIcons(listEl) {
+                if (!listEl) return;
+                listEl.querySelectorAll("[data-dm-mute]").forEach((btn) => {
+                    applyIconClass(btn, getLevel("dm", btn.getAttribute("data-dm-mute")));
+                });
+            }
+
+            function decorateChannelMuteIcons(listEl) {
+                if (!listEl) return;
+                listEl.querySelectorAll("[data-cch-mute-key]").forEach((btn) => {
+                    applyIconClass(btn, getLevel("channel", btn.getAttribute("data-cch-mute-key")));
+                });
+            }
+
+            function refreshAllMuteIcons() {
+                decorateDmMuteIcons(document.getElementById("dmChatList"));
+                document.querySelectorAll("[data-group-mute]").forEach((btn) => {
+                    applyIconClass(btn, getLevel("group", btn.getAttribute("data-group-mute")));
+                });
+                // Kanal butonları artık kendi tam anahtarını (data-cch-mute-key
+                // = "groupId_channelId") doğrudan taşıyor, bu yüzden hangi
+                // topluluğun açık olduğunu ayrıca bilmeye gerek yok -- DOM'da
+                // ne varsa (sadece açık topluluğun sidebar'ı render edilir)
+                // onu güncelliyoruz.
+                decorateChannelMuteIcons(document.getElementById("cchChannelList"));
+                const forumBtn = document.getElementById("forumMuteBtn");
+                if (forumBtn) {
+                    // İki forum alt-kapsamından herhangi biri "all" ise
+                    // kırmızı, sadece biri "mentions_only" ise altın renk
+                    // gösterilir (en kısıtlayıcı durum önceliklidir).
+                    const g = getLevel("forum_general", "general");
+                    const t = getLevel("forum_threads", "threads");
+                    const worst = (g === "all" || t === "all") ? "all"
+                        : (g === "mentions_only" || t === "mentions_only") ? "mentions_only" : "off";
+                    applyIconClass(forumBtn, worst);
+                }
+            }
+
+            // ── Görsel: seviye seçim menüsü (popover) ────────────────
+            const LEVEL_LABELS = {
+                off: { icon: "🔔", text: "Bildirimleri Aç (Varsayılan)" },
+                mentions_only: { icon: "🔖", text: "Sadece Etiketler / Yanıtlar" },
+                all: { icon: "🔕", text: "Tüm Bildirimleri Kapat" }
+            };
+
+            function closeMuteMenu() {
+                if (_openMenuEl) { _openMenuEl.remove(); _openMenuEl = null; }
+                const backdrop = document.querySelector(".mute-menu-backdrop");
+                if (backdrop) backdrop.remove();
+            }
+
+            /**
+             * `anchorEl` -- menüyü konumlandırmak için referans DOM öğesi
+             *              (tıklanan bildirim butonu).
+             * `scope`    -- "dm" | "group" | "channel" | "forum_general"
+             * `id`       -- ilgili kaynağın anahtarı (dmId / groupId /
+             *              "groupId_channelId" / "general").
+             * `opts.scopeLabel` -- menü başlığında gösterilecek bağlam metni.
+             */
+            function openMuteMenu(anchorEl, scope, id, opts) {
+                closeMuteMenu();
+                opts = opts || {};
+
+                const backdrop = document.createElement("div");
+                backdrop.className = "mute-menu-backdrop";
+                backdrop.addEventListener("click", closeMuteMenu);
+                document.body.appendChild(backdrop);
+
+                const current = getLevel(scope, id);
+                const rect = anchorEl.getBoundingClientRect();
+
+                const menu = document.createElement("div");
+                menu.className = "mute-menu-popover";
+
+                const titleMap = {
+                    dm: "DM Bildirimleri",
+                    group: "Grup Bildirimleri",
+                    channel: "Kanal Bildirimleri",
+                    forum_general: "Forum Bildirimleri (Genel Sohbet + Konular)"
+                };
+                const title = document.createElement("div");
+                title.className = "mute-menu-title";
+                title.textContent = titleMap[scope] || "Bildirim Ayarı";
+                menu.appendChild(title);
+
+                // DM'ler için "Sadece Etiketler/Yanıtlar" seçeneği anlamsız
+                // (her DM mesajı zaten doğrudan kullanıcıya yönelik) -- bu
+                // yüzden DM kapsamında sadece "Aç" / "Tüm Bildirimleri Kapat"
+                // gösterilir. Grup/Kanal/Forum kapsamında üç seçenek de sunulur.
+                const levelsToShow = (scope === "dm") ? ["off", "all"] : ["off", "mentions_only", "all"];
+
+                levelsToShow.forEach((lvl) => {
+                    const info = LEVEL_LABELS[lvl];
+                    const optBtn = document.createElement("button");
+                    optBtn.type = "button";
+                    optBtn.className = "mute-menu-option" + (current === lvl ? " is-selected" : "");
+                    optBtn.innerHTML = `<span class="mute-menu-option-icon">${info.icon}</span><span>${info.text}</span>`;
+                    optBtn.addEventListener("click", () => {
+                        // "forum_general" scope'u seçildiğinde, aynı kararı
+                        // forum_threads'e de uygula -- kullanıcı için "Forum"
+                        // tek bir anahtar gibi görünüyor (ayrı kanal/DM/grup
+                        // seviyesinde olduğu gibi ayrıştırma istenmiyor,
+                        // tek bir Forum nav öğesi var).
+                        if (scope === "forum_general") {
+                            setLevel("forum_general", "general", lvl);
+                            setLevel("forum_threads", "threads", lvl);
+                        } else {
+                            setLevel(scope, id, lvl);
+                        }
+                        closeMuteMenu();
+                    });
+                    menu.appendChild(optBtn);
+                });
+
+                document.body.appendChild(menu);
+                _openMenuEl = menu;
+
+                // Konumlandırma: buton altında, ekran dışına taşarsa yukarı/sola kaydır.
+                const menuRect = menu.getBoundingClientRect();
+                let top = rect.bottom + 6;
+                let left = rect.left;
+                if (left + menuRect.width > window.innerWidth - 8) left = window.innerWidth - menuRect.width - 8;
+                if (top + menuRect.height > window.innerHeight - 8) top = rect.top - menuRect.height - 6;
+                menu.style.top = Math.max(8, top) + "px";
+                menu.style.left = Math.max(8, left) + "px";
+            }
+
+            return {
+                init,
+                getLevel,
+                setLevel,
+                isFullyMuted,
+                isChannelKeyFullyMuted,
+                isMutedForNotification,
+                openMuteMenu,
+                closeMuteMenu,
+                decorateMuteIcon,
+                decorateDmMuteIcons,
+                decorateChannelMuteIcons,
+                refreshAllMuteIcons
+            };
+        })();
+        window.MuteSystem = MuteSystem;
+
+        // ════════════════════════════════════════════════════════════════
         // OKUNMAMIŞ İÇERİK / KIRMIZI NOKTA SİSTEMİ (UnreadSystem)
         // ════════════════════════════════════════════════════════════════
         /**
@@ -26235,19 +26811,88 @@
             const _channelReadListeners = {};
 
             // ── Yardımcılar ──────────────────────────────────────────
+            // 🔕 MUTE SİSTEMİ ENTEGRASYONU: dm_inbox/{uid}/{dmId}.unreadCount
+            // sunucu tarafında (increment) tutulduğu için, DM susturulmuş
+            // olsa bile sayaç artmaya devam eder -- writeNotification
+            // guard'ı SADECE bildirim/ses/toast'ı keser, gerçek okunmamış
+            // sayaç mekanizmasına dokunmaz (kasıtlı: mesaj hâlâ "okunmadı"
+            // sayılmalı, sadece rozet/ses görünmemeli). Bu yüzden rozet
+            // görünürlüğünü belirleyen anyDmUnread/anyGroupUnread/
+            // anyChannelUnread fonksiyonları burada MuteSystem.isFullyMuted
+            // ile filtrelenir; "Sadece Etiket/Yanıt" seviyesindeki
+            // susturmalarda ise genel var/yok rozeti (nav noktası) yine
+            // gösterilir çünkü mention dışı normal mesajlar okunmamış
+            // sayılmaya devam eder.
             function anyDmUnread() {
-                return Object.values(_dmState).some((s) => (s.unreadCount || 0) > 0);
+                return Object.entries(_dmState).some(([dmId, s]) => {
+                    if ((s.unreadCount || 0) <= 0) return false;
+                    if (window.MuteSystem && window.MuteSystem.isFullyMuted("dm", dmId)) return false;
+                    return true;
+                });
             }
             function anyGroupUnread() {
-                return Object.values(_groupState).some((s) => (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+                return Object.entries(_groupState).some(([gid, s]) => {
+                    if (!((s.lastActivityAt || 0) > (s.lastReadAt || 0))) return false;
+                    if (window.MuteSystem && window.MuteSystem.isFullyMuted("group", gid)) return false;
+                    return true;
+                });
             }
             function anyChannelUnread() {
-                return Object.values(_channelState).some((s) => (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+                return Object.entries(_channelState).some(([key, s]) => {
+                    if (!((s.lastActivityAt || 0) > (s.lastReadAt || 0))) return false;
+                    if (window.MuteSystem && window.MuteSystem.isChannelKeyFullyMuted(key)) return false;
+                    return true;
+                });
+            }
+            /**
+             * Belirli bir topluluğun (groupId) TAKİP EDİLEN kanallarından
+             * herhangi birinde okunmamış mesaj var mı? _channelState
+             * anahtarları "groupId_channelId" formatında olduğu için
+             * önek eşleşmesiyle filtreleniyor. Topluluklar listesindeki
+             * kartlara "hangi topluluktan geldiği belli değil" sorununu
+             * çözmek için kullanılır (bkz. renderCommunityList).
+             *
+             * NOT: sadece daha önce en az bir kez açılmış/taranmış (yani
+             * attachChannelReadTracking çağrılmış) kanallar için doğru
+             * sonuç verir -- hiç açılmamış bir topluluğun kanalları henüz
+             * _channelState'te yoktur. Bu, mevcut mimarinin (kanal listesi
+             * DOM'a basılınca lazy tarama) doğal bir sınırıdır; topluluk
+             * listesi render edildiğinde tüm üye olunan topluluklar için
+             * kanal taramasını proaktif başlatan ensureChannelTrackingForGroup
+             * ile bu sınır aşağıda giderilir.
+             */
+            function groupHasUnreadChannel(groupId) {
+                const prefix = groupId + "_";
+                return Object.keys(_channelState).some((key) => {
+                    if (!key.startsWith(prefix)) return false;
+                    const s = _channelState[key];
+                    if (!((s.lastActivityAt || 0) > (s.lastReadAt || 0))) return false;
+                    // 🔕 MUTE: tamamen susturulmuş bir kanal, topluluk
+                    // kartındaki "okunmamış var" işaretini tetiklemesin.
+                    if (window.MuteSystem && window.MuteSystem.isChannelKeyFullyMuted(key)) return false;
+                    return true;
+                });
+            }
+            /**
+             * Üye olunan bir topluluğun kanal listesini AÇMADAN, sadece
+             * "kanalları var mı, okunmamış mı" bilgisini arka planda almak
+             * için: topluluğun channels düğümünü bir kez okuyup her kanal
+             * için attachChannelReadTracking'i başlatır (zaten dinleniyorsa
+             * fonksiyon içi guard sayesinde tekrar abone olmaz). Topluluklar
+             * sayfası açıldığında, üye olunan HER topluluk için çağrılır.
+             */
+            function ensureChannelTrackingForGroup(groupId) {
+                database.ref("group_chats/" + groupId + "/channels").once("value").then((snap) => {
+                    const channels = snap.val() || {};
+                    Object.keys(channels).forEach((chId) => attachChannelReadTracking(groupId, chId));
+                }).catch(() => { /* izin yoksa veya topluluk değilse sessizce geç */ });
             }
             function forumGeneralUnread() {
+                if (window.MuteSystem && window.MuteSystem.isFullyMuted("forum_general", "general")) return false;
                 return (_forumGeneralState.lastActivityAt || 0) > (_forumGeneralState.lastReadAt || 0);
             }
             function forumThreadsUnread() {
+                if (window.MuteSystem && window.MuteSystem.isFullyMuted("forum_threads", "threads")) return false;
                 return (_forumThreadsState.lastActivityAt || 0) > (_forumThreadsState.lastReadAt || 0);
             }
 
@@ -26275,7 +26920,11 @@
                 listEl.querySelectorAll(".msg-chat-item[data-group-id]").forEach((btn) => {
                     const gid = btn.getAttribute("data-group-id");
                     const s = _groupState[gid];
-                    const unread = !!(s && (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+                    // 🔕 MUTE: tamamen susturulmuş bir grup için kırmızı
+                    // nokta hiçbir zaman çizilmez (mesaj hâlâ okunmamış
+                    // sayılabilir ama görsel gösterge bastırılır).
+                    const muted = window.MuteSystem && window.MuteSystem.isFullyMuted("group", gid);
+                    const unread = !muted && !!(s && (s.lastActivityAt || 0) > (s.lastReadAt || 0));
                     let dot = btn.querySelector(".msg-chat-item-reddot");
                     if (unread && !dot) {
                         dot = document.createElement("span");
@@ -26284,6 +26933,7 @@
                     } else if (!unread && dot) {
                         dot.remove();
                     }
+                    if (window.MuteSystem) window.MuteSystem.decorateMuteIcon(btn, "group", gid);
                 });
             }
 
@@ -26295,9 +26945,13 @@
                     const chId = dotEl.getAttribute("data-cch-reddot");
                     const key = groupId + "_" + chId;
                     const s = _channelState[key];
-                    const unread = !!(s && (s.lastActivityAt || 0) > (s.lastReadAt || 0));
+                    // 🔕 MUTE: kanal tamamen susturulmuşsa kırmızı nokta
+                    // gösterilmez.
+                    const muted = window.MuteSystem && window.MuteSystem.isChannelKeyFullyMuted(key);
+                    const unread = !muted && !!(s && (s.lastActivityAt || 0) > (s.lastReadAt || 0));
                     dotEl.style.display = unread ? "inline-block" : "none";
                 });
+                if (window.MuteSystem) window.MuteSystem.decorateChannelMuteIcons(listEl);
             }
 
             // ── GRUPLAR: her grup için okuma zamanı + son aktivite ────
@@ -26351,9 +27005,20 @@
                 _channelListeners[key] = msgRef;
                 msgRef.on("value", (snap) => {
                     let lastAt = 0;
-                    snap.forEach((child) => { lastAt = (child.val() && child.val().createdAt) || 0; });
+                    let lastAuthorUid = null;
+                    snap.forEach((child) => {
+                        lastAt = (child.val() && child.val().createdAt) || 0;
+                        lastAuthorUid = (child.val() && child.val().authorUid) || null;
+                    });
                     _channelState[key] = _channelState[key] || { lastActivityAt: 0, lastReadAt: 0 };
-                    _channelState[key].lastActivityAt = lastAt;
+                    // 🐛 BUGFIX: son mesajı BEN yazdıysam bu kanalı asla
+                    // "okunmamış" gösterme -- saat senkronizasyonuna bağlı
+                    // (Date.now() vs sunucu ServerValue.TIMESTAMP) bir
+                    // markChannelRead yarışına güvenmek yerine, kaynağında
+                    // (yazar kontrolüyle) engelliyoruz. Böylece kendi
+                    // mesajın hiçbir zaman sana bildirim/kırmızı nokta
+                    // tetiklemez.
+                    _channelState[key].lastActivityAt = (lastAuthorUid === _myUid) ? _channelState[key].lastReadAt : lastAt;
                     renderNavDots();
                     decorateChannelList(groupId);
                 });
@@ -26477,6 +27142,8 @@
                 markChannelRead,
                 attachChannelReadTracking,
                 scanVisibleChannelsForTracking,
+                groupHasUnreadChannel,
+                ensureChannelTrackingForGroup,
                 markForumGeneralRead,
                 markForumThreadsRead,
                 renderNavDots,
@@ -26605,6 +27272,17 @@
                 // Kullanıcı bildirimleri kapatmışsa (bkz. profil sayfasındaki
                 // "Bildirimler" toggle'ı) hiçbir şey çalma/gösterme.
                 if (getDecision() === "off") return;
+
+                // 🔕 MUTE SİSTEMİ ENTEGRASYONU (savunma katmanı): normalde
+                // writeNotification() zaten susturulmuş hedefler için hiç
+                // bildirim yazmadığından attachListener buraya ulaşmaz.
+                // Ama maybeNotifySelfMention gibi bazı çağrılar Firebase'e
+                // hiç dokunmadan DOĞRUDAN trigger() çağırıyor -- bu yüzden
+                // burada da aynı kontrolü tekrarlıyoruz ki susturulmuş bir
+                // DM/grup/kanal/forumdan gelen client-side tetikleme de
+                // ses/toast/push bildirimi üretmesin.
+                const _meta0 = Object.assign({ type }, meta || {});
+                if (window.MuteSystem && window.MuteSystem.isMutedForNotification(_myUid, _meta0)) return;
 
                 // Ses her zaman çal (permission bağımsız; kullanıcı sayfadaysa duyar)
                 playSound();
@@ -27877,6 +28555,12 @@
 
         document.addEventListener("communitystudio:auth-ready", (e) => {
             showHubShell(e.detail.user, e.detail.profile);
+            // 🔕 MUTE SİSTEMİ: NotificationSystem/UnreadSystem'den ÖNCE
+            // başlatılır ki ilk bildirim/rozet hesaplamaları zaten doğru
+            // mute durumunu görsün (init() içindeki once/on okumaları
+            // asenkron olduğu için kesin bir sıralama garantisi değildir,
+            // ama önce çağırmak ilk kare için en iyi ihtimali verir).
+            if (window.MuteSystem) window.MuteSystem.init(e.detail.user.uid);
             NotificationSystem.init(e.detail.user.uid);
             InboxSystem.init(e.detail.user.uid);
             MessagingSystem.init(e.detail.user.uid);
