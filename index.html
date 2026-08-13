@@ -6501,6 +6501,20 @@
         grid-template-columns: repeat(7, 1fr);
         gap: 8px;
     }
+    /* Mobilde 7 sütun sığmadığı için 3'lü satırlara bölünüyor (3+3+1);
+       7. gün (son eleman) tek başına kalan satırın TAMAMINI kaplar. */
+    @media (max-width: 860px) {
+        .daily-reward-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .daily-reward-day:nth-child(7) {
+            grid-column: 1 / -1;
+            aspect-ratio: auto;
+            flex-direction: row;
+            gap: 8px;
+            padding: 10px;
+        }
+    }
     .daily-reward-day {
         aspect-ratio: 1 / 1.05;
         border-radius: 10px;
