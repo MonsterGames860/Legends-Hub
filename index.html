@@ -2052,12 +2052,14 @@
         position: sticky;
         top: 0;
         height: 100vh;
+        overflow-y: auto;
     }
 
     .hub-brand {
         display: flex;
         align-items: center;
         gap: 10px;
+        flex-shrink: 0;
     }
 
     .hub-brand-mark {
@@ -2095,6 +2097,9 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     .hub-nav-item {
@@ -2145,6 +2150,7 @@
         border: 1px solid var(--line);
         cursor: pointer;
         transition: border-color 0.15s ease, background 0.15s ease;
+        flex-shrink: 0;
     }
 
     .hub-mini-profile:hover,
@@ -2220,6 +2226,7 @@
             transform: translateX(-100%);
             transition: transform 0.22s ease;
             box-shadow: 8px 0 30px rgba(0,0,0,0.4);
+            overflow-y: auto;
         }
 
         .hub-sidebar.is-open {
@@ -6389,6 +6396,7 @@
         align-items: center;
         gap: 8px;
         margin-top: 2px;
+        flex-shrink: 0;
     }
 
     .coin-balance-pill {
@@ -6404,44 +6412,26 @@
         cursor: default;
     }
 
-    /* Pixel-art coin ikonu: 7x7'lik bir ızgara, box-shadow ile
-       piksel piksel çizilmiş. Böylece harici bir görsele ihtiyaç
-       duymadan "8-bit" bir sikke elde ediliyor. */
+    /* Pixel-art coin ikonu: gerçek 8 karelik sprite sheet (base64 PNG,
+       kaynak: "Spinning pixel coin" by irmirx, opengameart.org, CC-BY 3.0,
+       kendi renk paletimize uyarlanarak yeniden çizildi) kullanılarak
+       CSS steps() ile kare-kare oynatılıyor -- box-shadow ile "sahte"
+       piksel çizmek yerine gerçek bir animasyon-şeridi kullanıyoruz. */
     .coin-pixel-icon {
-        --p: 2px; /* piksel boyutu */
-        width: calc(var(--p) * 7);
-        height: calc(var(--p) * 7);
-        position: relative;
+        --frame-w: 14px;
+        --frame-h: 16px;
+        width: var(--frame-w);
+        height: var(--frame-h);
         flex-shrink: 0;
-        animation: coinSpin 2.6s linear infinite;
-        transform-style: preserve-3d;
+        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHAAAAAQCAYAAADOFPsRAAABkElEQVR4nO1ZSY6DMBDsRpznno+heQOHPGYOeUOUj3FOPuA5ABnbE3d3tQFloSSkgF0uuspsDlOE85ECCfj+IZbad2yPdv5xPlLoerV/yEOsDb3EX3uyzLpb6eQo6aJ+tjOp64n4IJ/MFPA9RG/o8ckK/CIv5sf71jAyXVXHq4fW5/Gz/df8FYhuTGH4OyQFq4WuwcsvFGsOA9X16qE6aP+G6H5ljeEpeDhDJl4YKAk+/i1h5s39rTw+pJsVcQ2GGV+tB9cH+NkkJ8gMPQ+6ntTQJYO8bTHyItcGoofW5/EzCTBcKeS3Tw3MzHTb/uW0aMCL66F+NlLj5TRuEsJ1fLAvcRVoWq8OS32on2KAHrx7CFtD83PxAGuw5i3wGbBGfWKAXY+LIv2l2fUOV/IS9Wl+NshgeV8LT32GDvI+Mq61DrSGGj2kPo+fyYd8aXBJ9FGbNYTpI9iy+qBqoy9RnpcuVM9TH+pniwhdTunyUW0A8RiF4xDPugoTcz0cRA+pz+PnIgvTEm//BwPH7ucH4RfVE/D7q57SXgAAAABJRU5ErkJggg==");
+        background-repeat: no-repeat;
+        background-size: calc(var(--frame-w) * 8) var(--frame-h);
+        image-rendering: pixelated;
+        animation: coinSpriteSpin 1.6s steps(8) infinite;
     }
-    .coin-pixel-icon::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-color: transparent;
-        box-shadow:
-            calc(var(--p)*2) 0 0 var(--p) var(--gold),
-            calc(var(--p)*3) 0 0 var(--p) var(--gold),
-            var(--p) var(--p) 0 var(--p) var(--gold),
-            calc(var(--p)*4) var(--p) 0 var(--p) #ffe08a,
-            0 calc(var(--p)*2) 0 var(--p) var(--gold),
-            calc(var(--p)*5) calc(var(--p)*2) 0 var(--p) #c99a2e,
-            0 calc(var(--p)*3) 0 var(--p) var(--gold),
-            calc(var(--p)*5) calc(var(--p)*3) 0 var(--p) #c99a2e,
-            var(--p) calc(var(--p)*4) 0 var(--p) var(--gold),
-            calc(var(--p)*4) calc(var(--p)*4) 0 var(--p) #c99a2e,
-            calc(var(--p)*2) calc(var(--p)*5) 0 var(--p) var(--gold),
-            calc(var(--p)*3) calc(var(--p)*5) 0 var(--p) var(--gold);
-        filter: drop-shadow(0 0 3px rgba(245,197,66,0.55));
-    }
-    @keyframes coinSpin {
-        0%   { transform: rotateY(0deg) scale(1); }
-        45%  { transform: rotateY(180deg) scale(0.78); }
-        50%  { transform: rotateY(180deg) scale(0.78); filter: brightness(1.3); }
-        95%  { transform: rotateY(360deg) scale(1); }
-        100% { transform: rotateY(360deg) scale(1); }
+    @keyframes coinSpriteSpin {
+        from { background-position: 0 0; }
+        to   { background-position: calc(var(--frame-w) * -8) 0; }
     }
     @media (prefers-reduced-motion: reduce) {
         .coin-pixel-icon { animation: none; }
@@ -14128,7 +14118,7 @@
                     cellsHtml += `
                         <div class="daily-reward-day ${stateClass}" data-day="${dayNum}">
                             <span class="drd-num">Gün ${dayNum}</span>
-                            <span class="coin-pixel-icon" style="--p:1.5px;"></span>
+                            <span class="coin-pixel-icon" style="--frame-w:10px; --frame-h:11px;"></span>
                             <span class="drd-amount">${amount}</span>
                         </div>`;
                 }
