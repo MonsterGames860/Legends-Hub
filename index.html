@@ -7666,6 +7666,392 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    /* ================================================================
+       PLAY LEGENDS — ÖZEL OYUNCU ROZETLERİ (GÖRSEL İLK SÜRÜM)
+       Rozetler profil içinde ayrı bir alan olarak değil, kullanıcı adının
+       yanında küçük tıklanabilir işaretler olarak görünür.
+       ================================================================ */
+    .pl-badge-demo {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 9000;
+        width: min(420px, calc(100vw - 24px));
+        color: var(--text-primary, #e4e6eb);
+        background: linear-gradient(145deg, rgba(20, 27, 34, .98), rgba(11, 15, 20, .98));
+        border: 1px solid rgba(102, 252, 241, .24);
+        border-radius: 18px;
+        box-shadow: 0 18px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03) inset;
+        overflow: hidden;
+        font-family: var(--font-display, "Segoe UI", sans-serif);
+        backdrop-filter: blur(16px);
+    }
+    .pl-badge-demo::before {
+        content: "";
+        display: block;
+        height: 2px;
+        background: linear-gradient(90deg, #49e3a2, #36c6ef, #9b6cff);
+    }
+    .pl-badge-demo__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 16px 10px;
+    }
+    .pl-badge-demo__eyebrow {
+        color: #66fcf1;
+        font: 700 .64rem/1 var(--font-mono, monospace);
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+    .pl-badge-demo__title {
+        margin-top: 5px;
+        color: #f4f7fb;
+        font-size: 1rem;
+        font-weight: 750;
+    }
+    .pl-badge-demo__sub {
+        margin-top: 4px;
+        color: #8794a3;
+        font-size: .72rem;
+        line-height: 1.45;
+    }
+    .pl-badge-role {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 9px;
+        border: 1px solid rgba(245,197,66,.28);
+        border-radius: 999px;
+        background: rgba(245,197,66,.09);
+        color: #f5c542;
+        font: 700 .62rem/1 var(--font-mono, monospace);
+        white-space: nowrap;
+    }
+    .pl-badge-demo__section {
+        padding: 0 16px 14px;
+    }
+    .pl-badge-demo__section-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        color: #8794a3;
+        font: 700 .64rem/1 var(--font-mono, monospace);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    .pl-badge-rail {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+    }
+    .pl-badge-chip {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        padding: 8px;
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 11px;
+        background: rgba(255,255,255,.035);
+        color: #d8e0e8;
+        cursor: pointer;
+        text-align: left;
+        transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+    .pl-badge-chip:hover,
+    .pl-badge-chip:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--badge-color);
+        background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+        outline: none;
+    }
+    .pl-badge-chip__icon {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        color: var(--badge-color);
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+    }
+    .pl-badge-chip__icon svg { width: 22px; height: 22px; }
+    .pl-badge-chip__name {
+        overflow: hidden;
+        color: #f1f5f8;
+        font-size: .68rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .pl-badge-chip__hint {
+        margin-top: 2px;
+        color: #728091;
+        font-size: .58rem;
+        white-space: nowrap;
+    }
+    .pl-badge-users {
+        display: grid;
+        gap: 6px;
+    }
+    .pl-badge-user {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid rgba(255,255,255,.065);
+        border-radius: 10px;
+        background: rgba(255,255,255,.025);
+    }
+    .pl-badge-user__identity {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        gap: 8px;
+    }
+    .pl-badge-user__avatar {
+        display: grid;
+        place-items: center;
+        width: 25px;
+        height: 25px;
+        flex: 0 0 25px;
+        border-radius: 50%;
+        background: #202c38;
+        color: #dce8f1;
+        font: 700 .65rem/1 var(--font-mono, monospace);
+    }
+    .pl-badge-user__name {
+        overflow: hidden;
+        color: #e6edf3;
+        font-size: .74rem;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .pl-badge-user__badges {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        margin-left: 2px;
+    }
+    .pl-inline-badge {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--badge-color);
+        cursor: pointer;
+        transition: transform .14s ease, background .14s ease;
+        vertical-align: middle;
+    }
+    .pl-inline-badge:hover,
+    .pl-inline-badge:focus-visible {
+        transform: scale(1.18);
+        background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+        outline: none;
+    }
+    .pl-inline-badge svg { width: 17px; height: 17px; }
+    .pl-badge-user__action {
+        flex-shrink: 0;
+        padding: 5px 8px;
+        border: 1px solid rgba(102,252,241,.2);
+        border-radius: 7px;
+        background: rgba(102,252,241,.07);
+        color: #66fcf1;
+        cursor: pointer;
+        font: 700 .61rem/1 var(--font-mono, monospace);
+    }
+    .pl-badge-user__action:hover { background: rgba(102,252,241,.15); }
+    .pl-assign-select {
+        max-width: 104px;
+        height: 27px;
+        padding: 0 5px;
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 6px;
+        background: #0d1217;
+        color: #aebbc7;
+        font: .6rem/1 var(--font-display, sans-serif);
+    }
+    .pl-assign-select:focus {
+        border-color: #66fcf1;
+        outline: none;
+    }
+    .pl-badge-demo__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 16px 13px;
+        border-top: 1px solid rgba(255,255,255,.06);
+        color: #758394;
+        font-size: .64rem;
+    }
+    .pl-badge-demo__manage {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #66fcf1;
+        cursor: pointer;
+        font: 700 .64rem/1 var(--font-mono, monospace);
+    }
+    .pl-badge-demo__manage:hover { color: #b4fffa; }
+    .pl-badge-manager {
+        display: none;
+        padding: 0 16px 15px;
+        border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .pl-badge-manager.is-open { display: block; }
+    .pl-badge-manager__note {
+        margin: 11px 0 8px;
+        color: #8b98a6;
+        font-size: .68rem;
+        line-height: 1.45;
+    }
+    .pl-badge-manager__form {
+        display: grid;
+        grid-template-columns: 42px minmax(0,1fr) auto;
+        gap: 7px;
+    }
+    .pl-badge-manager__input,
+    .pl-badge-manager__emoji {
+        min-width: 0;
+        height: 34px;
+        padding: 0 9px;
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 8px;
+        background: #0d1217;
+        color: #e6edf3;
+        font: .7rem/1 var(--font-display, sans-serif);
+    }
+    .pl-badge-manager__emoji { padding: 0; text-align: center; font-size: 1.1rem; }
+    .pl-badge-manager__input:focus,
+    .pl-badge-manager__emoji:focus {
+        border-color: #66fcf1;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(102,252,241,.12);
+    }
+    .pl-badge-manager__save {
+        height: 34px;
+        padding: 0 10px;
+        border: 1px solid rgba(102,252,241,.3);
+        border-radius: 8px;
+        background: #66fcf1;
+        color: #081014;
+        cursor: pointer;
+        font: 800 .65rem/1 var(--font-mono, monospace);
+    }
+    .pl-badge-manager__save:hover { background: #a2fffa; }
+    .pl-badge-manager__status {
+        min-height: 15px;
+        margin-top: 6px;
+        color: #49e3a2;
+        font-size: .64rem;
+    }
+    .pl-badge-sheet-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        background: rgba(3,6,9,.56);
+        backdrop-filter: blur(3px);
+    }
+    .pl-badge-sheet-backdrop.is-open { display: flex; }
+    .pl-badge-sheet {
+        width: min(520px, 100%);
+        padding: 20px 20px 24px;
+        border: 1px solid rgba(102,252,241,.18);
+        border-bottom: 0;
+        border-radius: 19px 19px 0 0;
+        background: linear-gradient(155deg, #18212a, #0e141a);
+        box-shadow: 0 -16px 48px rgba(0,0,0,.46);
+        animation: plBadgeSheetIn .22s ease-out both;
+    }
+    @keyframes plBadgeSheetIn {
+        from { opacity: 0; transform: translateY(25px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .pl-badge-sheet__top {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+    }
+    .pl-badge-sheet__icon {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+        border-radius: 16px;
+        color: var(--badge-color);
+        background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+        box-shadow: 0 0 24px color-mix(in srgb, var(--badge-color) 20%, transparent);
+    }
+    .pl-badge-sheet__icon svg { width: 42px; height: 42px; }
+    .pl-badge-sheet__eyebrow {
+        color: #7f8d9b;
+        font: 700 .62rem/1 var(--font-mono, monospace);
+        letter-spacing: .1em;
+        text-transform: uppercase;
+    }
+    .pl-badge-sheet__title {
+        margin-top: 5px;
+        color: #f4f7fb;
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+    .pl-badge-sheet__desc {
+        margin-top: 5px;
+        color: #a4b0bc;
+        font-size: .78rem;
+        line-height: 1.55;
+    }
+    .pl-badge-sheet__close {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        margin-left: auto;
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 50%;
+        background: rgba(255,255,255,.04);
+        color: #b8c2cc;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .pl-badge-sheet__close:hover { background: rgba(255,255,255,.1); color: white; }
+    .pl-badge-sheet__rule {
+        height: 1px;
+        margin: 16px 0 12px;
+        background: rgba(255,255,255,.08);
+    }
+    .pl-badge-sheet__hint {
+        color: #7f8d9b;
+        font-size: .68rem;
+    }
+    @media (max-width: 560px) {
+        .pl-badge-demo { right: 12px; bottom: 12px; }
+        .pl-badge-demo__header { padding: 14px 13px 9px; }
+        .pl-badge-demo__section { padding: 0 13px 12px; }
+        .pl-badge-demo__footer { padding-left: 13px; padding-right: 13px; }
+        .pl-badge-rail { gap: 5px; }
+        .pl-badge-chip { padding: 7px 5px; gap: 5px; }
+        .pl-badge-chip__icon { width: 26px; height: 26px; flex-basis: 26px; }
+        .pl-badge-chip__icon svg { width: 19px; height: 19px; }
+        .pl-badge-chip__hint { display: none; }
+        .pl-badge-manager { padding-left: 13px; padding-right: 13px; }
+        .pl-badge-sheet { padding: 18px 16px 22px; }
+    }
 </style>
 
 <!-- ================================================================
@@ -29699,6 +30085,259 @@
             <button class="notif-prompt-btn-no"  id="notifPromptDeny">İstemiyorum</button>
         </div>
     </div>
+
+    <!-- ================================================================
+         ROZETLER DEMO / YÖNETİM PANELİ
+         İlk sürüm: Güvenilir, Moderatör, Geliştirici.
+         Bu katman görsel prototiptir; gerçek kullanıcı/profil verisine
+         yazmaz ve rozetleri profil içinde ayrı bir blok olarak göstermez.
+         ================================================================ -->
+    <section class="pl-badge-demo" id="plBadgeDemo" aria-label="Özel rozetler">
+        <div class="pl-badge-demo__header">
+            <div>
+                <div class="pl-badge-demo__eyebrow">PLAY LEGENDS / BADGES</div>
+                <div class="pl-badge-demo__title">Özel oyuncu rozetleri</div>
+                <div class="pl-badge-demo__sub">İsimlerin yanında mavi tik gibi görünür. Detay için rozete dokun.</div>
+            </div>
+            <span class="pl-badge-role" title="Rozet verme yetkisi">◆ Owner / Developer</span>
+        </div>
+
+        <div class="pl-badge-demo__section">
+            <div class="pl-badge-demo__section-label">
+                <span>Rozet kataloğu</span>
+                <span>3 aktif</span>
+            </div>
+            <div class="pl-badge-rail" id="plBadgeRail"></div>
+        </div>
+
+        <div class="pl-badge-demo__section">
+            <div class="pl-badge-demo__section-label">
+                <span>Oyuncular</span>
+                <span>Rozetler isim yanında</span>
+            </div>
+            <div class="pl-badge-users" id="plBadgeUsers"></div>
+        </div>
+
+        <div class="pl-badge-manager" id="plBadgeManager">
+            <div class="pl-badge-manager__note">
+                Yeni rozet tipi yalnızca Owner / Developer tarafından tanımlanabilir. İkon için bir emoji, ad için kısa bir isim yaz.
+            </div>
+            <form class="pl-badge-manager__form" id="plBadgeCreateForm">
+                <input class="pl-badge-manager__emoji" id="plBadgeEmojiInput" aria-label="Rozet ikonu" maxlength="2" placeholder="★" autocomplete="off">
+                <input class="pl-badge-manager__input" id="plBadgeNameInput" aria-label="Rozet adı" maxlength="24" placeholder="Yeni rozet adı" autocomplete="off">
+                <button class="pl-badge-manager__save" type="submit">Kaydet</button>
+            </form>
+            <div class="pl-badge-manager__status" id="plBadgeManagerStatus" aria-live="polite"></div>
+        </div>
+
+        <div class="pl-badge-demo__footer">
+            <span>Profilde ayrı rozet alanı yok · sadece isim yanında</span>
+            <button class="pl-badge-demo__manage" id="plBadgeManageToggle" type="button" aria-expanded="false">Rozet yönet</button>
+        </div>
+    </section>
+
+    <div class="pl-badge-sheet-backdrop" id="plBadgeSheetBackdrop" role="presentation">
+        <article class="pl-badge-sheet" id="plBadgeSheet" role="dialog" aria-modal="true" aria-labelledby="plBadgeSheetTitle">
+            <div class="pl-badge-sheet__top">
+                <div class="pl-badge-sheet__icon" id="plBadgeSheetIcon"></div>
+                <div>
+                    <div class="pl-badge-sheet__eyebrow">ROZET BİLGİSİ</div>
+                    <div class="pl-badge-sheet__title" id="plBadgeSheetTitle"></div>
+                    <div class="pl-badge-sheet__desc" id="plBadgeSheetDesc"></div>
+                </div>
+                <button class="pl-badge-sheet__close" id="plBadgeSheetClose" type="button" aria-label="Rozet bilgisini kapat">×</button>
+            </div>
+            <div class="pl-badge-sheet__rule"></div>
+            <div class="pl-badge-sheet__hint">Bu rozet kullanıcının profilinde ayrı bir kart olarak tutulmaz; kullanıcı adının yanında görünür.</div>
+        </article>
+    </div>
+
+    <script>
+    (function () {
+        "use strict";
+
+        var badgeDefs = {
+            reliable: {
+                name: "Güvenilir",
+                color: "#49e3a2",
+                hint: "Güvenilen oyuncular",
+                description: "Toplulukta güvenilir davranışlarıyla öne çıkan kişilere verilir.",
+                icon: "shield-check"
+            },
+            moderator: {
+                name: "Moderatör",
+                color: "#36c6ef",
+                hint: "Düzeni korur",
+                description: "Topluluğun düzenini koruyan ve moderasyon yapan kişilere verilir.",
+                icon: "shield"
+            },
+            developer: {
+                name: "Geliştirici",
+                color: "#9b6cff",
+                hint: "Oyunu geliştirir",
+                description: "Oyunu geliştiren kişilere verilir.",
+                icon: "code"
+            }
+        };
+
+        var users = [
+            { name: "Nova", initials: "N", badges: ["reliable"] },
+            { name: "Mira", initials: "M", badges: ["moderator"] },
+            { name: "Byte", initials: "B", badges: ["developer"] }
+        ];
+
+        function iconSvg(kind, size) {
+            var viewBox = "0 0 24 24";
+            var common = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+            var body = "";
+            if (kind === "shield-check") {
+                body = '<path ' + common + ' d="M12 3 5.5 5.7v5.1c0 4.2 2.7 7.9 6.5 9.2 3.8-1.3 6.5-5 6.5-9.2V5.7L12 3Z"/><path ' + common + ' d="m8.8 11.9 2.1 2.1 4.4-4.5"/>';
+            } else if (kind === "shield") {
+                body = '<path ' + common + ' d="M12 3 5.5 5.7v5.1c0 4.2 2.7 7.9 6.5 9.2 3.8-1.3 6.5-5 6.5-9.2V5.7L12 3Z"/><path ' + common + ' d="m13.2 7.7-2.4 3 2.1 2.1-2.1 3"/>';
+            } else if (kind === "code") {
+                body = '<path ' + common + ' d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>';
+            } else {
+                body = '<circle ' + common + ' cx="12" cy="12" r="8"/><path ' + common + ' d="M12 8v4l2.5 2.5"/>';
+            }
+            return '<svg viewBox="' + viewBox + '" width="' + (size || 22) + '" height="' + (size || 22) + '" aria-hidden="true">' + body + "</svg>";
+        }
+
+        function badgeIcon(def, size) {
+            if (def.icon === "emoji") {
+                return '<span aria-hidden="true" style="font-size:' + (size || 22) + 'px;line-height:1">' + def.emoji + "</span>";
+            }
+            return iconSvg(def.icon, size);
+        }
+
+        function badgeOptions(selected) {
+            var html = '<option value="">Rozet seç</option>';
+            Object.keys(badgeDefs).forEach(function (id) {
+                html += '<option value="' + id + '"' + (selected === id ? " selected" : "") + ">" + badgeDefs[id].name + "</option>";
+            });
+            return html;
+        }
+
+        function renderCatalog() {
+            var rail = document.getElementById("plBadgeRail");
+            if (!rail) return;
+            rail.innerHTML = "";
+            Object.keys(badgeDefs).forEach(function (id) {
+                var def = badgeDefs[id];
+                var button = document.createElement("button");
+                button.type = "button";
+                button.className = "pl-badge-chip";
+                button.dataset.badgeId = id;
+                button.style.setProperty("--badge-color", def.color);
+                button.innerHTML =
+                    '<span class="pl-badge-chip__icon">' + badgeIcon(def, 21) + "</span>" +
+                    '<span style="min-width:0"><span class="pl-badge-chip__name">' + def.name + '</span>' +
+                    '<span class="pl-badge-chip__hint">' + def.hint + "</span></span>";
+                rail.appendChild(button);
+            });
+            var label = document.querySelector(".pl-badge-demo__section-label span:last-child");
+            if (label) label.textContent = Object.keys(badgeDefs).length + " aktif";
+        }
+
+        function renderUsers() {
+            var list = document.getElementById("plBadgeUsers");
+            if (!list) return;
+            list.innerHTML = "";
+            users.forEach(function (user, index) {
+                var row = document.createElement("div");
+                row.className = "pl-badge-user";
+                var badges = user.badges.map(function (id) {
+                    var def = badgeDefs[id];
+                    if (!def) return "";
+                    return '<button type="button" class="pl-inline-badge" data-badge-id="' + id + '" style="--badge-color:' + def.color + '" title="' + def.name + '">' + badgeIcon(def, 17) + "</button>";
+                }).join("");
+                row.innerHTML =
+                    '<div class="pl-badge-user__identity"><span class="pl-badge-user__avatar">' + user.initials + '</span><span class="pl-badge-user__name">' + user.name + '</span><span class="pl-badge-user__badges">' + badges + "</span></div>" +
+                    '<div style="display:flex;align-items:center;gap:5px"><select class="pl-assign-select" data-user-index="' + index + '" aria-label="' + user.name + ' için rozet seç">' + badgeOptions("") + '</select><button type="button" class="pl-badge-user__action" data-assign-index="' + index + '">Ver</button></div>';
+                list.appendChild(row);
+            });
+        }
+
+        function openSheet(id) {
+            var def = badgeDefs[id];
+            var backdrop = document.getElementById("plBadgeSheetBackdrop");
+            if (!def || !backdrop) return;
+            var icon = document.getElementById("plBadgeSheetIcon");
+            icon.style.setProperty("--badge-color", def.color);
+            icon.innerHTML = badgeIcon(def, def.icon === "emoji" ? 34 : 42);
+            document.getElementById("plBadgeSheetTitle").textContent = def.name;
+            document.getElementById("plBadgeSheetDesc").textContent = def.description;
+            backdrop.classList.add("is-open");
+        }
+
+        function closeSheet() {
+            var backdrop = document.getElementById("plBadgeSheetBackdrop");
+            if (backdrop) backdrop.classList.remove("is-open");
+        }
+
+        document.addEventListener("click", function (event) {
+            var badge = event.target.closest("[data-badge-id]");
+            if (badge) {
+                openSheet(badge.dataset.badgeId);
+                return;
+            }
+            if (event.target.id === "plBadgeSheetClose" || event.target.id === "plBadgeSheetBackdrop") {
+                closeSheet();
+            }
+            if (event.target.id === "plBadgeManageToggle") {
+                var manager = document.getElementById("plBadgeManager");
+                var toggle = event.target;
+                var isOpen = manager.classList.toggle("is-open");
+                toggle.setAttribute("aria-expanded", String(isOpen));
+                toggle.textContent = isOpen ? "Yönetimi kapat" : "Rozet yönet";
+            }
+            var assign = event.target.closest("[data-assign-index]");
+            if (assign) {
+                var select = document.querySelector('.pl-assign-select[data-user-index="' + assign.dataset.assignIndex + '"]');
+                var chosen = select && select.value;
+                var targetUser = users[Number(assign.dataset.assignIndex)];
+                if (!chosen || !targetUser) return;
+                if (targetUser.badges.indexOf(chosen) === -1) targetUser.badges.push(chosen);
+                renderUsers();
+                var status = document.getElementById("plBadgeManagerStatus");
+                if (status) status.textContent = badgeDefs[chosen].name + " rozeti " + targetUser.name + " adlı oyuncuya verildi.";
+            }
+        });
+
+        document.getElementById("plBadgeCreateForm")?.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var emojiInput = document.getElementById("plBadgeEmojiInput");
+            var nameInput = document.getElementById("plBadgeNameInput");
+            var name = nameInput.value.trim();
+            var emoji = emojiInput.value.trim();
+            var status = document.getElementById("plBadgeManagerStatus");
+            if (!name || !emoji) {
+                if (status) status.textContent = "İkon ve rozet adı birlikte girilmeli.";
+                return;
+            }
+            var id = "custom-" + Date.now();
+            badgeDefs[id] = {
+                name: name,
+                emoji: emoji,
+                color: "#f5c542",
+                hint: "Yeni tanımlandı",
+                description: name + " rozeti, Owner / Developer tarafından tanımlanan özel bir rozettir.",
+                icon: "emoji"
+            };
+            renderCatalog();
+            renderUsers();
+            emojiInput.value = "";
+            nameInput.value = "";
+            if (status) status.textContent = name + " rozeti kataloğa eklendi.";
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") closeSheet();
+        });
+
+        renderCatalog();
+        renderUsers();
+    })();
+    </script>
 
 </body>
 </html>
