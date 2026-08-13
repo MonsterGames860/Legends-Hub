@@ -6377,6 +6377,240 @@
         flex-shrink: 0;
     }
 
+    /* ==========================================================
+       🪙 COIN SİSTEMİ — sidebar üstü coin rozeti + günlük ödül
+       kutusu + günlük ödül modalı + marketplace fiyat rozetleri.
+       Coin ikonu SAF CSS pixel-art (kutu-gölgeler ile), image
+       dosyası kullanmadan "8-bit" görünüm veriyor; @keyframes ile
+       hafif dönen/parlayan bir animasyon uygulanıyor.
+       ========================================================== */
+    .coin-widget-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 2px;
+    }
+
+    .coin-balance-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px 5px 6px;
+        border-radius: 999px;
+        background: rgba(245, 197, 66, 0.10);
+        border: 1px solid rgba(245, 197, 66, 0.35);
+        flex: 1;
+        min-width: 0;
+        cursor: default;
+    }
+
+    /* Pixel-art coin ikonu: 7x7'lik bir ızgara, box-shadow ile
+       piksel piksel çizilmiş. Böylece harici bir görsele ihtiyaç
+       duymadan "8-bit" bir sikke elde ediliyor. */
+    .coin-pixel-icon {
+        --p: 2px; /* piksel boyutu */
+        width: calc(var(--p) * 7);
+        height: calc(var(--p) * 7);
+        position: relative;
+        flex-shrink: 0;
+        animation: coinSpin 2.6s linear infinite;
+        transform-style: preserve-3d;
+    }
+    .coin-pixel-icon::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: transparent;
+        box-shadow:
+            calc(var(--p)*2) 0 0 var(--p) var(--gold),
+            calc(var(--p)*3) 0 0 var(--p) var(--gold),
+            var(--p) var(--p) 0 var(--p) var(--gold),
+            calc(var(--p)*4) var(--p) 0 var(--p) #ffe08a,
+            0 calc(var(--p)*2) 0 var(--p) var(--gold),
+            calc(var(--p)*5) calc(var(--p)*2) 0 var(--p) #c99a2e,
+            0 calc(var(--p)*3) 0 var(--p) var(--gold),
+            calc(var(--p)*5) calc(var(--p)*3) 0 var(--p) #c99a2e,
+            var(--p) calc(var(--p)*4) 0 var(--p) var(--gold),
+            calc(var(--p)*4) calc(var(--p)*4) 0 var(--p) #c99a2e,
+            calc(var(--p)*2) calc(var(--p)*5) 0 var(--p) var(--gold),
+            calc(var(--p)*3) calc(var(--p)*5) 0 var(--p) var(--gold);
+        filter: drop-shadow(0 0 3px rgba(245,197,66,0.55));
+    }
+    @keyframes coinSpin {
+        0%   { transform: rotateY(0deg) scale(1); }
+        45%  { transform: rotateY(180deg) scale(0.78); }
+        50%  { transform: rotateY(180deg) scale(0.78); filter: brightness(1.3); }
+        95%  { transform: rotateY(360deg) scale(1); }
+        100% { transform: rotateY(360deg) scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .coin-pixel-icon { animation: none; }
+    }
+
+    .coin-balance-amount {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 0.86rem;
+        color: var(--gold);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .coin-giftbox-btn {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        border: 1px solid rgba(245, 197, 66, 0.35);
+        background: rgba(245, 197, 66, 0.08);
+        color: var(--gold);
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .coin-giftbox-btn:hover {
+        background: rgba(245, 197, 66, 0.18);
+        transform: translateY(-1px);
+    }
+    .coin-giftbox-btn.has-claim::after {
+        content: "";
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--danger);
+        border: 2px solid var(--bg-panel);
+        animation: coinDotPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes coinDotPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.25); opacity: 0.75; }
+    }
+
+    /* --- Günlük ödül modalı --- */
+    .daily-reward-modal {
+        width: min(560px, 92vw);
+        max-height: 82vh;
+        overflow-y: auto;
+    }
+    .daily-reward-intro {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-bottom: 14px;
+        line-height: 1.5;
+    }
+    .daily-reward-week-label {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin: 14px 0 8px;
+    }
+    .daily-reward-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+    .daily-reward-day {
+        aspect-ratio: 1 / 1.05;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg-panel-raised);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 4px;
+        position: relative;
+    }
+    .daily-reward-day .drd-num {
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        color: var(--text-dim);
+    }
+    .daily-reward-day .drd-amount {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: var(--gold);
+    }
+    .daily-reward-day.is-claimed {
+        border-color: rgba(102, 252, 241, 0.4);
+        background: rgba(102, 252, 241, 0.06);
+        opacity: 0.6;
+    }
+    .daily-reward-day.is-claimed .drd-amount::after { content: " ✓"; }
+    .daily-reward-day.is-claimable {
+        border-color: var(--gold);
+        background: rgba(245, 197, 66, 0.12);
+        cursor: pointer;
+        animation: coinDayGlow 1.6s ease-in-out infinite;
+    }
+    .daily-reward-day.is-claimable:hover { transform: translateY(-2px); }
+    @keyframes coinDayGlow {
+        0%, 100% { box-shadow: 0 0 0 rgba(245,197,66,0); }
+        50% { box-shadow: 0 0 14px rgba(245,197,66,0.45); }
+    }
+    .daily-reward-day.is-locked { opacity: 0.35; }
+    .daily-reward-claim-btn {
+        margin-top: 16px;
+        width: 100%;
+    }
+    .daily-reward-timer {
+        margin-top: 10px;
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 0.74rem;
+        color: var(--text-dim);
+    }
+
+    /* --- Marketplace: fiyat rozetleri --- */
+    .mkt-card-free-badge.is-coin {
+        background: rgba(245, 197, 66, 0.18);
+        color: var(--gold);
+        border: 1px solid rgba(245, 197, 66, 0.4);
+    }
+    .mkt-modal-field-row-inline {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .mkt-modal-field-row-inline .mkt-modal-input {
+        flex: 1;
+    }
+    .mkt-price-toggle {
+        display: flex;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        width: fit-content;
+    }
+    .mkt-price-toggle button {
+        padding: 7px 14px;
+        font-size: 0.78rem;
+        border: none;
+        background: var(--bg-panel-raised);
+        color: var(--text-dim);
+        cursor: pointer;
+        font-family: var(--font-display);
+    }
+    .mkt-price-toggle button.is-active {
+        background: var(--accent-soft);
+        color: var(--accent);
+    }
+
+    /* --- Console: money komutları etiket rengi (var olan console-line
+         renklerini kullanır, ekstra bir şey gerekmiyor) --- */
+
     /* --- Çoklu sosyal bağlantı form (platform başına birden fazla giriş) --- */
     .social-link-platform-section {
         display: flex;
@@ -7553,6 +7787,17 @@
                 </div>
             </div>
 
+            <!-- 🪙 COIN SİSTEMİ: bakiye rozeti + günlük ödül (hediye
+                 kutusu) butonu. renderCoinBalance() bakiyeyi ve
+                 "bugün alınabilir ödül var mı" durumunu günceller. -->
+            <div class="coin-widget-row">
+                <div class="coin-balance-pill" title="Coin bakiyen">
+                    <span class="coin-pixel-icon"></span>
+                    <span class="coin-balance-amount" id="coinBalanceAmount">0</span>
+                </div>
+                <button type="button" class="coin-giftbox-btn" id="coinGiftboxBtn" title="Günlük Ödül">🎁</button>
+            </div>
+
             <nav class="hub-nav" id="hubNav">
                 <div class="hub-nav-item is-active" data-view="forum">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -8097,6 +8342,21 @@
                     <div>
                         <div class="mkt-modal-field-label">Etiketler (virgülle ayır)</div>
                         <input type="text" class="mkt-modal-input" id="mktSellTags" placeholder="ör: low-poly, fantastik, oyun-hazır">
+                    </div>
+
+                    <!-- 🪙 COIN SİSTEMİ: model ücretsiz ya da coin karşılığı
+                         paylaşılabilir. Coinli seçilirse fiyat alanı açılır.
+                         (Helper ve üzeri yetkililer için pazardaki HER model
+                         zaten otomatik ücretsizdir — bkz. CoinSystem.canDownloadForFree) -->
+                    <div>
+                        <div class="mkt-modal-field-label">Fiyatlandırma</div>
+                        <div class="mkt-price-toggle" id="mktSellPriceToggle">
+                            <button type="button" class="is-active" data-price-mode="free">Ücretsiz</button>
+                            <button type="button" data-price-mode="coin">🪙 Coin Karşılığı</button>
+                        </div>
+                        <div class="mkt-modal-field-row-inline" id="mktSellPriceAmountRow" style="display:none; margin-top:8px;">
+                            <input type="number" min="1" step="1" class="mkt-modal-input" id="mktSellPriceAmount" placeholder="Fiyat (coin)">
+                        </div>
                     </div>
 
                     <div class="mkt-modal-footer">
@@ -9375,6 +9635,7 @@
                     <button type="button" class="admin-tab-btn" data-admin-tab="marketplace">🧊 Pazar Yeri</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="reports">🚩 Şikâyetler</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="communities">🌐 Topluluklar</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="auditlog">🖥️ Konsol Kayıtları</button>
                 </div>
 
                 <!-- ═══ SEKME: İSTATİSTİKLER ═══ -->
@@ -9438,6 +9699,26 @@
                         <div class="hub-placeholder">Yükleniyor…</div>
                     </div>
                 </div>
+
+                <!-- ═══ SEKME: KONSOL KAYITLARI (audit_logs) ═══
+                     Owner/Developer'ın Konsol'dan (ban/mute/warn/money give-clear/
+                     title/event vb.) yaptığı TÜM işlemler burada kronolojik
+                     olarak listelenir -- audit_logs zaten her komutta yazılıyor,
+                     bu sekme sadece o veriyi Helper+ yetkiye görünür kılıyor. -->
+                <div class="admin-tab-panel" data-admin-panel="auditlog">
+                    <div class="admin-search-row">
+                        <select class="forum-text-input" id="adminAuditActionFilter" style="max-width:220px;">
+                            <option value="all">Tüm işlemler</option>
+                            <option value="money">Sadece coin işlemleri (money give/clear)</option>
+                            <option value="ban">Sadece ban/mute/askı/uyarı</option>
+                        </select>
+                        <input type="text" class="forum-text-input" id="adminAuditSearchInput" placeholder="Yetkili veya hedef kullanıcıya göre ara…">
+                    </div>
+                    <div class="admin-panel-subtitle" style="margin:10px 0;" id="adminAuditCountNote"></div>
+                    <div class="admin-list" id="adminAuditLogList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
             </section>
 
             <!-- ════════════════════════════════════════════════════════════
@@ -9473,6 +9754,33 @@
                         <button class="forum-modal-close" id="consoleHelpModalClose">✕</button>
                     </div>
                     <div class="forum-modal-body" id="consoleHelpBody"></div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════
+                 🪙 GÜNLÜK ÖDÜL MODALI — sidebar'daki 🎁 butonuyla açılır.
+                 Sonsuz gün sayısı destekler ama HAFTA HAFTA gösterilir:
+                 içinde bulunulan "hafta" (streak / 7 tam bölümü) ekranda
+                 görünür, her 7 günde bir sonraki haftaya geçilir. Her gün
+                 sadece bir önceki alımdan 24 saat sonra açılabilir.
+                 ════════════════════════════════════════════════════════════ -->
+            <div class="forum-modal-backdrop" id="dailyRewardModalBackdrop" style="display:none;">
+                <div class="forum-modal daily-reward-modal">
+                    <div class="forum-modal-header">
+                        <span>🎁 Günlük Ödül</span>
+                        <button class="forum-modal-close" id="dailyRewardModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body">
+                        <div class="daily-reward-intro" id="dailyRewardIntro">
+                            Her gün giriş yaparak ya da sohbet ederek coin kazan. Her ödül bir öncekinden
+                            tam 24 saat sonra açılır — seri sonsuza kadar devam eder, burada haftalık
+                            bloklar hâlinde gösterilir.
+                        </div>
+                        <div class="daily-reward-week-label" id="dailyRewardWeekLabel">Hafta 1</div>
+                        <div class="daily-reward-grid" id="dailyRewardGrid"></div>
+                        <button type="button" class="forum-btn forum-btn-primary daily-reward-claim-btn" id="dailyRewardClaimBtn">Ödülü Al</button>
+                        <div class="daily-reward-timer" id="dailyRewardTimer"></div>
+                    </div>
                 </div>
             </div>
 
@@ -12339,6 +12647,13 @@
             if (typeof window.initMarketplaceModule === "function") {
                 window.initMarketplaceModule();
             }
+
+            // 🪙 COIN SİSTEMİ: bakiye rozetini + günlük ödül kutusunu
+            // başlatır (bkz. CoinSystem modülü). Sadece bir kez init
+            // edilir, kendi içinde tekrar-bağlamaya karşı korumalıdır.
+            if (window.CoinSystem && typeof window.CoinSystem.init === "function") {
+                window.CoinSystem.init(user.uid);
+            }
         }
 
         function renderMiniProfile(profile) {
@@ -12346,6 +12661,14 @@
             const roleEl = document.getElementById("hubMiniRole");
             const avatarEl = document.getElementById("hubMiniAvatar");
             if (!profile) return;
+
+            // 🪙 Coin bakiyesi profille birlikte canlı güncellenir (profil
+            // her değiştiğinde -- ör. başka bir cihazdan coin harcanmışsa --
+            // burası da otomatik tetiklenir çünkü aynı Firebase gözlemcisi
+            // users/{uid} düğümünü baştan sona okur).
+            if (window.CoinSystem && typeof window.CoinSystem.renderBalance === "function") {
+                window.CoinSystem.renderBalance(profile.coins || 0);
+            }
 
             if (nameEl) {
                 const nameColor = window.NameColorSystem ? window.NameColorSystem.normalize(profile.nameColor, profile) : null;
@@ -13661,6 +13984,401 @@
                     showEventModalQueue([Object.assign({ id: snap.key }, ev)], uid, true);
                 });
         }
+
+        // ==============================================================
+        // 🪙 COIN SİSTEMİ
+        // ==============================================================
+        // Veri modeli (Firebase RTDB):
+        //   users/{uid}/coins                 -> number, kullanıcının bakiyesi
+        //   users/{uid}/dailyReward/streakDay  -> number, kaçıncı gün (1'den başlar, SINIRSIZ artar)
+        //   users/{uid}/dailyReward/lastClaimAt -> ms timestamp, son ödül alma anı
+        //   audit_logs                         -> coin ver/al işlemleri de buraya yazılır (Konsol
+        //                                          "money give/clear" ile aynı desen)
+        //
+        // Günlük ödül mantığı: streakDay 1'den başlayıp SONSUZA kadar
+        // artabilir (asla sıfırlanmaz/bitmez) ama arayüzde "hafta hafta"
+        // gösterilir -- yani her 7 günlük blok kendi "Hafta N" başlığı
+        // altında bir satır olarak render edilir. Bir sonraki gün, bir
+        // öncekinin alınmasından TAM 24 SAAT sonra açılır (lastClaimAt +
+        // 24s). Kullanıcı 24 saati kaçırırsa seri sıfırlanmaz -- coin
+        // sistemleri genelde burada seriyi sıfırlar, ama bu Hub'da bilinçli
+        // olarak SIFIRLANMAZ; sadece bir sonraki ödül yine 24 saat sonra
+        // açılabilir olur (kullanıcıyı cezalandırmadan sürekli oynamaya
+        // teşvik eder).
+        //
+        // Coin kazanmanın diğer yolu: aktivite (mesaj gönderme + çevrim içi
+        // kalma). Her ikisi de burada merkezi, RATE-LIMITED yardımcı
+        // fonksiyonlarla yönetilir ki mesaj/sohbet kodunun her noktasına
+        // ayrı ayrı limit mantığı yazılmasın.
+        const CoinSystem = (function () {
+            const DAILY_BASE_AMOUNT = 20;       // 1. gün ödülü
+            const DAILY_STEP_AMOUNT = 5;        // her gün +5 (7. günde en yüksek, sonra tekrar döngü)
+            const DAILY_CYCLE_LEN = 7;          // haftalık görünüm uzunluğu (1..7 arası döngü, sonsuza kadar tekrar eder)
+            const MESSAGE_COIN_AMOUNT = 1;      // her mesajda kazanılan coin
+            const MESSAGE_COIN_COOLDOWN_MS = 45 * 1000; // spam'le coin basmayı önlemek için mesaj başına min. aralık
+            const ONLINE_COIN_AMOUNT = 3;       // çevrim içi kalma ödülü miktarı
+            const ONLINE_COIN_INTERVAL_MS = 10 * 60 * 1000; // her 10 dakikada bir çevrim içi ödülü
+
+            let _uid = null;
+            let _myCoins = 0;
+            let _dailyReward = null; // { streakDay, lastClaimAt }
+            let _wired = false;
+            let _lastMessageCoinAt = 0;
+            let _onlineTimerHandle = null;
+            let _modalTimerHandle = null;
+
+            function dayAmount(dayNumber) {
+                // 1..7 döngüsünde artan ödül (21, 26, ... yerine sade bir
+                // artış): gün 1 -> 20, gün 2 -> 25 ... gün 7 -> 50, gün 8
+                // (yeni hafta, döngüde yine 1. gün) -> tekrar 20.
+                const posInCycle = ((dayNumber - 1) % DAILY_CYCLE_LEN) + 1;
+                return DAILY_BASE_AMOUNT + (posInCycle - 1) * DAILY_STEP_AMOUNT;
+            }
+
+            function init(uid) {
+                if (!uid) return;
+                _uid = uid;
+                wireEvents();
+                // users/{uid} zaten uygulamanın başka yerlerinde (auth
+                // observer) canlı dinleniyor ve renderMiniProfile() her
+                // güncellemede renderBalance()'ı tetikliyor -- burada ayrıca
+                // dailyReward alanını da tek seferlik okuyoruz (modal açılışı
+                // her seferinde canlı tazeleniyor zaten).
+                database.ref('users/' + uid + '/dailyReward').once('value').then((snap) => {
+                    _dailyReward = snap.val() || { streakDay: 0, lastClaimAt: 0 };
+                    updateGiftboxDot();
+                }).catch(() => {});
+
+                startOnlineRewardTimer();
+            }
+
+            function renderBalance(coins) {
+                _myCoins = coins || 0;
+                const el = document.getElementById("coinBalanceAmount");
+                if (el) el.textContent = Math.max(0, Math.floor(_myCoins)).toLocaleString("tr-TR");
+            }
+
+            function currentBalance() {
+                return _myCoins;
+            }
+
+            // ---- Günlük ödül: alınabilirlik hesaplama ------------------
+            function msUntilNextClaim() {
+                if (!_dailyReward || !_dailyReward.lastClaimAt) return 0;
+                const nextAt = _dailyReward.lastClaimAt + (24 * 60 * 60 * 1000);
+                return Math.max(0, nextAt - Date.now());
+            }
+
+            function canClaimToday() {
+                return msUntilNextClaim() <= 0;
+            }
+
+            function updateGiftboxDot() {
+                const btn = document.getElementById("coinGiftboxBtn");
+                if (!btn) return;
+                btn.classList.toggle("has-claim", canClaimToday());
+            }
+
+            // ---- Günlük ödül modalı --------------------------------------
+            function openDailyRewardModal() {
+                const backdrop = document.getElementById("dailyRewardModalBackdrop");
+                if (!backdrop) return;
+                // Modal her açıldığında Firebase'den taze veriyi çek --
+                // başka bir cihazdan alınmış olabilir.
+                database.ref('users/' + _uid + '/dailyReward').once('value').then((snap) => {
+                    _dailyReward = snap.val() || { streakDay: 0, lastClaimAt: 0 };
+                    renderDailyRewardModal();
+                    backdrop.style.display = "flex";
+                    updateGiftboxDot();
+                });
+            }
+
+            function closeDailyRewardModal() {
+                const backdrop = document.getElementById("dailyRewardModalBackdrop");
+                if (backdrop) backdrop.style.display = "none";
+                if (_modalTimerHandle) { clearInterval(_modalTimerHandle); _modalTimerHandle = null; }
+            }
+
+            function renderDailyRewardModal() {
+                const grid = document.getElementById("dailyRewardGrid");
+                const weekLabel = document.getElementById("dailyRewardWeekLabel");
+                const claimBtn = document.getElementById("dailyRewardClaimBtn");
+                const timerEl = document.getElementById("dailyRewardTimer");
+                if (!grid) return;
+
+                const streakDay = (_dailyReward && _dailyReward.streakDay) || 0; // en son ALINMIŞ gün (0 = hiç alınmamış)
+                const nextClaimDay = streakDay + 1; // sırada bekleyen gün
+                const weekNumber = Math.floor((nextClaimDay - 1) / DAILY_CYCLE_LEN) + 1;
+                const weekStartDay = (weekNumber - 1) * DAILY_CYCLE_LEN + 1;
+
+                if (weekLabel) weekLabel.textContent = `Hafta ${weekNumber} — Gün ${nextClaimDay}`;
+
+                const canClaim = canClaimToday();
+
+                let cellsHtml = "";
+                for (let i = 0; i < DAILY_CYCLE_LEN; i++) {
+                    const dayNum = weekStartDay + i;
+                    const amount = dayAmount(dayNum);
+                    let stateClass = "is-locked";
+                    if (dayNum <= streakDay) {
+                        stateClass = "is-claimed";
+                    } else if (dayNum === nextClaimDay && canClaim) {
+                        stateClass = "is-claimable";
+                    }
+                    cellsHtml += `
+                        <div class="daily-reward-day ${stateClass}" data-day="${dayNum}">
+                            <span class="drd-num">Gün ${dayNum}</span>
+                            <span class="coin-pixel-icon" style="--p:1.5px;"></span>
+                            <span class="drd-amount">${amount}</span>
+                        </div>`;
+                }
+                grid.innerHTML = cellsHtml;
+
+                if (claimBtn) {
+                    claimBtn.disabled = !canClaim;
+                    claimBtn.textContent = canClaim
+                        ? `🎁 Ödülü Al (+${dayAmount(nextClaimDay)} coin)`
+                        : "Bugünkü ödül zaten alındı";
+                    claimBtn.style.opacity = canClaim ? "1" : "0.55";
+                    claimBtn.style.cursor = canClaim ? "pointer" : "not-allowed";
+                }
+
+                if (_modalTimerHandle) clearInterval(_modalTimerHandle);
+                if (!canClaim && timerEl) {
+                    const tick = () => {
+                        const remain = msUntilNextClaim();
+                        if (remain <= 0) {
+                            clearInterval(_modalTimerHandle);
+                            _modalTimerHandle = null;
+                            renderDailyRewardModal();
+                            return;
+                        }
+                        const h = Math.floor(remain / 3600000);
+                        const m = Math.floor((remain % 3600000) / 60000);
+                        const s = Math.floor((remain % 60000) / 1000);
+                        timerEl.textContent = `Bir sonraki ödül: ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")} sonra`;
+                    };
+                    tick();
+                    _modalTimerHandle = setInterval(tick, 1000);
+                } else if (timerEl) {
+                    timerEl.textContent = "";
+                }
+            }
+
+            async function claimDailyReward() {
+                if (!canClaimToday()) return;
+                const nextDay = ((_dailyReward && _dailyReward.streakDay) || 0) + 1;
+                const amount = dayAmount(nextDay);
+                try {
+                    await database.ref('users/' + _uid).update({
+                        coins: firebase.database.ServerValue.increment(amount)
+                    });
+                    await database.ref('users/' + _uid + '/dailyReward').set({
+                        streakDay: nextDay,
+                        lastClaimAt: Date.now()
+                    });
+                    _dailyReward = { streakDay: nextDay, lastClaimAt: Date.now() };
+                    if (typeof showToastGlobal === "function") {
+                        showToastGlobal(`🎁 Günlük ödül alındı: +${amount} coin!`);
+                    }
+                    renderDailyRewardModal();
+                    updateGiftboxDot();
+                } catch (err) {
+                    console.error("[Coin] Günlük ödül alınamadı:", err);
+                    if (typeof showToastGlobal === "function") {
+                        showToastGlobal("Ödül alınırken bir sorun oluştu.");
+                    }
+                }
+            }
+
+            // ---- Aktivite bazlı coin kazanımı ---------------------------
+            // Mesaj gönderme noktalarından (forum genel sohbet, forum konu/
+            // cevap, grup/topluluk mesajları) çağrılır. Kısa bir cooldown
+            // ile spam'in coin'e çevrilmesi engellenir.
+            function grantMessageCoin() {
+                if (!_uid) return;
+                const now = Date.now();
+                if (now - _lastMessageCoinAt < MESSAGE_COIN_COOLDOWN_MS) return;
+                _lastMessageCoinAt = now;
+                database.ref('users/' + _uid).update({
+                    coins: firebase.database.ServerValue.increment(MESSAGE_COIN_AMOUNT)
+                }).catch((err) => console.error("[Coin] Mesaj ödülü yazılamadı:", err));
+            }
+
+            // Çevrim içi kaldıkça periyodik coin -- presence sistemi zaten
+            // bağlantı açıkken çalıştığı için burada ayrı bir "online"
+            // kontrolüne gerek yok: sekme açık olduğu sürece interval
+            // çalışır, kapanınca tarayıcı zaten JS'i durdurur.
+            function startOnlineRewardTimer() {
+                if (_onlineTimerHandle) return;
+                _onlineTimerHandle = setInterval(() => {
+                    if (!_uid) return;
+                    database.ref('users/' + _uid).update({
+                        coins: firebase.database.ServerValue.increment(ONLINE_COIN_AMOUNT)
+                    }).catch(() => {});
+                }, ONLINE_COIN_INTERVAL_MS);
+            }
+
+            // ---- Marketplace yardımcıları --------------------------------
+            // Bir ilanın "ücretsiz mi coinli mi" olduğunu ve indirmeye
+            // hakkı olup olmadığını tek merkezden hesaplar. Helper ve üzeri
+            // TÜM yetkililer için her model ücretsizdir (coin harcanmaz).
+            function listingPriceCoins(listing) {
+                return (listing && listing.priceCoins) ? Math.max(0, Math.floor(listing.priceCoins)) : 0;
+            }
+
+            function canDownloadForFree(listing, profile) {
+                const price = listingPriceCoins(listing);
+                if (price <= 0) return true;
+                if (window.CommunityRBAC && window.CommunityRBAC.hasMinimumTier(profile, "helper")) return true;
+                return false;
+            }
+
+            async function purchaseListing(listing) {
+                const price = listingPriceCoins(listing);
+                if (price <= 0) return { ok: true, charged: 0 };
+                const profile = window.CommunityAuth && window.CommunityAuth.profile;
+                if (window.CommunityRBAC && window.CommunityRBAC.hasMinimumTier(profile, "helper")) {
+                    return { ok: true, charged: 0 }; // helper+ herkes için ücretsiz
+                }
+                if (_myCoins < price) {
+                    return { ok: false, reason: `Bu modeli indirmek için ${price} coin gerekiyor. Bakiyen: ${_myCoins}.` };
+                }
+                try {
+                    await database.ref('users/' + _uid).update({
+                        coins: firebase.database.ServerValue.increment(-price)
+                    });
+                    if (listing.sellerUid && listing.sellerUid !== _uid) {
+                        // Satıcıya coin aktarımı YOK (istenmedi) -- model
+                        // paylaşımı "ücretsiz ya da coinli indirme kilidi"
+                        // olarak tasarlandı, bir pazar-yeri komisyonu değil.
+                        // İstenirse burada satıcıya da increment eklenebilir.
+                    }
+                    await database.ref('audit_logs').push({
+                        action: "marketplace_purchase",
+                        targetId: listing.id,
+                        detail: `${price} coin karşılığı indirildi: ${listing.name || listing.id}`,
+                        actorUid: _uid,
+                        actorUsername: (window.CommunityAuth && window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    return { ok: true, charged: price };
+                } catch (err) {
+                    console.error("[Coin] Satın alma başarısız:", err);
+                    return { ok: false, reason: "İşlem sırasında bir sorun oluştu." };
+                }
+            }
+
+            // ---- Konsol: money give / money clear -----------------------
+            // Konsol dispatcher'ı (bkz. ConsolePanel modülü) bu iki
+            // fonksiyonu "money give" ve "money clear" komutları için
+            // çağırır -- handleBanToggle ile AYNI desen: (1) hedefi bul,
+            // (2) users/{uid}.coins üzerine yaz, (3) audit_logs kaydı.
+            async function handleMoneyGiveCommand(targetUsername, amountRaw, actorProfile, printLine) {
+                const amount = parseInt(amountRaw, 10);
+                if (!amount || amount <= 0) {
+                    if (printLine) printLine("Kullanım: money give <kullanıcıAdı> <miktar>  (miktar pozitif bir tam sayı olmalı)", "err");
+                    return;
+                }
+                const candidate = window.CommunityMentions.getByUsername(targetUsername);
+                if (!candidate) {
+                    if (printLine) printLine(`Kullanıcı bulunamadı: ${targetUsername}`, "err");
+                    return;
+                }
+                try {
+                    await database.ref('users/' + candidate.uid).update({
+                        coins: firebase.database.ServerValue.increment(amount)
+                    });
+                    await database.ref('audit_logs').push({
+                        action: "money_give",
+                        targetUid: candidate.uid,
+                        detail: `+${amount} coin verildi`,
+                        actorUid: actorProfile && window.CommunityAuth.user.uid,
+                        actorUsername: (actorProfile && actorProfile.username) || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    if (printLine) printLine(`${candidate.username} kullanıcısına ${amount} coin verildi.`, "ok");
+                } catch (err) {
+                    console.error("[Konsol] money give hatası:", err);
+                    if (printLine) printLine("Coin verilemedi (bkz. konsol/Rules hatası).", "err");
+                }
+            }
+
+            async function handleMoneyClearCommand(targetUsername, amountRaw, actorProfile, printLine) {
+                const amount = parseInt(amountRaw, 10);
+                if (!amount || amount <= 0) {
+                    if (printLine) printLine("Kullanım: money clear <kullanıcıAdı> <miktar>  (miktar pozitif bir tam sayı olmalı)", "err");
+                    return;
+                }
+                const candidate = window.CommunityMentions.getByUsername(targetUsername);
+                if (!candidate) {
+                    if (printLine) printLine(`Kullanıcı bulunamadı: ${targetUsername}`, "err");
+                    return;
+                }
+                try {
+                    // Bakiye negatife düşmesin diye önce mevcut değeri okuyup
+                    // düşülecek miktarı sınırlıyoruz (ServerValue.increment
+                    // negatif bakiyeye izin verirdi, coin sisteminde bu
+                    // istenmeyen bir durum).
+                    const snap = await database.ref('users/' + candidate.uid + '/coins').once('value');
+                    const current = snap.val() || 0;
+                    const actualRemoved = Math.min(current, amount);
+                    await database.ref('users/' + candidate.uid).update({
+                        coins: Math.max(0, current - amount)
+                    });
+                    await database.ref('audit_logs').push({
+                        action: "money_clear",
+                        targetUid: candidate.uid,
+                        detail: `-${actualRemoved} coin alındı`,
+                        actorUid: actorProfile && window.CommunityAuth.user.uid,
+                        actorUsername: (actorProfile && actorProfile.username) || "unknown",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    if (printLine) printLine(`${candidate.username} kullanıcısından ${actualRemoved} coin alındı.`, "ok");
+                } catch (err) {
+                    console.error("[Konsol] money clear hatası:", err);
+                    if (printLine) printLine("Coin alınamadı (bkz. konsol/Rules hatası).", "err");
+                }
+            }
+
+            function wireEvents() {
+                const giftBtn = document.getElementById("coinGiftboxBtn");
+                if (giftBtn && !giftBtn.dataset.wired) {
+                    giftBtn.dataset.wired = "1";
+                    giftBtn.addEventListener("click", openDailyRewardModal);
+                }
+                const closeBtn = document.getElementById("dailyRewardModalClose");
+                if (closeBtn && !closeBtn.dataset.wired) {
+                    closeBtn.dataset.wired = "1";
+                    closeBtn.addEventListener("click", closeDailyRewardModal);
+                }
+                const backdrop = document.getElementById("dailyRewardModalBackdrop");
+                if (backdrop && !backdrop.dataset.wired) {
+                    backdrop.dataset.wired = "1";
+                    backdrop.addEventListener("click", (e) => {
+                        if (e.target.id === "dailyRewardModalBackdrop") closeDailyRewardModal();
+                    });
+                }
+                const claimBtn = document.getElementById("dailyRewardClaimBtn");
+                if (claimBtn && !claimBtn.dataset.wired) {
+                    claimBtn.dataset.wired = "1";
+                    claimBtn.addEventListener("click", claimDailyReward);
+                }
+            }
+
+            return {
+                init,
+                renderBalance,
+                currentBalance,
+                grantMessageCoin,
+                listingPriceCoins,
+                canDownloadForFree,
+                purchaseListing,
+                handleMoneyGiveCommand,
+                handleMoneyClearCommand
+            };
+        })();
+        window.CoinSystem = CoinSystem;
 
         // ==============================================================
         // 🟢 PRESENCE (ÇEVRİMİÇİ / SON GÖRÜLME) SİSTEMİ
@@ -15848,6 +16566,8 @@
 
             try {
                 const _msgRef = await database.ref('forum_messages').push(messageData);
+                // 🪙 Mesaj gönderme coin ödülü (rate-limited, bkz. CoinSystem)
+                if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
                 inputEl.value = "";
                 inputEl.removeAttribute("data-reply-to-message-id");
                 inputEl.removeAttribute("data-reply-to-author-uid");
@@ -16930,6 +17650,8 @@
 
             try {
                 const newRef = await database.ref('forum_threads').push(threadData);
+                // 🪙 Yeni konu açma da bir mesaj sayılır (coin ödülü, rate-limited)
+                if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
                 closeNewThreadModal();
                 switchForumCategory(categoryId);
                 openThreadDetail(newRef.key);
@@ -17304,6 +18026,8 @@
 
             try {
                 const _replyRef = await database.ref('forum_replies/' + threadId).push(replyData);
+                // 🪙 Konu cevabı da bir mesaj sayılır (coin ödülü, rate-limited)
+                if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
                 await database.ref('forum_threads/' + threadId).update({
                     replyCount: firebase.database.ServerValue.increment(1),
                     lastReplyAt: firebase.database.ServerValue.TIMESTAMP
@@ -19505,6 +20229,14 @@
                 const hiddenBadge = l.isHidden
                     ? `<span class="mkt-card-tag" style="background:rgba(255,77,77,0.18); color:var(--danger); border-color:rgba(255,77,77,0.4);" title="Sadece moderatörlere görünüyor">🚫 Gizli</span>`
                     : "";
+                // 🪙 Fiyat rozeti: ücretsizse "Ücretsiz", coinli ise
+                // "🪙 N Coin" — helper+ için pazardaki her şey ücretsiz
+                // olduğundan rozet yine de asıl fiyatı gösterir (indirme
+                // anında CoinSystem.canDownloadForFree ile ücret muaf tutulur).
+                const priceCoins = window.CoinSystem ? window.CoinSystem.listingPriceCoins(l) : 0;
+                const priceBadge = priceCoins > 0
+                    ? `<span class="mkt-card-free-badge is-coin">🪙 ${priceCoins} Coin</span>`
+                    : `<span class="mkt-card-free-badge">Ücretsiz</span>`;
                 return `
                 <div class="mkt-card" data-listing-id="${studioEscapeHtml(l.id)}">
                     <div class="mkt-card-canvas-wrap" id="mkt-canvas-${studioEscapeHtml(l.id)}">
@@ -19513,7 +20245,7 @@
                                 ? `<img class="mkt-card-thumb-img" src="${studioEscapeHtml(l.thumbDataUrl)}" alt="${studioEscapeHtml(l.name)}">`
                                 : (l.thumbEmoji || "🧊")}
                         </div>
-                        <span class="mkt-card-free-badge">Ücretsiz</span>
+                        ${priceBadge}
                         ${removeBadge}
                     </div>
                     <div class="mkt-card-body">
@@ -19625,8 +20357,19 @@
             // Yıldız puanlama
             mktRenderDetailStars(listingId);
 
-            // İndir
+            // İndir — 🪙 buton metni fiyata göre değişir (Ücretsiz / N Coin
+            // ile İndir), tıklanınca gerekiyorsa önce coin düşülür.
             const dlBtn = document.getElementById("mktDetailDownloadBtn");
+            const priceCoins = window.CoinSystem ? window.CoinSystem.listingPriceCoins(listing) : 0;
+            const myProfileForPrice = window.CommunityAuth && window.CommunityAuth.profile;
+            const freeForMe = !window.CoinSystem || window.CoinSystem.canDownloadForFree(listing, myProfileForPrice);
+            if (priceCoins > 0 && !freeForMe) {
+                dlBtn.textContent = `⬇ Modeli İndir (🪙 ${priceCoins} Coin)`;
+            } else if (priceCoins > 0 && freeForMe) {
+                dlBtn.textContent = `⬇ Modeli İndir (Yetkili — Ücretsiz)`;
+            } else {
+                dlBtn.textContent = `⬇ Modeli İndir (Ücretsiz)`;
+            }
             dlBtn.onclick = () => mktDownloadModel(listing);
 
             // Kendi ilanımsa: kaldırma butonu göster
@@ -19790,7 +20533,7 @@
         }
 
         // ── İndir ─────────────────────────────────────────────────────
-        function mktDownloadModel(listing) {
+        async function mktDownloadModel(listing) {
             if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth && window.CommunityAuth.profile)) {
                 showToastGlobal("Hesabınız askıya alındığı için 3D Model Pazarı'ndan indirme yapamazsınız.");
                 return;
@@ -19800,6 +20543,23 @@
                 showToastGlobal("Bu modelin GLTF verisi mevcut değil.");
                 return;
             }
+
+            // 🪙 Coinli model: helper+ için otomatik ücretsiz, diğerlerinde
+            // bakiyeden düşülür. Bakiye yetmezse indirme engellenir.
+            if (window.CoinSystem) {
+                const priceCoins = window.CoinSystem.listingPriceCoins(listing);
+                if (priceCoins > 0) {
+                    const purchase = await window.CoinSystem.purchaseListing(listing);
+                    if (!purchase.ok) {
+                        showToastGlobal(purchase.reason || "Bu modeli indirmek için yeterli coin'in yok.");
+                        return;
+                    }
+                    if (purchase.charged > 0) {
+                        showToastGlobal(`🪙 ${purchase.charged} coin harcandı.`);
+                    }
+                }
+            }
+
             const blob = new Blob([gltf], { type: "model/gltf+json" });
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement("a");
@@ -19875,6 +20635,15 @@
             }
             document.getElementById("mktSellDesc").value = "";
             document.getElementById("mktSellTags").value = "";
+            // 🪙 Fiyatlandırma alanını her açılışta "Ücretsiz"e sıfırla
+            const priceToggle = document.getElementById("mktSellPriceToggle");
+            const priceAmountRow = document.getElementById("mktSellPriceAmountRow");
+            const priceAmountInput = document.getElementById("mktSellPriceAmount");
+            if (priceToggle) {
+                priceToggle.querySelectorAll("button").forEach(b => b.classList.toggle("is-active", b.getAttribute("data-price-mode") === "free"));
+            }
+            if (priceAmountRow) priceAmountRow.style.display = "none";
+            if (priceAmountInput) priceAmountInput.value = "";
             document.getElementById("mktSellModalOverlay").classList.add("is-open");
         }
 
@@ -19909,6 +20678,21 @@
             const tags        = document.getElementById("mktSellTags").value
                 .split(",").map(t => t.trim()).filter(Boolean);
 
+            // 🪙 Fiyatlandırma: "Coin Karşılığı" seçiliyse geçerli bir
+            // pozitif tam sayı fiyat girilmiş olmalı; aksi halde ilan
+            // ücretsiz kabul edilir (priceCoins: 0).
+            const priceToggle = document.getElementById("mktSellPriceToggle");
+            const activeModeBtn = priceToggle ? priceToggle.querySelector('button.is-active') : null;
+            const priceMode = activeModeBtn ? activeModeBtn.getAttribute("data-price-mode") : "free";
+            let priceCoins = 0;
+            if (priceMode === "coin") {
+                priceCoins = parseInt(document.getElementById("mktSellPriceAmount").value, 10);
+                if (!priceCoins || priceCoins <= 0) {
+                    alert("Coin karşılığı paylaşmak için geçerli bir fiyat (1 veya üzeri) gir.");
+                    return;
+                }
+            }
+
             // Mevcut kullanıcının verified durumunu snapshot al
             const isVerified = !!(window.CommunityAuth && window.CommunityAuth.profile &&
                 window.CommunityAuth.profile.isVerified);
@@ -19922,6 +20706,7 @@
                 description,
                 category,
                 tags,
+                priceCoins:    priceCoins, // 🪙 0 = ücretsiz, >0 = coin karşılığı indirme
                 thumbEmoji:    model.thumbEmoji    || "🧊",
                 thumbDataUrl:  model.thumbDataUrl  || null,  // gerçek 3D render önizlemesi
                 cubeCount:     model.cubeCount      || 0,
@@ -19983,6 +20768,20 @@
             if (sellModalConfirm && !sellModalConfirm.dataset.bound) {
                 sellModalConfirm.dataset.bound = "1";
                 sellModalConfirm.addEventListener("click", mktSubmitSellListing);
+            }
+
+            // 🪙 Fiyatlandırma toggle (Ücretsiz / Coin Karşılığı)
+            const priceToggle = document.getElementById("mktSellPriceToggle");
+            if (priceToggle && !priceToggle.dataset.bound) {
+                priceToggle.dataset.bound = "1";
+                priceToggle.addEventListener("click", (e) => {
+                    const btn = e.target.closest("button[data-price-mode]");
+                    if (!btn) return;
+                    priceToggle.querySelectorAll("button").forEach(b => b.classList.remove("is-active"));
+                    btn.classList.add("is-active");
+                    const amountRow = document.getElementById("mktSellPriceAmountRow");
+                    if (amountRow) amountRow.style.display = (btn.getAttribute("data-price-mode") === "coin") ? "flex" : "none";
+                });
             }
 
             // Detay modalı kapat
@@ -23151,6 +23950,8 @@
                 const msgRef = database.ref(basePath).push();
                 try {
                     await msgRef.set(payload);
+                    // 🪙 Grup/topluluk mesajı da coin ödülü kazandırır (rate-limited)
+                    if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
                 } catch (err) {
                     console.error("[Messaging] Grup mesajı yazılamadı:", err, "path:", basePath, "payload:", payload);
                     throw err;
@@ -27437,6 +28238,7 @@
             let adminMuteCache = {};            // uid -> mute_status objesi
             let adminReportsCache = {};         // reportId -> report objesi
             let adminCommunityDirCache = {};    // groupId -> community_directory objesi
+            let adminAuditLogCache = {};         // logId -> audit_logs objesi (Konsol Kayıtları sekmesi)
             window.__adminUsersCacheRef = adminUsersCache; // handleBanToggle/handleRoleChange bu isimle okuyor
 
             // NOT: handleBanToggle/handleMuteToggle/handleRoleChange dosyanın
@@ -27781,6 +28583,96 @@
                 community: "🌐 Topluluk", dm: "✉️ DM"
             };
 
+            // ------------------------------------------------------------
+            // G) KONSOL KAYITLARI (audit_logs) — Owner/Developer'ın Konsol'dan
+            // yaptığı TÜM işlemlerin (ban/mute/warn/hanger/verify/title/event/
+            // money give-clear/forcename/hide-listing vb.) kronolojik dökümü.
+            // audit_logs zaten handleBanToggle/handleMuteToggle/... vb. her
+            // fonksiyon tarafından push ediliyor -- bu sekme SADECE o veriyi
+            // Helper+ yetkiye okunaklı biçimde gösterir, yeni bir yazma yolu
+            // AÇMAZ.
+            // ------------------------------------------------------------
+            const AUDIT_ACTION_LABELS = {
+                ban_user: "🔨 Ban",
+                unban_user: "✅ Ban Kaldırma",
+                mute_user: "🔇 Susturma",
+                unmute_user: "🔊 Susturma Kaldırma",
+                hanger_user: "🔒 Askıya Alma",
+                unhanger_user: "🔓 Askı Kaldırma",
+                warn_user: "⚠️ Uyarı",
+                verify_user: "✔️ Mavi Tik",
+                forcename_user: "✏️ İsim Değiştirme",
+                delete_report: "🗑️ Şikâyet Silme",
+                hide_listing: "🚫 Pazar İlanı Gizleme",
+                unhide_listing: "✅ Pazar İlanı Yayına Alma",
+                money_give: "🪙 Coin Verme",
+                money_clear: "🪙 Coin Alma",
+                marketplace_purchase: "🛒 Pazar Satın Alma"
+            };
+
+            function auditActionLabel(action) {
+                return AUDIT_ACTION_LABELS[action] || ("🖥️ " + (action || "Bilinmeyen İşlem"));
+            }
+
+            let _auditActionFilter = "all";
+            let _auditSearchQuery = "";
+
+            function renderAuditLogList() {
+                const listEl = document.getElementById("adminAuditLogList");
+                const countNote = document.getElementById("adminAuditCountNote");
+                if (!listEl) return;
+
+                let entries = Object.keys(adminAuditLogCache).map(id => Object.assign({ id }, adminAuditLogCache[id]));
+                entries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                if (_auditActionFilter === "money") {
+                    entries = entries.filter(e => e.action === "money_give" || e.action === "money_clear");
+                } else if (_auditActionFilter === "ban") {
+                    entries = entries.filter(e => ["ban_user","unban_user","mute_user","unmute_user","hanger_user","unhanger_user","warn_user"].includes(e.action));
+                }
+
+                if (_auditSearchQuery.trim()) {
+                    const q = _auditSearchQuery.trim().toLowerCase();
+                    entries = entries.filter(e => {
+                        const target = adminUsersCache[e.targetUid];
+                        const actorName = (e.actorUsername || "").toLowerCase();
+                        const targetName = (target ? target.username : (e.targetUid || "")).toLowerCase();
+                        return actorName.includes(q) || targetName.includes(q);
+                    });
+                }
+
+                // Çok büyük geçmişte performans için son 300 kayıtla sınırla
+                // (audit_logs zaten en yeniden en eskiye sıralı geliyor).
+                const shown = entries.slice(0, 300);
+
+                if (countNote) {
+                    countNote.textContent = `${shown.length} kayıt gösteriliyor` + (entries.length > shown.length ? ` (toplam ${entries.length})` : "");
+                }
+
+                listEl.innerHTML = shown.length ? shown.map(e => {
+                    const target = e.targetUid ? adminUsersCache[e.targetUid] : null;
+                    const targetLabel = e.targetUid
+                        ? `@${RBAC.escapeHtml((target && target.username) || e.targetUid)}`
+                        : (e.targetId ? RBAC.escapeHtml(e.targetId) : "—");
+                    const when = e.timestamp ? new Date(e.timestamp).toLocaleString("tr-TR") : "—";
+                    return `
+                    <div class="admin-row">
+                        <div class="admin-row-main">
+                            <div class="admin-row-title">
+                                ${auditActionLabel(e.action)}
+                                <span class="admin-badge admin-badge-open" style="background:rgba(102,252,241,0.12); color:var(--accent); border-color:rgba(102,252,241,0.35);">@${RBAC.escapeHtml(e.actorUsername || "bilinmiyor")}</span>
+                            </div>
+                            <div class="admin-row-sub">
+                                Hedef: ${targetLabel}
+                                ${e.detail ? " · " + RBAC.escapeHtml(String(e.detail)) : ""}
+                                ${e.durationMs ? ` · Süre: ${Math.round(e.durationMs/60000)} dk` : ""}
+                                <br>${RBAC.escapeHtml(when)}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join("") : `<div class="hub-placeholder">Kayıt bulunamadı.</div>`;
+            }
+
             function renderReportsList() {
                 const listEl = document.getElementById("adminReportList");
                 if (!listEl) return;
@@ -28015,6 +28907,19 @@
                     if (_activeTab === "stats") renderStats();
                 });
 
+                // 🖥️ Konsol Kayıtları sekmesi — audit_logs zaten Rules'ta
+                // sadece Owner/Developer/Admin okuyabiliyor, bu yüzden
+                // Helper/Mod gibi daha alt roller bu sekmeyi açtığında
+                // Firebase "permission denied" ile geri döner; o durumda
+                // sekmede sadece boş/placeholder görünür (kod tarafında ekstra
+                // bir engelleme yapmaya gerek yok, Rules zaten koruyor).
+                database.ref("audit_logs").on("value", (snap) => {
+                    adminAuditLogCache = snap.val() || {};
+                    if (_activeTab === "auditlog") renderAuditLogList();
+                }, (err) => {
+                    console.warn("[Admin] audit_logs okunamadı (yetki yetersiz olabilir):", err);
+                });
+
                 // forum_threads / forum_messages / marketplace_listings zaten
                 // başka modüller tarafından dinleniyor (forumThreadsCache,
                 // forumMessagesCache, mktListingsCache) — burada AYRI bir
@@ -28034,6 +28939,7 @@
                 renderMarketplaceModeration();
                 renderReportsList();
                 renderSuspendedCommunities();
+                renderAuditLogList();
             }
 
             // ------------------------------------------------------------
@@ -28070,6 +28976,16 @@
                 document.getElementById("adminResolveReportSubmitBtn")?.addEventListener("click", submitResolveModal);
 
                 document.getElementById("adminSuspendedList")?.addEventListener("click", onSuspendedListClick);
+
+                // 🖥️ Konsol Kayıtları filtre/arama
+                document.getElementById("adminAuditActionFilter")?.addEventListener("change", (e) => {
+                    _auditActionFilter = e.target.value;
+                    renderAuditLogList();
+                });
+                document.getElementById("adminAuditSearchInput")?.addEventListener("input", (e) => {
+                    _auditSearchQuery = e.target.value || "";
+                    renderAuditLogList();
+                });
 
                 document.getElementById("adminSanctionModalClose")?.addEventListener("click", closeSanctionModal);
                 document.getElementById("adminSanctionCancelBtn")?.addEventListener("click", closeSanctionModal);
@@ -28211,6 +29127,19 @@
                     usage: "clearevent <eventID|All>",
                     desc: "Belirtilen ID'ye sahip etkinlik duyurusunu siler. \"All\" yazılırsa TÜM etkinlikler " +
                           "silinir. ID'yi event komutunu çalıştırdığında konsoldan alabilirsin."
+                },
+                {
+                    name: "money give",
+                    usage: "money give <kullanıcıAdı> <miktar>",
+                    desc: "🪙 Belirtilen kullanıcıya belirtilen miktarda coin verir (users/{uid}.coins üzerine " +
+                          "eklenir). Miktar pozitif bir tam sayı olmalı. İşlem audit_logs'a kaydedilir."
+                },
+                {
+                    name: "money clear",
+                    usage: "money clear <kullanıcıAdı> <miktar>",
+                    desc: "🪙 Belirtilen kullanıcıdan belirtilen miktarda coin alır (bakiye 0'ın altına " +
+                          "düşürülmez — kullanıcının bakiyesi miktardan azsa sadece mevcut kadarı alınır). " +
+                          "İşlem audit_logs'a kaydedilir."
                 }
             ];
 
@@ -28360,6 +29289,26 @@
                             const targetId = rest[0];
                             if (!targetId) { printLine("Kullanım: clearevent <eventID|All>", "err"); break; }
                             await handleClearEventCommand(targetId, printLine);
+                            break;
+                        }
+                        case "money": {
+                            // İki kelimeli alt komut: "money give ..." / "money clear ...".
+                            // parseCommand ilk kelimeyi (money) cmd olarak aldığı için
+                            // alt komut rest[0]'da, hedef kullanıcı rest[1]'de, miktar rest[2]'de.
+                            const sub = (rest[0] || "").toLowerCase();
+                            const uname = rest[1];
+                            const amount = rest[2];
+                            if (sub === "give") {
+                                if (!uname || !amount) { printLine("Kullanım: money give <kullanıcıAdı> <miktar>", "err"); break; }
+                                if (!window.CoinSystem) { printLine("Coin sistemi yüklenemedi.", "err"); break; }
+                                await window.CoinSystem.handleMoneyGiveCommand(uname, amount, profile, printLine);
+                            } else if (sub === "clear") {
+                                if (!uname || !amount) { printLine("Kullanım: money clear <kullanıcıAdı> <miktar>", "err"); break; }
+                                if (!window.CoinSystem) { printLine("Coin sistemi yüklenemedi.", "err"); break; }
+                                await window.CoinSystem.handleMoneyClearCommand(uname, amount, profile, printLine);
+                            } else {
+                                printLine("Kullanım: money give <kullanıcıAdı> <miktar>  |  money clear <kullanıcıAdı> <miktar>", "err");
+                            }
                             break;
                         }
                         case "whoami": {
