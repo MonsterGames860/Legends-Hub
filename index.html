@@ -6412,29 +6412,21 @@
         cursor: default;
     }
 
-    /* Pixel-art coin ikonu: gerçek 8 karelik sprite sheet (base64 PNG,
-       kaynak: "Spinning pixel coin" by irmirx, opengameart.org, CC-BY 3.0,
-       kendi renk paletimize uyarlanarak yeniden çizildi) kullanılarak
-       CSS steps() ile kare-kare oynatılıyor -- box-shadow ile "sahte"
-       piksel çizmek yerine gerçek bir animasyon-şeridi kullanıyoruz. */
+    /* Pixel-art coin ikonu: kullanıcının sağladığı gerçek pixel-art coin
+       görseli (arka planı şeffaflaştırılmış PNG, base64 gömülü).
+       Animasyonsuz, sabit görsel -- kullanıcı isteği üzerine hareket
+       kaldırıldı. */
     .coin-pixel-icon {
         --frame-w: 14px;
         --frame-h: 16px;
         width: var(--frame-w);
         height: var(--frame-h);
         flex-shrink: 0;
-        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHAAAAAQCAYAAADOFPsRAAABkElEQVR4nO1ZSY6DMBDsRpznno+heQOHPGYOeUOUj3FOPuA5ABnbE3d3tQFloSSkgF0uuspsDlOE85ECCfj+IZbad2yPdv5xPlLoerV/yEOsDb3EX3uyzLpb6eQo6aJ+tjOp64n4IJ/MFPA9RG/o8ckK/CIv5sf71jAyXVXHq4fW5/Gz/df8FYhuTGH4OyQFq4WuwcsvFGsOA9X16qE6aP+G6H5ljeEpeDhDJl4YKAk+/i1h5s39rTw+pJsVcQ2GGV+tB9cH+NkkJ8gMPQ+6ntTQJYO8bTHyItcGoofW5/EzCTBcKeS3Tw3MzHTb/uW0aMCL66F+NlLj5TRuEsJ1fLAvcRVoWq8OS32on2KAHrx7CFtD83PxAGuw5i3wGbBGfWKAXY+LIv2l2fUOV/IS9Wl+NshgeV8LT32GDvI+Mq61DrSGGj2kPo+fyYd8aXBJ9FGbNYTpI9iy+qBqoy9RnpcuVM9TH+pniwhdTunyUW0A8RiF4xDPugoTcz0cRA+pz+PnIgvTEm//BwPH7ucH4RfVE/D7q57SXgAAAABJRU5ErkJggg==");
+        background-image: url("data:image/png;base64,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");
         background-repeat: no-repeat;
-        background-size: calc(var(--frame-w) * 8) var(--frame-h);
+        background-size: contain;
+        background-position: center;
         image-rendering: pixelated;
-        animation: coinSpriteSpin 1.6s steps(8) infinite;
-    }
-    @keyframes coinSpriteSpin {
-        from { background-position: 0 0; }
-        to   { background-position: calc(var(--frame-w) * -8) 0; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .coin-pixel-icon { animation: none; }
     }
 
     .coin-balance-amount {
