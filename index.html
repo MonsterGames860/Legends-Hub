@@ -7672,6 +7672,7 @@
        yanında küçük tıklanabilir işaretler olarak görünür.
        ================================================================ */
     .pl-badge-demo {
+        display: none !important;
         position: fixed;
         right: 18px;
         bottom: 18px;
@@ -8051,6 +8052,169 @@
         .pl-badge-chip__hint { display: none; }
         .pl-badge-manager { padding-left: 13px; padding-right: 13px; }
         .pl-badge-sheet { padding: 18px 16px 22px; }
+    }
+
+    /* Yönetim Paneli > Kullanıcılar içindeki gerçek rozet alanı. */
+    .pl-admin-badges-card {
+        margin-bottom: 14px;
+        padding: 13px;
+        border: 1px solid rgba(102,252,241,.18);
+        border-radius: 12px;
+        background: linear-gradient(145deg, rgba(102,252,241,.055), rgba(255,255,255,.018));
+    }
+    .pl-admin-badges-card__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .pl-admin-badges-card__title {
+        color: var(--text-primary);
+        font-size: .88rem;
+        font-weight: 750;
+    }
+    .pl-admin-badges-card__note {
+        max-width: 510px;
+        margin-top: 3px;
+        color: var(--text-dim);
+        font-size: .72rem;
+        line-height: 1.4;
+    }
+    .pl-admin-badges-card__access {
+        flex-shrink: 0;
+        padding: 5px 8px;
+        border: 1px solid rgba(245,197,66,.28);
+        border-radius: 999px;
+        background: rgba(245,197,66,.09);
+        color: var(--gold);
+        font: 700 .62rem/1 var(--font-mono);
+        white-space: nowrap;
+    }
+    .pl-admin-badges-catalog {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+    .pl-admin-badge-catalog-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 8px;
+        border: 1px solid color-mix(in srgb, var(--badge-color) 32%, transparent);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--badge-color) 9%, transparent);
+        color: var(--badge-color);
+        cursor: pointer;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+    .pl-admin-badge-catalog-chip:hover { background: color-mix(in srgb, var(--badge-color) 16%, transparent); }
+    .pl-admin-badge-catalog-chip svg { width: 17px; height: 17px; }
+    .pl-admin-badges-form {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+        gap: 6px;
+    }
+    .pl-admin-badges-form input {
+        min-width: 0;
+        height: 32px;
+        padding: 0 8px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--bg-void);
+        color: var(--text-primary);
+        font: .72rem/1 var(--font-display);
+    }
+    .pl-admin-badges-form input:first-child { padding: 0; text-align: center; font-size: 1rem; }
+    .pl-admin-badges-form input:focus { border-color: var(--accent); outline: none; }
+    .pl-admin-badges-form button {
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--accent);
+        border-radius: 7px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        cursor: pointer;
+        font: 700 .68rem/1 var(--font-mono);
+    }
+    .pl-admin-badges-form button:hover { background: rgba(102,252,241,.2); }
+    .pl-admin-badges-form button:disabled,
+    .pl-admin-badges-form input:disabled { cursor: not-allowed; opacity: .45; }
+    .pl-admin-badges-status {
+        min-height: 14px;
+        margin-top: 6px;
+        color: var(--accent);
+        font-size: .68rem;
+    }
+    .pl-admin-user-badge-tools {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+        width: 100%;
+        margin-bottom: 3px;
+        padding-bottom: 7px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .pl-admin-user-badge-tools__label {
+        color: var(--text-dim);
+        font: 700 .62rem/1 var(--font-mono);
+    }
+    .pl-admin-special-badges {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        margin-left: 4px;
+        vertical-align: middle;
+    }
+    .pl-admin-special-badge {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: var(--badge-color);
+        cursor: pointer;
+        vertical-align: middle;
+    }
+    .pl-admin-special-badge:hover {
+        background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+        transform: scale(1.12);
+    }
+    .pl-admin-special-badge svg { width: 17px; height: 17px; }
+    .pl-admin-special-badge-emoji { font-size: 15px; line-height: 1; }
+    .pl-admin-user-badge-select {
+        min-width: 118px;
+        height: 27px;
+        padding: 0 5px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg-void);
+        color: var(--text-primary);
+        font-size: .68rem;
+    }
+    .pl-admin-user-badge-give {
+        height: 27px;
+        padding: 0 8px;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        cursor: pointer;
+        font: 700 .64rem/1 var(--font-mono);
+    }
+    .pl-admin-user-badge-give:hover { background: rgba(102,252,241,.2); }
+    .pl-admin-user-badge-give:disabled,
+    .pl-admin-user-badge-select:disabled { cursor: not-allowed; opacity: .45; }
+    @media (max-width: 720px) {
+        .pl-admin-badges-card__head { flex-direction: column; gap: 7px; }
+        .pl-admin-badges-form { grid-template-columns: 38px minmax(0, 1fr); }
+        .pl-admin-badges-form button { grid-column: 1 / -1; }
     }
 </style>
 
@@ -10033,11 +10197,45 @@
 
                 <!-- ═══ SEKME: KULLANICILAR (RBAC + Ban/Mute) ═══ -->
                 <div class="admin-tab-panel" data-admin-panel="users">
+                    <div class="pl-admin-badges-card" id="plAdminBadgesCard">
+                        <div class="pl-admin-badges-card__head">
+                            <div>
+                                <div class="pl-admin-badges-card__title">Özel rozetler</div>
+                                <div class="pl-admin-badges-card__note">
+                                    Rozet tipi oluşturma ve kullanıcıya verme işlemleri yalnızca Owner / Developer içindir.
+                                    Rozetler kullanıcının adının yanında görünür; profil içine ayrı bir alan eklenmez.
+                                </div>
+                            </div>
+                            <span class="pl-admin-badges-card__access">OWNER / DEVELOPER</span>
+                        </div>
+                        <div class="pl-admin-badges-catalog" id="plAdminBadgeCatalog"></div>
+                        <form class="pl-admin-badges-form" id="plAdminBadgesForm">
+                            <input id="plAdminBadgeEmoji" type="text" maxlength="2" placeholder="★" aria-label="Rozet ikonu" autocomplete="off">
+                            <input id="plAdminBadgeName" type="text" maxlength="24" placeholder="Yeni rozet adı" aria-label="Rozet adı" autocomplete="off">
+                            <button type="submit">Rozet oluştur</button>
+                        </form>
+                        <div class="pl-admin-badges-status" id="plAdminBadgesStatus" aria-live="polite"></div>
+                    </div>
                     <div class="admin-search-row">
                         <input type="text" class="forum-text-input" id="adminUserSearchInput" placeholder="Kullanıcı adına göre ara…" autocomplete="off">
                     </div>
                     <div class="admin-list" id="adminUserList">
                         <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                    <div class="pl-badge-sheet-backdrop" id="plAdminBadgeInfoBackdrop" role="presentation">
+                        <article class="pl-badge-sheet" role="dialog" aria-modal="true" aria-labelledby="plAdminBadgeInfoTitle">
+                            <div class="pl-badge-sheet__top">
+                                <div class="pl-badge-sheet__icon" id="plAdminBadgeInfoIcon"></div>
+                                <div>
+                                    <div class="pl-badge-sheet__eyebrow">ROZET BİLGİSİ</div>
+                                    <div class="pl-badge-sheet__title" id="plAdminBadgeInfoTitle"></div>
+                                    <div class="pl-badge-sheet__desc" id="plAdminBadgeInfoDesc"></div>
+                                </div>
+                                <button class="pl-badge-sheet__close" id="plAdminBadgeInfoClose" type="button" aria-label="Rozet bilgisini kapat">×</button>
+                            </div>
+                            <div class="pl-badge-sheet__rule"></div>
+                            <div class="pl-badge-sheet__hint">Rozet kullanıcı adının yanında görünür; profil içinde ayrı bir rozet kartı bulunmaz.</div>
+                        </article>
                     </div>
                 </div>
 
@@ -28623,12 +28821,122 @@
             let adminAuditLogCache = {};         // logId -> audit_logs objesi (Konsol Kayıtları sekmesi)
             window.__adminUsersCacheRef = adminUsersCache; // handleBanToggle/handleRoleChange bu isimle okuyor
 
+            // Özel oyuncu rozetleri: ilk sürüm görsel/prototip amaçlıdır.
+            // Tanımlar ve atamalar Firebase profilini değiştirmez; yalnızca
+            // bu tarayıcıdaki Yönetim Paneli > Kullanıcılar görünümünde tutulur.
+            const SPECIAL_BADGES_STORAGE = "pl_special_badge_catalog_v1";
+            const SPECIAL_ASSIGNMENTS_STORAGE = "pl_special_badge_assignments_v1";
+            const specialBadgeDefs = {
+                reliable: {
+                    name: "Güvenilir",
+                    color: "#49e3a2",
+                    description: "Toplulukta güvenilir davranışlarıyla öne çıkan kişilere verilir.",
+                    icon: "shield-check"
+                },
+                moderator: {
+                    name: "Moderatör",
+                    color: "#36c6ef",
+                    description: "Topluluğun düzenini koruyan ve moderasyon yapan kişilere verilir.",
+                    icon: "shield"
+                },
+                developer: {
+                    name: "Geliştirici",
+                    color: "#9b6cff",
+                    description: "Oyunu geliştiren kişilere verilir.",
+                    icon: "code"
+                }
+            };
+            let specialBadgeAssignments = {};
+
+            try {
+                const savedCatalog = JSON.parse(localStorage.getItem(SPECIAL_BADGES_STORAGE) || "{}");
+                Object.assign(specialBadgeDefs, savedCatalog);
+                specialBadgeAssignments = JSON.parse(localStorage.getItem(SPECIAL_ASSIGNMENTS_STORAGE) || "{}");
+            } catch (err) {
+                specialBadgeAssignments = {};
+            }
+
             // NOT: handleBanToggle/handleMuteToggle/handleRoleChange dosyanın
             // üst kısmında "adminUsersCache" adında GLOBAL bir değişken
             // bekliyor (bkz. Modül 7 - Kullanıcı Yönetimi Fonksiyonları).
             // O fonksiyonlar tanımlandığında bu modül henüz yoktu; burada
             // gerçek referansı `window.adminUsersCache` üzerinden sağlıyoruz.
             window.adminUsersCache = adminUsersCache;
+
+            function saveSpecialBadgeState() {
+                try {
+                    localStorage.setItem(SPECIAL_BADGES_STORAGE, JSON.stringify(specialBadgeDefs));
+                    localStorage.setItem(SPECIAL_ASSIGNMENTS_STORAGE, JSON.stringify(specialBadgeAssignments));
+                } catch (err) {
+                    // Görsel prototipte kalıcı tarayıcı depolaması zorunlu değil.
+                }
+            }
+
+            function specialBadgeIcon(def, size) {
+                const px = size || 17;
+                if (def.icon === "emoji") {
+                    return `<span class="pl-admin-special-badge-emoji" style="font-size:${Math.max(13, px - 1)}px;">${RBAC.escapeHtml(def.emoji || "★")}</span>`;
+                }
+                const common = `fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+                const body = def.icon === "shield-check"
+                    ? `<path ${common} d="M12 3 5.5 5.7v5.1c0 4.2 2.7 7.9 6.5 9.2 3.8-1.3 6.5-5 6.5-9.2V5.7L12 3Z"/><path ${common} d="m8.8 11.9 2.1 2.1 4.4-4.5"/>`
+                    : def.icon === "shield"
+                        ? `<path ${common} d="M12 3 5.5 5.7v5.1c0 4.2 2.7 7.9 6.5 9.2 3.8-1.3 6.5-5 6.5-9.2V5.7L12 3Z"/><path ${common} d="m13.2 7.7-2.4 3 2.1 2.1-2.1 3"/>`
+                        : `<path ${common} d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>`;
+                return `<svg viewBox="0 0 24 24" width="${px}" height="${px}" aria-hidden="true">${body}</svg>`;
+            }
+
+            function specialBadgeButton(id) {
+                const def = specialBadgeDefs[id];
+                if (!def) return "";
+                return `<button type="button" class="pl-admin-special-badge" data-admin-special-badge="${RBAC.escapeHtml(id)}" style="--badge-color:${RBAC.escapeHtml(def.color)}" title="${RBAC.escapeHtml(def.name)}">${specialBadgeIcon(def, 17)}</button>`;
+            }
+
+            function specialBadgeOptions() {
+                return `<option value="">Rozet seç</option>` + Object.entries(specialBadgeDefs).map(([id, def]) =>
+                    `<option value="${RBAC.escapeHtml(id)}">${RBAC.escapeHtml(def.name)}</option>`
+                ).join("");
+            }
+
+            function getUserSpecialBadges(uid, user) {
+                if (!Array.isArray(user.specialBadges)) {
+                    user.specialBadges = Array.isArray(specialBadgeAssignments[uid])
+                        ? specialBadgeAssignments[uid].slice()
+                        : [];
+                }
+                return user.specialBadges.filter((id) => !!specialBadgeDefs[id]);
+            }
+
+            function renderSpecialBadgeCatalog() {
+                const catalog = document.getElementById("plAdminBadgeCatalog");
+                const form = document.getElementById("plAdminBadgesForm");
+                if (!catalog) return;
+                const canManage = RBAC.canManageStaff(window.CommunityAuth.profile);
+                catalog.innerHTML = Object.entries(specialBadgeDefs).map(([id, def]) =>
+                    `<button type="button" class="pl-admin-badge-catalog-chip" data-admin-special-badge="${RBAC.escapeHtml(id)}" style="--badge-color:${RBAC.escapeHtml(def.color)}" title="${RBAC.escapeHtml(def.description)}">${specialBadgeIcon(def, 17)} ${RBAC.escapeHtml(def.name)}</button>`
+                ).join("");
+                if (form) {
+                    form.querySelectorAll("input,button").forEach((el) => { el.disabled = !canManage; });
+                }
+                const status = document.getElementById("plAdminBadgesStatus");
+                if (status && !canManage) status.textContent = "Yeni rozet oluşturma yetkisi yalnızca Owner / Developer'dadır.";
+            }
+
+            function openSpecialBadgeInfo(id) {
+                const def = specialBadgeDefs[id];
+                const backdrop = document.getElementById("plAdminBadgeInfoBackdrop");
+                if (!def || !backdrop) return;
+                const icon = document.getElementById("plAdminBadgeInfoIcon");
+                icon.style.setProperty("--badge-color", def.color);
+                icon.innerHTML = specialBadgeIcon(def, 42);
+                document.getElementById("plAdminBadgeInfoTitle").textContent = def.name;
+                document.getElementById("plAdminBadgeInfoDesc").textContent = def.description;
+                backdrop.classList.add("is-open");
+            }
+
+            function closeSpecialBadgeInfo() {
+                document.getElementById("plAdminBadgeInfoBackdrop")?.classList.remove("is-open");
+            }
 
             // ------------------------------------------------------------
             // A) SEKME GEÇİŞİ
@@ -28691,6 +28999,8 @@
                 const isMutedNow = mute && mute.mutedUntil && mute.mutedUntil > Date.now();
                 const isBannedNow = RBAC.isBanActiveNow(u);
                 const warnCount = u.warnCount || 0;
+                const specialBadges = getUserSpecialBadges(uid, u);
+                const specialBadgeHtml = specialBadges.map(specialBadgeButton).join("");
 
                 const badges = [
                     isBannedNow ? `<span class="admin-badge admin-badge-banned">🚫 Banlı</span>` : "",
@@ -28700,6 +29010,15 @@
 
                 // Rank -- salt okunur düz metin (dropdown YOK).
                 const rankReadonlyHtml = `<span class="admin-row-role-readonly">${RBAC.escapeHtml(u.role || "Player")}</span>`;
+                const canManageSpecialBadges = RBAC.canManageStaff(myProfile);
+                const specialBadgeToolsHtml = `
+                    <div class="pl-admin-user-badge-tools">
+                        <span class="pl-admin-user-badge-tools__label">Rozet</span>
+                        <select class="pl-admin-user-badge-select" data-special-badge-user="${RBAC.escapeHtml(uid)}" ${canManageSpecialBadges ? "" : 'disabled title="Bu işlem yalnızca Owner / Developer yapabilir."'}>
+                            ${specialBadgeOptions()}
+                        </select>
+                        <button type="button" class="pl-admin-user-badge-give" data-admin-action="give-special-badge" data-uid="${RBAC.escapeHtml(uid)}" ${canManageSpecialBadges ? "" : 'disabled title="Bu işlem yalnızca Owner / Developer yapabilir."'}>Ver</button>
+                    </div>`;
 
                 // Bu satırdaki kullanıcıya (target) ceza uygulanabilir mi?
                 // Helper ve üzeri herkes butonları GÖRÜR, ama bir yetkiliye
@@ -28720,10 +29039,11 @@
                     <div class="admin-row" data-admin-user-row="${RBAC.escapeHtml(uid)}">
                         <img class="admin-row-avatar" src="${RBAC.escapeHtml(u.avatarUrl || '')}" alt="" onerror="this.style.visibility='hidden'">
                         <div class="admin-row-main">
-                            <div class="admin-row-title">${RBAC.renderUsernameWithBadge(u.username, u.isVerified)} ${badges}</div>
+                            <div class="admin-row-title">${RBAC.renderUsernameWithBadge(u.username, u.isVerified)} <span class="pl-admin-special-badges">${specialBadgeHtml}</span> ${badges}</div>
                             <div class="admin-row-sub">${RBAC.escapeHtml(u.role || "Player")}${isBannedNow && u.banReason ? " · Sebep: " + RBAC.escapeHtml(u.banReason) : ""}</div>
                         </div>
                         <div class="admin-row-actions">
+                            ${specialBadgeToolsHtml}
                             ${rankReadonlyHtml}
                             ${banBtnHtml}
                             <button type="button" class="forum-btn forum-btn-ghost" data-admin-action="mute" data-uid="${RBAC.escapeHtml(uid)}" ${isMutedNow ? "" : disabledAttr}>${isMutedNow ? "✅ Susturmayı Kaldır" : "🔇 Sustur"}</button>
@@ -28804,6 +29124,34 @@
             }
 
             function onUserListClick(e) {
+                const specialBadgeBtn = e.target.closest("[data-admin-special-badge]");
+                if (specialBadgeBtn) {
+                    openSpecialBadgeInfo(specialBadgeBtn.getAttribute("data-admin-special-badge"));
+                    return;
+                }
+                const giveSpecialBadgeBtn = e.target.closest('[data-admin-action="give-special-badge"]');
+                if (giveSpecialBadgeBtn) {
+                    const myProfile = window.CommunityAuth.profile;
+                    if (!RBAC.canManageStaff(myProfile)) {
+                        alert("Özel rozet verme işlemini yalnızca Owner / Developer yapabilir.");
+                        return;
+                    }
+                    const uid = giveSpecialBadgeBtn.getAttribute("data-uid");
+                    const row = giveSpecialBadgeBtn.closest("[data-admin-user-row]");
+                    const select = row && row.querySelector("[data-special-badge-user]");
+                    const badgeId = select && select.value;
+                    const target = adminUsersCache[uid];
+                    if (!uid || !badgeId || !target || !specialBadgeDefs[badgeId]) return;
+                    const current = getUserSpecialBadges(uid, target);
+                    if (current.indexOf(badgeId) === -1) current.push(badgeId);
+                    target.specialBadges = current;
+                    specialBadgeAssignments[uid] = current.slice();
+                    saveSpecialBadgeState();
+                    renderUserList();
+                    const status = document.getElementById("plAdminBadgesStatus");
+                    if (status) status.textContent = `${specialBadgeDefs[badgeId].name} rozeti @${target.username || uid} kullanıcısına verildi.`;
+                    return;
+                }
                 const banBtn = e.target.closest('[data-admin-action="ban"]');
                 const muteBtn = e.target.closest('[data-admin-action="mute"]');
                 const warnBtn = e.target.closest('[data-admin-action="warn"]');
@@ -29316,6 +29664,7 @@
                 if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) return; // ekstra güvenlik katmanı
                 startListeners();
                 renderStats();
+                renderSpecialBadgeCatalog();
                 renderUserList();
                 renderForumModeration();
                 renderMarketplaceModeration();
@@ -29337,6 +29686,45 @@
                     renderUserList();
                 });
                 document.getElementById("adminUserList")?.addEventListener("click", onUserListClick);
+                document.getElementById("plAdminBadgeCatalog")?.addEventListener("click", (e) => {
+                    const badgeBtn = e.target.closest("[data-admin-special-badge]");
+                    if (badgeBtn) openSpecialBadgeInfo(badgeBtn.getAttribute("data-admin-special-badge"));
+                });
+                document.getElementById("plAdminBadgesForm")?.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const myProfile = window.CommunityAuth.profile;
+                    const status = document.getElementById("plAdminBadgesStatus");
+                    if (!RBAC.canManageStaff(myProfile)) {
+                        if (status) status.textContent = "Bu işlem yalnızca Owner / Developer tarafından yapılabilir.";
+                        return;
+                    }
+                    const emojiInput = document.getElementById("plAdminBadgeEmoji");
+                    const nameInput = document.getElementById("plAdminBadgeName");
+                    const emoji = emojiInput.value.trim();
+                    const name = nameInput.value.trim();
+                    if (!emoji || !name) {
+                        if (status) status.textContent = "İkon ve rozet adı birlikte girilmeli.";
+                        return;
+                    }
+                    const id = "custom-" + Date.now();
+                    specialBadgeDefs[id] = {
+                        name,
+                        emoji,
+                        color: "#f5c542",
+                        description: `${name} rozeti, Owner / Developer tarafından tanımlanan özel bir rozettir.`,
+                        icon: "emoji"
+                    };
+                    saveSpecialBadgeState();
+                    renderSpecialBadgeCatalog();
+                    renderUserList();
+                    emojiInput.value = "";
+                    nameInput.value = "";
+                    if (status) status.textContent = `${name} rozeti oluşturuldu ve kullanıcı listesinde seçilebilir.`;
+                });
+                document.getElementById("plAdminBadgeInfoClose")?.addEventListener("click", closeSpecialBadgeInfo);
+                document.getElementById("plAdminBadgeInfoBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "plAdminBadgeInfoBackdrop") closeSpecialBadgeInfo();
+                });
                 // NOT: rol artık panelden değiştirilemediği için (bkz. madde 3)
                 // "change" olayına artık ihtiyaç yok — dropdown kaldırıldı.
 
