@@ -11122,6 +11122,13 @@
         document.addEventListener("click", (ev) => {
             const pill = ev.target.closest(".community-badge-pill");
             if (!pill) return;
+            // Rozet genelde forumda "kullanıcı adı/avatar" wrapper'ının
+            // (data-action="view-profile") İÇİNDE render edilir. stopPropagation
+            // olmadan tıklama yukarı kabarcıklanıp o wrapper'ı da tetikliyor ve
+            // topluluk paneli yerine (ya da onunla birlikte) kullanıcının
+            // profili açılıyordu. Burada durdurup SADECE topluluk önizlemesini
+            // açıyoruz.
+            ev.stopPropagation();
             const gid = pill.getAttribute("data-badge-group-id");
             if (!gid) return;
             if (typeof window.openCommunityPreviewModal === "function") {
@@ -13106,6 +13113,28 @@
             document.getElementById("plAdminBadgeInfoBackdrop")?.addEventListener("click", (e) => {
                 if (e.target.id === "plAdminBadgeInfoBackdrop") e.currentTarget.classList.remove("is-open");
             });
+        });
+
+        // 🏅 ÖZEL ROZET DETAY PANELİ — SİTE GENELİ TIKLAMA DİNLEYİCİSİ
+        // data-special-badge-info attribute'u forum, mesajlaşma, profil vb.
+        // her yerde rozet render edilirken basılıyor (bkz. satır ~10910,
+        // ~10933) ama şimdiye kadar buna tıklamayı dinleyen tek yer admin
+        // panelindeki kullanıcı listesiydi (data-admin-special-badge,
+        // onUserListClick). Bu yüzden panel sadece Yönetim Panelinde
+        // açılabiliyordu. Aşağıdaki delegasyon document seviyesinde
+        // olduğu için sayfa neresinde render edilirse edilsin çalışır.
+        document.addEventListener("click", (e) => {
+            const badgeEl = e.target.closest("[data-special-badge-info]");
+            if (!badgeEl) return;
+            // community-badge-pill'deki ile aynı sebep: bu rozetler de
+            // forumda data-action="view-profile" wrapper'ının içinde
+            // basılıyor, stopPropagation olmadan tıklama kullanıcının
+            // profilini açan üst dinleyiciye kadar kabarcıklanıyordu.
+            e.stopPropagation();
+            const id = badgeEl.getAttribute("data-special-badge-info");
+            if (id && typeof window.openSpecialBadgeInfoGlobal === "function") {
+                window.openSpecialBadgeInfoGlobal(id);
+            }
         });
 
         // NOT: Mention cache'in başlatılması artık burada YAPILMIYOR.
