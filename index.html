@@ -8216,6 +8216,119 @@
         .pl-admin-badges-form { grid-template-columns: 38px minmax(0, 1fr); }
         .pl-admin-badges-form button { grid-column: 1 / -1; }
     }
+
+    /* ── Rozet ikonu artık bir FOTOĞRAF (base64 PNG/JPG) ──
+       ⭐ metin girişi yerine gizli bir <input type="file"> açan bir
+       "ikon seç" butonu. Seçilen dosya anında base64'e çevrilip
+       def.imageData alanına yazılır (bkz. JS: onBadgeIconFileChange). */
+    .pl-admin-badge-icon-picker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 32px;
+        flex-shrink: 0;
+        border: 1px dashed rgba(255,255,255,.22);
+        border-radius: 7px;
+        background: var(--bg-void);
+        cursor: pointer;
+        overflow: hidden;
+        padding: 0;
+    }
+    .pl-admin-badge-icon-picker:hover { border-color: var(--accent); }
+    .pl-admin-badge-icon-picker img { width: 100%; height: 100%; object-fit: contain; }
+    .pl-admin-badge-icon-picker-placeholder { color: var(--text-dim); font-size: 15px; line-height: 1; }
+
+    /* Rozet oluşturma formu artık 2 satır: ikon+isim+buton üstte,
+       zorunlu açıklama altta (tam genişlik). */
+    .pl-admin-badges-form { grid-template-columns: 38px minmax(0, 1fr) auto; }
+    .pl-admin-badges-form-desc-row { grid-column: 1 / -1; margin-top: 6px; }
+    .pl-admin-badges-form-desc-row textarea {
+        width: 100%;
+        min-height: 46px;
+        padding: 7px 8px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--bg-void);
+        color: var(--text-primary);
+        font: .72rem/1.4 var(--font-display);
+        resize: vertical;
+    }
+    .pl-admin-badges-form-desc-row textarea:focus { border-color: var(--accent); outline: none; }
+
+    /* ── Rozet kataloğu artık sürüklenerek sıralanabilir kartlar ──
+       En üstteki rozet = en yüksek öncelik (isim yanında görünen tek
+       rozet budur). Diğerleri isim ALTINDA listelenir. */
+    .pl-admin-badges-catalog { flex-direction: column; gap: 6px; }
+    .pl-admin-badge-catalog-chip {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 7px 9px;
+        cursor: grab;
+        user-select: none;
+    }
+    .pl-admin-badge-catalog-chip.is-dragging { opacity: .4; cursor: grabbing; }
+    .pl-admin-badge-catalog-chip.is-drag-over { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+    .pl-admin-badge-catalog-chip__rank {
+        flex-shrink: 0;
+        width: 18px;
+        color: var(--text-dim);
+        font: 700 .64rem/1 var(--font-mono);
+        text-align: center;
+    }
+    .pl-admin-badge-catalog-chip__drag {
+        flex-shrink: 0;
+        color: var(--text-dim);
+        font-size: 12px;
+        letter-spacing: -1px;
+    }
+    .pl-admin-badge-catalog-chip img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+    .pl-admin-badge-catalog-chip__name { flex: 1; text-align: left; }
+    .pl-admin-badge-catalog-chip__del {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 5px;
+        background: transparent;
+        color: #ff6b6b;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .pl-admin-badge-catalog-chip__del:hover { background: rgba(255,80,80,.14); }
+
+    /* ── Kullanıcı satırı rozet ikonları artık img (base64) olabilir ── */
+    .pl-admin-special-badge img { width: 17px; height: 17px; object-fit: contain; border-radius: 3px; }
+
+    /* ════════════════════════════════════════════════════════════
+       🏅 ROZETLER — HER YERDE GÖSTERİM (mavi tik gibi)
+       İsim yanında: sadece EN ÜST ÖNCELİKLİ rozet (mavi tik/askıdan
+       hemen sonra). Diğer rozetler (varsa) isim SATIRININ ALTINDA,
+       küçük bir şerit halinde listelenir.
+       ════════════════════════════════════════════════════════════ */
+    .pl-badge-inline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+    .pl-badge-inline img { width: 100%; height: 100%; object-fit: contain; }
+    .pl-badge-sub-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+    }
+    .pl-badge-sub-row .pl-badge-inline { width: 14px; height: 14px; opacity: .88; }
+    .pl-badge-sub-row .pl-badge-inline:hover { opacity: 1; }
 </style>
 
 <!-- ================================================================
@@ -9848,10 +9961,14 @@
                             <div class="profile-name-row">
                                 <span class="profile-username" id="profileUsernameText">—</span>
                                 <span id="profileVerifiedBadgeSlot"></span>
+                                <span id="profileTopSpecialBadgeSlot"></span>
                                 <button class="profile-edit-name-btn" id="profileEditNameBtn" title="Kullanıcı adını düzenle">✏️</button>
                             </div>
                             <div class="profile-original-name" id="profileOriginalNameText"></div>
                             <div class="profile-hangered-label" id="profileHangeredLabel" style="display:none;">Askıya Alındı</div>
+                            <!-- 🏅 Kalan özel rozetler (en üsttekinin dışındakiler) --
+                                 isim satırının hemen altında listelenir. -->
+                            <div id="profileSpecialBadgeSubRow"></div>
                             <div class="profile-role-chip" id="profileRoleChip">—</div>
                             <!-- Sosyal medya ikon çubuğu — kendi profilinde + diğer profillerinde -->
                             <div class="profile-social-icons" id="profileHeroSocialIcons"></div>
@@ -10203,16 +10320,24 @@
                                 <div class="pl-admin-badges-card__title">Özel rozetler</div>
                                 <div class="pl-admin-badges-card__note">
                                     Rozet tipi oluşturma ve kullanıcıya verme işlemleri yalnızca Owner / Developer içindir.
-                                    Rozetler kullanıcının adının yanında görünür; profil içine ayrı bir alan eklenmez.
+                                    En üstteki rozet kullanıcının adının yanında görünür; diğerleri isminin altında listelenir.
+                                    Sıralamayı değiştirmek için rozetleri sürükleyip bırakabilirsiniz.
                                 </div>
                             </div>
                             <span class="pl-admin-badges-card__access">OWNER / DEVELOPER</span>
                         </div>
                         <div class="pl-admin-badges-catalog" id="plAdminBadgeCatalog"></div>
                         <form class="pl-admin-badges-form" id="plAdminBadgesForm">
-                            <input id="plAdminBadgeEmoji" type="text" maxlength="2" placeholder="★" aria-label="Rozet ikonu" autocomplete="off">
+                            <button type="button" class="pl-admin-badge-icon-picker" id="plAdminBadgeIconPicker" title="Rozet görseli seç">
+                                <span class="pl-admin-badge-icon-picker-placeholder" id="plAdminBadgeIconPlaceholder">🖼️</span>
+                                <img id="plAdminBadgeIconPreview" style="display:none;" alt="">
+                            </button>
+                            <input type="file" id="plAdminBadgeFileInput" accept="image/*" style="display:none;">
                             <input id="plAdminBadgeName" type="text" maxlength="24" placeholder="Yeni rozet adı" aria-label="Rozet adı" autocomplete="off">
                             <button type="submit">Rozet oluştur</button>
+                            <div class="pl-admin-badges-form-desc-row">
+                                <textarea id="plAdminBadgeDesc" maxlength="160" placeholder="Rozet açıklaması (zorunlu) — rozete dokununca gösterilir" aria-label="Rozet açıklaması"></textarea>
+                            </div>
                         </form>
                         <div class="pl-admin-badges-status" id="plAdminBadgesStatus" aria-live="polite"></div>
                     </div>
@@ -10701,7 +10826,23 @@
          * (hanger) durumu. true ise, mavi tikten ÖNCE kırmızı 🪝 rozeti
          * basılır -- bkz. renderHangerBadge.
          */
-        function renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered) {
+        /**
+         * @param {string} username
+         * @param {string} role
+         * @param {boolean} isVerified
+         * @param {string} nameColor
+         * @param {string} equippedBadgeGroupId
+         * @param {boolean} isHangered
+         * @param {Array<string>} specialBadgeIds - (opsiyonel) o kullanıcının
+         *   sahip olduğu ÖZEL rozet id'leri, ÖNCELİK SIRASINA göre dizilmiş
+         *   (bkz. RBAC.getUserSpecialBadges). Sadece EN ÜST ÖNCELİKLİ olan
+         *   (dizinin 0. elemanı) burada, mavi tik/askıdan hemen sonra,
+         *   inline gösterilir -- tıpkı mavi tik gibi. Kalan rozetler (varsa)
+         *   bu fonksiyonun kapsamı dışındadır; onları isim ALTINDA ayrı bir
+         *   satır olarak listelemek isteyen çağıran taraf (şu an: profil
+         *   sayfası) RBAC.renderSpecialBadgeSubRow'u ayrıca kullanır.
+         */
+        function renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds) {
             const safeName = escapeHtml(username || "Kullanıcı");
             const nameHtml = window.NameColorSystem
                 ? window.NameColorSystem.wrapNameWithColor(safeName, nameColor)
@@ -10709,7 +10850,8 @@
             const badgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
                 ? renderCommunityBadge(equippedBadgeGroupId, "14px")
                 : "";
-            return `${formatRankTagHtml(role)}${nameHtml}${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
+            const topSpecialBadgeHtml = renderTopSpecialBadgeInline(specialBadgeIds, "14px");
+            return `${formatRankTagHtml(role)}${nameHtml}${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}${topSpecialBadgeHtml}${badgeHtml}`;
         }
 
         /**
@@ -10724,7 +10866,7 @@
          * renderNameWithRank'teki aynı isimli parametrenin açıklaması.
          * `isHangered` (opsiyonel, 5. parametre): bkz. renderNameWithRank.
          */
-        function renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId, isHangered) {
+        function renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId, isHangered, specialBadgeIds) {
             const safeName = escapeHtml(username || "Kullanıcı");
             const nameHtml = roleColor
                 ? `<span style="color:${escapeHtml(roleColor)}; font-weight:700;">${safeName}</span>`
@@ -10732,7 +10874,56 @@
             const badgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
                 ? renderCommunityBadge(equippedBadgeGroupId, "14px")
                 : "";
-            return `${nameHtml}${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}${badgeHtml}`;
+            const topSpecialBadgeHtml = renderTopSpecialBadgeInline(specialBadgeIds, "14px");
+            return `${nameHtml}${renderHangerBadge(isHangered)}${renderVerifiedBadge(isVerified)}${topSpecialBadgeHtml}${badgeHtml}`;
+        }
+
+        /**
+         * 🏅 ÖZEL ROZET — İSİM YANI (mavi tik gibi, TEK rozet)
+         * specialBadgeIds dizisinin İLK elemanı (= en üst öncelik) burada
+         * küçük bir görsel olarak render edilir. Kalan rozetler dahil
+         * EDİLMEZ -- dar alanlarda (forum, mesaj balonu, kullanıcı listesi)
+         * taşmayı önlemek için sadece en üstün rozet gösterilir. Tıklanınca
+         * (event delegation ile, bkz. aşağıdaki click listener) detay
+         * bilgi panelini açar.
+         */
+        function renderTopSpecialBadgeInline(specialBadgeIds, size) {
+            if (!Array.isArray(specialBadgeIds) || !specialBadgeIds.length) return "";
+            const defs = (window.SpecialBadgeSystem && window.SpecialBadgeSystem.defs) || {};
+            const topId = specialBadgeIds[0];
+            const def = defs[topId];
+            if (!def) return "";
+            const px = size || "14px";
+            const img = def.imageData
+                ? `<img src="${escapeAttr(def.imageData)}" alt="">`
+                : (def.emoji ? `<span style="font-size:${px};line-height:1;">${escapeHtml(def.emoji)}</span>` : "");
+            if (!img) return "";
+            return `<span class="pl-badge-inline" data-special-badge-info="${escapeAttr(topId)}" title="${escapeAttr(def.name || "Rozet")}" style="width:${px};height:${px};">${img}</span>`;
+        }
+
+        /**
+         * 🏅 ÖZEL ROZETLER — İSİM ALTI (kalan rozetler, ikinci ve sonrası)
+         * specialBadgeIds dizisindeki İLK rozet HARİÇ diğerlerini küçük bir
+         * şerit halinde döndürür. Dizi 1 veya 0 elemanlıysa boş string
+         * döner (gösterilecek "alt satır" yoktur). Çağıran taraf bu HTML'i
+         * isim satırının HEMEN ALTINA kendi yerleştirir (bkz. profil sayfası
+         * renderProfileView kullanımı).
+         */
+        function renderSpecialBadgeSubRow(specialBadgeIds, size) {
+            if (!Array.isArray(specialBadgeIds) || specialBadgeIds.length < 2) return "";
+            const defs = (window.SpecialBadgeSystem && window.SpecialBadgeSystem.defs) || {};
+            const px = size || "14px";
+            const rest = specialBadgeIds.slice(1).filter((id) => !!defs[id]);
+            if (!rest.length) return "";
+            const chips = rest.map((id) => {
+                const def = defs[id];
+                const img = def.imageData
+                    ? `<img src="${escapeAttr(def.imageData)}" alt="">`
+                    : (def.emoji ? `<span style="font-size:${px};line-height:1;">${escapeHtml(def.emoji)}</span>` : "");
+                if (!img) return "";
+                return `<span class="pl-badge-inline" data-special-badge-info="${escapeAttr(id)}" title="${escapeAttr(def.name || "Rozet")}" style="width:${px};height:${px};">${img}</span>`;
+            }).join("");
+            return chips ? `<div class="pl-badge-sub-row">${chips}</div>` : "";
         }
 
         // ---------- MAVİ TİK (VERIFIED BADGE) — tek merkezi render ----------
@@ -11095,8 +11286,45 @@
             formatRankTagHtml,
             renderNameWithRank,
             renderCommunityMemberName,
-            renderCommunityBadge
+            renderCommunityBadge,
+            renderTopSpecialBadgeInline,
+            renderSpecialBadgeSubRow,
+            getUserSpecialBadgesOrdered
         };
+
+        /**
+         * RBAC.getUserSpecialBadgesOrdered(profile) — bir profildeki
+         * (profile.specialBadges dizisi) özel rozetleri, GÜNCEL katalog
+         * öncelik sırasına göre dizip döndürür. Admin panelin kendi
+         * getUserSpecialBadges'ından FARKLI olarak burada adminUsersCache
+         * gibi bir bağımlılık yoktur -- herhangi bir profil objesiyle
+         * (forum yazarı, mesaj göndereni, profil sayfası vb.) her yerden
+         * çağrılabilir.
+         */
+        function getUserSpecialBadgesOrdered(profile) {
+            if (!profile || !Array.isArray(profile.specialBadges) || !profile.specialBadges.length) return [];
+            const sys = window.SpecialBadgeSystem;
+            if (!sys) return profile.specialBadges.slice();
+            const owned = new Set(profile.specialBadges.filter((id) => !!sys.defs[id]));
+            if (!owned.size) return [];
+            const ordered = sys.order.filter((id) => owned.has(id));
+            owned.forEach((id) => { if (ordered.indexOf(id) === -1) ordered.push(id); });
+            return ordered;
+        }
+
+        // Herhangi bir özel rozet ikonuna (isim yanı VEYA isim altı, hangi
+        // modülde render edilmiş olursa olsun) tıklanınca detay panelini
+        // açar. Event delegation kullanıldığı için sonradan render edilen
+        // rozetler için de otomatik çalışır.
+        document.addEventListener("click", (ev) => {
+            const el = ev.target.closest("[data-special-badge-info]");
+            if (!el) return;
+            const badgeId = el.getAttribute("data-special-badge-info");
+            if (!badgeId) return;
+            if (typeof window.openSpecialBadgeInfoGlobal === "function") {
+                window.openSpecialBadgeInfoGlobal(badgeId);
+            }
+        });
 
         // NameColorSystem: RBAC'tan ayrı ama onunla aynı dosyada, RBAC'ın
         // resolveThemeTier'ına (Modül 6'da tanımlı) bağımlı olduğu için
@@ -11260,7 +11488,8 @@
                     profile.isVerified === true,
                     nameColorObj,
                     profile.equippedBadgeGroupId,
-                    profile.hangered === true
+                    profile.hangered === true,
+                    window.CommunityRBAC.getUserSpecialBadgesOrdered(profile)
                 );
             }
             // 🐛 BUGFIX güvenlik önlemi: profileUsernameText'i SADECE o an
@@ -12209,6 +12438,11 @@
                         // her render'da canlı olarak window.CommunityDirectoryCache
                         // üzerinden okunur (bkz. renderCommunityBadge).
                         equippedBadgeGroupId: u.equippedBadgeGroupId || null,
+                        // 🏅 Özel rozetler (Owner/Developer tarafından verilen) --
+                        // ham id dizisi burada tutulur, öncelik sıralaması her
+                        // render'da RBAC.getUserSpecialBadgesOrdered ile canlı
+                        // olarak (güncel katalog sırasına göre) hesaplanır.
+                        specialBadges: Array.isArray(u.specialBadges) ? u.specialBadges : [],
                         nameColor: window.NameColorSystem
                             ? window.NameColorSystem.normalize(u.nameColor, fakeProfileForTierCheck)
                             : null
@@ -12801,6 +13035,74 @@
             return;
         }
 
+        // ══════════════════════════════════════════════════════════
+        // 🏅 ÖZEL ROZETLER — GLOBAL KATALOG DİNLEYİCİSİ
+        // badge_types tablosu HERKESE AÇIK okunur (Rules: ".read": true)
+        // -- bu sayede rozetler mavi tik gibi HER YERDE (profil, forum,
+        // mesajlaşma, admin panel) görünebilir; sadece YAZMA (oluşturma/
+        // silme/sıralama/verme) Owner/Developer ile sınırlıdır. Bu
+        // dinleyici oturum açık/kapalı fark etmeksizin, sayfa yüklenir
+        // yüklenmez başlatılır -- admin panelinin açılmasını beklemez.
+        // window.SpecialBadgeSystem, admin panel modülünün specialBadgeDefs/
+        // specialBadgeOrder ile AYNI objeleri paylaşır (bkz. Modül 8).
+        // ══════════════════════════════════════════════════════════
+        window.SpecialBadgeSystem = window.SpecialBadgeSystem || {
+            defs: {},      // {badgeId: {name,description,color,imageData,order,...}}
+            order: [],     // [badgeId, ...] öncelik sırasıyla (0 = en üstün)
+            ready: false,
+            _listeners: []
+        };
+        (function initSpecialBadgeGlobalListener() {
+            database.ref("badge_types").on("value", (snap) => {
+                const all = snap.val() || {};
+                const defs = window.SpecialBadgeSystem.defs;
+                Object.keys(defs).forEach((k) => delete defs[k]);
+                Object.assign(defs, all);
+                window.SpecialBadgeSystem.order = Object.keys(defs).sort((a, b) => {
+                    const oa = Number(defs[a].order) || 0;
+                    const ob = Number(defs[b].order) || 0;
+                    return oa - ob;
+                });
+                window.SpecialBadgeSystem.ready = true;
+                window.SpecialBadgeSystem._listeners.forEach((fn) => { try { fn(); } catch (_e) {} });
+            }, (err) => {
+                console.warn("[SpecialBadgeSystem] badge_types okunamadı:", err);
+            });
+        })();
+
+        /**
+         * 🏅 ÖZEL ROZET DETAY PANELİ — HERKESE AÇIK versiyon. Admin
+         * panelin kendi openSpecialBadgeInfo'suyla AYNI DOM elementlerini
+         * (#plAdminBadgeInfoBackdrop) kullanır -- bu panel admin sekmesi
+         * dışında da (forum, profil, mesajlaşma) DOM'da her zaman
+         * mevcuttur, o yüzden ayrı bir HTML kopyası gerekmez.
+         */
+        window.openSpecialBadgeInfoGlobal = function (id) {
+            const def = window.SpecialBadgeSystem && window.SpecialBadgeSystem.defs[id];
+            const backdrop = document.getElementById("plAdminBadgeInfoBackdrop");
+            if (!def || !backdrop) return;
+            const icon = document.getElementById("plAdminBadgeInfoIcon");
+            if (icon) {
+                icon.style.setProperty("--badge-color", def.color || "#f5c542");
+                icon.innerHTML = def.imageData
+                    ? `<img src="${escapeAttr(def.imageData)}" width="42" height="42" alt="" style="object-fit:contain;">`
+                    : (def.emoji ? `<span style="font-size:32px;line-height:1;">${escapeHtml(def.emoji)}</span>` : "");
+            }
+            const titleEl = document.getElementById("plAdminBadgeInfoTitle");
+            const descEl = document.getElementById("plAdminBadgeInfoDesc");
+            if (titleEl) titleEl.textContent = def.name || "Rozet";
+            if (descEl) descEl.textContent = def.description || "";
+            backdrop.classList.add("is-open");
+        };
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("plAdminBadgeInfoClose")?.addEventListener("click", () => {
+                document.getElementById("plAdminBadgeInfoBackdrop")?.classList.remove("is-open");
+            });
+            document.getElementById("plAdminBadgeInfoBackdrop")?.addEventListener("click", (e) => {
+                if (e.target.id === "plAdminBadgeInfoBackdrop") e.currentTarget.classList.remove("is-open");
+            });
+        });
+
         // NOT: Mention cache'in başlatılması artık burada YAPILMIYOR.
         // Önceden auth durumundan bağımsız hemen çağrılıyordu, ancak
         // mobil cihazlarda firebase.auth() kullanıcı doğrulamasını PC'ye
@@ -13258,7 +13560,8 @@
                     profile.isVerified === true,
                     nameColor,
                     profile.equippedBadgeGroupId,
-                    profile.hangered === true
+                    profile.hangered === true,
+                    window.CommunityRBAC.getUserSpecialBadgesOrdered(profile)
                 );
             }
             if (roleEl) roleEl.textContent = (profile.role || "Player").toUpperCase();
@@ -13376,6 +13679,19 @@
                 RBAC.renderHangerBadge(profile.hangered === true, "18px") +
                 RBAC.renderVerifiedBadge(profile.isVerified === true, "18px") +
                 (typeof renderCommunityBadge === "function" ? renderCommunityBadge(profile.equippedBadgeGroupId, "18px") : "");
+
+            // 🏅 Özel rozetler: EN ÜST öncelikli olan isim yanında (mavi tik
+            // gibi), kalanı isim satırının hemen altında (bkz. HTML:
+            // profileSpecialBadgeSubRow) listelenir. Hem kendi profilinde
+            // hem başkasının profilinde aynı şekilde çalışır -- bu bilgi
+            // herkese açıktır.
+            {
+                const orderedSpecialBadges = RBAC.getUserSpecialBadgesOrdered(profile);
+                const topSlot = document.getElementById("profileTopSpecialBadgeSlot");
+                if (topSlot) topSlot.innerHTML = RBAC.renderTopSpecialBadgeInline(orderedSpecialBadges, "18px");
+                const subRowSlot = document.getElementById("profileSpecialBadgeSubRow");
+                if (subRowSlot) subRowSlot.innerHTML = RBAC.renderSpecialBadgeSubRow(orderedSpecialBadges, "16px");
+            }
 
             // 🔒 "Askıya Alındı" etiketi — sadece profil sahibinin
             // kendisinde DEĞİL, herkesin görüntülediği profilde görünür
@@ -17684,12 +18000,13 @@
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isHangered = candidate ? candidate.hangered : false;
+            const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
             const canPin = RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper");
             return `
                 <div class="forum-pinned-item">
                     <div class="forum-message-header">
                         <span class="forum-message-username">
-                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
+                            ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}
                         </span>
                         <span class="forum-message-pinned-tag">📌 Sabitlendi</span>
                     </div>
@@ -17707,6 +18024,7 @@
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isHangered = candidate ? candidate.hangered : false;
+            const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
             const isWhisper = !!m.whisperToUid;
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
@@ -17747,7 +18065,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-message-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${m.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(m.createdAt)}</span>
                     ${isWhisper ? '<span class="forum-message-whisper-tag">Gizli Mesaj</span>' : ''}
@@ -18104,6 +18422,7 @@
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isHangered = candidate ? candidate.hangered : false;
+            const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
 
             const tagsHtml = `
                 ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
@@ -18121,7 +18440,7 @@
                             ${tagsHtml}
                         </div>
                         <div class="forum-thread-meta">
-                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}</span>
+                            <span>${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}</span>
                             <span class="forum-thread-meta-sep">·</span>
                             <span>${formatMessageTime(t.createdAt)}</span>
                         </div>
@@ -18286,6 +18605,7 @@
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isHangered = candidate ? candidate.hangered : false;
+            const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
             const viewerProfile = window.CommunityAuth.profile;
             const myUid = window.CommunityAuth.user.uid;
             const canModerateThread = RBAC.hasMinimumTier(viewerProfile, "helper");
@@ -18307,7 +18627,7 @@
                 </div>
                 <div class="forum-thread-detail-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}
                     </span>
                     <span class="forum-message-time">${formatMessageTime(t.createdAt)}</span>
                 </div>
@@ -18416,6 +18736,7 @@
             const nameColor = candidate ? candidate.nameColor : null;
             const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isHangered = candidate ? candidate.hangered : false;
+            const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
             const myUid = window.CommunityAuth.user.uid;
             const viewerProfile = window.CommunityAuth.profile;
             const thread = forumThreadsCache[threadId];
@@ -18443,7 +18764,7 @@
             const headerHtml = isGrouped ? "" : `
                 <div class="forum-reply-header">
                     <span class="forum-reply-username" data-action="view-profile" data-uid="${r.authorUid}">
-                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}
+                        ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}
                     </span>
                     <span class="forum-reply-time">${formatMessageTime(r.createdAt)}</span>
                 </div>`;
@@ -20040,6 +20361,7 @@
                                 isVerified: u.isVerified === true,
                                 hangered: u.hangered === true,
                                 equippedBadgeGroupId: u.equippedBadgeGroupId || null,
+                                specialBadges: Array.isArray(u.specialBadges) ? u.specialBadges : [],
                                 nameColor: window.NameColorSystem
                                     ? window.NameColorSystem.normalize(u.nameColor, { role: u.role || "user" })
                                     : null
@@ -20076,7 +20398,7 @@
                 const visible = this._filtered.slice(0, this._visibleCount);
                 const html = visible.map((u) => {
                     const nameHtml = window.CommunityRBAC
-                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor, u.equippedBadgeGroupId, u.hangered)
+                        ? window.CommunityRBAC.renderNameWithRank(u.username, u.role, u.isVerified, u.nameColor, u.equippedBadgeGroupId, u.hangered, window.CommunityRBAC.getUserSpecialBadgesOrdered(u))
                         : RBAC.escapeHtml(u.username);
                     const avatarAttrs = window.CommunityRBAC ? window.CommunityRBAC.renderAvatarAttrs(u.avatarUrl) : `src=""`;
                     return `
@@ -21044,6 +21366,7 @@
                 const role      = candidate ? candidate.role : (c.role || "");
                 const nameColor = candidate ? candidate.nameColor : null;
                 const avatarUrl = candidate ? candidate.avatarUrl : (c.avatarUrl || "");
+                const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
                 const time = studioFormatRelativeDate(c.createdAt);
                 const bodyHtml = typeof renderRichContent === "function"
                     ? renderRichContent(c.text)
@@ -21066,7 +21389,7 @@
                     <div class="mkt-comment-body">
                         <div class="mkt-comment-header">
                             <span class="mkt-comment-author" data-cmt-uid="${studioEscapeHtml(c.uid||"")}">
-                                ${RBAC.renderNameWithRank(username, role, isVerified, nameColor)}
+                                ${RBAC.renderNameWithRank(username, role, isVerified, nameColor, null, false, specialBadgeIds)}
                             </span>
                             <span class="mkt-comment-time">${time}</span>
                         </div>
@@ -26970,6 +27293,7 @@
                     const nameColor = candidate ? candidate.nameColor : null;
                     const equippedBadgeGroupId = candidate ? candidate.equippedBadgeGroupId : null;
             const isHangered = candidate ? candidate.hangered : false;
+            const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
 
                     // Gruplama kararı: aynı gönderen, üst üste, aradaki süre
                     // pencere içinde, ve bir yanıt (replyTo) değilse (bir
@@ -27009,13 +27333,14 @@
                                 const inlineBadgeHtml = equippedBadgeGroupId && typeof renderCommunityBadge === "function"
                                     ? renderCommunityBadge(equippedBadgeGroupId, "14px")
                                     : "";
-                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderHangerBadge(isHangered)}${RBAC.renderVerifiedBadge(isVerified)}${inlineBadgeHtml}${timeInline}</div>`;
+                                const inlineSpecialBadgeHtml = RBAC.renderTopSpecialBadgeInline(specialBadgeIds, "14px");
+                                senderHtml = `<div class="msg-bubble-sender">${coloredCommunityName}${RBAC.renderHangerBadge(isHangered)}${RBAC.renderVerifiedBadge(isVerified)}${inlineSpecialBadgeHtml}${inlineBadgeHtml}${timeInline}</div>`;
                             } else {
-                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId, isHangered)}${timeInline}</div>`;
+                                senderHtml = `<div class="msg-bubble-sender">${RBAC.renderCommunityMemberName(username, isVerified, roleColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}${timeInline}</div>`;
                             }
                         } else {
                             const groupRoleHtml = groupRoleBadgeHtml(activeMetaForBubble, m.authorUid, { forBubble: true });
-                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered)}${timeInline}</div>`;
+                            senderHtml = `<div class="msg-bubble-sender">${groupRoleHtml}${RBAC.renderNameWithRank(username, role, isVerified, nameColor, equippedBadgeGroupId, isHangered, specialBadgeIds)}${timeInline}</div>`;
                         }
                     }
 
@@ -28821,40 +29146,29 @@
             let adminAuditLogCache = {};         // logId -> audit_logs objesi (Konsol Kayıtları sekmesi)
             window.__adminUsersCacheRef = adminUsersCache; // handleBanToggle/handleRoleChange bu isimle okuyor
 
-            // Özel oyuncu rozetleri: ilk sürüm görsel/prototip amaçlıdır.
-            // Tanımlar ve atamalar Firebase profilini değiştirmez; yalnızca
-            // bu tarayıcıdaki Yönetim Paneli > Kullanıcılar görünümünde tutulur.
-            const SPECIAL_BADGES_STORAGE = "pl_special_badge_catalog_v1";
-            const SPECIAL_ASSIGNMENTS_STORAGE = "pl_special_badge_assignments_v1";
-            const specialBadgeDefs = {
-                reliable: {
-                    name: "Güvenilir",
-                    color: "#49e3a2",
-                    description: "Toplulukta güvenilir davranışlarıyla öne çıkan kişilere verilir.",
-                    icon: "shield-check"
-                },
-                moderator: {
-                    name: "Moderatör",
-                    color: "#36c6ef",
-                    description: "Topluluğun düzenini koruyan ve moderasyon yapan kişilere verilir.",
-                    icon: "shield"
-                },
-                developer: {
-                    name: "Geliştirici",
-                    color: "#9b6cff",
-                    description: "Oyunu geliştiren kişilere verilir.",
-                    icon: "code"
-                }
-            };
-            let specialBadgeAssignments = {};
-
-            try {
-                const savedCatalog = JSON.parse(localStorage.getItem(SPECIAL_BADGES_STORAGE) || "{}");
-                Object.assign(specialBadgeDefs, savedCatalog);
-                specialBadgeAssignments = JSON.parse(localStorage.getItem(SPECIAL_ASSIGNMENTS_STORAGE) || "{}");
-            } catch (err) {
-                specialBadgeAssignments = {};
-            }
+            // ══════════════════════════════════════════════════════════
+            // 🏅 ÖZEL ROZETLER (v3 — FIREBASE) — artık her kullanıcının
+            // tarayıcısında görünür. Veri modeli:
+            //   badge_types/{badgeId} = {name, description, color,
+            //                            imageData (base64 data URI),
+            //                            order (sayı, küçük = üst öncelik),
+            //                            createdAt, createdBy}
+            //   users/{uid}/specialBadges = [badgeId, badgeId, ...]
+            // Yazma (oluşturma/silme/verme/sıralama) SADECE Owner/Developer
+            // (role === "Owner / Developer") — bkz. Firebase Rules. Okuma
+            // herkese açıktır (mavi tik gibi herkes görebilmeli).
+            //
+            // NOT: specialBadgeDefs, window.SpecialBadgeSystem.defs İLE AYNI
+            // REFERANSI kullanır (kopya değil) -- dosyanın başında (database
+            // tanımlandıktan hemen sonra) başlatılan global dinleyici
+            // (initSpecialBadgeGlobalListener) güncelleme yaptığında admin
+            // panel de otomatik senkron kalır. Sıra dizisi ise dinleyici her
+            // tetiklendiğinde YENİ bir dizi olarak atandığından, admin panel
+            // kodu bunu HER ZAMAN specialBadgeOrder() fonksiyonu üzerinden
+            // (referans değil, güncel değeri okuyarak) kullanır.
+            // ══════════════════════════════════════════════════════════
+            const specialBadgeDefs = window.SpecialBadgeSystem.defs;
+            function specialBadgeOrder_() { return window.SpecialBadgeSystem.order; }
 
             // NOT: handleBanToggle/handleMuteToggle/handleRoleChange dosyanın
             // üst kısmında "adminUsersCache" adında GLOBAL bir değişken
@@ -28863,17 +29177,74 @@
             // gerçek referansı `window.adminUsersCache` üzerinden sağlıyoruz.
             window.adminUsersCache = adminUsersCache;
 
-            function saveSpecialBadgeState() {
-                try {
-                    localStorage.setItem(SPECIAL_BADGES_STORAGE, JSON.stringify(specialBadgeDefs));
-                    localStorage.setItem(SPECIAL_ASSIGNMENTS_STORAGE, JSON.stringify(specialBadgeAssignments));
-                } catch (err) {
-                    // Görsel prototipte kalıcı tarayıcı depolaması zorunlu değil.
-                }
+            /**
+             * Yeni bir rozet tipini Firebase'e yazar (badge_types/{id}).
+             * Sadece Owner/Developer çağırabilir -- Rules bunu ayrıca
+             * zorunlu kılar, burada da erken kontrol var.
+             */
+            async function createSpecialBadgeInDb(name, description, imageData) {
+                const myProfile = window.CommunityAuth.profile;
+                if (!RBAC.canManageStaff(myProfile)) throw new Error("Bu işlem yalnızca Owner / Developer tarafından yapılabilir.");
+                const id = "custom-" + Date.now();
+                const maxOrder = Object.values(specialBadgeDefs).reduce((m, d) => Math.max(m, Number(d.order) || 0), -1);
+                await database.ref("badge_types/" + id).set({
+                    name,
+                    description,
+                    color: "#f5c542",
+                    imageData,
+                    order: maxOrder + 1,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    createdBy: window.CommunityAuth.user.uid
+                });
+                return id;
             }
 
+            async function deleteSpecialBadgeInDb(id) {
+                const myProfile = window.CommunityAuth.profile;
+                if (!RBAC.canManageStaff(myProfile)) throw new Error("Bu işlem yalnızca Owner / Developer tarafından yapılabilir.");
+                await database.ref("badge_types/" + id).remove();
+                // Bu rozete sahip tüm kullanıcılardan da kaldır.
+                const uids = Object.keys(adminUsersCache).filter((uid) =>
+                    Array.isArray(adminUsersCache[uid].specialBadges) && adminUsersCache[uid].specialBadges.indexOf(id) !== -1);
+                await Promise.all(uids.map((uid) => {
+                    const next = (adminUsersCache[uid].specialBadges || []).filter((x) => x !== id);
+                    return database.ref("users/" + uid + "/specialBadges").set(next.length ? next : null);
+                }));
+            }
+
+            /**
+             * Sürükle-bırak ile yeniden sıralama: verilen id dizisindeki
+             * SIRAYA göre her rozetin order alanını 0,1,2... olarak yazar.
+             */
+            async function reorderSpecialBadgesInDb(orderedIds) {
+                const myProfile = window.CommunityAuth.profile;
+                if (!RBAC.canManageStaff(myProfile)) throw new Error("Bu işlem yalnızca Owner / Developer tarafından yapılabilir.");
+                const updates = {};
+                orderedIds.forEach((id, idx) => { updates["badge_types/" + id + "/order"] = idx; });
+                await database.ref().update(updates);
+            }
+
+            async function giveSpecialBadgeInDb(uid, badgeId) {
+                const myProfile = window.CommunityAuth.profile;
+                if (!RBAC.canManageStaff(myProfile)) throw new Error("Bu işlem yalnızca Owner / Developer tarafından yapılabilir.");
+                const target = adminUsersCache[uid];
+                const current = getUserSpecialBadges(uid, target || {});
+                if (current.indexOf(badgeId) !== -1) return; // zaten sahip -- her tipten 1 tane
+                const next = current.concat([badgeId]);
+                await database.ref("users/" + uid + "/specialBadges").set(next);
+            }
+
+            /**
+             * Rozet ikonunu render eder. v2'de ikon her zaman bir fotoğraf
+             * (def.imageData -- base64 data URI). Eski emoji/SVG tanımlı
+             * kayıtlar (v1'den kalma) varsa yine de bozulmadan gösterilsin
+             * diye geriye dönük uyumluluk korunur.
+             */
             function specialBadgeIcon(def, size) {
                 const px = size || 17;
+                if (def.imageData) {
+                    return `<img src="${RBAC.escapeHtml(def.imageData)}" width="${px}" height="${px}" alt="">`;
+                }
                 if (def.icon === "emoji") {
                     return `<span class="pl-admin-special-badge-emoji" style="font-size:${Math.max(13, px - 1)}px;">${RBAC.escapeHtml(def.emoji || "★")}</span>`;
                 }
@@ -28893,18 +29264,27 @@
             }
 
             function specialBadgeOptions() {
-                return `<option value="">Rozet seç</option>` + Object.entries(specialBadgeDefs).map(([id, def]) =>
-                    `<option value="${RBAC.escapeHtml(id)}">${RBAC.escapeHtml(def.name)}</option>`
+                return `<option value="">Rozet seç</option>` + specialBadgeOrder_().filter((id) => !!specialBadgeDefs[id]).map((id) =>
+                    `<option value="${RBAC.escapeHtml(id)}">${RBAC.escapeHtml(specialBadgeDefs[id].name)}</option>`
                 ).join("");
             }
 
+            /**
+             * Bir kullanıcının rozetlerini, katalogdaki ÖNCELİK SIRASINA göre
+             * sıralanmış olarak döndürür (index 0 = en üstün rozet). Bu sıra;
+             * isim yanında hangi rozetin (tekil) görüneceğini ve isim
+             * altındaki listenin sırasını belirler. Veri kaynağı doğrudan
+             * users/{uid}/specialBadges (Firebase) -- adminUsersCache[uid]
+             * zaten canlı bir "on value" dinleyicisiyle güncel tutuluyor.
+             */
             function getUserSpecialBadges(uid, user) {
-                if (!Array.isArray(user.specialBadges)) {
-                    user.specialBadges = Array.isArray(specialBadgeAssignments[uid])
-                        ? specialBadgeAssignments[uid].slice()
-                        : [];
-                }
-                return user.specialBadges.filter((id) => !!specialBadgeDefs[id]);
+                const raw = Array.isArray(user.specialBadges) ? user.specialBadges : [];
+                const owned = new Set(raw.filter((id) => !!specialBadgeDefs[id]));
+                // Katalog sırasına göre diz -- specialBadgeOrder'da olmayan
+                // (senkron dışı kalmış) id'ler sona eklenir.
+                const ordered = specialBadgeOrder_().filter((id) => owned.has(id));
+                owned.forEach((id) => { if (ordered.indexOf(id) === -1) ordered.push(id); });
+                return ordered;
             }
 
             function renderSpecialBadgeCatalog() {
@@ -28912,26 +29292,98 @@
                 const form = document.getElementById("plAdminBadgesForm");
                 if (!catalog) return;
                 const canManage = RBAC.canManageStaff(window.CommunityAuth.profile);
-                catalog.innerHTML = Object.entries(specialBadgeDefs).map(([id, def]) =>
-                    `<button type="button" class="pl-admin-badge-catalog-chip" data-admin-special-badge="${RBAC.escapeHtml(id)}" style="--badge-color:${RBAC.escapeHtml(def.color)}" title="${RBAC.escapeHtml(def.description)}">${specialBadgeIcon(def, 17)} ${RBAC.escapeHtml(def.name)}</button>`
-                ).join("");
+                catalog.innerHTML = specialBadgeOrder_().filter((id) => !!specialBadgeDefs[id]).map((id, idx) => {
+                    const def = specialBadgeDefs[id];
+                    return `<div class="pl-admin-badge-catalog-chip" draggable="${canManage ? "true" : "false"}" data-admin-badge-drag-id="${RBAC.escapeHtml(id)}" style="--badge-color:${RBAC.escapeHtml(def.color)}">
+                        <span class="pl-admin-badge-catalog-chip__rank">#${idx + 1}</span>
+                        ${canManage ? '<span class="pl-admin-badge-catalog-chip__drag" title="Sürükleyerek sırala">⠿</span>' : ""}
+                        <span data-admin-special-badge="${RBAC.escapeHtml(id)}" style="display:inline-flex;align-items:center;gap:5px;flex:1;cursor:pointer;" title="${RBAC.escapeHtml(def.description)}">
+                            ${specialBadgeIcon(def, 20)}
+                            <span class="pl-admin-badge-catalog-chip__name">${RBAC.escapeHtml(def.name)}</span>
+                        </span>
+                        ${canManage ? `<button type="button" class="pl-admin-badge-catalog-chip__del" data-admin-badge-delete-id="${RBAC.escapeHtml(id)}" title="Rozeti sil">✕</button>` : ""}
+                    </div>`;
+                }).join("") || `<div class="hub-placeholder" style="padding:8px 0;">Henüz rozet tanımlanmadı.</div>`;
                 if (form) {
-                    form.querySelectorAll("input,button").forEach((el) => { el.disabled = !canManage; });
+                    form.querySelectorAll("input,button,textarea").forEach((el) => { el.disabled = !canManage; });
                 }
                 const status = document.getElementById("plAdminBadgesStatus");
                 if (status && !canManage) status.textContent = "Yeni rozet oluşturma yetkisi yalnızca Owner / Developer'dadır.";
+                initBadgeCatalogDragSort();
             }
 
-            function openSpecialBadgeInfo(id) {
+            // ── Sürükle-bırak ile katalog sıralama ──
+            // Rozet chip'lerinin draggable özelliği kullanılır; bırakılan
+            // yere göre yeni sıra Firebase'e (badge_types/{id}/order) yazılır.
+            let _dragBadgeId = null;
+            function initBadgeCatalogDragSort() {
+                const catalog = document.getElementById("plAdminBadgeCatalog");
+                if (!catalog) return;
+                catalog.querySelectorAll("[data-admin-badge-drag-id]").forEach((chip) => {
+                    chip.addEventListener("dragstart", (e) => {
+                        _dragBadgeId = chip.getAttribute("data-admin-badge-drag-id");
+                        chip.classList.add("is-dragging");
+                        e.dataTransfer.effectAllowed = "move";
+                    });
+                    chip.addEventListener("dragend", () => {
+                        chip.classList.remove("is-dragging");
+                        catalog.querySelectorAll(".is-drag-over").forEach((el) => el.classList.remove("is-drag-over"));
+                    });
+                    chip.addEventListener("dragover", (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        chip.classList.add("is-drag-over");
+                    });
+                    chip.addEventListener("dragleave", () => chip.classList.remove("is-drag-over"));
+                    chip.addEventListener("drop", async (e) => {
+                        e.preventDefault();
+                        chip.classList.remove("is-drag-over");
+                        const targetId = chip.getAttribute("data-admin-badge-drag-id");
+                        if (!_dragBadgeId || _dragBadgeId === targetId) return;
+                        const canManage = RBAC.canManageStaff(window.CommunityAuth.profile);
+                        if (!canManage) return;
+                        const nextOrder = specialBadgeOrder_().slice();
+                        const fromIdx = nextOrder.indexOf(_dragBadgeId);
+                        const toIdx = nextOrder.indexOf(targetId);
+                        if (fromIdx === -1 || toIdx === -1) return;
+                        nextOrder.splice(fromIdx, 1);
+                        nextOrder.splice(toIdx, 0, _dragBadgeId);
+                        const draggedId = _dragBadgeId;
+                        _dragBadgeId = null;
+                        try {
+                            await reorderSpecialBadgesInDb(nextOrder);
+                            // Firebase "value" dinleyicisi zaten yeniden render
+                            // edecek; burada ekstra bir şey yapmaya gerek yok.
+                        } catch (err) {
+                            const status = document.getElementById("plAdminBadgesStatus");
+                            if (status) status.textContent = "Sıralama kaydedilemedi: " + (err && err.message ? err.message : err);
+                        }
+                    });
+                });
+            }
+
+            async function deleteSpecialBadge(id) {
+                if (!specialBadgeDefs[id]) return;
                 const def = specialBadgeDefs[id];
-                const backdrop = document.getElementById("plAdminBadgeInfoBackdrop");
-                if (!def || !backdrop) return;
-                const icon = document.getElementById("plAdminBadgeInfoIcon");
-                icon.style.setProperty("--badge-color", def.color);
-                icon.innerHTML = specialBadgeIcon(def, 42);
-                document.getElementById("plAdminBadgeInfoTitle").textContent = def.name;
-                document.getElementById("plAdminBadgeInfoDesc").textContent = def.description;
-                backdrop.classList.add("is-open");
+                if (!confirm(`"${def.name}" rozetini silmek istediğine emin misin? Bu rozete sahip tüm kullanıcılardan da kaldırılacak.`)) return;
+                const status = document.getElementById("plAdminBadgesStatus");
+                try {
+                    await deleteSpecialBadgeInDb(id);
+                    if (status) status.textContent = `"${def.name}" rozeti silindi.`;
+                } catch (err) {
+                    if (status) status.textContent = "Silme başarısız: " + (err && err.message ? err.message : err);
+                }
+            }
+
+            // NOT: Detay paneli artık window.openSpecialBadgeInfoGlobal
+            // üzerinden HERKESE AÇIK olarak yönetiliyor (RBAC modülü,
+            // database tanımından hemen sonra) -- admin panel içindeki
+            // rozet chip'lerine tıklamalar da aynı global fonksiyona
+            // yönlendirilir, ayrı bir kopya tutulmaz.
+            function openSpecialBadgeInfo(id) {
+                if (typeof window.openSpecialBadgeInfoGlobal === "function") {
+                    window.openSpecialBadgeInfoGlobal(id);
+                }
             }
 
             function closeSpecialBadgeInfo() {
@@ -29142,14 +29594,12 @@
                     const badgeId = select && select.value;
                     const target = adminUsersCache[uid];
                     if (!uid || !badgeId || !target || !specialBadgeDefs[badgeId]) return;
-                    const current = getUserSpecialBadges(uid, target);
-                    if (current.indexOf(badgeId) === -1) current.push(badgeId);
-                    target.specialBadges = current;
-                    specialBadgeAssignments[uid] = current.slice();
-                    saveSpecialBadgeState();
-                    renderUserList();
                     const status = document.getElementById("plAdminBadgesStatus");
-                    if (status) status.textContent = `${specialBadgeDefs[badgeId].name} rozeti @${target.username || uid} kullanıcısına verildi.`;
+                    giveSpecialBadgeInDb(uid, badgeId).then(() => {
+                        if (status) status.textContent = `${specialBadgeDefs[badgeId].name} rozeti @${target.username || uid} kullanıcısına verildi.`;
+                    }).catch((err) => {
+                        if (status) status.textContent = "Rozet verilemedi: " + (err && err.message ? err.message : err);
+                    });
                     return;
                 }
                 const banBtn = e.target.closest('[data-admin-action="ban"]');
@@ -29621,6 +30071,11 @@
                     if (_activeTab === "reports") renderReportsList();
                 });
 
+                // NOT: badge_types (rozet kataloğu) dinleyicisi burada DEĞİL,
+                // sayfa açılışında (initSpecialBadgeGlobalListener) başlatılır
+                // -- çünkü rozetler admin paneli hiç açılmasa da her yerde
+                // (mavi tik gibi profil/forum/mesajlaşma) görünmeli.
+
                 database.ref("mute_status").on("value", (snap) => {
                     adminMuteCache = snap.val() || {};
                     if (_activeTab === "users") renderUserList();
@@ -29660,9 +30115,19 @@
             // ------------------------------------------------------------
             // I) DIŞA AÇIK: open() — nav'dan "admin" sekmesine geçildiğinde çağrılır
             // ------------------------------------------------------------
+            let _specialBadgeAdminListenerAdded = false;
             function open() {
                 if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) return; // ekstra güvenlik katmanı
                 startListeners();
+                // badge_types Firebase'den her güncellendiğinde (yeni rozet,
+                // silme, sıralama değişikliği) admin panel görünümü de
+                // tazelensin -- bu listener sadece bir kez eklenir.
+                if (!_specialBadgeAdminListenerAdded) {
+                    _specialBadgeAdminListenerAdded = true;
+                    window.SpecialBadgeSystem._listeners.push(() => {
+                        if (_activeTab === "users") { renderSpecialBadgeCatalog(); renderUserList(); }
+                    });
+                }
                 renderStats();
                 renderSpecialBadgeCatalog();
                 renderUserList();
@@ -29687,10 +30152,50 @@
                 });
                 document.getElementById("adminUserList")?.addEventListener("click", onUserListClick);
                 document.getElementById("plAdminBadgeCatalog")?.addEventListener("click", (e) => {
+                    const delBtn = e.target.closest("[data-admin-badge-delete-id]");
+                    if (delBtn) {
+                        const myProfile = window.CommunityAuth.profile;
+                        if (!RBAC.canManageStaff(myProfile)) return;
+                        deleteSpecialBadge(delBtn.getAttribute("data-admin-badge-delete-id"));
+                        return;
+                    }
                     const badgeBtn = e.target.closest("[data-admin-special-badge]");
                     if (badgeBtn) openSpecialBadgeInfo(badgeBtn.getAttribute("data-admin-special-badge"));
                 });
-                document.getElementById("plAdminBadgesForm")?.addEventListener("submit", (e) => {
+
+                // 🖼️ İkon seçici: butona basınca gizli dosya input'unu açar.
+                // Seçilen resim FileReader ile base64 data URI'ye çevrilir
+                // ve forma "hazır ikon" olarak yüklenir (önizleme gösterilir).
+                let _pendingBadgeIconData = null;
+                document.getElementById("plAdminBadgeIconPicker")?.addEventListener("click", () => {
+                    const myProfile = window.CommunityAuth.profile;
+                    if (!RBAC.canManageStaff(myProfile)) return;
+                    document.getElementById("plAdminBadgeFileInput")?.click();
+                });
+                document.getElementById("plAdminBadgeFileInput")?.addEventListener("change", (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    if (!file.type.startsWith("image/")) {
+                        const status = document.getElementById("plAdminBadgesStatus");
+                        if (status) status.textContent = "Lütfen bir görsel dosyası seç (PNG, JPG, WEBP...).";
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        _pendingBadgeIconData = reader.result;
+                        const preview = document.getElementById("plAdminBadgeIconPreview");
+                        const placeholder = document.getElementById("plAdminBadgeIconPlaceholder");
+                        if (preview) { preview.src = _pendingBadgeIconData; preview.style.display = "block"; }
+                        if (placeholder) placeholder.style.display = "none";
+                    };
+                    reader.onerror = () => {
+                        const status = document.getElementById("plAdminBadgesStatus");
+                        if (status) status.textContent = "Görsel okunamadı, tekrar dene.";
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                document.getElementById("plAdminBadgesForm")?.addEventListener("submit", async (e) => {
                     e.preventDefault();
                     const myProfile = window.CommunityAuth.profile;
                     const status = document.getElementById("plAdminBadgesStatus");
@@ -29698,28 +30203,40 @@
                         if (status) status.textContent = "Bu işlem yalnızca Owner / Developer tarafından yapılabilir.";
                         return;
                     }
-                    const emojiInput = document.getElementById("plAdminBadgeEmoji");
                     const nameInput = document.getElementById("plAdminBadgeName");
-                    const emoji = emojiInput.value.trim();
+                    const descInput = document.getElementById("plAdminBadgeDesc");
                     const name = nameInput.value.trim();
-                    if (!emoji || !name) {
-                        if (status) status.textContent = "İkon ve rozet adı birlikte girilmeli.";
+                    const description = descInput.value.trim();
+                    if (!_pendingBadgeIconData) {
+                        if (status) status.textContent = "Rozet için bir görsel seçmelisin.";
                         return;
                     }
-                    const id = "custom-" + Date.now();
-                    specialBadgeDefs[id] = {
-                        name,
-                        emoji,
-                        color: "#f5c542",
-                        description: `${name} rozeti, Owner / Developer tarafından tanımlanan özel bir rozettir.`,
-                        icon: "emoji"
-                    };
-                    saveSpecialBadgeState();
-                    renderSpecialBadgeCatalog();
-                    renderUserList();
-                    emojiInput.value = "";
-                    nameInput.value = "";
-                    if (status) status.textContent = `${name} rozeti oluşturuldu ve kullanıcı listesinde seçilebilir.`;
+                    if (!name) {
+                        if (status) status.textContent = "Rozet adı girilmeli.";
+                        return;
+                    }
+                    if (!description) {
+                        if (status) status.textContent = "Rozet açıklaması zorunludur.";
+                        return;
+                    }
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.disabled = true;
+                    try {
+                        await createSpecialBadgeInDb(name, description, _pendingBadgeIconData);
+                        nameInput.value = "";
+                        descInput.value = "";
+                        _pendingBadgeIconData = null;
+                        const preview = document.getElementById("plAdminBadgeIconPreview");
+                        const placeholder = document.getElementById("plAdminBadgeIconPlaceholder");
+                        if (preview) { preview.src = ""; preview.style.display = "none"; }
+                        if (placeholder) placeholder.style.display = "block";
+                        document.getElementById("plAdminBadgeFileInput").value = "";
+                        if (status) status.textContent = `${name} rozeti oluşturuldu ve kullanıcı listesinde seçilebilir.`;
+                    } catch (err) {
+                        if (status) status.textContent = "Rozet oluşturulamadı: " + (err && err.message ? err.message : err);
+                    } finally {
+                        if (submitBtn) submitBtn.disabled = false;
+                    }
                 });
                 document.getElementById("plAdminBadgeInfoClose")?.addEventListener("click", closeSpecialBadgeInfo);
                 document.getElementById("plAdminBadgeInfoBackdrop")?.addEventListener("click", (e) => {
