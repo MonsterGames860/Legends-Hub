@@ -8316,7 +8316,10 @@
         width: 16px;
         height: 16px;
         flex-shrink: 0;
-        cursor: pointer;
+        /* cursor: pointer YOK -- genel sitede bu rozetler artık tıklanamaz,
+           salt görsel (mavi tik gibi). Sadece Yönetim Paneli içindeki
+           rozet chip'leri (.pl-admin-special-badge / .pl-admin-badge-catalog-chip)
+           tıklanabilir ve orada ayrı bir cursor:pointer tanımı var. */
         vertical-align: middle;
     }
     .pl-badge-inline img { width: 100%; height: 100%; object-fit: contain; }
@@ -8328,8 +8331,8 @@
         margin-top: 2px;
     }
     .pl-badge-sub-row .pl-badge-inline { width: 14px; height: 14px; opacity: .88; }
-    .pl-badge-sub-row .pl-badge-inline:hover { opacity: 1; }
 </style>
+
 
 <!-- ================================================================
      PWA — MANIFEST + META
@@ -9966,6 +9969,12 @@
                             </div>
                             <div class="profile-original-name" id="profileOriginalNameText"></div>
                             <div class="profile-hangered-label" id="profileHangeredLabel" style="display:none;">Askıya Alındı</div>
+                            <!-- 🏷️ Topluluk Rozetim (equippedBadgeGroupId, ör. LSTR) --
+                                 SADECE bu profil sayfasında isim satırının HEMEN
+                                 ALTINDA gösterilir (diğer her yerde -- forum, mesaj,
+                                 oyuncu dizini -- isim yanında kalmaya devam eder,
+                                 bkz. renderNameWithRank/renderCommunityMemberName). -->
+                            <div id="profileCommunityBadgeSubRow" style="margin-top:4px;"></div>
                             <!-- 🏅 Kalan özel rozetler (en üsttekinin dışındakiler) --
                                  isim satırının hemen altında listelenir. -->
                             <div id="profileSpecialBadgeSubRow"></div>
@@ -11312,19 +11321,15 @@
             return ordered;
         }
 
-        // Herhangi bir özel rozet ikonuna (isim yanı VEYA isim altı, hangi
-        // modülde render edilmiş olursa olsun) tıklanınca detay panelini
-        // açar. Event delegation kullanıldığı için sonradan render edilen
-        // rozetler için de otomatik çalışır.
-        document.addEventListener("click", (ev) => {
-            const el = ev.target.closest("[data-special-badge-info]");
-            if (!el) return;
-            const badgeId = el.getAttribute("data-special-badge-info");
-            if (!badgeId) return;
-            if (typeof window.openSpecialBadgeInfoGlobal === "function") {
-                window.openSpecialBadgeInfoGlobal(badgeId);
-            }
-        });
+        // NOT: Özel rozet ikonlarına (isim yanı/altı, forum/mesaj/profil
+        // dahil GENEL sitede) tıklamak artık HİÇBİR ŞEY YAPMAZ -- detay
+        // paneli SADECE Yönetim Paneli > Kullanıcılar sekmesi içinde
+        // çalışır (bkz. admin panel modülündeki data-admin-special-badge
+        // click handler'ları, onUserListClick ve plAdminBadgeCatalog
+        // listener'ı). Genel sitedeki rozet ikonları artık salt görsel
+        // (mavi tik gibi) -- window.openSpecialBadgeInfoGlobal fonksiyonu
+        // hâlâ mevcut ve admin panel tarafından çağrılabiliyor, sadece
+        // buradaki genel click delegation kaldırıldı.
 
         // NameColorSystem: RBAC'tan ayrı ama onunla aynı dosyada, RBAC'ın
         // resolveThemeTier'ına (Modül 6'da tanımlı) bağımlı olduğu için
@@ -13677,8 +13682,22 @@
             }
             document.getElementById("profileVerifiedBadgeSlot").innerHTML =
                 RBAC.renderHangerBadge(profile.hangered === true, "18px") +
-                RBAC.renderVerifiedBadge(profile.isVerified === true, "18px") +
-                (typeof renderCommunityBadge === "function" ? renderCommunityBadge(profile.equippedBadgeGroupId, "18px") : "");
+                RBAC.renderVerifiedBadge(profile.isVerified === true, "18px");
+
+            // 🏷️ Topluluk Rozetim -- SADECE profil sayfasında isim altına
+            // taşındı (diğer tüm yerlerde hâlâ isim yanında, bkz.
+            // renderNameWithRank içindeki equippedBadgeGroupId kullanımı).
+            {
+                const communitySubRowEl = document.getElementById("profileCommunityBadgeSubRow");
+                if (communitySubRowEl) {
+                    const communityBadgeHtml = typeof renderCommunityBadge === "function"
+                        ? renderCommunityBadge(profile.equippedBadgeGroupId, "18px")
+                        : "";
+                    communitySubRowEl.innerHTML = communityBadgeHtml
+                        ? `<div class="pl-badge-sub-row">${communityBadgeHtml}</div>`
+                        : "";
+                }
+            }
 
             // 🏅 Özel rozetler: EN ÜST öncelikli olan isim yanında (mavi tik
             // gibi), kalanı isim satırının hemen altında (bkz. HTML:
