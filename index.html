@@ -2029,6 +2029,29 @@
     body:has(.msg-shell.is-community.is-conversation-open) .msg-chat-list-panel {
         display: none;
     }
+    /* Topluluk tam ekran moduna geçtiğinde artık ana Hub sidebar'ı yok,
+       dolayısıyla "Topluluklar" listesine dönmenin tek yolu geri (←)
+       butonu. Bu buton normalde SADECE mobil media query'de (max-width:
+       780px) açılıyordu; masaüstünde topluluk tam ekran olsa bile buton
+       "display:none" kalıyor ve kullanıcı geri dönemiyordu. Topluluk tam
+       ekran koşulunda ekran genişliğinden bağımsız olarak gösteriyoruz. */
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-back-btn {
+        display: inline-flex !important;
+    }
+    /* Aynı sebeple: topluluk tam ekranken kanal içerik alanı (mesaj listesi +
+       composer) mevcut genişliğin tamamını kaplasın. Flex zincirindeki her
+       halka için min-width:0 şart, yoksa içerik (uzun kelimeler, kod bloğu
+       vb.) panelin taşmasına ve dolayısıyla dar/kırpık görünmesine sebep olur. */
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-shell.is-community,
+    body:has(.msg-shell.is-community.is-conversation-open) #groupConversationPanel,
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-conversation-active,
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-conversation-active-main {
+        width: 100%;
+        min-width: 0;
+    }
+    body:has(.msg-shell.is-community.is-conversation-open) .msg-bubble-list {
+        width: 100%;
+    }
 
     /* ---------- HUB SHELL (auth doğrulanınca görünür olur) ---------- */
     #hubShell {
@@ -3648,21 +3671,41 @@
     }
 
     /* --- Topluluk listesi kartı --- */
+    /* Kartlar artık gerçek bir "kart" (dikey düzen, sabit yükseklik,
+       kendi arkaplan/kenarlığı) -- eskiden yatay liste satırı olarak
+       tasarlanmıştı ama bir grid'e (auto-fill) konulunca farklı içerik
+       uzunlukları yüzünden satırlar/kolonlar hizasız ve dağınık
+       görünüyordu. Grid + dikey kart + sabit min-height bunu çözer:
+       her kart aynı yükseklikte, sıra düzenli. */
     .grp-community-card {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 14px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        cursor: pointer;
+        min-height: 168px;
+        transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .grp-community-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+
+    .grp-community-card-top {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--line);
-        cursor: pointer;
     }
-    .grp-community-card:hover { background: var(--bg-panel-raised); }
 
     .grp-community-avatar {
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        background: var(--bg-panel-raised);
+        background: var(--bg-panel);
         border: 1px solid var(--line);
         display: flex;
         align-items: center;
@@ -3686,7 +3729,7 @@
         height: 12px;
         border-radius: 50%;
         background: var(--danger);
-        border: 2px solid var(--bg-panel);
+        border: 2px solid var(--bg-panel-raised);
         z-index: 2;
     }
 
@@ -3695,7 +3738,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: 0.88rem;
+        font-size: 0.92rem;
         font-weight: 700;
         color: var(--text-primary);
         overflow: hidden;
@@ -3703,11 +3746,16 @@
         white-space: nowrap;
     }
     .grp-community-desc {
-        font-size: 0.74rem;
+        font-size: 0.76rem;
         color: var(--text-dim);
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        white-space: normal;
+        min-height: 2.2em;
+        flex: 1;
     }
     .grp-community-meta-row {
         font-size: 0.7rem;
@@ -3727,18 +3775,23 @@
         border: 1px solid var(--accent);
         color: var(--accent);
         border-radius: 20px;
-        padding: 6px 12px;
-        font-size: 0.72rem;
+        padding: 7px 12px;
+        font-size: 0.74rem;
         font-weight: 700;
         cursor: pointer;
-        flex-shrink: 0;
+        width: 100%;
+        text-align: center;
     }
     .grp-community-join-btn:hover { background: var(--accent); color: #06110f; }
     .grp-community-joined-tag {
-        font-size: 0.7rem;
-        color: var(--text-dim);
+        font-size: 0.72rem;
+        color: var(--accent);
         font-family: var(--font-mono);
-        flex-shrink: 0;
+        font-weight: 700;
+        text-align: center;
+        padding: 7px 12px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -5360,11 +5413,35 @@
        PROFİL SAYFASI — Modül 2 Bölüm B
        ========================================================== */
     .profile-page {
-        max-width: 900px;
+        max-width: 1100px;
         width: 100%;
         display: flex;
         flex-direction: column;
         gap: 18px;
+    }
+
+    /* ==========================================================
+       İKİ SÜTUNLU PROFİL DÜZENİ — banner/hero her zaman tam
+       genişlikte en üstte kalır (.profile-page'in doğrudan flex
+       çocuğu olarak); altındaki kartlar ise iki sütuna (sol: ana
+       içerik, sağ: ayarlar) dağıtılır. Dar ekranda tek sütuna düşer.
+       ========================================================== */
+    .profile-columns {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+    }
+    .profile-col {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-width: 0;
+    }
+    @media (max-width: 860px) {
+        .profile-columns {
+            grid-template-columns: 1fr;
+        }
     }
 
     .profile-hero {
@@ -5443,6 +5520,7 @@
         border-radius: var(--radius);
         padding: 14px;
         margin: -14px;
+        min-height: 100%;
     }
     .profile-page.has-custom-bg::before {
         content: "";
@@ -5453,6 +5531,13 @@
         background-image: var(--profile-bg-image, none);
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
+        /* Kart içeriği kısa olsa bile (az sayıda kart/az yazı) arka plan
+           tüm .profile-page yüksekliğini doldursun -- eskiden içerik
+           kısa kaldığında görsel/renk sayfanın alt kısmında kesiliyor,
+           "profil kısmının arkasını full doldurmuyor" görünümü
+           yaratıyordu. inset:0 + min-height burada garanti eder. */
+        min-height: 100%;
         z-index: -1;
     }
     .profile-page.has-custom-bg::after {
@@ -8569,7 +8654,7 @@
                      görebilir ve girebilir. Yönetim Paneli'nin hemen altında,
                      aynı gizle/göster desenini kullanır (bkz. adminNavItem
                      görünürlük mantığı, applyProfileToDom içinde). -->
-                <div class="hub-nav-item" data-view="console" data-restricted="true" data-min-role="owner">
+                <div class="hub-nav-item" data-view="console" data-restricted="true" data-min-role="helper">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="1" y="2" width="14" height="12" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/>
                         <path d="M3.5 5.5l3 2.5-3 2.5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -9749,7 +9834,7 @@
                         </div>
                         <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
                         <div class="grp-community-limit-note" id="communityLimitNote"></div>
-                        <div class="msg-chat-list" id="communityList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:10px;">
+                        <div class="msg-chat-list" id="communityList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:14px; align-items:start; padding:14px;">
                             <div class="hub-placeholder">Yükleniyor…</div>
                         </div>
                     </div>
@@ -10019,6 +10104,12 @@
                         </div>
                     </div>
 
+                    <!-- İKİ SÜTUNLU DÜZEN: banner/hero yukarıda tam genişlikte
+                         kaldı; aşağıdaki kartlar artık sol (ana içerik) ve
+                         sağ (ayarlar) olmak üzere iki sütuna dağıtılıyor. -->
+                    <div class="profile-columns">
+                        <div class="profile-col profile-col-main">
+
                     <!-- 🏷️ TAKILI ROZET SEÇİMİ — sadece KENDİ profilimizde
                          görünür (başkasının profiline bakarken gizli). Üyesi
                          olduğumuz VE rozeti olan toplulukları listeler; hiçbir
@@ -10072,6 +10163,31 @@
                         </div>
                     </div>
 
+                    <!-- MODÜL 6: OYUNCU İSTATİSTİKLERİ -->
+                    <div class="profile-card" id="profileStatsCard">
+                        <div class="profile-card-header"><span>İstatistikler</span></div>
+                        <div class="profile-stats-grid">
+                            <div class="profile-stat-box">
+                                <span class="profile-stat-icon">⏱️</span>
+                                <span class="profile-stat-value" id="profileStatPlaytime">—</span>
+                                <span class="profile-stat-label">Oynama Süresi</span>
+                            </div>
+                            <div class="profile-stat-box">
+                                <span class="profile-stat-icon">🧊</span>
+                                <span class="profile-stat-value" id="profileStatVoxelLevel">—</span>
+                                <span class="profile-stat-label">Voksel Seviyesi</span>
+                            </div>
+                            <div class="profile-stat-box">
+                                <span class="profile-stat-icon">🏅</span>
+                                <span class="profile-stat-value" id="profileStatBadges">—</span>
+                                <span class="profile-stat-label">Kazanılan Rozet</span>
+                            </div>
+                        </div>
+                    </div>
+
+                        </div>
+                        <div class="profile-col profile-col-side">
+
                     <!-- HESAP BİLGİLERİ -->
                     <div class="profile-card">
                         <div class="profile-card-header"><span>Hesap Bilgileri</span></div>
@@ -10093,28 +10209,6 @@
                             <div class="profile-info-item" id="profileIpRow" style="display:none;">
                                 <span class="profile-info-label">Son IP <span class="profile-owner-only-tag">yalnızca owner</span></span>
                                 <span class="profile-info-value profile-info-mono" id="profileIpText">—</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- MODÜL 6: OYUNCU İSTATİSTİKLERİ -->
-                    <div class="profile-card" id="profileStatsCard">
-                        <div class="profile-card-header"><span>İstatistikler</span></div>
-                        <div class="profile-stats-grid">
-                            <div class="profile-stat-box">
-                                <span class="profile-stat-icon">⏱️</span>
-                                <span class="profile-stat-value" id="profileStatPlaytime">—</span>
-                                <span class="profile-stat-label">Oynama Süresi</span>
-                            </div>
-                            <div class="profile-stat-box">
-                                <span class="profile-stat-icon">🧊</span>
-                                <span class="profile-stat-value" id="profileStatVoxelLevel">—</span>
-                                <span class="profile-stat-label">Voksel Seviyesi</span>
-                            </div>
-                            <div class="profile-stat-box">
-                                <span class="profile-stat-icon">🏅</span>
-                                <span class="profile-stat-value" id="profileStatBadges">—</span>
-                                <span class="profile-stat-label">Kazanılan Rozet</span>
                             </div>
                         </div>
                     </div>
@@ -10318,6 +10412,9 @@
                         </div>
                     </div>
 
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
@@ -10459,7 +10556,7 @@
                 <div class="console-header">
                     <div>
                         <div class="admin-panel-title">🖥️ Konsol</div>
-                        <div class="admin-panel-subtitle">Metin komutlarıyla hızlı yönetim — sadece Owner/Developer</div>
+                        <div class="admin-panel-subtitle">Metin komutlarıyla hızlı yönetim — Helper ve üzeri (coin ver/al: Admin ve üzeri)</div>
                     </div>
                     <button type="button" class="forum-btn forum-btn-ghost" id="consoleHelpBtn">📖 Komutlar</button>
                 </div>
@@ -15237,6 +15334,14 @@
             // çağırır -- handleBanToggle ile AYNI desen: (1) hedefi bul,
             // (2) users/{uid}.coins üzerine yaz, (3) audit_logs kaydı.
             async function handleMoneyGiveCommand(targetUsername, amountRaw, actorProfile, printLine) {
+                // 🔒 Çift güvenlik: çağıran taraf (Konsol runCommand) zaten
+                // Admin+ kontrolü yapıyor, ama bu fonksiyon window.CoinSystem
+                // üzerinden dışa açık olduğu için burada da aynı eşiği
+                // tekrar doğruluyoruz (savunma derinliği).
+                if (!window.CommunityRBAC || !window.CommunityRBAC.hasMinimumTier(actorProfile, "admin")) {
+                    if (printLine) printLine("Coin ver/al işlemleri için Admin ve üzeri rütbe gerekir.", "err");
+                    return;
+                }
                 const amount = parseInt(amountRaw, 10);
                 if (!amount || amount <= 0) {
                     if (printLine) printLine("Kullanım: money give <kullanıcıAdı> <miktar>  (miktar pozitif bir tam sayı olmalı)", "err");
@@ -15267,6 +15372,11 @@
             }
 
             async function handleMoneyClearCommand(targetUsername, amountRaw, actorProfile, printLine) {
+                // 🔒 Çift güvenlik: bkz. handleMoneyGiveCommand üstündeki not.
+                if (!window.CommunityRBAC || !window.CommunityRBAC.hasMinimumTier(actorProfile, "admin")) {
+                    if (printLine) printLine("Coin ver/al işlemleri için Admin ve üzeri rütbe gerekir.", "err");
+                    return;
+                }
                 const amount = parseInt(amountRaw, 10);
                 if (!amount || amount <= 0) {
                     if (printLine) printLine("Kullanım: money clear <kullanıcıAdı> <miktar>  (miktar pozitif bir tam sayı olmalı)", "err");
@@ -26632,18 +26742,20 @@
 
                     return `
                         <div class="grp-community-card" ${cardAttr}>
-                            <div class="grp-community-avatar">${avatarHtml}${unreadDotHtml}</div>
-                            <div class="grp-community-info">
-                                <div class="grp-community-name-row">
-                                    <span>${escapeHtml(c.name || "İsimsiz Topluluk")}</span>
-                                    ${verifiedHtml}
-                                </div>
-                                <div class="grp-community-desc">${escapeHtml(c.description || "")}</div>
-                                <div class="grp-community-meta-row">
-                                    <span>${c.memberCount || 0} üye</span>
-                                    ${suspendedHtml}
+                            <div class="grp-community-card-top">
+                                <div class="grp-community-avatar">${avatarHtml}${unreadDotHtml}</div>
+                                <div class="grp-community-info">
+                                    <div class="grp-community-name-row">
+                                        <span>${escapeHtml(c.name || "İsimsiz Topluluk")}</span>
+                                        ${verifiedHtml}
+                                    </div>
+                                    <div class="grp-community-meta-row">
+                                        <span>👥 ${c.memberCount || 0} üye</span>
+                                        ${suspendedHtml}
+                                    </div>
                                 </div>
                             </div>
+                            <div class="grp-community-desc">${escapeHtml(c.description || "")}</div>
                             ${actionHtml}
                         </div>
                     `;
@@ -30494,31 +30606,27 @@
                 {
                     name: "money give",
                     usage: "money give <kullanıcıAdı> <miktar>",
-                    desc: "🪙 Belirtilen kullanıcıya belirtilen miktarda coin verir (users/{uid}.coins üzerine " +
-                          "eklenir). Miktar pozitif bir tam sayı olmalı. İşlem audit_logs'a kaydedilir."
+                    desc: "🪙 [Admin ve üzeri] Belirtilen kullanıcıya belirtilen miktarda coin verir (users/{uid}.coins " +
+                          "üzerine eklenir). Miktar pozitif bir tam sayı olmalı. İşlem audit_logs'a kaydedilir."
                 },
                 {
                     name: "money clear",
                     usage: "money clear <kullanıcıAdı> <miktar>",
-                    desc: "🪙 Belirtilen kullanıcıdan belirtilen miktarda coin alır (bakiye 0'ın altına " +
+                    desc: "🪙 [Admin ve üzeri] Belirtilen kullanıcıdan belirtilen miktarda coin alır (bakiye 0'ın altına " +
                           "düşürülmez — kullanıcının bakiyesi miktardan azsa sadece mevcut kadarı alınır). " +
                           "İşlem audit_logs'a kaydedilir."
                 }
             ];
 
             function open() {
-                // Çift güvenlik: nav öğesi zaten owner olmayana gizli, ama
+                // Çift güvenlik: nav öğesi zaten Helper+ olmayana gizli, ama
                 // hash/URL ile doğrudan gelinmeye çalışılırsa da içerik
-                // çalışmasın diye burada da kontrol ediyoruz.
+                // çalışmasın diye burada da kontrol ediyoruz. Konsolun genel
+                // erişimi Helper+ (moderasyon komutları); coin ver/al
+                // (money give/clear) ise ayrıca Admin+ ile sınırlı — bkz.
+                // runCommand() içindeki "money" case kontrolü.
                 const profile = window.CommunityAuth && window.CommunityAuth.profile;
-                // 🐛 BUGFIX: window.CommunityRBAC dışa açık interface'inde
-                // fonksiyon "isOwner" adıyla export ediliyor ("isOwnerProfile"
-                // sadece iç/private isim). Yanlış isimle çağrıldığında
-                // "undefined is not a function" hatası fırlıyor, bu hata
-                // open() içinde YAKALANMADIĞI için wireEvents() hiç
-                // çalışmıyordu -- "Çalıştır" ve "📖 Komutlar" butonlarının
-                // tamamen tepkisiz kalmasının kök nedeni buydu.
-                if (!window.CommunityRBAC.isOwner(profile)) {
+                if (!window.CommunityRBAC.hasMinimumTier(profile, "helper")) {
                     const outEl = document.getElementById("consoleOutput");
                     if (outEl) outEl.innerHTML = `<div class="console-line console-line-err">Bu bölüme erişim yetkin yok.</div>`;
                     return;
@@ -30573,7 +30681,7 @@
                 const { cmd, rest } = parsed;
 
                 const profile = window.CommunityAuth && window.CommunityAuth.profile;
-                if (!window.CommunityRBAC.isOwner(profile)) {
+                if (!window.CommunityRBAC.hasMinimumTier(profile, "helper")) {
                     printLine("Yetkin yok.", "err");
                     return;
                 }
@@ -30655,6 +30763,14 @@
                             break;
                         }
                         case "money": {
+                            // 🪙 Coin ver/al genel konsol erişiminden (Helper+)
+                            // daha kısıtlı: sadece Admin+ kullanabilir. Diğer
+                            // komutlar (title, event, find, whoami vb.)
+                            // Helper+'a açık kalmaya devam ediyor.
+                            if (!window.CommunityRBAC.hasMinimumTier(profile, "admin")) {
+                                printLine("Coin ver/al işlemleri için Admin ve üzeri rütbe gerekir.", "err");
+                                break;
+                            }
                             // İki kelimeli alt komut: "money give ..." / "money clear ...".
                             // parseCommand ilk kelimeyi (money) cmd olarak aldığı için
                             // alt komut rest[0]'da, hedef kullanıcı rest[1]'de, miktar rest[2]'de.
