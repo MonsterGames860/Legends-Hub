@@ -9819,6 +9819,34 @@
             </section>
 
             <!-- ════════════════════════════════════════════════════
+                 ÖZEL ROZET DETAY PANELİ (pl-badge-sheet)
+                 — Aynı sebep: eskiden .hub-view[data-view="admin"] >
+                 .admin-tab-panel[data-admin-panel="users"] SEKMESİNİN
+                 İÇİNDEYDİ. .admin-tab-panel { display:none } ve .hub-view
+                 { display:none } kuralları, "Kullanıcılar" sekmesi/admin
+                 görünümü aktif değilken bu paneli (is-open eklense dahi)
+                 görünmez kılıyordu -- bu yüzden rozet sadece Yönetim
+                 Paneli > Kullanıcılar sekmesindeyken açılabiliyordu.
+                 Artık diğer global modallerle aynı seviyede durduğu için
+                 hangi sekmede/sayfada olursak olalım açılabiliyor.
+                 ════════════════════════════════════════════════════ -->
+            <div class="pl-badge-sheet-backdrop" id="plAdminBadgeInfoBackdrop" role="presentation">
+                <article class="pl-badge-sheet" role="dialog" aria-modal="true" aria-labelledby="plAdminBadgeInfoTitle">
+                    <div class="pl-badge-sheet__top">
+                        <div class="pl-badge-sheet__icon" id="plAdminBadgeInfoIcon"></div>
+                        <div>
+                            <div class="pl-badge-sheet__eyebrow">ROZET BİLGİSİ</div>
+                            <div class="pl-badge-sheet__title" id="plAdminBadgeInfoTitle"></div>
+                            <div class="pl-badge-sheet__desc" id="plAdminBadgeInfoDesc"></div>
+                        </div>
+                        <button class="pl-badge-sheet__close" id="plAdminBadgeInfoClose" type="button" aria-label="Rozet bilgisini kapat">×</button>
+                    </div>
+                    <div class="pl-badge-sheet__rule"></div>
+                    <div class="pl-badge-sheet__hint">Rozet kullanıcı adının yanında görünür; profil içinde ayrı bir rozet kartı bulunmaz.</div>
+                </article>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════
                  TOPLULUK ÖNİZLEME MODALI (katılmadan önce gözden geçir)
                  — Rozete (community-badge-pill) HER YERDEN tıklanabildiği
                  için (forum, DM, grup sohbeti vb.) bu modal artık
@@ -10355,21 +10383,6 @@
                     </div>
                     <div class="admin-list" id="adminUserList">
                         <div class="hub-placeholder">Yükleniyor…</div>
-                    </div>
-                    <div class="pl-badge-sheet-backdrop" id="plAdminBadgeInfoBackdrop" role="presentation">
-                        <article class="pl-badge-sheet" role="dialog" aria-modal="true" aria-labelledby="plAdminBadgeInfoTitle">
-                            <div class="pl-badge-sheet__top">
-                                <div class="pl-badge-sheet__icon" id="plAdminBadgeInfoIcon"></div>
-                                <div>
-                                    <div class="pl-badge-sheet__eyebrow">ROZET BİLGİSİ</div>
-                                    <div class="pl-badge-sheet__title" id="plAdminBadgeInfoTitle"></div>
-                                    <div class="pl-badge-sheet__desc" id="plAdminBadgeInfoDesc"></div>
-                                </div>
-                                <button class="pl-badge-sheet__close" id="plAdminBadgeInfoClose" type="button" aria-label="Rozet bilgisini kapat">×</button>
-                            </div>
-                            <div class="pl-badge-sheet__rule"></div>
-                            <div class="pl-badge-sheet__hint">Rozet kullanıcı adının yanında görünür; profil içinde ayrı bir rozet kartı bulunmaz.</div>
-                        </article>
                     </div>
                 </div>
 
@@ -11123,18 +11136,21 @@
             const pill = ev.target.closest(".community-badge-pill");
             if (!pill) return;
             // Rozet genelde forumda "kullanıcı adı/avatar" wrapper'ının
-            // (data-action="view-profile") İÇİNDE render edilir. stopPropagation
-            // olmadan tıklama yukarı kabarcıklanıp o wrapper'ı da tetikliyor ve
-            // topluluk paneli yerine (ya da onunla birlikte) kullanıcının
-            // profili açılıyordu. Burada durdurup SADECE topluluk önizlemesini
-            // açıyoruz.
+            // (data-action="view-profile") İÇİNDE render edilir ve o
+            // wrapper'ın kendi click listener'ı DOĞRUDAN kendisine bağlı
+            // (bubble fazında rozetten SONRA değil, rozete tıklanınca
+            // wrapper hedefe daha yakın olduğu için ÖNCE tetiklenir).
+            // Bu yüzden bubble fazında stopPropagation çok geç kalıyordu.
+            // CAPTURE fazında (bkz. bu listener'ın 3. parametresi=true)
+            // document en tepede olduğundan wrapper'ın kendi listener'ı
+            // tetiklenmeden ÖNCE burası çalışır ve durdurabiliriz.
             ev.stopPropagation();
             const gid = pill.getAttribute("data-badge-group-id");
             if (!gid) return;
             if (typeof window.openCommunityPreviewModal === "function") {
                 window.openCommunityPreviewModal(gid);
             }
-        });
+        }, true);
 
         // ---------- XSS KORUMASI ----------
         function escapeHtml(str) {
@@ -13126,16 +13142,17 @@
         document.addEventListener("click", (e) => {
             const badgeEl = e.target.closest("[data-special-badge-info]");
             if (!badgeEl) return;
-            // community-badge-pill'deki ile aynı sebep: bu rozetler de
-            // forumda data-action="view-profile" wrapper'ının içinde
-            // basılıyor, stopPropagation olmadan tıklama kullanıcının
-            // profilini açan üst dinleyiciye kadar kabarcıklanıyordu.
+            // community-badge-pill'deki ile AYNI sebep ve aynı çözüm:
+            // wrapper'ın (data-action="view-profile") kendi listener'ı
+            // doğrudan kendisine bağlı olduğu için bubble fazında rozetten
+            // önce tetikleniyordu. CAPTURE fazında dinleyip en tepeden
+            // durduruyoruz (bkz. addEventListener 3. parametresi=true).
             e.stopPropagation();
             const id = badgeEl.getAttribute("data-special-badge-info");
             if (id && typeof window.openSpecialBadgeInfoGlobal === "function") {
                 window.openSpecialBadgeInfoGlobal(id);
             }
-        });
+        }, true);
 
         // NOT: Mention cache'in başlatılması artık burada YAPILMIYOR.
         // Önceden auth durumundan bağımsız hemen çağrılıyordu, ancak
@@ -18210,7 +18227,14 @@
             });
 
             containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
-                el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
+                el.addEventListener("click", (ev) => {
+                    // İçinde bir rozete (topluluk rozeti / özel rozet)
+                    // tıklandıysa profili açma -- rozetin kendi capture
+                    // fazındaki dinleyicisi zaten stopPropagation çağırır,
+                    // ama çift güvenlik için burada da kontrol ediyoruz.
+                    if (ev.target.closest(".community-badge-pill") || ev.target.closest("[data-special-badge-info]")) return;
+                    openUserProfile(el.getAttribute("data-uid"));
+                });
             });
 
             // @mention etiketlerine tıklayınca o kullanıcının profili açılsın.
@@ -18841,7 +18865,10 @@
             }
 
             containerEl.querySelectorAll('[data-action="view-profile"]').forEach((el) => {
-                el.addEventListener("click", () => openUserProfile(el.getAttribute("data-uid")));
+                el.addEventListener("click", (ev) => {
+                    if (ev.target.closest(".community-badge-pill") || ev.target.closest("[data-special-badge-info]")) return;
+                    openUserProfile(el.getAttribute("data-uid"));
+                });
             });
 
             // @mention etiketlerine tıklayınca o kullanıcının profili açılsın.
