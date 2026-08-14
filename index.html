@@ -2017,6 +2017,16 @@
         height: 100vh;
         height: 100dvh;
         margin: 0;
+        /* HATA DÜZELTMESİ: .msg-shell normalde "minmax(240px,320px) 1fr"
+           iki sütunlu grid'dir (sohbet listesi + konuşma paneli). Topluluk
+           tam ekran moduna geçince .msg-chat-list-panel gizleniyor ama grid
+           şablonu hâlâ iki sütunlu kaldığı için konuşma paneli yalnızca
+           "1fr" kadar (ör. 320px sonrası kalan alan değil, ekranın geri
+           kalanının çok küçük bir kısmı) yer kaplıyordu ve solda dar bir
+           kanal sidebar'ı + sağda kocaman boş/siyah alan görünüyordu.
+           Tek sütuna indirerek konuşma paneli tüm genişliği kaplar. */
+        display: grid;
+        grid-template-columns: 1fr;
     }
     body:has(.msg-shell.is-community.is-conversation-open) .msg-shell.is-community .msg-conversation-panel {
         border-radius: 0;
@@ -9826,15 +9836,24 @@
                  MODÜL 5-B — TOPLULUKLAR (herkese açık, keşfedilebilir gruplar)
                  ════════════════════════════════════════════════════════════ -->
             <section class="hub-view" data-view="communities">
-                <div class="msg-shell" id="communityShell" style="grid-template-columns: 1fr;">
-                    <div class="msg-chat-list-panel" id="communityListPanel" style="max-width:none; border-right:none;">
+                <!-- HATA DÜZELTMESİ: .msg-shell varsayılan olarak sabit yükseklik
+                     alır (height: calc(100vh - 220px)) çünkü normalde DM/Grup
+                     sohbet listesi + konuşma paneli gibi iki panelli, ekranı
+                     dolduran bir yapı için tasarlanmıştır. Topluluklar sayfası
+                     tek panelli bir kart ızgarası olduğundan bu sabit yükseklik
+                     mirası, az sayıda topluluk kartı olduğunda kartların altında
+                     kocaman boş alan bırakıyordu (panel kartlardan çok daha
+                     uzundu). height:auto ile panel artık yalnızca içeriği kadar
+                     yer kaplıyor. -->
+                <div class="msg-shell" id="communityShell" style="grid-template-columns: 1fr; height:auto; min-height:0;">
+                    <div class="msg-chat-list-panel" id="communityListPanel" style="max-width:none; border-right:none; height:auto;">
                         <div class="msg-panel-header">
                             <span>🌐 Topluluklar</span>
                             <button type="button" class="msg-new-chat-btn" id="communityCreateBtn" title="Yeni topluluk oluştur">+ Yeni Topluluk</button>
                         </div>
                         <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
                         <div class="grp-community-limit-note" id="communityLimitNote"></div>
-                        <div class="msg-chat-list" id="communityList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:14px; align-items:start; padding:14px;">
+                        <div class="msg-chat-list" id="communityList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:14px; align-items:start; padding:14px; flex:none; overflow:visible;">
                             <div class="hub-placeholder">Yükleniyor…</div>
                         </div>
                     </div>
