@@ -5360,7 +5360,8 @@
        PROFİL SAYFASI — Modül 2 Bölüm B
        ========================================================== */
     .profile-page {
-        max-width: 640px;
+        max-width: 900px;
+        width: 100%;
         display: flex;
         flex-direction: column;
         gap: 18px;
@@ -7310,7 +7311,7 @@
         display: flex;
         flex-direction: column;
         gap: 0;
-        max-width: 720px;
+        width: 100%;
     }
 
     .inbox-header {
@@ -7358,7 +7359,12 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
-        max-width: 720px;
+        width: 100%;
+    }
+    .players-dir-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 10px;
     }
     .players-dir-header {
         display: flex;
@@ -7388,11 +7394,6 @@
         outline: none;
     }
     .players-dir-search:focus { border-color: var(--accent); }
-    .players-dir-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
     .players-dir-item {
         display: flex;
         align-items: center;
@@ -9740,7 +9741,7 @@
                  MODÜL 5-B — TOPLULUKLAR (herkese açık, keşfedilebilir gruplar)
                  ════════════════════════════════════════════════════════════ -->
             <section class="hub-view" data-view="communities">
-                <div class="msg-shell" id="communityShell">
+                <div class="msg-shell" id="communityShell" style="grid-template-columns: 1fr;">
                     <div class="msg-chat-list-panel" id="communityListPanel" style="max-width:none; border-right:none;">
                         <div class="msg-panel-header">
                             <span>🌐 Topluluklar</span>
@@ -9748,7 +9749,7 @@
                         </div>
                         <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
                         <div class="grp-community-limit-note" id="communityLimitNote"></div>
-                        <div class="msg-chat-list" id="communityList">
+                        <div class="msg-chat-list" id="communityList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:10px;">
                             <div class="hub-placeholder">Yükleniyor…</div>
                         </div>
                     </div>
