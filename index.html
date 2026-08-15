@@ -7423,6 +7423,83 @@
     .notif-ping-icon { font-size: 1rem; flex-shrink: 0; }
     .notif-ping-body strong { color: var(--accent); }
 
+    /* ── Başarım kazanma bildirimi (ekranın üstünde ortalanmış banner) ──
+       Ping toast'tan farklı olarak (sağ üst, mesaj bildirimi tarzı) bu
+       banner ekranın ÜST ORTASINDA belirir, altın/ödül temalı görünür ve
+       daha uzun süre ekranda kalır -- bir başarım kazanmak, bir mesaj
+       bildiriminden daha "özel" bir an olduğu için görsel olarak
+       ayrıştırılmıştır. */
+    @keyframes achvToastIn {
+        from { transform: translate(-50%, -120%); opacity: 0; }
+        to   { transform: translate(-50%, 0);      opacity: 1; }
+    }
+    @keyframes achvToastOut {
+        from { transform: translate(-50%, 0);      opacity: 1; }
+        to   { transform: translate(-50%, -120%); opacity: 0; }
+    }
+    .achv-unlock-toast {
+        position: fixed;
+        top: 18px;
+        left: 50%;
+        z-index: 9600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, var(--bg-panel-raised), var(--bg-panel));
+        border: 1px solid rgba(245, 197, 66, 0.55);
+        border-left: 4px solid var(--gold);
+        border-radius: 12px;
+        padding: 12px 18px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,197,66,0.08) inset;
+        max-width: min(92vw, 380px);
+        pointer-events: none;
+        animation: achvToastIn 0.32s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .achv-unlock-toast.fading {
+        animation: achvToastOut 0.38s ease both;
+    }
+    .achv-unlock-icon {
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: rgba(245,197,66,0.12);
+        border: 1px solid rgba(245,197,66,0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        overflow: hidden;
+    }
+    .achv-unlock-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .achv-unlock-body { min-width: 0; }
+    .achv-unlock-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--gold);
+        opacity: 0.9;
+        margin-bottom: 2px;
+    }
+    .achv-unlock-name {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .achv-unlock-reward {
+        font-size: 0.78rem;
+        color: var(--gold);
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .achv-unlock-toast, .achv-unlock-toast.fading { animation: none; }
+    }
+
 
     /* ═══════════════════════════════════════════════════════════════
        MENTIONS & REPLIES — INBOX PANELİ
@@ -12811,15 +12888,22 @@
 
             const playtimeMinutes = Number(stats.playtimeMinutes) || 0;
             const voxelLevel = Number(stats.voxelLevel) || 1;
-            const badgesCount = Number(stats.badgesCount) || 0;
 
             const playtimeEl = document.getElementById("profileStatPlaytime");
             const voxelEl = document.getElementById("profileStatVoxelLevel");
-            const badgesEl = document.getElementById("profileStatBadges");
 
             if (playtimeEl) playtimeEl.textContent = formatPlaytime(playtimeMinutes);
             if (voxelEl) voxelEl.textContent = "Lv. " + voxelLevel;
-            if (badgesEl) badgesEl.textContent = badgesCount;
+            // 🐛 BUGFIX: "Kazanılan Başarım" kutusu (#profileStatBadges) BURADA
+            // ARTIK YAZILMIYOR. Eskiden bu fonksiyon her profil render'ında
+            // profile.stats.badgesCount alanını (hiçbir zaman doldurulmayan,
+            // hep 0 dönen eski/ölü bir alan) kutuya yazıyordu ve bu,
+            // AchievementSystem.updateProfileStatBadge()'in gerçek kazanılan
+            // başarım sayısıyla yazdığı değerin ÜZERİNE geçiyordu -- bu yüzden
+            // kullanıcı gerçekten başarım kazanmış olsa bile kutu hep "0"
+            // gösteriyordu. Bu kutunun tek sahibi artık AchievementSystem'dir
+            // (bkz. updateProfileStatBadge, users/{uid}/earnedAchievements'a
+            // bağlı canlı dinleyici).
         }
 
         function formatPlaytime(totalMinutes) {
@@ -16002,13 +16086,53 @@
                             coins: firebase.database.ServerValue.increment(reward)
                         });
                     }
-                    if (typeof showToastGlobal === "function") {
-                        showToastGlobal(`🏆 Başarım kazanıldı: ${def.name}${reward > 0 ? ` (+${reward} coin)` : ""}`);
-                    }
+                    showAchievementUnlockToast(def, reward);
                 } catch (err) {
                     console.error("[Achievements] Ödül verilemedi:", id, err);
                     delete _earned[id]; // geri al, tekrar denenebilsin
                 }
+            }
+
+            // ── Başarım kazanma bildirimi: ekranın üstünde beliren banner +
+            // bildirim.mp3 sesi. NotificationSystem'in mesaj/mention
+            // bildirimlerinde kullandığı sesle AYNI dosyayı ("bildirim.mp3")
+            // çalar -- ayrı bir ses dosyasına gerek yok, tutarlı bir "bir şey
+            // geldi" hissi veriyor. Her tetiklemede yeni bir <audio>
+            // elemanı oluşturulur ki art arda iki başarım aynı anda
+            // kazanılırsa (ör. tek bir olayda birden fazla eşik aşılırsa)
+            // sesler birbirini kesmesin.
+            let _achvToastTimer = null;
+            function playAchievementSound() {
+                try {
+                    const audio = new Audio("bildirim.mp3");
+                    audio.volume = 0.6;
+                    const p = audio.play();
+                    if (p && typeof p.catch === "function") p.catch(() => {});
+                } catch (_) { /* ses desteklenmiyorsa sessizce geç */ }
+            }
+
+            function showAchievementUnlockToast(def, reward) {
+                playAchievementSound();
+
+                if (_achvToastTimer) clearTimeout(_achvToastTimer);
+                const old = document.querySelector(".achv-unlock-toast");
+                if (old) old.remove();
+
+                const el = document.createElement("div");
+                el.className = "achv-unlock-toast";
+                el.innerHTML = `
+                    <div class="achv-unlock-icon">${renderIconHtml(def)}</div>
+                    <div class="achv-unlock-body">
+                        <div class="achv-unlock-eyebrow">🏆 Başarım Kazanıldı</div>
+                        <div class="achv-unlock-name">${escapeHtml(def.name || "")}</div>
+                        ${reward > 0 ? `<div class="achv-unlock-reward">+${reward} 🪙 coin</div>` : ""}
+                    </div>`;
+                document.body.appendChild(el);
+
+                _achvToastTimer = setTimeout(() => {
+                    el.classList.add("fading");
+                    setTimeout(() => el.remove(), 420);
+                }, 4200);
             }
 
             // ---- Profil galerisi (kazanılan + kilitli hepsi) --------------
