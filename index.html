@@ -6325,6 +6325,44 @@
     }
     .achv-admin-diff-select:focus { outline: none; border-color: var(--accent); }
 
+    .achv-video-reward-helper {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 0.76rem;
+        color: var(--text-dim);
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+    }
+    .achv-video-reward-helper-sep { opacity: 0.4; }
+    .achv-video-reward-helper input {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        color: var(--text-primary);
+        border-radius: 5px;
+        padding: 3px 6px;
+        font-size: 0.76rem;
+    }
+    #achvVideoRewardApplyBtn {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid rgba(102,252,241,0.4);
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .achv-video-reward-helper-hint {
+        font-size: 0.68rem;
+        color: var(--text-dim);
+        opacity: 0.75;
+        line-height: 1.4;
+    }
+
     /* ==========================================================
        MODÜL 6 — RÜTBE BAZLI PROFİL TEMASI / RENK PALETİ SİSTEMİ
        ========================================================== */
@@ -11073,8 +11111,24 @@
                                  değeri bu koşul için anlamsız olduğundan (izleme %100
                                  tamamlanınca otomatik kazanılır) formda gizlenip 1'e
                                  sabitlenir -- bkz. createAchievementFromForm. -->
-                            <div class="achv-admin-form-row" id="achvFormVideoRow" style="display:none;">
+                            <div class="achv-admin-form-row" id="achvFormVideoRow" style="display:none; flex-direction:column; gap:8px;">
                                 <input id="achvFormVideoUrl" type="url" placeholder="Video linki (ör. https://youtube.com/watch?v=... veya .mp4 linki)" aria-label="Video linki" style="flex:1;">
+                                <!-- 🎬 Ödül/süre eşitleme: video linki değiştiğinde (mp4
+                                     ise) süresi otomatik algılanır ve aşağıdaki "saniye
+                                     başına coin" oranıyla önerilen ödül hesaplanır. Admin
+                                     "Uygula" ile bunu ödül alanına yazdırabilir ya da elle
+                                     kendi değerini girebilir -- bu tamamen opsiyonel bir
+                                     yardımcıdır, zorunlu değildir. -->
+                                <div class="achv-video-reward-helper" id="achvVideoRewardHelper" style="display:none;">
+                                    <span id="achvVideoDetectedDuration">Video süresi tespit ediliyor…</span>
+                                    <span class="achv-video-reward-helper-sep">·</span>
+                                    <label>Saniyede
+                                        <input id="achvFormCoinsPerSecond" type="number" min="0" step="0.1" value="1" style="width:56px;">
+                                        coin
+                                    </label>
+                                    <button type="button" id="achvVideoRewardApplyBtn">Ödülü hesapla ve uygula</button>
+                                </div>
+                                <div class="achv-video-reward-helper-hint">Not: Bu otomatik süre tespiti yalnızca doğrudan video dosyası linklerinde (.mp4/.webm/.ogg) çalışır. YouTube/Vimeo linklerinde süreyi buraya elle gir.</div>
                             </div>
                             <div class="achv-admin-form-row">
                                 <select id="achvFormDifficulty" aria-label="Zorluk seviyesi" style="max-width:200px;">
@@ -14504,6 +14558,12 @@
             // olmalı; başkasının profiline bakarken tüm bu kartlar
             // tamamen gizlenir.
             renderProfileStats(profile);
+            // 🏆 "Kazanılan Başarım" kutusu + galeri modalı, görüntülenen
+            // profile göre ayarlanır (kendi profilimizde canlı kendi
+            // verimiz, başkasının profilinde o kişinin salt-okunur verisi).
+            if (window.AchievementSystem && typeof window.AchievementSystem.viewUserAchievements === "function") {
+                window.AchievementSystem.viewUserAchievements(uid, isSelf);
+            }
             const themeCardEl = document.getElementById("profileThemeCard");
             const nameColorCardEl = document.getElementById("nameColorCard");
             const profileBgCardEl = document.getElementById("profileBgCard");
@@ -16126,6 +16186,11 @@
             let _dailyStreak = 0;      // canlı günlük seri kopyası (dailyStreak koşulu için)
             let _defsRef = null;
             let _wired = false;
+            // 🎬 Admin formunda video linkinden tespit edilen süre (saniye).
+            // wireEvents içindeki video linki dinleyicisi doldurur,
+            // createAchievementFromForm başarım kaydına videoDurationSeconds
+            // olarak yazar (bkz. her iki fonksiyon).
+            let _detectedVideoDuration = 0;
 
             // Koşul tipi -> hangi kalıcı alandan okunacağı (coinTotal ve
             // dailyStreak farklı yerlerden geldiği için özel işlenir).
@@ -16183,8 +16248,59 @@
             }
 
             function updateProfileStatBadge() {
+                // 👀 Başkasının profili açıkken (bkz. viewUserAchievements)
+                // bu canlı-kendi-veri güncellemesi kutuyu EZMEMELİ -- o an
+                // görüntülenen kişi kim ise onun sayısı sabit kalmalı, ta ki
+                // tekrar kendi profiline dönülene kadar.
+                if (_viewingOtherUid) return;
                 const el = document.getElementById("profileStatBadges");
                 if (el) el.textContent = Object.keys(_earned).length;
+            }
+
+            // ── Başkasının profilinde "Kazanılan Başarım" istatistiği ──────
+            // _viewingOtherUid dolu olduğu sürece hem stat kutusu hem galeri
+            // modalı, giriş yapmış kullanıcının DEĞİL, görüntülenen
+            // kullanıcının verisini gösterir. Bu, kendi kazanma/canlı
+            // dinleme mantığını (_earned, checkAndAward vb.) hiç etkilemez
+            // -- onlar sürekli auth.uid'ye bağlı kalmaya devam eder, sadece
+            // EKRANDA gösterilen değer geçici olarak değişir.
+            let _viewingOtherUid = null;
+            let _viewingOtherEarned = {};
+            let _viewingOtherRef = null;
+
+            function viewUserAchievements(targetUid, isSelf) {
+                if (_viewingOtherRef) { _viewingOtherRef.off(); _viewingOtherRef = null; }
+
+                if (isSelf || !targetUid || targetUid === _uid) {
+                    // Kendi profilimiz -- normal canlı _earned'e dön.
+                    _viewingOtherUid = null;
+                    updateProfileStatBadge();
+                    const modal = document.getElementById("achvGalleryModalBackdrop");
+                    if (modal && modal.classList.contains("is-open")) renderGalleryModal();
+                    return;
+                }
+
+                _viewingOtherUid = targetUid;
+                const el = document.getElementById("profileStatBadges");
+                if (el) el.textContent = "—";
+
+                // Bu okuma, RTDB Rules'taki earnedAchievements.read kuralına
+                // tabidir (auth.uid == $uid || rolün owner/developer olması).
+                // Normal bir üye başka bir üyenin başarımlarını göremiyorsa
+                // Rules'ta bu satırın güncellenmesi gerekir (bkz. ayrı not).
+                _viewingOtherRef = database.ref("users/" + targetUid + "/earnedAchievements");
+                _viewingOtherRef.on("value", (snap) => {
+                    _viewingOtherEarned = snap.val() || {};
+                    if (_viewingOtherUid !== targetUid) return; // profil bu sırada değişmiş olabilir
+                    const badgeEl = document.getElementById("profileStatBadges");
+                    if (badgeEl) badgeEl.textContent = Object.keys(_viewingOtherEarned).length;
+                    const modal = document.getElementById("achvGalleryModalBackdrop");
+                    if (modal && modal.classList.contains("is-open")) renderGalleryModal();
+                }, (err) => {
+                    console.error("[Achievements] Başka kullanıcının başarımları okunamadı:", err);
+                    const badgeEl = document.getElementById("profileStatBadges");
+                    if (badgeEl) badgeEl.textContent = "0";
+                });
             }
 
             // CoinSystem.renderBalance() zaten her coin değişiminde
@@ -16367,8 +16483,18 @@
                 const grid = document.getElementById("achvGalleryGrid");
                 const summary = document.getElementById("achvSummaryRow");
                 if (!grid) return;
+
+                // 👀 Başkasının profili görüntüleniyorsa, "kazanılan" bilgisi
+                // o kişinin verisinden (_viewingOtherEarned) gelir ve galeri
+                // SALT-OKUNUR olur: "İzle ve Kazan" gibi aksiyon butonları
+                // gösterilmez, çünkü bu sadece o kişinin ilerlemesini
+                // görüntülemek için, ondan adına bir şey tetiklemek için
+                // değildir.
+                const viewingOther = !!_viewingOtherUid;
+                const earnedSource = viewingOther ? _viewingOtherEarned : _earned;
+
                 const allIds = Object.keys(_defs);
-                const earnedCount = allIds.filter((id) => _earned[id]).length;
+                const earnedCount = allIds.filter((id) => earnedSource[id]).length;
                 if (summary) {
                     summary.innerHTML = `<span><strong>${earnedCount}</strong> / ${allIds.length} başarım kazanıldı</span>`;
                 }
@@ -16376,11 +16502,17 @@
                     grid.innerHTML = `<div class="hub-placeholder">Henüz başarım tanımlanmadı.</div>`;
                     return;
                 }
-                // Kazanılanlar önce, sonra hedefe en yakın olanlar.
+                // Kazanılanlar önce, sonra hedefe en yakın olanlar. Başkasının
+                // profilinde ilerleme yüzdesi (currentValueFor) HER ZAMAN bizim
+                // kendi ilerlememizi gösterir (o kişininkini canlı okumuyoruz,
+                // sadece kazanıp kazanmadığını) -- bu yüzden başkasının
+                // profilinde kazanılmamış kartlar için ilerleme çubuğu/sayısı
+                // GÖSTERİLMEZ, sadece kilitli olduğu belirtilir.
                 const sorted = allIds.slice().sort((a, b) => {
-                    const ea = !!_earned[a], eb = !!_earned[b];
+                    const ea = !!earnedSource[a], eb = !!earnedSource[b];
                     if (ea !== eb) return ea ? -1 : 1;
-                    if (ea && eb) return (_earned[b].earnedAt || 0) - (_earned[a].earnedAt || 0);
+                    if (ea && eb) return (earnedSource[b].earnedAt || 0) - (earnedSource[a].earnedAt || 0);
+                    if (viewingOther) return 0;
                     const da = _defs[a], db = _defs[b];
                     const pa = Math.min(1, currentValueFor(da.conditionType) / (Number(da.target) || 1));
                     const pb = Math.min(1, currentValueFor(db.conditionType) / (Number(db.target) || 1));
@@ -16388,7 +16520,7 @@
                 });
                 grid.innerHTML = sorted.map((id) => {
                     const def = _defs[id];
-                    const isEarned = !!_earned[id];
+                    const isEarned = !!earnedSource[id];
                     const isVideo = def.conditionType === "videoWatch";
                     const target = Number(def.target) || 1;
                     const current = Math.min(target, currentValueFor(def.conditionType));
@@ -16398,14 +16530,20 @@
                     // Video koşullu başarımlarda ilerleme çubuğu yerine
                     // "İzle" butonu gösterilir -- ilerleme yüzdesi bu koşulda
                     // anlamlı değil (ya baştan sona izlenir ya izlenmez).
-                    const progressOrWatch = isEarned
-                        ? ""
-                        : (isVideo
-                            ? `<button type="button" class="achv-card-watch-btn" data-achv-watch-id="${escapeHtml(id)}">▶ İzle ve Kazan</button>`
-                            : `<div class="achv-card-progress-track"><div class="achv-card-progress-fill" style="width:${pct}%;"></div></div>`);
-                    const metaLeft = isEarned
-                        ? '<span class="achv-card-earned-tag">✓ Kazanıldı</span>'
-                        : (isVideo ? "Videoyu izleyerek kazanılır" : `${current}/${target}`);
+                    // Başkasının profilinde hiçbir aksiyon butonu gösterilmez.
+                    let progressOrWatch = "";
+                    let metaLeft;
+                    if (isEarned) {
+                        metaLeft = '<span class="achv-card-earned-tag">✓ Kazanıldı</span>';
+                    } else if (viewingOther) {
+                        metaLeft = "🔒 Henüz kazanılmadı";
+                    } else if (isVideo) {
+                        progressOrWatch = `<button type="button" class="achv-card-watch-btn" data-achv-watch-id="${escapeHtml(id)}">▶ İzle ve Kazan</button>`;
+                        metaLeft = "Videoyu izleyerek kazanılır";
+                    } else {
+                        progressOrWatch = `<div class="achv-card-progress-track"><div class="achv-card-progress-fill" style="width:${pct}%;"></div></div>`;
+                        metaLeft = `${current}/${target}`;
+                    }
                     return `<div class="achv-card ${isEarned ? "is-earned" : "is-locked"}">
                         <div class="achv-card-icon">${renderIconHtml(def)}</div>
                         <div class="achv-card-body">
@@ -16476,6 +16614,12 @@
                 if (title) title.textContent = def.name || "Başarım Videosu";
 
                 const src = parseVideoSource(def.videoUrl);
+                // Önceki oynatıcı kalıntısı varsa (kullanıcı hızlıca kapatıp
+                // başka bir video başarımı açtıysa) önce onu düzgün durdur.
+                const prevVideo = body.querySelector("video");
+                if (prevVideo) { try { prevVideo.pause(); prevVideo.removeAttribute("src"); prevVideo.load(); } catch (_) {} }
+                const prevIframe = body.querySelector("iframe");
+                if (prevIframe) prevIframe.src = "about:blank";
                 body.innerHTML = "";
                 if (!src) {
                     body.innerHTML = `<div class="hub-placeholder" style="color:#fff;">Video linki tanımlanmamış.</div>`;
@@ -16489,27 +16633,53 @@
                     video.controls = true;
                     video.playsInline = true;
                     video.autoplay = true;
+                    video.preload = "auto";
 
-                    // ⛔ SARMA ENGELİ: kullanıcı ilerleme çubuğunu tutup daha
-                    // önce izlemediği bir noktaya (mevcut en ileri izlenen
-                    // saniyeden 1sn'den fazla ileriye) atlamaya çalışırsa,
-                    // oynatıcı otomatik olarak en son gerçekten izlenen ana
-                    // geri alınır -- yani videoyu atlayarak "izlemiş" gibi
-                    // görünmek mümkün olmaz.
+                    // ⛔ SARMA ENGELİ (donma yaşanmayan versiyon):
+                    // Önceki sürüm her "seeking" olayında currentTime'ı
+                    // senkron olarak geri atıyordu; bu da tarayıcının aynı
+                    // anda hem ileri sarmaya hem geri sarmaya çalışmasına
+                    // (seek -> seeking event -> geri sar -> bu da yeni bir
+                    // seeking/seeked tetikler -> ...) ve mobilde video
+                    // decoder'ının kilitlenip donmasına yol açıyordu.
+                    //
+                    // Yeni yaklaşım: "seeking" anında MÜDAHALE ETMİYORUZ,
+                    // sadece nereye sarıldığını not ediyoruz. Gerçek düzeltme
+                    // "seeked" (sarma İŞLEMİ TAMAMLANDIKTAN sonra tetiklenen
+                    // olay) anında, TEK SEFERLİK yapılıyor. Böylece decoder
+                    // önce sarma işlemini normal şekilde bitiriyor, biz de
+                    // ancak ondan SONRA "aslında burada olmamalıydın" deyip
+                    // geri alıyoruz -- iki seek işlemi üst üste/iç içe
+                    // tetiklenmiyor, video takılmıyor.
+                    let seekGuardActive = false;
                     video.addEventListener("timeupdate", () => {
-                        if (video.currentTime > _videoModalMaxWatched + 0.75) {
-                            video.currentTime = _videoModalMaxWatched;
-                            return;
+                        if (seekGuardActive) return;
+                        // Normal oynatımda (sarma değil) ilerleme doğal
+                        // olarak artar; en ileri izlenen noktayı güncelle.
+                        if (video.currentTime > _videoModalMaxWatched) {
+                            _videoModalMaxWatched = video.currentTime;
                         }
-                        _videoModalMaxWatched = Math.max(_videoModalMaxWatched, video.currentTime);
                         if (video.duration > 0 && fill) {
                             const pct = Math.min(100, Math.round((_videoModalMaxWatched / video.duration) * 100));
                             fill.style.width = pct + "%";
                         }
                     });
-                    video.addEventListener("seeking", () => {
-                        if (video.currentTime > _videoModalMaxWatched + 0.75) {
+                    video.addEventListener("seeked", () => {
+                        // Kullanıcı gerçekten izlemediği bir noktaya (tolerans:
+                        // 1.5sn -- normal oynatım sırasında oluşan küçük
+                        // sapmaları yanlışlıkla "sarma" saymamak için) atladıysa
+                        // TEK bir düzeltme hamlesiyle geri al.
+                        if (video.currentTime > _videoModalMaxWatched + 1.5) {
+                            seekGuardActive = true;
                             video.currentTime = _videoModalMaxWatched;
+                            // Bu atama da bir "seeked" tetikleyecek; guard
+                            // sayesinde o ikinci tetiklemede tekrar
+                            // müdahale etmiyoruz, sadece bayrağı indiriyoruz.
+                            const clearGuard = () => {
+                                seekGuardActive = false;
+                                video.removeEventListener("seeked", clearGuard);
+                            };
+                            video.addEventListener("seeked", clearGuard);
                         }
                     });
                     video.addEventListener("ended", () => {
@@ -16564,7 +16734,25 @@
                 const body = document.getElementById("achvVideoModalBody");
                 if (_videoModalTimerHandle) { clearInterval(_videoModalTimerHandle); _videoModalTimerHandle = null; }
                 if (backdrop) backdrop.classList.remove("is-open");
-                if (body) body.innerHTML = ""; // <video>/<iframe> oynatmayı durdurmak için tamamen kaldırılır
+                // 🐛 Video/iframe'i kaldırmadan önce DÜZGÜN durdurmak gerekir --
+                // aksi halde mobil tarayıcılarda (özellikle Chrome Android)
+                // arka planda hâlâ decode eden bir video kalıp bir sonraki
+                // video açılışını YAVAŞLATIYOR/DONDURUYOR gibi görünen bir
+                // etki yaratıyordu. Önce pause + src temizliği + load(),
+                // SONRA DOM'dan kaldırıyoruz.
+                if (body) {
+                    const existingVideo = body.querySelector("video");
+                    if (existingVideo) {
+                        try {
+                            existingVideo.pause();
+                            existingVideo.removeAttribute("src");
+                            existingVideo.load();
+                        } catch (_) { /* yoksay */ }
+                    }
+                    const existingIframe = body.querySelector("iframe");
+                    if (existingIframe) existingIframe.src = "about:blank";
+                    body.innerHTML = "";
+                }
                 _videoModalAchId = null;
                 _videoModalMaxWatched = 0;
             }
@@ -16699,7 +16887,14 @@
                         createdAt: firebase.database.ServerValue.TIMESTAMP,
                         createdBy: _uid
                     };
-                    if (isVideo) payload.videoUrl = videoUrl;
+                    if (isVideo) {
+                        payload.videoUrl = videoUrl;
+                        // Süre tespit edildiyse (doğrudan mp4/webm/ogg linki)
+                        // kaydediyoruz -- hem "ödül/süre eşitleme" hesabının
+                        // şeffaf bir kaydı olarak, hem de ileride oynatıcıda
+                        // ilerleme tahmini için kullanılabilir.
+                        if (_detectedVideoDuration > 0) payload.videoDurationSeconds = Math.round(_detectedVideoDuration);
+                    }
                     await ref.set(payload);
                     document.getElementById("achvAdminForm").reset();
                     _pendingAchvIconData = null;
@@ -16710,6 +16905,9 @@
                     document.getElementById("achvFormIconFile").value = "";
                     const videoRow = document.getElementById("achvFormVideoRow");
                     if (videoRow) videoRow.style.display = "none";
+                    const rewardHelper = document.getElementById("achvVideoRewardHelper");
+                    if (rewardHelper) rewardHelper.style.display = "none";
+                    _detectedVideoDuration = 0;
                     if (status) status.textContent = `"${name}" başarımı oluşturuldu.`;
                 } catch (err) {
                     console.error("[Achievements] Oluşturma başarısız:", err);
@@ -16802,6 +17000,60 @@
                         targetInput.required = !isVideo;
                     }
                 });
+
+                // 🎬 ÖDÜL/SÜRE EŞİTLEME: video linki girilince (sadece doğrudan
+                // .mp4/.webm/.ogg dosyalarında -- YouTube/Vimeo cross-origin
+                // olduğu için tarayıcıdan süre okunamaz) gizli bir <video>
+                // elemanıyla süre tespit edilir, "saniyede X coin" oranına
+                // göre önerilen ödül hesaplanıp gösterilir. Admin "Uygula"ya
+                // basarsa ödül alanına yazılır; basmazsa hiçbir şey değişmez
+                // (tamamen opsiyonel yardımcı, admin isterse elle de girebilir).
+                let _durationProbeVideo = null;
+                document.getElementById("achvFormVideoUrl")?.addEventListener("change", (e) => {
+                    const url = (e.target.value || "").trim();
+                    const helper = document.getElementById("achvVideoRewardHelper");
+                    const durationLabel = document.getElementById("achvVideoDetectedDuration");
+                    _detectedVideoDuration = 0;
+                    if (!helper || !durationLabel) return;
+
+                    const isDirect = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+                    if (!url || !isDirect) {
+                        helper.style.display = "none";
+                        return;
+                    }
+                    helper.style.display = "flex";
+                    durationLabel.textContent = "Video süresi tespit ediliyor…";
+
+                    if (_durationProbeVideo) {
+                        try { _durationProbeVideo.pause(); _durationProbeVideo.removeAttribute("src"); _durationProbeVideo.load(); } catch (_) {}
+                    }
+                    _durationProbeVideo = document.createElement("video");
+                    _durationProbeVideo.preload = "metadata";
+                    _durationProbeVideo.src = url;
+                    _durationProbeVideo.addEventListener("loadedmetadata", () => {
+                        _detectedVideoDuration = _durationProbeVideo.duration || 0;
+                        const mins = Math.floor(_detectedVideoDuration / 60);
+                        const secs = Math.round(_detectedVideoDuration % 60);
+                        durationLabel.textContent = `Video süresi: ${mins}dk ${secs}sn (${Math.round(_detectedVideoDuration)}sn)`;
+                    });
+                    _durationProbeVideo.addEventListener("error", () => {
+                        durationLabel.textContent = "Video süresi okunamadı (link erişilemiyor olabilir) -- ödülü elle gir.";
+                    });
+                });
+                document.getElementById("achvVideoRewardApplyBtn")?.addEventListener("click", () => {
+                    const durationLabel = document.getElementById("achvVideoDetectedDuration");
+                    const perSecondInput = document.getElementById("achvFormCoinsPerSecond");
+                    const rewardInput = document.getElementById("achvFormReward");
+                    if (!_detectedVideoDuration) {
+                        if (durationLabel) durationLabel.textContent = "Henüz süre tespit edilemedi -- video linkinin doğru olduğundan emin ol.";
+                        return;
+                    }
+                    const perSecond = Math.max(0, Number(perSecondInput && perSecondInput.value) || 0);
+                    const computed = Math.round(_detectedVideoDuration * perSecond);
+                    if (rewardInput) rewardInput.value = computed;
+                    const status = document.getElementById("achvAdminStatus");
+                    if (status) status.textContent = `Ödül, video süresine göre otomatik hesaplandı: ${computed} coin (${Math.round(_detectedVideoDuration)}sn × ${perSecond} coin/sn).`;
+                });
                 document.getElementById("achvAdminForm")?.addEventListener("submit", createAchievementFromForm);
                 document.getElementById("achvAdminList")?.addEventListener("click", (e) => {
                     const btn = e.target.closest("[data-achv-delete-id]");
@@ -16818,7 +17070,8 @@
                 setCoinBalance,
                 trackEvent,
                 trackDmPeer,
-                renderAdminAchievementList
+                renderAdminAchievementList,
+                viewUserAchievements
             };
         })();
         window.AchievementSystem = AchievementSystem;
