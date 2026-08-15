@@ -1113,6 +1113,23 @@
         border: 1px solid var(--line);
         background: #000;
     }
+    /* HATA DÜZELTMESİ: mesaj balonu içine gömülü bir YouTube/TikTok/Vimeo
+       vb. video geldiğinde, kutu min-height:200px + max-width:420px ile
+       sabitlendiğinden dar telefon ekranlarında (balonun kendi max-width'i
+       zaten %78 ile sınırlıyken) video mesaj balonunu göz ardı edilemeyecek
+       kadar iri gösteriyor, sanki tüm arayüz masaüstü ölçeğindeymiş hissi
+       veriyordu. Dar ekranlarda min-height'i düşürüp kutuyu küçültüyoruz;
+       aspect-ratio zaten 16:9'u koruduğu için video bozulmadan küçülür. */
+    @media (max-width: 480px) {
+        .forum-embed-platform-video {
+            max-width: 100%;
+            min-height: 140px;
+        }
+        .forum-embed-platform-video.is-vertical {
+            max-width: 180px;
+            min-height: 220px;
+        }
+    }
     /* aspect-ratio desteklemeyen tarayıcılar için padding-trick fallback:
        @supports not koşulu aspect-ratio yoksa devreye girer ve kutuyu
        16:9 oranında (56.25% üst dolgu) zorla yükseklik kazandırır. */
@@ -2032,6 +2049,8 @@
         border-radius: 0;
         border: none;
         height: 100%;
+        width: 100%;
+        min-width: 0;
     }
     /* Bu görünümde artık "Gruplarım" listesi anlamsız (topluluk zaten
        kanal sidebar'ıyla tam ekran) -- gizliyoruz ki iki sidebar üst
@@ -5942,10 +5961,193 @@
         letter-spacing: 0.04em;
     }
 
+    /* Tıklanabilir versiyon (Kazanılan Başarım kutusu) -- <button> olarak
+       render edildiği için tarayıcı varsayılan buton stillerini sıfırlayıp
+       .profile-stat-box ile aynı görünümü koruyoruz, üstüne hover/focus
+       efekti ekliyoruz. */
+    .profile-stat-box-clickable {
+        font-family: inherit;
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+    }
+    .profile-stat-box-clickable:hover,
+    .profile-stat-box-clickable:focus-visible {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        outline: none;
+    }
+    .profile-stat-box-clickable:active { transform: scale(0.97); }
+
     @media (max-width: 480px) {
         .profile-stats-grid { grid-template-columns: 1fr 1fr; }
         .profile-stat-box:last-child { grid-column: span 2; }
     }
+
+    /* ==========================================================
+       BAŞARIM SİSTEMİ (Achievements) — otomatik koşullu kazanım,
+       isim yanında GÖSTERİLMEZ (bu yönüyle specialBadges/community
+       -badge sistemlerinden ayrılır). Sadece Profilim > İstatistikler
+       > "Kazanılan Başarım" kutusuna tıklanınca açılan galeride
+       (kazanılan + kilitli hepsi) ve Admin Panelinde görünür.
+       ========================================================== */
+    .achv-modal { max-width: 640px; width: 94vw; }
+    .achv-modal .forum-modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    .achv-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 2px 14px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 14px;
+        font-size: 0.82rem;
+        color: var(--text-dim);
+    }
+    .achv-summary-row strong { color: var(--accent); }
+    .achv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+    }
+    .achv-card {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 12px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+    }
+    .achv-card.is-locked { opacity: 0.5; filter: grayscale(0.6); }
+    .achv-card.is-earned { border-color: rgba(102,252,241,0.4); }
+    .achv-card-icon {
+        font-size: 1.6rem;
+        line-height: 1;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+    .achv-card-body { min-width: 0; flex: 1; }
+    .achv-card-name {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    .achv-card-desc {
+        font-size: 0.76rem;
+        color: var(--text-dim);
+        line-height: 1.4;
+        margin-bottom: 6px;
+    }
+    .achv-card-progress-track {
+        height: 5px;
+        border-radius: 3px;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        margin-bottom: 4px;
+    }
+    .achv-card-progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+    }
+    .achv-card-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+    }
+    .achv-card-reward { color: var(--gold); font-weight: 700; }
+    .achv-card-earned-tag {
+        font-size: 0.66rem;
+        color: var(--accent);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    /* ── Admin: Başarım oluşturma formu ── */
+    .achv-admin-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .achv-admin-form-row {
+        display: flex;
+        gap: 8px;
+    }
+    .achv-admin-form input,
+    .achv-admin-form select,
+    .achv-admin-form textarea {
+        flex: 1;
+        min-width: 0;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 9px 12px;
+        font-size: 0.84rem;
+        font-family: var(--font-display);
+    }
+    .achv-admin-form textarea { resize: vertical; min-height: 44px; }
+    .achv-admin-form input:focus,
+    .achv-admin-form select:focus,
+    .achv-admin-form textarea:focus { outline: none; border-color: var(--accent); }
+    .achv-admin-form button[type="submit"] {
+        background: var(--accent);
+        color: var(--bg-void);
+        border: none;
+        border-radius: 8px;
+        padding: 9px 18px;
+        font-weight: 700;
+        font-size: 0.84rem;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .achv-admin-form button[type="submit"]:hover { filter: brightness(1.08); }
+    @media (max-width: 560px) {
+        .achv-admin-form-row { flex-direction: column; }
+    }
+
+    .achv-admin-list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+    .achv-admin-list-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .achv-admin-list-body { flex: 1; min-width: 0; }
+    .achv-admin-list-name { font-weight: 700; font-size: 0.85rem; }
+    .achv-admin-list-meta { font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); }
+    .achv-admin-list-del {
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--danger);
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        flex-shrink: 0;
+        font-size: 0.78rem;
+    }
+    .achv-admin-list-del:hover { border-color: var(--danger); background: rgba(255,77,77,0.1); }
 
     /* ==========================================================
        MODÜL 6 — RÜTBE BAZLI PROFİL TEMASI / RENK PALETİ SİSTEMİ
@@ -10196,13 +10398,21 @@
                                 <span class="profile-stat-value" id="profileStatVoxelLevel">—</span>
                                 <span class="profile-stat-label">Voksel Seviyesi</span>
                             </div>
-                            <div class="profile-stat-box">
-                                <span class="profile-stat-icon">🏅</span>
+                            <!-- BAŞARIM SİSTEMİ: "Kazanılan Rozet" kutusu "Kazanılan
+                                 Başarım" olarak yeniden adlandırıldı ve tıklanabilir
+                                 yapıldı -- tıklanınca kazanılan/kazanılmayan TÜM
+                                 başarımların galerisini (profileAchievementsModal)
+                                 açar. Bu, isim yanında görünen "özel rozetler"
+                                 sisteminden (specialBadges) tamamen ayrı, bağımsız
+                                 bir sistemdir (bkz. AchievementSystem modülü). -->
+                            <button type="button" class="profile-stat-box profile-stat-box-clickable" id="profileStatAchievementsBtn" title="Tüm başarımları gör">
+                                <span class="profile-stat-icon">🏆</span>
                                 <span class="profile-stat-value" id="profileStatBadges">—</span>
-                                <span class="profile-stat-label">Kazanılan Rozet</span>
-                            </div>
+                                <span class="profile-stat-label">Kazanılan Başarım</span>
+                            </button>
                         </div>
                     </div>
+
 
                         </div>
                         <div class="profile-col profile-col-side">
@@ -10437,6 +10647,27 @@
                 </div>
             </section>
 
+            <!-- BAŞARIM SİSTEMİ: Profilim > İstatistikler > "Kazanılan Başarım"
+                 kutusuna tıklanınca açılan galeri modalı. Kazanılan VE
+                 kazanılmayan (kilitli) TÜM başarımlar burada listelenir;
+                 kazanılmayanlarda ilerleme çubuğu (ör. "320/1000 coin")
+                 gösterilir. İçerik AchievementSystem.renderGalleryModal()
+                 tarafından doldurulur -- bkz. ilgili JS modülü. -->
+            <div class="forum-modal-backdrop" id="achvGalleryModalBackdrop" style="display:none;">
+                <div class="forum-modal achv-modal">
+                    <div class="forum-modal-header">
+                        <span>🏆 Başarımlar</span>
+                        <button class="forum-modal-close" id="achvGalleryModalClose">✕</button>
+                    </div>
+                    <div class="forum-modal-body">
+                        <div class="achv-summary-row" id="achvSummaryRow">Yükleniyor…</div>
+                        <div class="achv-grid" id="achvGalleryGrid">
+                            <div class="hub-placeholder">Yükleniyor…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <section class="hub-view" data-view="admin">
                 <div class="admin-panel-header">
                     <div>
@@ -10450,6 +10681,7 @@
                     <button type="button" class="admin-tab-btn" data-admin-tab="users">👥 Kullanıcılar</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="forum">💬 Forum</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="marketplace">🧊 Pazar Yeri</button>
+                    <button type="button" class="admin-tab-btn" data-admin-tab="achievements">🏆 Başarımlar</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="reports">🚩 Şikâyetler</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="communities">🌐 Topluluklar</button>
                     <button type="button" class="admin-tab-btn" data-admin-tab="auditlog">🖥️ Konsol Kayıtları</button>
@@ -10518,6 +10750,57 @@
                 <!-- ═══ SEKME: PAZAR YERİ (3D STUDIO) MODERASYONU ═══ -->
                 <div class="admin-tab-panel" data-admin-panel="marketplace">
                     <div class="admin-list" id="adminListingList">
+                        <div class="hub-placeholder">Yükleniyor…</div>
+                    </div>
+                </div>
+
+                <!-- ═══ SEKME: BAŞARIMLAR (Achievements) ═══
+                     Owner/Developer burada otomatik-koşullu başarım
+                     tanımları oluşturur (isim, açıklama, ikon, koşul tipi +
+                     hedef değer, coin ödülü). Koşul kontrolü ve otomatik
+                     ödüllendirme AchievementSystem modülünde (bkz. ilgili
+                     JS bloğu) yapılır -- bu panel sadece TANIM CRUD'udur. -->
+                <div class="admin-tab-panel" data-admin-panel="achievements">
+                    <div class="pl-admin-badges-card" id="achvAdminCard">
+                        <div class="pl-admin-badges-card__head">
+                            <div>
+                                <div class="pl-admin-badges-card__title">Başarım oluştur</div>
+                                <div class="pl-admin-badges-card__note">
+                                    Başarımlar otomatik koşullu kazanılır (isim yanında GÖSTERİLMEZ) ve coin ödülü verir.
+                                    Oluşturma/silme yalnızca Owner / Developer içindir.
+                                </div>
+                            </div>
+                            <span class="pl-admin-badges-card__access">OWNER / DEVELOPER</span>
+                        </div>
+                        <form class="achv-admin-form" id="achvAdminForm">
+                            <div class="achv-admin-form-row">
+                                <input id="achvFormName" type="text" maxlength="32" placeholder="Başarım adı (ör. Coin Avcısı)" aria-label="Başarım adı" autocomplete="off" required>
+                                <input id="achvFormIcon" type="text" maxlength="4" placeholder="İkon (emoji, ör. 💰)" aria-label="İkon" autocomplete="off" required style="max-width:120px;">
+                            </div>
+                            <textarea id="achvFormDesc" maxlength="140" placeholder="Açıklama (ör. Toplamda 1000 coin biriktir)" aria-label="Açıklama" required></textarea>
+                            <div class="achv-admin-form-row">
+                                <select id="achvFormConditionType" aria-label="Koşul tipi">
+                                    <option value="coinTotal">Toplam coin biriktirme (bakiye)</option>
+                                    <option value="coinEarnedTotal">Toplam kazanılan coin (harcansa da sayılır)</option>
+                                    <option value="marketplaceSalesCount">Pazar yerinde yapılan satış sayısı</option>
+                                    <option value="marketplacePurchaseCount">Pazar yerinden yapılan satın alma sayısı</option>
+                                    <option value="messageCount">Gönderilen toplam mesaj sayısı</option>
+                                    <option value="dmFriendCount">Farklı kişiyle DM başlatma sayısı</option>
+                                    <option value="forumThreadCount">Açılan forum konusu sayısı</option>
+                                    <option value="modelUploadCount">Pazar yerine yüklenen model sayısı</option>
+                                    <option value="dailyStreak">Günlük ödül serisi (gün)</option>
+                                </select>
+                                <input id="achvFormTarget" type="number" min="1" step="1" placeholder="Hedef (ör. 1000)" aria-label="Hedef değer" required style="max-width:140px;">
+                            </div>
+                            <div class="achv-admin-form-row">
+                                <input id="achvFormReward" type="number" min="0" step="1" placeholder="Coin ödülü (ör. 50)" aria-label="Coin ödülü" required style="max-width:160px;">
+                                <button type="submit">Başarım oluştur</button>
+                            </div>
+                        </form>
+                        <div class="pl-admin-badges-status" id="achvAdminStatus" aria-live="polite"></div>
+                    </div>
+                    <div class="admin-panel-subtitle" style="margin:16px 0 10px;">Tanımlı Başarımlar</div>
+                    <div class="admin-list" id="achvAdminList">
                         <div class="hub-placeholder">Yükleniyor…</div>
                     </div>
                 </div>
@@ -13704,6 +13987,12 @@
             if (window.CoinSystem && typeof window.CoinSystem.init === "function") {
                 window.CoinSystem.init(user.uid);
             }
+
+            // 🏆 BAŞARIM SİSTEMİ: kalıcı sayaçları + kazanılan başarımları
+            // dinlemeye başlar (bkz. AchievementSystem modülü).
+            if (window.AchievementSystem && typeof window.AchievementSystem.init === "function") {
+                window.AchievementSystem.init(user.uid);
+            }
         }
 
         function renderMiniProfile(profile) {
@@ -13718,6 +14007,11 @@
             // users/{uid} düğümünü baştan sona okur).
             if (window.CoinSystem && typeof window.CoinSystem.renderBalance === "function") {
                 window.CoinSystem.renderBalance(profile.coins || 0);
+            }
+            // 🏆 "Toplam coin biriktirme" koşullu başarımlar için canlı
+            // bakiyeyi AchievementSystem'e de bildiriyoruz.
+            if (window.AchievementSystem && typeof window.AchievementSystem.setCoinBalance === "function") {
+                window.AchievementSystem.setCoinBalance(profile.coins || 0);
             }
 
             if (nameEl) {
@@ -15256,6 +15550,7 @@
                         lastClaimAt: Date.now()
                     });
                     _dailyReward = { streakDay: nextDay, lastClaimAt: Date.now() };
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("coinEarnedTotal", amount);
                     if (typeof showToastGlobal === "function") {
                         showToastGlobal(`🎁 Günlük ödül alındı: +${amount} coin!`);
                     }
@@ -15281,6 +15576,7 @@
                 database.ref('users/' + _uid).update({
                     coins: firebase.database.ServerValue.increment(MESSAGE_COIN_AMOUNT)
                 }).catch((err) => console.error("[Coin] Mesaj ödülü yazılamadı:", err));
+                if (window.AchievementSystem) window.AchievementSystem.trackEvent("coinEarnedTotal", MESSAGE_COIN_AMOUNT);
             }
 
             // Çevrim içi kaldıkça periyodik coin -- presence sistemi zaten
@@ -15294,6 +15590,7 @@
                     database.ref('users/' + _uid).update({
                         coins: firebase.database.ServerValue.increment(ONLINE_COIN_AMOUNT)
                     }).catch(() => {});
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("coinEarnedTotal", ONLINE_COIN_AMOUNT);
                 }, ONLINE_COIN_INTERVAL_MS);
             }
 
@@ -15340,6 +15637,22 @@
                         actorUsername: (window.CommunityAuth && window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "unknown",
                         timestamp: firebase.database.ServerValue.TIMESTAMP
                     });
+                    // 🏆 Başarım sayaçları: alıcı için "satın alma sayısı"
+                    // (kendi client'ımızdan, kendi verimiz -- normal yetki).
+                    // Satıcı için "satış sayısı" sayacı ise BAŞKA bir
+                    // kullanıcının achievementProgress alanına yazıyor;
+                    // bu yüzden Firebase Rules'ta achievementProgress
+                    // altına "herkes kendi UID'si dışında da +1 amaçlı
+                    // yazabilir" kuralı gerekiyor (bkz. paylaşılan Rules
+                    // dosyası, achievementProgress node'u).
+                    if (window.AchievementSystem) {
+                        window.AchievementSystem.trackEvent("marketplacePurchaseCount", 1);
+                        if (listing.sellerUid && listing.sellerUid !== _uid) {
+                            database.ref("users/" + listing.sellerUid + "/achievementProgress/marketplaceSalesCount")
+                                .transaction((cur) => (Number(cur) || 0) + 1)
+                                .catch((err) => console.error("[Achievements] Satıcı sayacı güncellenemedi:", err));
+                        }
+                    }
                     return { ok: true, charged: price };
                 } catch (err) {
                     console.error("[Coin] Satın alma başarısız:", err);
@@ -15470,6 +15783,361 @@
             };
         })();
         window.CoinSystem = CoinSystem;
+
+        // ==============================================================
+        // 🏆 BAŞARIM SİSTEMİ (Achievements)
+        // ==============================================================
+        // Veri modeli (Firebase RTDB):
+        //   achievements/{achvId}                -> { name, description, icon,
+        //                                              conditionType, target,
+        //                                              rewardCoins, createdAt }
+        //   users/{uid}/achievementProgress/*     -> kalıcı sayaçlar (bkz. aşağı)
+        //   users/{uid}/earnedAchievements/{id}   -> true + earnedAt (kazanılınca)
+        //
+        // ÖNEMLİ FARK: Bu sistem, isim yanında görünen "özel rozetler"
+        // (specialBadges) ve "topluluk rozetleri" (community-badge) ile
+        // TAMAMEN AYRIDIR. Başarımlar sadece Profilim > İstatistikler >
+        // "Kazanılan Başarım" galerisinde görünür, isim yanında ASLA
+        // gösterilmez. Kazanınca coin ödülü verir.
+        //
+        // Koşul tipleri ve hangi kalıcı sayaca karşılık geldiği:
+        //   coinTotal              -> users/{uid}/coins (anlık bakiye)
+        //   coinEarnedTotal        -> users/{uid}/achievementProgress/coinEarnedTotal
+        //   marketplaceSalesCount  -> users/{uid}/achievementProgress/marketplaceSalesCount
+        //   marketplacePurchaseCount -> users/{uid}/achievementProgress/marketplacePurchaseCount
+        //   messageCount           -> users/{uid}/achievementProgress/messageCount
+        //   dmFriendCount          -> users/{uid}/achievementProgress/dmFriendCount
+        //   forumThreadCount       -> users/{uid}/achievementProgress/forumThreadCount
+        //   modelUploadCount       -> users/{uid}/achievementProgress/modelUploadCount
+        //   dailyStreak            -> users/{uid}/dailyReward/streakDay (zaten var olan alan)
+        //
+        // trackEvent(uid, eventType, meta) her olayda çağrılır: (1) ilgili
+        // sayaç Firebase'de increment edilir, (2) o sayaca bağlı TÜM
+        // başarım tanımları çekilip hedefe ulaşılıp ulaşılmadığı kontrol
+        // edilir, (3) ulaşılan ve henüz kazanılmamışsa otomatik ödül
+        // (coin + earnedAchievements kaydı) verilir + toast gösterilir.
+        const AchievementSystem = (function () {
+            let _uid = null;
+            let _defs = {};           // achId -> tanım
+            let _defsByCondition = {}; // conditionType -> [achId,...]
+            let _earned = {};          // achId -> {earnedAt}
+            let _progress = {};        // achievementProgress alanı canlı kopya
+            let _coins = 0;            // canlı coin bakiyesi kopyası (coinTotal koşulu için)
+            let _dailyStreak = 0;      // canlı günlük seri kopyası (dailyStreak koşulu için)
+            let _defsRef = null;
+            let _wired = false;
+
+            // Koşul tipi -> hangi kalıcı alandan okunacağı (coinTotal ve
+            // dailyStreak farklı yerlerden geldiği için özel işlenir).
+            function currentValueFor(conditionType) {
+                if (conditionType === "coinTotal") return _coins;
+                if (conditionType === "dailyStreak") return _dailyStreak;
+                return Number(_progress[conditionType]) || 0;
+            }
+
+            function rebuildConditionIndex() {
+                _defsByCondition = {};
+                Object.keys(_defs).forEach((id) => {
+                    const def = _defs[id];
+                    if (!def || !def.conditionType) return;
+                    if (!_defsByCondition[def.conditionType]) _defsByCondition[def.conditionType] = [];
+                    _defsByCondition[def.conditionType].push(id);
+                });
+            }
+
+            function init(uid) {
+                if (!uid) return;
+                _uid = uid;
+
+                // Başarım kataloğu -- herkes okuyabilir, canlı dinlenir ki
+                // admin yeni bir başarım eklediğinde sayfa yenilemeden
+                // devreye girsin.
+                if (_defsRef) _defsRef.off();
+                _defsRef = database.ref("achievements");
+                _defsRef.on("value", (snap) => {
+                    _defs = snap.val() || {};
+                    rebuildConditionIndex();
+                    renderAdminAchievementList();
+                    // Galeri modalı açıksa canlı güncelle.
+                    const modal = document.getElementById("achvGalleryModalBackdrop");
+                    if (modal && modal.style.display === "flex") renderGalleryModal();
+                });
+
+                database.ref("users/" + uid + "/earnedAchievements").on("value", (snap) => {
+                    _earned = snap.val() || {};
+                    updateProfileStatBadge();
+                    const modal = document.getElementById("achvGalleryModalBackdrop");
+                    if (modal && modal.style.display === "flex") renderGalleryModal();
+                });
+
+                database.ref("users/" + uid + "/achievementProgress").on("value", (snap) => {
+                    _progress = snap.val() || {};
+                });
+
+                database.ref("users/" + uid + "/dailyReward/streakDay").on("value", (snap) => {
+                    _dailyStreak = Number(snap.val()) || 0;
+                    checkAndAward("dailyStreak");
+                });
+
+                wireEvents();
+            }
+
+            function updateProfileStatBadge() {
+                const el = document.getElementById("profileStatBadges");
+                if (el) el.textContent = Object.keys(_earned).length;
+            }
+
+            // CoinSystem.renderBalance() zaten her coin değişiminde
+            // çağrılıyor -- burada aynı değeri yakalayıp coinTotal
+            // koşulunu da tetikliyoruz. setCoinBalance dışarıdan
+            // (renderMiniProfile akışından) çağrılır.
+            function setCoinBalance(coins) {
+                _coins = coins || 0;
+                checkAndAward("coinTotal");
+            }
+
+            /**
+             * Bir olay (event) gerçekleştiğinde çağrılır: ilgili kalıcı
+             * sayacı +1 (veya belirtilen miktar) artırır, sonra o sayaca
+             * bağlı başarımları kontrol eder. `amount` verilmezse 1 kabul
+             * edilir (coinEarnedTotal gibi coin miktarına bağlı olanlar
+             * için gerçek miktar geçilmelidir).
+             */
+            async function trackEvent(eventType, amount) {
+                if (!_uid) return;
+                const inc = (amount === undefined) ? 1 : amount;
+                if (inc === 0) return;
+                try {
+                    await database.ref("users/" + _uid + "/achievementProgress/" + eventType)
+                        .transaction((cur) => (Number(cur) || 0) + inc);
+                } catch (err) {
+                    console.error("[Achievements] Sayaç güncellenemedi:", eventType, err);
+                    return;
+                }
+                // _progress'in "value" dinleyicisi zaten tazelenecek ama
+                // eşzamanlı transaction sonrası hemen kontrol etmek için
+                // yerel kopyayı da güncelliyoruz.
+                _progress[eventType] = (Number(_progress[eventType]) || 0) + inc;
+                checkAndAward(eventType);
+            }
+
+            // Sadece farklı kullanıcılarla DM başlatıldığında çağrılır
+            // (bkz. ensureDmMetaExists) -- aynı kişiyle tekrar tekrar DM
+            // açmak sayaç artırmaz, bu yüzden ayrı, idempotent bir
+            // fonksiyon: users/{uid}/achievementProgress/dmPeers/{otherUid}
+            // = true olarak işaretlenir, sayaç bu setin boyutudur.
+            async function trackDmPeer(otherUid) {
+                if (!_uid || !otherUid || otherUid === _uid) return;
+                const peerRef = database.ref("users/" + _uid + "/achievementProgress/dmPeers/" + otherUid);
+                try {
+                    const snap = await peerRef.once("value");
+                    if (snap.exists()) return; // zaten sayılmış bir kişi
+                    await peerRef.set(true);
+                    await trackEvent("dmFriendCount", 1);
+                } catch (err) {
+                    console.error("[Achievements] DM peer kaydı başarısız:", err);
+                }
+            }
+
+            function checkAndAward(conditionType) {
+                const ids = _defsByCondition[conditionType];
+                if (!ids || !ids.length) return;
+                const current = currentValueFor(conditionType);
+                ids.forEach((id) => {
+                    const def = _defs[id];
+                    if (!def) return;
+                    if (_earned[id]) return; // zaten kazanılmış
+                    const target = Number(def.target) || 0;
+                    if (target <= 0 || current < target) return;
+                    awardAchievement(id, def);
+                });
+            }
+
+            async function awardAchievement(id, def) {
+                if (!_uid || _earned[id]) return;
+                // İyimser kilit: aynı anda iki tetikleyici aynı başarımı
+                // vermeye çalışmasın diye hemen yerel olarak işaretliyoruz.
+                _earned[id] = { earnedAt: Date.now() };
+                try {
+                    await database.ref("users/" + _uid + "/earnedAchievements/" + id).set({
+                        earnedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    const reward = Number(def.rewardCoins) || 0;
+                    if (reward > 0) {
+                        await database.ref("users/" + _uid).update({
+                            coins: firebase.database.ServerValue.increment(reward)
+                        });
+                    }
+                    if (typeof showToastGlobal === "function") {
+                        showToastGlobal(`🏆 Başarım kazanıldı: ${def.name}${reward > 0 ? ` (+${reward} coin)` : ""}`);
+                    }
+                } catch (err) {
+                    console.error("[Achievements] Ödül verilemedi:", id, err);
+                    delete _earned[id]; // geri al, tekrar denenebilsin
+                }
+            }
+
+            // ---- Profil galerisi (kazanılan + kilitli hepsi) --------------
+            function renderGalleryModal() {
+                const grid = document.getElementById("achvGalleryGrid");
+                const summary = document.getElementById("achvSummaryRow");
+                if (!grid) return;
+                const allIds = Object.keys(_defs);
+                const earnedCount = allIds.filter((id) => _earned[id]).length;
+                if (summary) {
+                    summary.innerHTML = `<span><strong>${earnedCount}</strong> / ${allIds.length} başarım kazanıldı</span>`;
+                }
+                if (!allIds.length) {
+                    grid.innerHTML = `<div class="hub-placeholder">Henüz başarım tanımlanmadı.</div>`;
+                    return;
+                }
+                // Kazanılanlar önce, sonra hedefe en yakın olanlar.
+                const sorted = allIds.slice().sort((a, b) => {
+                    const ea = !!_earned[a], eb = !!_earned[b];
+                    if (ea !== eb) return ea ? -1 : 1;
+                    if (ea && eb) return (_earned[b].earnedAt || 0) - (_earned[a].earnedAt || 0);
+                    const da = _defs[a], db = _defs[b];
+                    const pa = Math.min(1, currentValueFor(da.conditionType) / (Number(da.target) || 1));
+                    const pb = Math.min(1, currentValueFor(db.conditionType) / (Number(db.target) || 1));
+                    return pb - pa;
+                });
+                grid.innerHTML = sorted.map((id) => {
+                    const def = _defs[id];
+                    const isEarned = !!_earned[id];
+                    const target = Number(def.target) || 1;
+                    const current = Math.min(target, currentValueFor(def.conditionType));
+                    const pct = Math.max(0, Math.min(100, Math.round((current / target) * 100)));
+                    const reward = Number(def.rewardCoins) || 0;
+                    return `<div class="achv-card ${isEarned ? "is-earned" : "is-locked"}">
+                        <div class="achv-card-icon">${escapeHtml(def.icon || "🏆")}</div>
+                        <div class="achv-card-body">
+                            <div class="achv-card-name">${escapeHtml(def.name || "")}</div>
+                            <div class="achv-card-desc">${escapeHtml(def.description || "")}</div>
+                            ${isEarned ? "" : `
+                                <div class="achv-card-progress-track"><div class="achv-card-progress-fill" style="width:${pct}%;"></div></div>
+                            `}
+                            <div class="achv-card-meta">
+                                <span>${isEarned ? '<span class="achv-card-earned-tag">✓ Kazanıldı</span>' : `${current}/${target}`}</span>
+                                ${reward > 0 ? `<span class="achv-card-reward">+${reward} 🪙</span>` : ""}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join("");
+            }
+
+            function openGalleryModal() {
+                const backdrop = document.getElementById("achvGalleryModalBackdrop");
+                if (!backdrop) return;
+                renderGalleryModal();
+                backdrop.style.display = "flex";
+            }
+
+            function closeGalleryModal() {
+                const backdrop = document.getElementById("achvGalleryModalBackdrop");
+                if (backdrop) backdrop.style.display = "none";
+            }
+
+            // ---- Admin: tanım listesi + CRUD -------------------------------
+            function renderAdminAchievementList() {
+                const list = document.getElementById("achvAdminList");
+                if (!list) return;
+                const canManage = window.CommunityRBAC && window.CommunityRBAC.canManageStaff(window.CommunityAuth && window.CommunityAuth.profile);
+                const ids = Object.keys(_defs);
+                if (!ids.length) {
+                    list.innerHTML = `<div class="hub-placeholder">Henüz başarım tanımlanmadı.</div>`;
+                } else {
+                    list.innerHTML = ids.map((id) => {
+                        const def = _defs[id];
+                        return `<div class="achv-admin-list-item">
+                            <span class="achv-admin-list-icon">${escapeHtml(def.icon || "🏆")}</span>
+                            <div class="achv-admin-list-body">
+                                <div class="achv-admin-list-name">${escapeHtml(def.name || "")}</div>
+                                <div class="achv-admin-list-meta">${escapeHtml(def.conditionType || "")} ≥ ${escapeHtml(String(def.target || 0))} · Ödül: ${escapeHtml(String(def.rewardCoins || 0))} coin</div>
+                            </div>
+                            ${canManage ? `<button type="button" class="achv-admin-list-del" data-achv-delete-id="${escapeHtml(id)}">Sil</button>` : ""}
+                        </div>`;
+                    }).join("");
+                }
+                const form = document.getElementById("achvAdminForm");
+                if (form) {
+                    form.querySelectorAll("input,select,textarea,button").forEach((el) => { el.disabled = !canManage; });
+                }
+                const status = document.getElementById("achvAdminStatus");
+                if (status && !canManage) status.textContent = "Başarım oluşturma/silme yetkisi yalnızca Owner / Developer'dadır.";
+            }
+
+            async function createAchievementFromForm(e) {
+                e.preventDefault();
+                const canManage = window.CommunityRBAC && window.CommunityRBAC.canManageStaff(window.CommunityAuth && window.CommunityAuth.profile);
+                const status = document.getElementById("achvAdminStatus");
+                if (!canManage) {
+                    if (status) status.textContent = "Bu işlem için yetkin yok.";
+                    return;
+                }
+                const name = (document.getElementById("achvFormName").value || "").trim();
+                const icon = (document.getElementById("achvFormIcon").value || "🏆").trim();
+                const description = (document.getElementById("achvFormDesc").value || "").trim();
+                const conditionType = document.getElementById("achvFormConditionType").value;
+                const target = Math.max(1, Math.floor(Number(document.getElementById("achvFormTarget").value) || 0));
+                const rewardCoins = Math.max(0, Math.floor(Number(document.getElementById("achvFormReward").value) || 0));
+
+                if (!name || !description || !target) {
+                    if (status) status.textContent = "Lütfen tüm zorunlu alanları doldur.";
+                    return;
+                }
+
+                try {
+                    const ref = database.ref("achievements").push();
+                    await ref.set({
+                        name, icon, description, conditionType, target, rewardCoins,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        createdBy: _uid
+                    });
+                    document.getElementById("achvAdminForm").reset();
+                    if (status) status.textContent = `"${name}" başarımı oluşturuldu.`;
+                } catch (err) {
+                    console.error("[Achievements] Oluşturma başarısız:", err);
+                    if (status) status.textContent = "Oluşturulamadı: " + (err && err.message ? err.message : err);
+                }
+            }
+
+            async function deleteAchievement(id) {
+                if (!_defs[id]) return;
+                if (!confirm(`"${_defs[id].name}" başarımını silmek istediğine emin misin? Bu başarımı kazanmış kullanıcılardan geri alınmaz, sadece katalogdan kaldırılır.`)) return;
+                const status = document.getElementById("achvAdminStatus");
+                try {
+                    await database.ref("achievements/" + id).remove();
+                    if (status) status.textContent = "Başarım silindi.";
+                } catch (err) {
+                    if (status) status.textContent = "Silinemedi: " + (err && err.message ? err.message : err);
+                }
+            }
+
+            function wireEvents() {
+                if (_wired) return;
+                _wired = true;
+                document.getElementById("profileStatAchievementsBtn")?.addEventListener("click", openGalleryModal);
+                document.getElementById("achvGalleryModalClose")?.addEventListener("click", closeGalleryModal);
+                document.getElementById("achvGalleryModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "achvGalleryModalBackdrop") closeGalleryModal();
+                });
+                document.getElementById("achvAdminForm")?.addEventListener("submit", createAchievementFromForm);
+                document.getElementById("achvAdminList")?.addEventListener("click", (e) => {
+                    const btn = e.target.closest("[data-achv-delete-id]");
+                    if (btn) deleteAchievement(btn.getAttribute("data-achv-delete-id"));
+                });
+            }
+
+            return {
+                init,
+                setCoinBalance,
+                trackEvent,
+                trackDmPeer,
+                renderAdminAchievementList
+            };
+        })();
+        window.AchievementSystem = AchievementSystem;
+
 
         // ==============================================================
         // 🟢 PRESENCE (ÇEVRİMİÇİ / SON GÖRÜLME) SİSTEMİ
@@ -17659,6 +18327,7 @@
                 const _msgRef = await database.ref('forum_messages').push(messageData);
                 // 🪙 Mesaj gönderme coin ödülü (rate-limited, bkz. CoinSystem)
                 if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("messageCount", 1);
                 inputEl.value = "";
                 inputEl.removeAttribute("data-reply-to-message-id");
                 inputEl.removeAttribute("data-reply-to-author-uid");
@@ -18753,6 +19422,8 @@
                 const newRef = await database.ref('forum_threads').push(threadData);
                 // 🪙 Yeni konu açma da bir mesaj sayılır (coin ödülü, rate-limited)
                 if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("messageCount", 1);
+                if (window.AchievementSystem) window.AchievementSystem.trackEvent("forumThreadCount", 1);
                 closeNewThreadModal();
                 switchForumCategory(categoryId);
                 openThreadDetail(newRef.key);
@@ -19134,6 +19805,7 @@
                 const _replyRef = await database.ref('forum_replies/' + threadId).push(replyData);
                 // 🪙 Konu cevabı da bir mesaj sayılır (coin ödülü, rate-limited)
                 if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("messageCount", 1);
                 await database.ref('forum_threads/' + threadId).update({
                     replyCount: firebase.database.ServerValue.increment(1),
                     lastReplyAt: firebase.database.ServerValue.TIMESTAMP
@@ -21822,6 +22494,8 @@
                 createdAt:     new Date().toISOString()
             }).then(() => {
                 mktCloseSellModal();
+                // 🏆 "Pazar yerine yüklenen model" sayısı
+                if (window.AchievementSystem) window.AchievementSystem.trackEvent("modelUploadCount", 1);
             }).catch(err => {
                 console.error("[Pazar] İlan paylaşılamadı:", err);
                 showToastGlobal("İlan paylaşılırken bir sorun oluştu.");
@@ -24367,6 +25041,11 @@
                     members: { [_myUid]: true, [otherUid]: true },
                     updatedAt: Date.now()
                 });
+                // 🏆 "Farklı kişiyle DM başlatma" başarımı: gerçek bir
+                // arkadaş sistemi olmadığı için en yakın ölçüt olarak
+                // kullanılıyor. DM meta'sı YENİ oluşturuluyorsa (yani bu
+                // kişiyle ilk kez konuşuluyorsa) sayaç artırılır.
+                if (window.AchievementSystem) window.AchievementSystem.trackDmPeer(otherUid);
             }
 
             async function openDmConversation(dmId, otherUid) {
@@ -25060,6 +25739,7 @@
                     await msgRef.set(payload);
                     // 🪙 Grup/topluluk mesajı da coin ödülü kazandırır (rate-limited)
                     if (window.CoinSystem) window.CoinSystem.grantMessageCoin();
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("messageCount", 1);
                 } catch (err) {
                     console.error("[Messaging] Grup mesajı yazılamadı:", err, "path:", basePath, "payload:", payload);
                     throw err;
@@ -30343,6 +31023,11 @@
                 renderReportsList();
                 renderSuspendedCommunities();
                 renderAuditLogList();
+                // 🏆 Başarım tanım listesi (AchievementSystem kendi
+                // Firebase listener'ıyla zaten canlı güncellenir, ama panel
+                // ilk açıldığında da hemen dolu görünsün diye burada da
+                // tetikliyoruz).
+                if (window.AchievementSystem) window.AchievementSystem.renderAdminAchievementList();
             }
 
             // ------------------------------------------------------------
