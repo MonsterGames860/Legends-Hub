@@ -11103,6 +11103,10 @@
                                     <option value="forumThreadCount">Açılan forum konusu sayısı</option>
                                     <option value="modelUploadCount">Pazar yerine yüklenen model sayısı</option>
                                     <option value="dailyStreak">Günlük ödül serisi (gün)</option>
+                                    <option value="communityJoinCount">Katılınan topluluk sayısı</option>
+                                    <option value="communityCreateCount">Kurulan topluluk sayısı</option>
+                                    <option value="groupChatCreateCount">Kurulan grup sohbeti sayısı</option>
+                                    <option value="profileCustomized">Profili özelleştirme (isim rengi/tema seçme, tek seferlik)</option>
                                     <option value="videoWatch">Video izleme (baştan sona, sarma yok)</option>
                                 </select>
                                 <input id="achvFormTarget" type="number" min="1" step="1" value="1" placeholder="Hedef (ör. 1000)" aria-label="Hedef değer" required style="max-width:140px;">
@@ -12228,6 +12232,12 @@
             try {
                 if (window.CommunityAuth && window.CommunityAuth.user && typeof database !== "undefined") {
                     database.ref('users/' + window.CommunityAuth.user.uid + '/nameColor').set(toSave);
+                    // 🏆 "Profilini özelleştir" başarımı -- isim rengi VEYA
+                    // tema seçmek (aşağıda setProfileTheme'de de aynı bayrak)
+                    // AYNI tek seferlik başarımı tetikler; kullanıcı ikisinden
+                    // birini yapınca yeterlidir, "profileCustomized" ortak
+                    // bayrağı bunu sağlar.
+                    if (window.AchievementSystem) window.AchievementSystem.trackOnceEvent("profileCustomized", "profileCustomized");
                 } else {
                     console.warn("[NameColor] Firebase bağlantısı yok, kaydedilemedi.");
                     return;
@@ -12970,6 +12980,8 @@
             try {
                 if (window.CommunityAuth && window.CommunityAuth.user && typeof database !== "undefined") {
                     database.ref('users/' + window.CommunityAuth.user.uid + '/profileTheme').set(themeObj);
+                    // 🏆 Bkz. setNameColor'daki aynı not -- ortak bayrak.
+                    if (window.AchievementSystem) window.AchievementSystem.trackOnceEvent("profileCustomized", "profileCustomized");
                 }
             } catch (e) {
                 console.warn("[ProfileTheme] Firebase senkronu atlandı:", e);
@@ -16355,6 +16367,25 @@
                 }
             }
 
+            // 🏆 TEK SEFERLİK bayrak-tabanlı eventler (ör. "profilini
+            // özelleştir") -- trackEvent gibi her çağrıda +1 artmaz, sadece
+            // İLK kez tetiklendiğinde sayaç 1 olur ve bir daha hiç
+            // artmaz/azalmaz. users/{uid}/achievementProgress/onceFlags/{flagKey}
+            // ile idempotent hale getirilir (aynı bayrak birden fazla kez
+            // işaretlenmeye çalışılsa bile sayaç sabit kalır).
+            async function trackOnceEvent(flagKey, conditionType) {
+                if (!_uid) return;
+                const flagRef = database.ref("users/" + _uid + "/achievementProgress/onceFlags/" + flagKey);
+                try {
+                    const snap = await flagRef.once("value");
+                    if (snap.exists()) return; // zaten işaretlenmiş
+                    await flagRef.set(true);
+                    await trackEvent(conditionType, 1);
+                } catch (err) {
+                    console.error("[Achievements] Tek seferlik event kaydı başarısız:", flagKey, err);
+                }
+            }
+
             // Video izleme koşullu başarımlar sayaç bazlı DEĞİLDİR (bkz.
             // videoWatch): kullanıcı videoyu baştan sona, sarma yapmadan
             // izlediğinde video oynatıcı (setupVideoGuard) doğrudan bu
@@ -16857,15 +16888,16 @@
                 const description = (document.getElementById("achvFormDesc").value || "").trim();
                 const conditionType = document.getElementById("achvFormConditionType").value;
                 const isVideo = conditionType === "videoWatch";
-                // Video koşulunda hedef anlamsız (izleme tamamlanınca otomatik
-                // kazanılır) -- 1'e sabitleniyor, formdaki hedef alanı bu
-                // durumda zaten gizli/kullanılmıyor.
-                const target = isVideo ? 1 : Math.max(1, Math.floor(Number(document.getElementById("achvFormTarget").value) || 0));
+                const isOnceOnly = conditionType === "profileCustomized";
+                // Video/tek-seferlik koşullarda hedef anlamsız (tamamlanınca
+                // otomatik kazanılır) -- 1'e sabitleniyor, formdaki hedef
+                // alanı bu durumlarda zaten gizli/kullanılmıyor.
+                const target = (isVideo || isOnceOnly) ? 1 : Math.max(1, Math.floor(Number(document.getElementById("achvFormTarget").value) || 0));
                 const rewardCoins = Math.max(0, Math.floor(Number(document.getElementById("achvFormReward").value) || 0));
                 const difficulty = document.getElementById("achvFormDifficulty").value || "medium";
                 const videoUrl = (document.getElementById("achvFormVideoUrl").value || "").trim();
 
-                if (!name || !description || (!isVideo && !target)) {
+                if (!name || !description || (!isVideo && !isOnceOnly && !target)) {
                     if (status) status.textContent = "Lütfen tüm zorunlu alanları doldur.";
                     return;
                 }
@@ -16992,12 +17024,17 @@
                 // video linki alanını gösterir (ve tersi).
                 document.getElementById("achvFormConditionType")?.addEventListener("change", (e) => {
                     const isVideo = e.target.value === "videoWatch";
+                    // "Tek seferlik" koşullar (hedef her zaman 1, anlamsız --
+                    // ör. profilini özelleştirme bir kez olur, biriktirilmez).
+                    const isOnceOnly = e.target.value === "profileCustomized";
                     const videoRow = document.getElementById("achvFormVideoRow");
                     const targetInput = document.getElementById("achvFormTarget");
                     if (videoRow) videoRow.style.display = isVideo ? "flex" : "none";
                     if (targetInput) {
-                        targetInput.style.display = isVideo ? "none" : "";
-                        targetInput.required = !isVideo;
+                        const hideTarget = isVideo || isOnceOnly;
+                        targetInput.style.display = hideTarget ? "none" : "";
+                        targetInput.required = !hideTarget;
+                        if (isOnceOnly) targetInput.value = "1";
                     }
                 });
 
@@ -17070,6 +17107,7 @@
                 setCoinBalance,
                 trackEvent,
                 trackDmPeer,
+                trackOnceEvent,
                 renderAdminAchievementList,
                 viewUserAchievements
             };
@@ -28282,6 +28320,8 @@
 
                 const me = window.CommunityMentions.getByUid(_myUid);
                 await postGroupSystemMessage(groupId, `🎉 ${me ? me.username : "Kurucu"} grubu oluşturdu.`);
+                // 🏆 "Grup sohbeti kurma" başarımı (groupChatCreateCount).
+                if (window.AchievementSystem) window.AchievementSystem.trackEvent("groupChatCreateCount", 1);
 
                 closeCreateGroupModal();
                 openGroupConversation(groupId);
@@ -28660,6 +28700,11 @@
                         isSuspended: false,
                         createdAt: now
                     });
+                    // 🏆 "Topluluk kurma" başarımı (communityCreateCount) --
+                    // "gruba katılma" (communityJoinCount) veya "grup sohbeti
+                    // kurma" (groupChatCreateCount) ile karıştırılmasın diye
+                    // ayrı bir sayaç.
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("communityCreateCount", 1);
                 } catch (err) {
                     console.error("[Topluluk] Oluşturma hatası:", err);
                     // Yarım kalan oluşturmada rezerve edilen ismi serbest
@@ -28791,6 +28836,8 @@
 
                     const me = window.CommunityMentions.getByUid(_myUid);
                     await postGroupSystemMessage(groupId, `🎉 ${me ? me.username : "Yeni bir üye"} topluluğa katıldı.`);
+                    // 🏆 "Topluluğa katılma" başarımı (communityJoinCount).
+                    if (window.AchievementSystem) window.AchievementSystem.trackEvent("communityJoinCount", 1);
                 } catch (err) {
                     console.error("[Topluluk] Katılma hatası:", err);
                     errorEl.textContent = "Katılırken bir hata oluştu: " + (err && err.message ? err.message : err);
@@ -28962,6 +29009,13 @@
                     // varsayılan (başlangıç) rütbe otomatik atansın.
                     if (meta.isCommunity && window.CommunityChannels) {
                         await window.CommunityChannels.assignDefaultRoleIfAny(groupId, _myUid);
+                    }
+                    // 🏆 "Topluluğa katılma" başarımı -- sadece isCommunity
+                    // true olan gruplar sayılır (normal arkadaş grupları
+                    // dahil edilmez, bkz. joinCommunityFromPreview'daki
+                    // aynı mantık).
+                    if (meta.isCommunity && window.AchievementSystem) {
+                        window.AchievementSystem.trackEvent("communityJoinCount", 1);
                     }
 
                     const me = window.CommunityMentions.getByUid(_myUid);
