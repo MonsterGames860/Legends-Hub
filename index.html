@@ -6044,6 +6044,45 @@
         color: var(--text-primary);
         margin-bottom: 2px;
     }
+
+    /* ── Başarım ZORLUK sistemi: her zorluk seviyesinin kendi rengi var,
+       en üst seviye ("legendary") RGB döngüsü ile animasyonlu gösterilir.
+       Bu class'lar hem galeri kartlarında (.achv-card-name) hem admin
+       listesinde (.achv-admin-list-name) hem de başarım kazanma
+       banner'ında (.achv-unlock-name) kullanılır -- aynı isim rengi her
+       yerde tutarlı olsun diye ortak class isimleri seçildi. ── */
+    .achv-diff-easy       { color: #8fd68a; }
+    .achv-diff-medium     { color: #66fcf1; }
+    .achv-diff-hard       { color: #ff9d4d; }
+    .achv-diff-extreme    { color: #ff4d6a; }
+    .achv-diff-legendary {
+        background: linear-gradient(90deg, #ff4d4d, #f5c542, #4dff8f, #4dc9ff, #b24dff, #ff4d4d);
+        background-size: 400% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        animation: achvRgbCycle 3.2s linear infinite;
+    }
+    @keyframes achvRgbCycle {
+        from { background-position: 0% 50%; }
+        to   { background-position: 400% 50%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .achv-diff-legendary { animation: none; background-position: 0% 50%; }
+    }
+    .achv-card-diff-tag {
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1px 6px;
+        border-radius: 5px;
+        border: 1px solid currentColor;
+        margin-left: 6px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
     .achv-card-desc {
         font-size: 0.76rem;
         color: var(--text-dim);
@@ -6079,6 +6118,102 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
+
+    /* ── Video izleme koşullu başarımlar: galeri kartındaki "İzle" butonu
+       + tam ekrana yakın video oynatıcı modalı. Kullanıcı ileri sarma
+       (seek) YAPAMAZ -- videoyu baştan sona gerçekten izlemesi gerekir,
+       aksi halde başarım verilmez (bkz. AchievementSystem içindeki
+       video izleme JS mantığı). ── */
+    .achv-card-watch-btn {
+        margin-top: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 7px;
+        border: 1px solid rgba(102,252,241,0.4);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .achv-card-watch-btn:hover { filter: brightness(1.1); }
+    .achv-card-watch-btn:disabled { opacity: 0.5; cursor: default; }
+
+    .achv-video-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 9700;
+        background: rgba(5,6,8,0.92);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .achv-video-modal-backdrop.is-open { display: flex; }
+    .achv-video-modal {
+        width: 100%;
+        max-width: 720px;
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .achv-video-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+    .achv-video-modal-close {
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1.1rem;
+        cursor: pointer;
+        line-height: 1;
+    }
+    .achv-video-modal-close:hover { color: var(--text-primary); }
+    .achv-video-modal-body { position: relative; background: #000; aspect-ratio: 16/9; }
+    .achv-video-modal-body video,
+    .achv-video-modal-body iframe {
+        width: 100%;
+        height: 100%;
+        display: block;
+        border: none;
+    }
+    .achv-video-modal-progress-wrap {
+        padding: 10px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .achv-video-modal-progress-track {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        overflow: hidden;
+    }
+    .achv-video-modal-progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+        width: 0%;
+        transition: width 0.2s linear;
+    }
+    .achv-video-modal-hint {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+    }
+    .achv-video-modal-hint.is-done { color: var(--accent); }
 
     /* ── Admin: Başarım oluşturma formu ── */
     .achv-admin-form {
@@ -6178,6 +6313,17 @@
         font-size: 0.78rem;
     }
     .achv-admin-list-del:hover { border-color: var(--danger); background: rgba(255,77,77,0.1); }
+    .achv-admin-diff-select {
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        color: var(--text-primary);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 0.72rem;
+        flex-shrink: 0;
+        max-width: 110px;
+    }
+    .achv-admin-diff-select:focus { outline: none; border-color: var(--accent); }
 
     /* ==========================================================
        MODÜL 6 — RÜTBE BAZLI PROFİL TEMASI / RENK PALETİ SİSTEMİ
@@ -10775,6 +10921,25 @@
                 </div>
             </div>
 
+            <!-- BAŞARIM SİSTEMİ: Video izleme koşullu başarımlar için oynatıcı
+                 modalı. Kazanılan galeri kartındaki "İzle" butonuna basılınca
+                 açılır. Videonun TAMAMI, ileri sarmadan izlenmeden başarım
+                 verilmez -- bkz. AchievementSystem içindeki video izleme
+                 mantığı (setupVideoGuard). -->
+            <div class="achv-video-modal-backdrop" id="achvVideoModalBackdrop">
+                <div class="achv-video-modal">
+                    <div class="achv-video-modal-head">
+                        <span id="achvVideoModalTitle">Başarım Videosu</span>
+                        <button type="button" class="achv-video-modal-close" id="achvVideoModalClose" aria-label="Kapat">✕</button>
+                    </div>
+                    <div class="achv-video-modal-body" id="achvVideoModalBody"></div>
+                    <div class="achv-video-modal-progress-wrap">
+                        <div class="achv-video-modal-progress-track"><div class="achv-video-modal-progress-fill" id="achvVideoModalProgressFill"></div></div>
+                        <div class="achv-video-modal-hint" id="achvVideoModalHint">Başarımı kazanmak için videoyu ileri sarmadan sonuna kadar izle.</div>
+                    </div>
+                </div>
+            </div>
+
             <section class="hub-view" data-view="admin">
                 <div class="admin-panel-header">
                     <div>
@@ -10888,7 +11053,7 @@
                                 <input type="file" id="achvFormIconFile" accept="image/*" style="display:none;">
                                 <input id="achvFormName" type="text" maxlength="32" placeholder="Başarım adı (ör. Coin Avcısı)" aria-label="Başarım adı" autocomplete="off" required>
                             </div>
-                            <textarea id="achvFormDesc" maxlength="140" placeholder="Açıklama (ör. Toplamda 1000 coin biriktir)" aria-label="Açıklama" required></textarea>
+                            <textarea id="achvFormDesc" maxlength="140" placeholder="Açıklama (ör. Toplamda 1000 coin biriktir). Video koşullu başarımlarda videonun linkini de buraya ekleyebilirsin." aria-label="Açıklama" required></textarea>
                             <div class="achv-admin-form-row">
                                 <select id="achvFormConditionType" aria-label="Koşul tipi">
                                     <option value="coinTotal">Toplam coin biriktirme (bakiye)</option>
@@ -10900,8 +11065,25 @@
                                     <option value="forumThreadCount">Açılan forum konusu sayısı</option>
                                     <option value="modelUploadCount">Pazar yerine yüklenen model sayısı</option>
                                     <option value="dailyStreak">Günlük ödül serisi (gün)</option>
+                                    <option value="videoWatch">Video izleme (baştan sona, sarma yok)</option>
                                 </select>
-                                <input id="achvFormTarget" type="number" min="1" step="1" placeholder="Hedef (ör. 1000)" aria-label="Hedef değer" required style="max-width:140px;">
+                                <input id="achvFormTarget" type="number" min="1" step="1" value="1" placeholder="Hedef (ör. 1000)" aria-label="Hedef değer" required style="max-width:140px;">
+                            </div>
+                            <!-- Sadece "Video izleme" koşulu seçiliyken görünür. Hedef
+                                 değeri bu koşul için anlamsız olduğundan (izleme %100
+                                 tamamlanınca otomatik kazanılır) formda gizlenip 1'e
+                                 sabitlenir -- bkz. createAchievementFromForm. -->
+                            <div class="achv-admin-form-row" id="achvFormVideoRow" style="display:none;">
+                                <input id="achvFormVideoUrl" type="url" placeholder="Video linki (ör. https://youtube.com/watch?v=... veya .mp4 linki)" aria-label="Video linki" style="flex:1;">
+                            </div>
+                            <div class="achv-admin-form-row">
+                                <select id="achvFormDifficulty" aria-label="Zorluk seviyesi" style="max-width:200px;">
+                                    <option value="easy">Kolay</option>
+                                    <option value="medium" selected>Orta</option>
+                                    <option value="hard">Zor</option>
+                                    <option value="extreme">Çok Zor</option>
+                                    <option value="legendary">Efsanevi (RGB)</option>
+                                </select>
                             </div>
                             <div class="achv-admin-form-row">
                                 <input id="achvFormReward" type="number" min="0" step="1" placeholder="Coin ödülü (ör. 50)" aria-label="Coin ödülü" required style="max-width:160px;">
@@ -16057,6 +16239,17 @@
                 }
             }
 
+            // Video izleme koşullu başarımlar sayaç bazlı DEĞİLDİR (bkz.
+            // videoWatch): kullanıcı videoyu baştan sona, sarma yapmadan
+            // izlediğinde video oynatıcı (setupVideoGuard) doğrudan bu
+            // fonksiyonu çağırır ve başarım anında verilir.
+            async function trackVideoWatched(achId) {
+                const def = _defs[achId];
+                if (!def || def.conditionType !== "videoWatch") return;
+                if (_earned[achId]) return;
+                await awardAchievement(achId, def);
+            }
+
             function checkAndAward(conditionType) {
                 const ids = _defsByCondition[conditionType];
                 if (!ids || !ids.length) return;
@@ -16124,7 +16317,7 @@
                     <div class="achv-unlock-icon">${renderIconHtml(def)}</div>
                     <div class="achv-unlock-body">
                         <div class="achv-unlock-eyebrow">🏆 Başarım Kazanıldı</div>
-                        <div class="achv-unlock-name">${escapeHtml(def.name || "")}</div>
+                        <div class="achv-unlock-name ${difficultyClass(def)}">${escapeHtml(def.name || "")}</div>
                         ${reward > 0 ? `<div class="achv-unlock-reward">+${reward} 🪙 coin</div>` : ""}
                     </div>`;
                 document.body.appendChild(el);
@@ -16147,6 +16340,27 @@
                     return `<img src="${icon}" alt="" style="width:100%;height:100%;object-fit:contain;">`;
                 }
                 return escapeHtml(icon);
+            }
+
+            // 🎚️ Zorluk -> CSS class + görünen ad eşlemesi. Tanımsız/eski
+            // kayıtlarda difficulty alanı yoksa "medium" varsayılır ki
+            // eski başarımlar bozuk görünmesin.
+            const DIFFICULTY_LABELS = {
+                easy: "Kolay",
+                medium: "Orta",
+                hard: "Zor",
+                extreme: "Çok Zor",
+                legendary: "Efsanevi"
+            };
+            function difficultyKey(def) {
+                const d = def && def.difficulty;
+                return DIFFICULTY_LABELS[d] ? d : "medium";
+            }
+            function difficultyClass(def) {
+                return "achv-diff-" + difficultyKey(def);
+            }
+            function difficultyLabel(def) {
+                return DIFFICULTY_LABELS[difficultyKey(def)];
             }
 
             function renderGalleryModal() {
@@ -16175,25 +16389,184 @@
                 grid.innerHTML = sorted.map((id) => {
                     const def = _defs[id];
                     const isEarned = !!_earned[id];
+                    const isVideo = def.conditionType === "videoWatch";
                     const target = Number(def.target) || 1;
                     const current = Math.min(target, currentValueFor(def.conditionType));
                     const pct = Math.max(0, Math.min(100, Math.round((current / target) * 100)));
                     const reward = Number(def.rewardCoins) || 0;
+                    const diffCls = difficultyClass(def);
+                    // Video koşullu başarımlarda ilerleme çubuğu yerine
+                    // "İzle" butonu gösterilir -- ilerleme yüzdesi bu koşulda
+                    // anlamlı değil (ya baştan sona izlenir ya izlenmez).
+                    const progressOrWatch = isEarned
+                        ? ""
+                        : (isVideo
+                            ? `<button type="button" class="achv-card-watch-btn" data-achv-watch-id="${escapeHtml(id)}">▶ İzle ve Kazan</button>`
+                            : `<div class="achv-card-progress-track"><div class="achv-card-progress-fill" style="width:${pct}%;"></div></div>`);
+                    const metaLeft = isEarned
+                        ? '<span class="achv-card-earned-tag">✓ Kazanıldı</span>'
+                        : (isVideo ? "Videoyu izleyerek kazanılır" : `${current}/${target}`);
                     return `<div class="achv-card ${isEarned ? "is-earned" : "is-locked"}">
                         <div class="achv-card-icon">${renderIconHtml(def)}</div>
                         <div class="achv-card-body">
-                            <div class="achv-card-name">${escapeHtml(def.name || "")}</div>
+                            <div class="achv-card-name">
+                                <span class="${diffCls}">${escapeHtml(def.name || "")}</span>
+                                <span class="achv-card-diff-tag ${diffCls}">${difficultyLabel(def)}</span>
+                            </div>
                             <div class="achv-card-desc">${escapeHtml(def.description || "")}</div>
-                            ${isEarned ? "" : `
-                                <div class="achv-card-progress-track"><div class="achv-card-progress-fill" style="width:${pct}%;"></div></div>
-                            `}
+                            ${progressOrWatch}
                             <div class="achv-card-meta">
-                                <span>${isEarned ? '<span class="achv-card-earned-tag">✓ Kazanıldı</span>' : `${current}/${target}`}</span>
+                                <span>${metaLeft}</span>
                                 ${reward > 0 ? `<span class="achv-card-reward">+${reward} 🪙</span>` : ""}
                             </div>
                         </div>
                     </div>`;
                 }).join("");
+            }
+
+            // 🎬 Video izleme koşullu başarımlar — oynatıcı modalı + "sarma
+            // yapamama" koruması. İki video kaynağı türü desteklenir:
+            //   1) Doğrudan video dosyası linki (.mp4/.webm/.ogg) -- <video>
+            //      etiketiyle oynatılır, "seeking" olayı yakalanıp kullanıcı
+            //      daha önce İZLEMEDİĞİ bir noktaya atlarsa oynatıcı otomatik
+            //      en son gerçekten izlediği noktaya GERİ ALINIR. Böylece
+            //      ileri sarıp videoyu atlamak mümkün olmaz.
+            //   2) YouTube/Vimeo gibi harici platform linkleri -- <iframe>
+            //      ile gömülür. Bu durumda iframe farklı bir origin'den
+            //      geldiği için JS ile sarmayı ENGELLEMEK teknik olarak
+            //      mümkün değildir (tarayıcı güvenlik sınırı) -- bu yüzden
+            //      YouTube/Vimeo linklerinde başarım, modal en az videonun
+            //      GERÇEK süresi kadar açık kaldıktan sonra kazanılır (basit
+            //      bir zamanlayıcı ile). Gerçek "sarma engelleme" istiyorsan
+            //      videoyu bir .mp4 dosyası olarak barındırıp o linki
+            //      kullanman gerekir.
+            let _videoModalAchId = null;
+            let _videoModalMaxWatched = 0;   // <video> için: o ana kadar gerçekten izlenen en ileri saniye
+            let _videoModalTimerHandle = null;
+
+            function parseVideoSource(url) {
+                if (!url) return null;
+                const directExt = /\.(mp4|webm|ogg)(\?.*)?$/i;
+                if (directExt.test(url)) return { type: "direct", url };
+                const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
+                if (yt) return { type: "embed", embedUrl: `https://www.youtube.com/embed/${yt[1]}?autoplay=1&modestbranding=1&rel=0` };
+                const vimeo = url.match(/vimeo\.com\/(\d+)/);
+                if (vimeo) return { type: "embed", embedUrl: `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1` };
+                // Tanınmayan bir link ise yine de iframe olarak denenir.
+                return { type: "embed", embedUrl: url };
+            }
+
+            function openVideoModal(achId) {
+                const def = _defs[achId];
+                const backdrop = document.getElementById("achvVideoModalBackdrop");
+                const body = document.getElementById("achvVideoModalBody");
+                const title = document.getElementById("achvVideoModalTitle");
+                const fill = document.getElementById("achvVideoModalProgressFill");
+                const hint = document.getElementById("achvVideoModalHint");
+                if (!def || def.conditionType !== "videoWatch" || !backdrop || !body) return;
+                if (_earned[achId]) return;
+
+                _videoModalAchId = achId;
+                _videoModalMaxWatched = 0;
+                if (fill) fill.style.width = "0%";
+                if (hint) {
+                    hint.textContent = "Başarımı kazanmak için videoyu ileri sarmadan sonuna kadar izle.";
+                    hint.classList.remove("is-done");
+                }
+                if (title) title.textContent = def.name || "Başarım Videosu";
+
+                const src = parseVideoSource(def.videoUrl);
+                body.innerHTML = "";
+                if (!src) {
+                    body.innerHTML = `<div class="hub-placeholder" style="color:#fff;">Video linki tanımlanmamış.</div>`;
+                    backdrop.classList.add("is-open");
+                    return;
+                }
+
+                if (src.type === "direct") {
+                    const video = document.createElement("video");
+                    video.src = src.url;
+                    video.controls = true;
+                    video.playsInline = true;
+                    video.autoplay = true;
+
+                    // ⛔ SARMA ENGELİ: kullanıcı ilerleme çubuğunu tutup daha
+                    // önce izlemediği bir noktaya (mevcut en ileri izlenen
+                    // saniyeden 1sn'den fazla ileriye) atlamaya çalışırsa,
+                    // oynatıcı otomatik olarak en son gerçekten izlenen ana
+                    // geri alınır -- yani videoyu atlayarak "izlemiş" gibi
+                    // görünmek mümkün olmaz.
+                    video.addEventListener("timeupdate", () => {
+                        if (video.currentTime > _videoModalMaxWatched + 0.75) {
+                            video.currentTime = _videoModalMaxWatched;
+                            return;
+                        }
+                        _videoModalMaxWatched = Math.max(_videoModalMaxWatched, video.currentTime);
+                        if (video.duration > 0 && fill) {
+                            const pct = Math.min(100, Math.round((_videoModalMaxWatched / video.duration) * 100));
+                            fill.style.width = pct + "%";
+                        }
+                    });
+                    video.addEventListener("seeking", () => {
+                        if (video.currentTime > _videoModalMaxWatched + 0.75) {
+                            video.currentTime = _videoModalMaxWatched;
+                        }
+                    });
+                    video.addEventListener("ended", () => {
+                        if (fill) fill.style.width = "100%";
+                        if (hint) {
+                            hint.textContent = "✓ Video tamamlandı! Başarım veriliyor…";
+                            hint.classList.add("is-done");
+                        }
+                        trackVideoWatched(achId).then(() => {
+                            setTimeout(closeVideoModal, 1400);
+                        });
+                    });
+                    body.appendChild(video);
+                } else {
+                    // YouTube/Vimeo/diğer -- gerçek sarma engeli konulamaz
+                    // (bkz. yukarıdaki açıklama). Videonun beklenen süresi
+                    // tanımda yoksa admin panelinden eklenmiş "target"
+                    // saniye olarak yorumlanmaz; bunun yerine sabit,
+                    // makul bir izleme süresi (90sn) beklenir.
+                    const iframe = document.createElement("iframe");
+                    iframe.src = src.embedUrl;
+                    iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+                    iframe.allowFullscreen = true;
+                    body.appendChild(iframe);
+
+                    const waitSeconds = Math.max(15, Number(def.videoMinSeconds) || 90);
+                    let elapsed = 0;
+                    if (hint) hint.textContent = `Bu video harici bir platformdan oynatılıyor, sarma engellenemiyor -- videoyu gerçekten izle. En az ${waitSeconds}sn sonra başarım verilecek.`;
+                    if (_videoModalTimerHandle) clearInterval(_videoModalTimerHandle);
+                    _videoModalTimerHandle = setInterval(() => {
+                        elapsed += 1;
+                        if (fill) fill.style.width = Math.min(100, Math.round((elapsed / waitSeconds) * 100)) + "%";
+                        if (elapsed >= waitSeconds) {
+                            clearInterval(_videoModalTimerHandle);
+                            _videoModalTimerHandle = null;
+                            if (hint) {
+                                hint.textContent = "✓ Video tamamlandı! Başarım veriliyor…";
+                                hint.classList.add("is-done");
+                            }
+                            trackVideoWatched(achId).then(() => {
+                                setTimeout(closeVideoModal, 1400);
+                            });
+                        }
+                    }, 1000);
+                }
+
+                backdrop.classList.add("is-open");
+            }
+
+            function closeVideoModal() {
+                const backdrop = document.getElementById("achvVideoModalBackdrop");
+                const body = document.getElementById("achvVideoModalBody");
+                if (_videoModalTimerHandle) { clearInterval(_videoModalTimerHandle); _videoModalTimerHandle = null; }
+                if (backdrop) backdrop.classList.remove("is-open");
+                if (body) body.innerHTML = ""; // <video>/<iframe> oynatmayı durdurmak için tamamen kaldırılır
+                _videoModalAchId = null;
+                _videoModalMaxWatched = 0;
             }
 
             function openGalleryModal() {
@@ -16219,13 +16592,22 @@
                 } else {
                     list.innerHTML = ids.map((id) => {
                         const def = _defs[id];
+                        const diffCls = difficultyClass(def);
+                        const isVideo = def.conditionType === "videoWatch";
+                        const condLabel = isVideo ? "videoWatch (video izleme)" : escapeHtml(def.conditionType || "");
+                        const targetLabel = isVideo ? "" : ` ≥ ${escapeHtml(String(def.target || 0))}`;
                         return `<div class="achv-admin-list-item">
                             <span class="achv-admin-list-icon">${renderIconHtml(def)}</span>
                             <div class="achv-admin-list-body">
-                                <div class="achv-admin-list-name">${escapeHtml(def.name || "")}</div>
-                                <div class="achv-admin-list-meta">${escapeHtml(def.conditionType || "")} ≥ ${escapeHtml(String(def.target || 0))} · Ödül: ${escapeHtml(String(def.rewardCoins || 0))} coin</div>
+                                <div class="achv-admin-list-name"><span class="${diffCls}">${escapeHtml(def.name || "")}</span></div>
+                                <div class="achv-admin-list-meta">${condLabel}${targetLabel} · Ödül: ${escapeHtml(String(def.rewardCoins || 0))} coin</div>
                             </div>
-                            ${canManage ? `<button type="button" class="achv-admin-list-del" data-achv-delete-id="${escapeHtml(id)}">Sil</button>` : ""}
+                            ${canManage ? `
+                                <select class="achv-admin-diff-select" data-achv-diff-id="${escapeHtml(id)}" aria-label="Zorluk değiştir" title="Zorluk seviyesini değiştir">
+                                    ${Object.keys(DIFFICULTY_LABELS).map((k) => `<option value="${k}" ${difficultyKey(def) === k ? "selected" : ""}>${DIFFICULTY_LABELS[k]}</option>`).join("")}
+                                </select>
+                                <button type="button" class="achv-admin-list-del" data-achv-delete-id="${escapeHtml(id)}">Sil</button>
+                            ` : ""}
                         </div>`;
                     }).join("");
                 }
@@ -16286,11 +16668,21 @@
                 const name = (document.getElementById("achvFormName").value || "").trim();
                 const description = (document.getElementById("achvFormDesc").value || "").trim();
                 const conditionType = document.getElementById("achvFormConditionType").value;
-                const target = Math.max(1, Math.floor(Number(document.getElementById("achvFormTarget").value) || 0));
+                const isVideo = conditionType === "videoWatch";
+                // Video koşulunda hedef anlamsız (izleme tamamlanınca otomatik
+                // kazanılır) -- 1'e sabitleniyor, formdaki hedef alanı bu
+                // durumda zaten gizli/kullanılmıyor.
+                const target = isVideo ? 1 : Math.max(1, Math.floor(Number(document.getElementById("achvFormTarget").value) || 0));
                 const rewardCoins = Math.max(0, Math.floor(Number(document.getElementById("achvFormReward").value) || 0));
+                const difficulty = document.getElementById("achvFormDifficulty").value || "medium";
+                const videoUrl = (document.getElementById("achvFormVideoUrl").value || "").trim();
 
-                if (!name || !description || !target) {
+                if (!name || !description || (!isVideo && !target)) {
                     if (status) status.textContent = "Lütfen tüm zorunlu alanları doldur.";
+                    return;
+                }
+                if (isVideo && !videoUrl) {
+                    if (status) status.textContent = "Video koşullu başarım için video linki gerekli.";
                     return;
                 }
                 if (!_pendingAchvIconData) {
@@ -16300,13 +16692,15 @@
 
                 try {
                     const ref = database.ref("achievements").push();
-                    await ref.set({
-                        name, description, conditionType, target, rewardCoins,
+                    const payload = {
+                        name, description, conditionType, target, rewardCoins, difficulty,
                         icon: _pendingAchvIconData,
                         iconType: "image",
                         createdAt: firebase.database.ServerValue.TIMESTAMP,
                         createdBy: _uid
-                    });
+                    };
+                    if (isVideo) payload.videoUrl = videoUrl;
+                    await ref.set(payload);
                     document.getElementById("achvAdminForm").reset();
                     _pendingAchvIconData = null;
                     const preview = document.getElementById("achvIconPreview");
@@ -16314,6 +16708,8 @@
                     if (preview) { preview.src = ""; preview.style.display = "none"; }
                     if (placeholder) placeholder.style.display = "block";
                     document.getElementById("achvFormIconFile").value = "";
+                    const videoRow = document.getElementById("achvFormVideoRow");
+                    if (videoRow) videoRow.style.display = "none";
                     if (status) status.textContent = `"${name}" başarımı oluşturuldu.`;
                 } catch (err) {
                     console.error("[Achievements] Oluşturma başarısız:", err);
@@ -16333,6 +16729,22 @@
                 }
             }
 
+            // 🎚️ Var olan bir başarımın zorluk seviyesini değiştirir (admin
+            // listesindeki dropdown'dan). Zorluk değişince başarımın adının
+            // rengi HEM admin listede HEM galeri kartlarında HEM kazanma
+            // banner'ında otomatik güncellenir (hepsi difficultyClass'a
+            // bakar, ayrı bir migrasyona gerek yok).
+            async function changeDifficulty(id, difficulty) {
+                if (!_defs[id] || !DIFFICULTY_LABELS[difficulty]) return;
+                const status = document.getElementById("achvAdminStatus");
+                try {
+                    await database.ref("achievements/" + id + "/difficulty").set(difficulty);
+                    if (status) status.textContent = `Zorluk güncellendi: ${DIFFICULTY_LABELS[difficulty]}.`;
+                } catch (err) {
+                    if (status) status.textContent = "Zorluk güncellenemedi: " + (err && err.message ? err.message : err);
+                }
+            }
+
             function wireEvents() {
                 if (_wired) return;
                 _wired = true;
@@ -16340,6 +16752,16 @@
                 document.getElementById("achvGalleryModalClose")?.addEventListener("click", closeGalleryModal);
                 document.getElementById("achvGalleryModalBackdrop")?.addEventListener("click", (e) => {
                     if (e.target.id === "achvGalleryModalBackdrop") closeGalleryModal();
+                });
+                // 🎬 Galeri kartındaki "İzle ve Kazan" butonu -- video izleme
+                // koşullu başarımlar için (bkz. setupVideoGuard).
+                document.getElementById("achvGalleryGrid")?.addEventListener("click", (e) => {
+                    const btn = e.target.closest("[data-achv-watch-id]");
+                    if (btn) openVideoModal(btn.getAttribute("data-achv-watch-id"));
+                });
+                document.getElementById("achvVideoModalClose")?.addEventListener("click", closeVideoModal);
+                document.getElementById("achvVideoModalBackdrop")?.addEventListener("click", (e) => {
+                    if (e.target.id === "achvVideoModalBackdrop") closeVideoModal();
                 });
                 // 🖼️ İkon seçici: butona basınca gizli dosya input'unu açar,
                 // seçilen görsel resizeImageToDataUrl ile küçültülüp
@@ -16368,10 +16790,26 @@
                         if (status) status.textContent = "Görsel okunamadı, tekrar dene.";
                     }
                 });
+                // Koşul tipi "Video izleme" seçilince hedef alanını gizleyip
+                // video linki alanını gösterir (ve tersi).
+                document.getElementById("achvFormConditionType")?.addEventListener("change", (e) => {
+                    const isVideo = e.target.value === "videoWatch";
+                    const videoRow = document.getElementById("achvFormVideoRow");
+                    const targetInput = document.getElementById("achvFormTarget");
+                    if (videoRow) videoRow.style.display = isVideo ? "flex" : "none";
+                    if (targetInput) {
+                        targetInput.style.display = isVideo ? "none" : "";
+                        targetInput.required = !isVideo;
+                    }
+                });
                 document.getElementById("achvAdminForm")?.addEventListener("submit", createAchievementFromForm);
                 document.getElementById("achvAdminList")?.addEventListener("click", (e) => {
                     const btn = e.target.closest("[data-achv-delete-id]");
                     if (btn) deleteAchievement(btn.getAttribute("data-achv-delete-id"));
+                });
+                document.getElementById("achvAdminList")?.addEventListener("change", (e) => {
+                    const sel = e.target.closest("[data-achv-diff-id]");
+                    if (sel) changeDifficulty(sel.getAttribute("data-achv-diff-id"), sel.value);
                 });
             }
 
