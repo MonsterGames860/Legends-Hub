@@ -4826,6 +4826,71 @@
         flex-direction: column;
         gap: 10px;
     }
+
+    /* ── WhatsApp tarzı "aşağı in" butonu ─────────────────────────────
+       Kullanıcı mesaj listesinde yeterince yukarı kaydırdığında (eski
+       mesajlara bakarken) belirir; tıklanınca en alta (en yeni mesaja)
+       kaydırır. position: fixed kullanılıyor çünkü .msg-bubble-list'in
+       kapsayıcı panelinin position değeri garanti değil -- fixed,
+       hangi sayfa/görünümde olursa olsun güvenilir şekilde sağ-altta
+       durmasını sağlıyor. Görünürlüğü sadece JS ile (is-visible class'ı)
+       kontrol edilir, varsayılan olarak gizlidir. */
+    .msg-scroll-to-bottom-btn {
+        position: fixed;
+        right: 22px;
+        bottom: 128px;
+        z-index: 40;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--bg-panel-raised);
+        border: 1px solid var(--line);
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .msg-scroll-to-bottom-btn.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+    .msg-scroll-to-bottom-btn .msg-scroll-unread-dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: var(--danger);
+        color: #fff;
+        font-size: 0.62rem;
+        font-weight: 700;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-mono);
+    }
+    .msg-scroll-to-bottom-btn .msg-scroll-unread-dot.is-shown { display: flex; }
+
+    /* ── Eski mesaj yükleniyor göstergesi (yukarı sayfalama) ──────────
+       Liste en tepeye yaklaştığında bir önceki mesaj bloğu yüklenirken
+       listenin en üstünde küçük bir "yükleniyor" satırı gösterilir. */
+    .msg-loading-older {
+        text-align: center;
+        padding: 10px 0;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+    }
     .msg-bubble-row {
         display: flex;
         align-self: flex-start;
@@ -9707,6 +9772,9 @@
                             </div>
 
                             <div class="msg-bubble-list" id="dmMessageList"></div>
+                            <button type="button" class="msg-scroll-to-bottom-btn" id="dmScrollToBottomBtn" title="En alta git" aria-label="En alta git">
+                                ↓<span class="msg-scroll-unread-dot" id="dmScrollUnreadDot"></span>
+                            </button>
 
                             <div class="msg-reply-banner" id="dmReplyBanner">
                                 <div class="msg-reply-banner-info">
@@ -9822,6 +9890,9 @@
                             </div>
 
                             <div class="msg-bubble-list" id="groupMessageList"></div>
+                            <button type="button" class="msg-scroll-to-bottom-btn" id="groupScrollToBottomBtn" title="En alta git" aria-label="En alta git">
+                                ↓<span class="msg-scroll-unread-dot" id="groupScrollUnreadDot"></span>
+                            </button>
 
                             <div class="msg-reply-banner" id="groupReplyBanner">
                                 <div class="msg-reply-banner-info">
@@ -24020,6 +24091,18 @@
             let _editingRoleId = null;
             let _editingCategoryId = null;
 
+            // ── Yukarı sayfalama (eski mesaj yükleme) state'i -- bkz.
+            // MessagingSystem'daki aynı isimli mantığın kanal sürümü.
+            // Kanal değiştikçe (selectChannel) sıfırlanır.
+            let _channelOlderMessages = {};
+            let _channelOldestLoadedAt = null;
+            let _channelHasMoreOlder = true;
+            let _channelLoadingOlder = false;
+            let _channelLastLiveArr = [];
+            const CHANNEL_PAGE_SIZE = 60;
+            const CHANNEL_SCROLL_TOP_THRESHOLD = 120;
+            const CHANNEL_SCROLL_BOTTOM_THRESHOLD = 400;
+
             firebase.auth().onAuthStateChanged((user) => { _myUid = user ? user.uid : null; });
 
             function escAttr(str) {
@@ -24182,6 +24265,18 @@
                 if (_categoriesRef) { _categoriesRef.off(); _categoriesRef = null; }
                 if (_memberRolesRef) { _memberRolesRef.off(); _memberRolesRef = null; }
                 if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
+                // 🐛 BUGFIX: kanalın scroll (yukarı sayfalama / aşağı-in)
+                // dinleyicisi de kapatılmalı -- aksi halde kullanıcı bir
+                // topluluktan normal bir gruba geçtiğinde #groupMessageList
+                // üzerinde HEM CommunityChannels'ın HEM MessagingSystem'in
+                // scroll dinleyicisi aynı anda aktif kalır (çift yükleme,
+                // çift "aşağı in" tıklama davranışı gibi hatalara yol açar).
+                if (_channelScrollAbortController) { _channelScrollAbortController.abort(); _channelScrollAbortController = null; }
+                _channelOlderMessages = {};
+                _channelOldestLoadedAt = null;
+                _channelHasMoreOlder = true;
+                _channelLoadingOlder = false;
+                _channelLastLiveArr = [];
                 _openGroupId = null;
                 closeSidebarDrawer();
             }
@@ -24198,6 +24293,97 @@
             let _lastRenderedGroupId = null;
             let _lastRenderedChannelId = null;
             let _lastRenderedMessagesArr = null;
+
+            // ── Kanal mesajları için yukarı sayfalama + birleştirme ──────
+            function rerenderChannelMessagesMerged(groupId, channelId) {
+                const olderArr = Object.keys(_channelOlderMessages).map((id) => ({ id, ..._channelOlderMessages[id] }));
+                const merged = olderArr.concat(_channelLastLiveArr);
+                const seen = new Set();
+                const dedup = [];
+                merged.forEach((m) => { if (!seen.has(m.id)) { seen.add(m.id); dedup.push(m); } });
+                dedup.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                renderActiveMessageList(groupId, channelId, dedup);
+            }
+
+            async function loadOlderChannelMessages(groupId, channelId, listEl) {
+                if (_channelLoadingOlder || !_channelHasMoreOlder) return;
+                if (_channelOldestLoadedAt == null) return;
+                _channelLoadingOlder = true;
+
+                const loadingEl = document.createElement("div");
+                loadingEl.className = "msg-loading-older";
+                loadingEl.textContent = "Eski mesajlar yükleniyor…";
+                listEl.prepend(loadingEl);
+                const prevScrollHeight = listEl.scrollHeight;
+
+                try {
+                    const snap = await firebase.database()
+                        .ref("group_chats/" + groupId + "/channels/" + channelId + "/messages")
+                        .orderByChild("createdAt")
+                        .endBefore(_channelOldestLoadedAt)
+                        .limitToLast(CHANNEL_PAGE_SIZE)
+                        .once("value");
+                    const val = snap.val() || {};
+                    const ids = Object.keys(val);
+                    if (groupId !== _openGroupId || channelId !== getActiveChannelId(groupId)) return; // bu sırada kanal değişmiş olabilir
+
+                    if (ids.length === 0) {
+                        _channelHasMoreOlder = false;
+                    } else {
+                        Object.assign(_channelOlderMessages, val);
+                        let minCreatedAt = _channelOldestLoadedAt;
+                        ids.forEach((id) => { const c = val[id].createdAt || 0; if (c < minCreatedAt) minCreatedAt = c; });
+                        _channelOldestLoadedAt = minCreatedAt;
+                        if (ids.length < CHANNEL_PAGE_SIZE) _channelHasMoreOlder = false;
+                    }
+                } catch (err) {
+                    console.error("[CommunityChannels] Eski mesajlar yüklenemedi:", err);
+                } finally {
+                    loadingEl.remove();
+                    _channelLoadingOlder = false;
+                    const heightDiff = listEl.scrollHeight - prevScrollHeight;
+                    if (heightDiff > 0) listEl.scrollTop += heightDiff;
+                    rerenderChannelMessagesMerged(groupId, channelId);
+                }
+            }
+
+            let _channelScrollAbortController = null;
+
+            function wireChannelScrollPagination(groupId, channelId, listEl) {
+                if (!listEl) return;
+                // Kanal her değiştiğinde dinleyici groupId/channelId'yi yeniden
+                // yakalamalı (closure). AbortController ile önceki kanalın
+                // scroll dinleyicisini temiz şekilde iptal edip yenisini
+                // bağlıyoruz -- DOM elementini klonlamak yerine bu yöntem,
+                // elemente başka yerlerden (ör. bindBubbleActions benzeri
+                // global delegasyonlar) bağlanmış olabilecek diğer olay
+                // dinleyicilerini bozmuyor.
+                if (_channelScrollAbortController) _channelScrollAbortController.abort();
+                _channelScrollAbortController = new AbortController();
+                const { signal } = _channelScrollAbortController;
+
+                const scrollBtn = document.getElementById("groupScrollToBottomBtn");
+                const unreadDot = document.getElementById("groupScrollUnreadDot");
+
+                listEl.addEventListener("scroll", () => {
+                    if (listEl.scrollTop <= CHANNEL_SCROLL_TOP_THRESHOLD) {
+                        loadOlderChannelMessages(groupId, channelId, listEl);
+                    }
+                    const distanceFromBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight;
+                    if (scrollBtn) scrollBtn.classList.toggle("is-visible", distanceFromBottom > CHANNEL_SCROLL_BOTTOM_THRESHOLD);
+                    if (distanceFromBottom <= CHANNEL_SCROLL_BOTTOM_THRESHOLD && unreadDot) {
+                        unreadDot.classList.remove("is-shown");
+                        unreadDot.textContent = "";
+                    }
+                }, { signal });
+
+                if (scrollBtn) {
+                    scrollBtn.addEventListener("click", () => {
+                        listEl.scrollTo({ top: listEl.scrollHeight, behavior: "smooth" });
+                        if (unreadDot) { unreadDot.classList.remove("is-shown"); unreadDot.textContent = ""; }
+                    }, { signal });
+                }
+            }
 
             function renderActiveMessageList(groupId, channelId, arr) {
                 // 🐛 BUGFIX: Firebase'in .off() çağrısına rağmen "uçuşta"
@@ -24254,7 +24440,17 @@
                     if (getActiveChannelId(groupId) !== channelId) return; // bu sırada kanal değişmiş olabilir
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                    renderActiveMessageList(groupId, channelId, arr);
+                    // 🐛 BUGFIX: burada doğrudan renderActiveMessageList
+                    // çağırmak, kullanıcının yukarı kaydırarak yüklediği
+                    // eski mesajları (_channelOlderMessages) EKRANDAN
+                    // SİLERDİ, çünkü bu sorgu sadece son 150'yi getiriyor.
+                    // Bunun yerine canlı diziyi güncelleyip her zamanki
+                    // birleştirme (eski + canlı) yoluyla render ediyoruz.
+                    _channelLastLiveArr = arr;
+                    if (_channelOldestLoadedAt == null && arr.length > 0) {
+                        _channelOldestLoadedAt = arr[0].createdAt;
+                    }
+                    rerenderChannelMessagesMerged(groupId, channelId);
                 } catch (err) {
                     console.error("[CommunityChannels] forceRefreshActiveMessages okunamadı:", err, "groupId:", groupId, "channelId:", channelId);
                 }
@@ -24263,13 +24459,23 @@
             function selectChannel(groupId, channelId) {
                 setActiveChannelId(groupId, channelId);
                 if (_activeMessagesRef) { _activeMessagesRef.off(); _activeMessagesRef = null; }
+                // Kanal değişti -- yukarı sayfalama state'ini sıfırla.
+                _channelOlderMessages = {};
+                _channelOldestLoadedAt = null;
+                _channelHasMoreOlder = true;
+                _channelLoadingOlder = false;
+                _channelLastLiveArr = [];
                 _activeMessagesRef = firebase.database()
                     .ref("group_chats/" + groupId + "/channels/" + channelId + "/messages")
                     .orderByChild("createdAt").limitToLast(150);
                 _activeMessagesRef.on("value", (snap) => {
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                    renderActiveMessageList(groupId, channelId, arr);
+                    _channelLastLiveArr = arr;
+                    if (_channelOldestLoadedAt == null && arr.length > 0) {
+                        _channelOldestLoadedAt = arr[0].createdAt;
+                    }
+                    rerenderChannelMessagesMerged(groupId, channelId);
                 }, (err) => {
                     // İzin reddi ya da başka bir okuma hatası sessizce
                     // yutulmasın -- konsola basıp kullanıcıya da görünür
@@ -24277,6 +24483,7 @@
                     // gibi teşhisi zor bir duruma düşülüyor.
                     console.error("[CommunityChannels] Kanal mesajları okunamadı:", err, "groupId:", groupId, "channelId:", channelId);
                 });
+                wireChannelScrollPagination(groupId, channelId, document.getElementById("groupMessageList"));
                 renderChannelSidebar(groupId);
                 updateComposerLockSafe(groupId);
                 closeSidebarDrawer(); // mobilde bir kanal seçilince drawer otomatik kapansın
@@ -25744,6 +25951,36 @@
             let _dmInboxRef = null;
             let _userGroupsRef = null;
 
+            // ── Yukarı sayfalama (eski mesaj yükleme) state'i ───────────
+            // Canlı dinleyici (.on limitToLast(150)) her zaman en YENİ 150
+            // mesajı gösterir. Kullanıcı yukarı kaydırıp daha eskisini
+            // isterse, bu eski bloklar AYRI bir "statik" havuzda tutulur
+            // ve canlı veriyle birleştirilip render edilir. Her sohbet
+            // açılışında sıfırlanır (bkz. resetPaginationState).
+            let _dmOlderMessages = {};      // messageId -> mesaj (yukarı kaydırmayla yüklenmiş, canlı DEĞİL)
+            let _groupOlderMessages = {};
+            let _dmOldestLoadedAt = null;   // şu ana kadar yüklenen en eski mesajın createdAt'i (bir sonraki sayfa için sınır)
+            let _groupOldestLoadedAt = null;
+            let _dmHasMoreOlder = true;     // false olursa "daha eski mesaj yok" demektir, tekrar denenmez
+            let _groupHasMoreOlder = true;
+            let _dmLoadingOlder = false;    // aynı anda birden fazla yükleme isteği atılmasın diye kilit
+            let _groupLoadingOlder = false;
+            const PAGE_SIZE = 60;           // her "yukarı kaydırma" sayfasında kaç eski mesaj çekilecek
+
+            function resetPaginationState(kind) {
+                if (kind === "dm") {
+                    _dmOlderMessages = {};
+                    _dmOldestLoadedAt = null;
+                    _dmHasMoreOlder = true;
+                    _dmLoadingOlder = false;
+                } else {
+                    _groupOlderMessages = {};
+                    _groupOldestLoadedAt = null;
+                    _groupHasMoreOlder = true;
+                    _groupLoadingOlder = false;
+                }
+            }
+
             let _dmInboxCache = {};   // dmId -> {otherUid, lastMessage, updatedAt, lastSenderUid, unreadCount}
             let _userGroupsCache = {}; // groupId -> true
             let _groupMetaCache = {};  // groupId -> meta (canlı dinlenir, liste render için)
@@ -26066,6 +26303,8 @@
                 if (mySeq !== _dmOpenRequestSeq || _activeDmId !== dmId) return;
 
                 if (_dmMessagesRef) _dmMessagesRef.off();
+                resetPaginationState("dm");
+                _dmOldestLoadedAt = null; // canlı veri gelince ilk mesajın createdAt'i ile dolacak
                 _dmMessagesRef = database.ref("dms/" + dmId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _dmMessagesRef.on("value", (snap) => {
                     // Callback ASENKRON olarak (RTDB'den) tekrar tekrar
@@ -26076,11 +26315,19 @@
                     if (mySeq !== _dmOpenRequestSeq || _activeDmId !== dmId) return;
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                    renderBubbleList(document.getElementById("dmMessageList"), arr, { isGroup: false });
+                    _dmLastLiveArr = arr;
+                    // Canlı pencerenin en eski mesajı, "daha eskisini yükle"
+                    // sayfalamasının başlangıç sınırıdır (henüz hiç yukarı
+                    // sayfalama yapılmadıysa).
+                    if (_dmOldestLoadedAt == null && arr.length > 0) {
+                        _dmOldestLoadedAt = arr[0].createdAt;
+                    }
+                    rerenderDmMessages();
                 }, (err) => {
                     console.error("[Messaging] DM mesajları okunamadı:", err);
                     if (mySeq === _dmOpenRequestSeq) showToastGlobal("Mesajlar yüklenemedi. Yetki sorunu olabilir.");
                 });
+                wireScrollPagination("dm", document.getElementById("dmMessageList"), document.getElementById("dmScrollToBottomBtn"), document.getElementById("dmScrollUnreadDot"));
 
                 // Bu sohbeti açtık — okunmamış sayacı sıfırla.
                 database.ref("dm_inbox/" + _myUid + "/" + dmId + "/unreadCount").set(0).catch((err) => {
@@ -26506,6 +26753,8 @@
                 window.CommunityChannels && window.CommunityChannels.onCloseCommunity();
 
                 if (_groupMessagesRef) _groupMessagesRef.off();
+                resetPaginationState("group");
+                _groupOldestLoadedAt = null;
                 _groupMessagesRef = database.ref("group_chats/" + groupId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _groupMessagesRef.on("value", (snap) => {
                     // 🐛 BUGFIX: aynı yarış durumu koruması -- .off()'a
@@ -26516,8 +26765,13 @@
                     if (groupId !== _activeGroupId) return;
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                    renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
+                    _groupLastLiveArr = arr;
+                    if (_groupOldestLoadedAt == null && arr.length > 0) {
+                        _groupOldestLoadedAt = arr[0].createdAt;
+                    }
+                    rerenderGroupMessages();
                 });
+                wireScrollPagination("group", document.getElementById("groupMessageList"), document.getElementById("groupScrollToBottomBtn"), document.getElementById("groupScrollUnreadDot"));
 
                 // Kırmızı Nokta: bu grubu açtık, okunmamış sayacı temizle.
                 if (window.UnreadSystem) window.UnreadSystem.markGroupRead(groupId);
@@ -29107,6 +29361,154 @@
                 // Ham depolanmış metindeki [mention:...] kodlarını sadeleştirip
                 // kısa bir önizleme çıkarıyoruz (zaten makePreviewSnippet bunu yapıyor).
                 return makePreviewSnippet(m.text || "");
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // 📜 YUKARI SAYFALAMA + "AŞAĞI İN" BUTONU (WhatsApp tarzı)
+            // ══════════════════════════════════════════════════════════
+            // Genel amaçlı, hem DM hem grup sohbeti için kullanılan ortak
+            // yardımcılar. Fikir:
+            //   1) Kullanıcı mesaj listesinde YUKARI kaydırıp tepeye
+            //      yaklaşırsa (ör. 120px kala) bir önceki PAGE_SIZE kadar
+            //      eski mesaj Firebase'den çekilip listenin BAŞINA eklenir
+            //      -- canlı (son 150) veriye dokunulmaz, ayrı bir "eski
+            //      mesajlar" havuzunda tutulup render sırasında birleştirilir.
+            //   2) Kullanıcı en alttan yeterince (400px) uzaklaşırsa sağ
+            //      altta bir "↓ en alta git" butonu belirir; tıklanınca
+            //      liste en alta kaydırılır.
+            const SCROLL_TOP_THRESHOLD = 120;   // bu kadar piksel kala eski mesaj yüklemeye başla
+            const SCROLL_BOTTOM_THRESHOLD = 400; // bu kadar piksel altta değilse "aşağı in" butonu göster
+
+            async function loadOlderMessages(kind, basePath, listEl) {
+                const isDm = kind === "dm";
+                const loadingFlag = isDm ? "_dmLoadingOlder" : "_groupLoadingOlder";
+                if (isDm ? _dmLoadingOlder : _groupLoadingOlder) return;
+                if (isDm ? !_dmHasMoreOlder : !_groupHasMoreOlder) return;
+
+                const oldestLoadedAt = isDm ? _dmOldestLoadedAt : _groupOldestLoadedAt;
+                if (oldestLoadedAt == null) return; // canlı veri henüz hiç gelmediyse sınır bilinmiyor, bekle
+
+                if (isDm) _dmLoadingOlder = true; else _groupLoadingOlder = true;
+
+                // Küçük bir "yükleniyor" göstergesi listenin en üstüne eklenir.
+                const loadingEl = document.createElement("div");
+                loadingEl.className = "msg-loading-older";
+                loadingEl.textContent = "Eski mesajlar yükleniyor…";
+                listEl.prepend(loadingEl);
+                const prevScrollHeight = listEl.scrollHeight;
+
+                try {
+                    const snap = await database.ref(basePath)
+                        .orderByChild("createdAt")
+                        .endBefore(oldestLoadedAt)
+                        .limitToLast(PAGE_SIZE)
+                        .once("value");
+                    const val = snap.val() || {};
+                    const ids = Object.keys(val);
+
+                    if (ids.length === 0) {
+                        if (isDm) _dmHasMoreOlder = false; else _groupHasMoreOlder = false;
+                    } else {
+                        if (isDm) {
+                            Object.assign(_dmOlderMessages, val);
+                        } else {
+                            Object.assign(_groupOlderMessages, val);
+                        }
+                        // Yeni sınır: bu sayfada gelen en eski mesajın createdAt'i.
+                        let minCreatedAt = oldestLoadedAt;
+                        ids.forEach((id) => {
+                            const c = val[id].createdAt || 0;
+                            if (c < minCreatedAt) minCreatedAt = c;
+                        });
+                        if (isDm) _dmOldestLoadedAt = minCreatedAt; else _groupOldestLoadedAt = minCreatedAt;
+                        if (ids.length < PAGE_SIZE) {
+                            if (isDm) _dmHasMoreOlder = false; else _groupHasMoreOlder = false;
+                        }
+                    }
+                } catch (err) {
+                    console.error("[Messaging] Eski mesajlar yüklenemedi:", err);
+                } finally {
+                    loadingEl.remove();
+                    if (isDm) _dmLoadingOlder = false; else _groupLoadingOlder = false;
+                    // Scroll konumunu koru: yeni içerik üste eklenince tarayıcı
+                    // otomatik olarak scrollTop'ı korumaz, kullanıcı aniden
+                    // aşağı fırlamış gibi hisseder -- yükseklik farkı kadar
+                    // scrollTop'ı manuel telafi ediyoruz.
+                    const heightDiff = listEl.scrollHeight - prevScrollHeight;
+                    if (heightDiff > 0) listEl.scrollTop += heightDiff;
+                    // Yeniden render tetikleyip birleşmiş (eski+canlı) listeyi göster.
+                    if (isDm) rerenderDmMessages(); else rerenderGroupMessages();
+                }
+            }
+
+            function wireScrollPagination(kind, listEl, scrollBtn, unreadDot) {
+                if (!listEl || listEl.dataset.paginationWired === "1") return;
+                listEl.dataset.paginationWired = "1";
+                const basePathFn = kind === "dm"
+                    ? () => "dms/" + _activeDmId + "/messages"
+                    : () => (_activeGroupId ? getGroupMessagesBasePath(_activeGroupId) : null);
+
+                listEl.addEventListener("scroll", () => {
+                    // 1) Tepeye yakınsa eski mesajları yükle.
+                    if (listEl.scrollTop <= SCROLL_TOP_THRESHOLD) {
+                        const basePath = basePathFn();
+                        if (basePath) loadOlderMessages(kind, basePath, listEl);
+                    }
+                    // 2) Alttan uzaksa "aşağı in" butonunu göster.
+                    const distanceFromBottom = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight;
+                    if (scrollBtn) {
+                        scrollBtn.classList.toggle("is-visible", distanceFromBottom > SCROLL_BOTTOM_THRESHOLD);
+                    }
+                    // Kullanıcı en alta yakınsa (yeni mesaj rozetini) temizle.
+                    if (distanceFromBottom <= SCROLL_BOTTOM_THRESHOLD && unreadDot) {
+                        unreadDot.classList.remove("is-shown");
+                        unreadDot.textContent = "";
+                    }
+                });
+
+                if (scrollBtn) {
+                    scrollBtn.addEventListener("click", () => {
+                        listEl.scrollTo({ top: listEl.scrollHeight, behavior: "smooth" });
+                        if (unreadDot) { unreadDot.classList.remove("is-shown"); unreadDot.textContent = ""; }
+                    });
+                }
+            }
+
+            // Grup mesajlarının canlı yolu bazen normal grup (group_chats/{id}/messages)
+            // bazen topluluk kanalı (group_chats/{id}/channels/{channelId}/messages)
+            // olabiliyor -- CommunityChannels modülü varsa ve aktif kanal
+            // varsa onu, yoksa düz grup yolunu kullanıyoruz.
+            function getGroupMessagesBasePath(groupId) {
+                if (window.CommunityChannels && typeof window.CommunityChannels.getActiveChannelId === "function") {
+                    const channelId = window.CommunityChannels.getActiveChannelId(groupId);
+                    if (channelId) return "group_chats/" + groupId + "/channels/" + channelId + "/messages";
+                }
+                return "group_chats/" + groupId + "/messages";
+            }
+
+            // Canlı (_dmLastLiveArr) ve statik-eski (_dmOlderMessages) veriyi
+            // birleştirip tarihe göre sıralayarak yeniden render eder.
+            let _dmLastLiveArr = [];
+            let _groupLastLiveArr = [];
+
+            function rerenderDmMessages() {
+                const olderArr = Object.keys(_dmOlderMessages).map((id) => ({ id, ..._dmOlderMessages[id] }));
+                const merged = olderArr.concat(_dmLastLiveArr);
+                const seen = new Set();
+                const dedup = [];
+                merged.forEach((m) => { if (!seen.has(m.id)) { seen.add(m.id); dedup.push(m); } });
+                dedup.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                renderBubbleList(document.getElementById("dmMessageList"), dedup, { isGroup: false });
+            }
+
+            function rerenderGroupMessages() {
+                const olderArr = Object.keys(_groupOlderMessages).map((id) => ({ id, ..._groupOlderMessages[id] }));
+                const merged = olderArr.concat(_groupLastLiveArr);
+                const seen = new Set();
+                const dedup = [];
+                merged.forEach((m) => { if (!seen.has(m.id)) { seen.add(m.id); dedup.push(m); } });
+                dedup.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                renderBubbleList(document.getElementById("groupMessageList"), dedup, { isGroup: true });
             }
 
             function renderBubbleList(listEl, messages, { isGroup }) {
@@ -32830,18 +33232,47 @@
                     .register("./sw.js")
                     .then(function (reg) {
                         console.log("[SW] Kayıt başarılı, scope:", reg.scope);
+
+                        // 🔄 OTOMATİK GÜNCELLEME (1/2): Tarayıcılar normalde
+                        // sw.js dosyasını seyrek kontrol eder (bazen saatler/
+                        // 24 saat sürebilir), bu yüzden sayfa yenilense bile
+                        // yeni deploy fark edilmeyip hep eski sürüm çalışmaya
+                        // devam edebiliyordu -- hard-reset gerekiyordu.
+                        // Burada iki tetikleyici ekleniyor: (a) sayfa her
+                        // yüklendiğinde reg.update() ile elle "yeni sürüm var
+                        // mı?" diye sorulur, (b) sekme arka plandan öne
+                        // gelince (visibilitychange) aynı kontrol tekrarlanır
+                        // -- kullanıcı normal sekme geçişi/yenileme yapınca
+                        // bile güncel sürüm hızlıca fark edilir.
+                        reg.update().catch(() => {});
+                        document.addEventListener("visibilitychange", function () {
+                            if (document.visibilityState === "visible") {
+                                reg.update().catch(() => {});
+                            }
+                        });
                     })
                     .catch(function (err) {
                         console.warn("[SW] Kayıt başarısız:", err);
                     });
 
-                // Service worker'dan gelen "notif-click" mesajını dinle
-                // (bkz. sw.js -> notificationclick). Sekme arka planda
-                // gösterilmiş bir bildirime tıklanınca buraya, ilgili
-                // sohbeti/DM'i doğrudan açmamız için bilgi gelir --
-                // WhatsApp'taki "bildirime tıkla, sohbet açılsın" davranışı.
+                // 🔄 OTOMATİK GÜNCELLEME (2/2): yeni service worker devreye
+                // girdiğinde (bkz. sw.js -> activate -> self.clients.claim
+                // sonrası "sw-updated" mesajı postalanıyor) sayfayı otomatik
+                // yeniliyoruz -- artık kullanıcının elle önbelleği temizleyip
+                // hard-reset yapmasına gerek kalmıyor, deploy sonrası bir
+                // sonraki sekme odaklanmasında/yenilemesinde otomatik en
+                // güncel sürüme geçiliyor. _swReloadedOnce ile aynı sekmede
+                // birden fazla "sw-updated" mesajı gelirse sonsuz yenileme
+                // döngüsüne girilmesi engelleniyor.
+                let _swReloadedOnce = false;
                 navigator.serviceWorker.addEventListener("message", function (event) {
                     const msg = event.data;
+                    if (msg && msg.type === "sw-updated") {
+                        if (_swReloadedOnce) return;
+                        _swReloadedOnce = true;
+                        window.location.reload();
+                        return;
+                    }
                     if (!msg || msg.type !== "notif-click") return;
                     const payload = msg.payload || {};
                     if (payload.type === "dm" && payload.dmId && payload.otherUid) {

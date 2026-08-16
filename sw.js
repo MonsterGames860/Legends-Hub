@@ -52,12 +52,35 @@ self.addEventListener("activate", (event) => {
           .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
+      .then(() => {
+        // 🔄 OTOMATİK GÜNCELLEME: yeni service worker devreye girdiğinde
+        // (eski cache'ler temizlenip self.clients.claim() ile tüm açık
+        // sekmelerin kontrolü alındıktan SONRA) her açık sekmeye "yeni
+        // sürüm hazır" mesajı gönderilir. index.html tarafındaki dinleyici
+        // (bkz. "message" event, type: "sw-updated") bunu yakalayıp sayfayı
+        // otomatik yeniler -- artık kullanıcının elle hard-reset yapmasına
+        // gerek kalmaz, normal sayfa yenilemesi (hatta hiç yenilememesi)
+        // bile en güncel sürüme geçmeye yeter.
+        return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+          clientList.forEach((client) => client.postMessage({ type: "sw-updated" }));
+        });
+      })
   );
-  self.clients.claim();
 });
 
-// ---- FETCH: cache-first, yoksa network, o da yoksa index.html'e düş ----
+// ---- FETCH: index.html/manifest.json için NETWORK-FIRST (her zaman en
+// güncel sürümü getir), diğer tüm dosyalar için eskisi gibi CACHE-FIRST.
+// ────────────────────────────────────────────────────────────────
+// 🐛 BUGFIX (otomatik güncelleme): Eskiden TÜM istekler cache-first idi,
+// yani index.html bir kere önbelleğe alındıktan sonra yeni bir deploy
+// yapılsa bile service worker hep eski, önbellekteki index.html'i
+// döndürüyordu -- kullanıcı sayfayı normal yenilediğinde hâlâ eski
+// sürümü görüyor, ancak "hard reset" (önbelleği elle temizleme) ile
+// güncelleme oluyordu. Çözüm: index.html ve manifest.json (uygulamanın
+// "kabuğu"/giriş noktası) için ÖNCE AĞDAN dene, başarısız olursa
+// (çevrimdışıysa) cache'e düş. Diğer statik dosyalar (resimler, ikonlar
+// gibi büyük/az değişen dosyalar) performans için hâlâ cache-first kalır.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
@@ -69,6 +92,35 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // "Kabuk" dosyaları: sayfa navigasyonu (adres çubuğuna yazma, sayfa
+  // yenileme) İLE index.html/manifest.json isteği her zaman bu dala girer.
+  const isShellRequest = req.mode === "navigate"
+    || url.pathname.endsWith("/index.html")
+    || url.pathname === "/" || url.pathname.endsWith("/")
+    || url.pathname.endsWith("/manifest.json");
+
+  if (isShellRequest) {
+    event.respondWith(
+      fetch(req)
+        .then((networkRes) => {
+          // Ağdan başarıyla geldi: önbelleği bu en güncel sürümle
+          // güncelle (bir sonraki çevrimdışı kullanım için) ve onu döndür.
+          if (networkRes && networkRes.status === 200) {
+            const resClone = networkRes.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          }
+          return networkRes;
+        })
+        .catch(() => {
+          // Çevrimdışıysa (ağ isteği başarısızsa) önbellekteki en son
+          // bilinen sürüme düş -- eski davranış burada korunuyor.
+          return caches.match(req).then((cached) => cached || caches.match("./index.html"));
+        })
+    );
+    return;
+  }
+
+  // ---- Diğer tüm dosyalar: eskisi gibi cache-first, yoksa network ----
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
