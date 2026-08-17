@@ -1888,28 +1888,123 @@
     .forum-field-label:first-child { margin-top: 0; }
 
     /* ==========================================================
-       🖼️ GÖRSEL KONUMLANDIRMA MODALI — avatar/banner/profil arka
-       planı için ortak sürükle + yakınlaştır arayüzü.
+       🖼️ GÖRSEL KONUMLANDIRMA EKRANI — avatar/banner/profil arka
+       planı için ortak, TAM EKRAN sürükle + yakınlaştır arayüzü.
+       Bilinçli olarak .forum-modal-backdrop/.forum-modal KALIPLARINI
+       KULLANMIYOR -- bir modal/kart olarak değil, YouTube/Android'in
+       "Kırpın ve döndürün" ekranı gibi kendi başına duran, altındaki
+       hiçbir ekranın sızıp görünmediği bağımsız bir katman olarak
+       tasarlandı (bkz. openImagePositionModal). z-index 9700, tüm
+       .forum-modal-backdrop'lardan (9600) daha yüksek -- bu editör
+       hangi ekranın (Grup/Topluluk Detayları modalı dahil) üstünden
+       açılırsa açılsın her zaman en üstte, tek başına görünür.
        ========================================================== */
-    .img-pos-modal { max-width: 460px; }
-    .img-pos-modal-body { gap: 14px; }
+    .img-pos-fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 9700;
+        background: #0a0a0c;
+        display: flex;
+        flex-direction: column;
+    }
+    .img-pos-fs-topbar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        background: rgba(20, 22, 26, 0.92);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .img-pos-fs-back {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.3rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+    .img-pos-fs-back:hover { background: rgba(255,255,255,0.08); }
+    .img-pos-fs-title {
+        flex: 1;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .img-pos-fs-save {
+        background: var(--accent);
+        color: #06110f;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 18px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .img-pos-fs-save:hover { filter: brightness(1.08); }
+
+    .img-pos-fs-stage {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        overflow: hidden;
+    }
+
+    .img-pos-fs-bottombar {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px 20px;
+        background: rgba(20, 22, 26, 0.92);
+        border-top: 1px solid rgba(255,255,255,0.08);
+    }
     .img-pos-hint {
         font-size: 0.78rem;
         color: var(--text-dim);
         text-align: center;
     }
+    .img-pos-fs-cancel {
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        border-radius: 8px;
+        padding: 8px 22px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .img-pos-fs-cancel:hover { color: var(--text-primary); border-color: var(--text-dim); }
+
+    /* Hedef alan: dışı karartılmış (dış katman gri/koyu), içi net --
+       aynen istenen "dış katman gri, iç boş" görünümü. Bunu tek bir
+       elemente devasa bir box-shadow ile veriyoruz: viewport'un
+       KENDİSİ şeffaf/görsel dolu alan, box-shadow ise viewport'un
+       DIŞINI kaplayan yarı saydam karartma katmanı. */
     .img-pos-viewport {
         position: relative;
-        width: 100%;
+        width: min(100%, 640px);
         aspect-ratio: var(--img-pos-ratio, 1 / 1);
-        max-height: 60vh;
+        max-height: 100%;
         overflow: hidden;
-        border-radius: 10px;
-        border: 1px solid var(--line);
-        background: #000;
+        border-radius: 6px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.78);
+        outline: 2px solid rgba(255,255,255,0.85);
         cursor: grab;
         touch-action: none;
         user-select: none;
+        background: #000;
     }
     .img-pos-viewport.is-dragging { cursor: grabbing; }
     /* Yuvarlak avatar önizlemesi için modal JS tarafından bu class eklenir. */
@@ -1923,29 +2018,6 @@
         transform-origin: 0 0;
         pointer-events: none;
         -webkit-user-drag: none;
-    }
-    .img-pos-zoom-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .img-pos-zoom-icon {
-        color: var(--text-dim);
-        font-size: 1rem;
-        font-weight: 700;
-        width: 16px;
-        text-align: center;
-        flex-shrink: 0;
-    }
-    .img-pos-zoom-row input[type="range"] {
-        flex: 1;
-        accent-color: var(--accent);
-    }
-    .img-pos-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 4px;
     }
 
     .forum-select,
@@ -9495,27 +9567,33 @@
                  göre (avatar 1:1, banner 3:1, profil arka planı 1:1)
                  dinamik ayarlanır — bkz. openImagePositionModal().
                  ============================================================ -->
-            <div class="forum-modal-backdrop" id="imgPosModalBackdrop" style="display:none;">
-                <div class="forum-modal img-pos-modal">
-                    <div class="forum-modal-header">
-                        <span id="imgPosModalTitle">Görseli Konumlandır</span>
-                        <button class="forum-modal-close" id="imgPosModalClose">✕</button>
+            <!-- ════════════════════════════════════════════════════════
+                 🖼️ GÖRSEL KONUMLANDIRMA EKRANI (tam ekran, YouTube/Android
+                 "Kırpın ve döndürün" ekranına benzer tasarım). Avatar,
+                 banner, profil arka planı -- hepsi bu paylaşılan tam ekran
+                 katmanı kullanır (bkz. openImagePositionModal). Herhangi
+                 bir modal/kart İÇİNDE değil, doğrudan body'nin altında,
+                 en yüksek z-index'te durur ki altındaki hiçbir ekran
+                 (Grup/Topluluk Detayları modalı dahil) asla sızıp
+                 görünmesin. Zoom, slider yerine parmakla sıkıştırma
+                 (pinch), fare tekerleği ve çift dokunma ile yapılır --
+                 minimum zoom, görselin hedef alanı TAM DOLDURDUĞU (kenar
+                 boşluğu göstermeye başlamadan hemen önceki) noktadır.
+                 ════════════════════════════════════════════════════════ -->
+            <div class="img-pos-fullscreen" id="imgPosModalBackdrop" style="display:none;">
+                <div class="img-pos-fs-topbar">
+                    <button type="button" class="img-pos-fs-back" id="imgPosModalClose" aria-label="Vazgeç">←</button>
+                    <span class="img-pos-fs-title" id="imgPosModalTitle">Görseli Konumlandır</span>
+                    <button type="button" class="img-pos-fs-save" id="imgPosSaveBtn">Kaydet</button>
+                </div>
+                <div class="img-pos-fs-stage">
+                    <div class="img-pos-viewport" id="imgPosViewport">
+                        <img id="imgPosImg" alt="" draggable="false">
                     </div>
-                    <div class="forum-modal-body img-pos-modal-body">
-                        <div class="img-pos-hint">Görseli sürükleyerek konumlandır, kaydırıcıyla yakınlaştır.</div>
-                        <div class="img-pos-viewport" id="imgPosViewport">
-                            <img id="imgPosImg" alt="" draggable="false">
-                        </div>
-                        <div class="img-pos-zoom-row">
-                            <span class="img-pos-zoom-icon">−</span>
-                            <input type="range" id="imgPosZoomSlider" min="100" max="300" value="100" step="1">
-                            <span class="img-pos-zoom-icon">+</span>
-                        </div>
-                        <div class="img-pos-actions">
-                            <button type="button" class="forum-btn forum-btn-ghost" id="imgPosCancelBtn">Vazgeç</button>
-                            <button type="button" class="forum-btn forum-btn-primary" id="imgPosSaveBtn">Kaydet</button>
-                        </div>
-                    </div>
+                </div>
+                <div class="img-pos-fs-bottombar">
+                    <div class="img-pos-hint">Görseli sürükle, parmaklarınla sıkıştırarak veya fare tekerleğiyle yakınlaştır.</div>
+                    <button type="button" class="img-pos-fs-cancel" id="imgPosCancelBtn">Vazgeç</button>
                 </div>
             </div>
 
@@ -17617,7 +17695,6 @@
                 const titleEl = document.getElementById("imgPosModalTitle");
                 const viewport = document.getElementById("imgPosViewport");
                 const imgEl = document.getElementById("imgPosImg");
-                const zoomSlider = document.getElementById("imgPosZoomSlider");
                 const closeBtn = document.getElementById("imgPosModalClose");
                 const cancelBtn = document.getElementById("imgPosCancelBtn");
                 const saveBtn = document.getElementById("imgPosSaveBtn");
@@ -17634,15 +17711,14 @@
                     viewport.removeEventListener("pointerdown", onPointerDown);
                     window.removeEventListener("pointermove", onPointerMove);
                     window.removeEventListener("pointerup", onPointerUp);
-                    zoomSlider.removeEventListener("input", onZoomInput);
+                    viewport.removeEventListener("wheel", onWheel);
+                    viewport.removeEventListener("dblclick", onDoubleClick);
                     closeBtn.removeEventListener("click", onCancel);
                     cancelBtn.removeEventListener("click", onCancel);
                     saveBtn.removeEventListener("click", onSave);
-                    backdrop.removeEventListener("click", onBackdropClick);
                     resolve(result);
                 }
                 function onCancel() { cleanupAndResolve(null); }
-                function onBackdropClick(e) { if (e.target === backdrop) onCancel(); }
 
                 // Görüntü alanı oranı (avatar/bg 1:1, banner 3:1 vb.) CSS
                 // custom property ile ayarlanır — viewport bu orana göre
@@ -17652,8 +17728,13 @@
                 titleEl.textContent = title;
 
                 // Sürükleme/yakınlaştırma durumu: baseScale görseli
-                // viewport'u TAM DOLDURACAK (cover) minimum ölçek; zoom
-                // slider'ı bunun üzerine 1.0-3.0 arası çarpan uygular.
+                // viewport'u TAM DOLDURACAK (cover) MİNİMUM ölçek -- yani
+                // kullanıcı bunun altına asla küçültemez (küçültseydi
+                // hedef alanda boşluk görünürdü, bu istenmiyor). zoom,
+                // bu taban ölçeğin üstüne uygulanan serbest bir çarpandır
+                // (1.0 = minimum/cover, sınırsız üst sınır -- sadece
+                // pratik bir MAX_ZOOM ile çok aşırı yakınlaşmayı önlüyoruz).
+                const MAX_ZOOM = 6; // baseScale'in 6 katına kadar yakınlaşılabilir
                 let baseScale = 1;
                 let zoom = 1;
                 let offsetX = 0; // görselin sol-üst köşesinin viewport'a göre pikseldeki konumu
@@ -17690,69 +17771,153 @@
                     clampOffset();
                 }
 
+                // Belirli bir viewport noktasını (px cinsinden, viewport'un
+                // sol-üstüne göre) sabit tutarak zoom'u newZoom'a değiştirir
+                // -- fare/parmak neredeyse görsel o noktadan büyür/küçülür,
+                // "zıplama" olmaz. newZoom, [1, MAX_ZOOM] aralığına
+                // otomatik sıkıştırılır (1 = minimum/cover sınırı).
+                function zoomAround(pointX, pointY, newZoom) {
+                    const clampedZoom = Math.min(MAX_ZOOM, Math.max(1, newZoom));
+                    const oldScale = baseScale * zoom;
+                    const newScale = baseScale * clampedZoom;
+                    const imgPointX = (pointX - offsetX) / oldScale;
+                    const imgPointY = (pointY - offsetY) / oldScale;
+                    zoom = clampedZoom;
+                    offsetX = pointX - imgPointX * newScale;
+                    offsetY = pointY - imgPointY * newScale;
+                    clampOffset();
+                    applyTransform();
+                }
+
                 imgEl.onload = () => {
                     naturalW = imgEl.naturalWidth;
                     naturalH = imgEl.naturalHeight;
                     const vpW = viewport.clientWidth;
                     const vpH = viewport.clientHeight;
                     // "cover" mantığı: görsel her iki eksende de viewport'u
-                    // dolduracak şekilde minimum ölçeği hesapla.
+                    // dolduracak şekilde minimum ölçeği hesapla -- bu,
+                    // kullanıcının inebileceği EN KÜÇÜK zoom seviyesidir
+                    // (tam olarak istenen "boşluk kalana kadar küçültme"
+                    // sınırı: bundan daha aşağı inilirse kenar boşluğu
+                    // görünmeye başlardı, bu yüzden izin verilmiyor).
                     baseScale = Math.max(vpW / naturalW, vpH / naturalH);
                     zoom = 1;
-                    zoomSlider.value = "100";
                     centerImage();
                     applyTransform();
                 };
                 imgEl.src = objectUrl;
 
-                // --- Sürükleme (pan) ---
+                // --- Sürükleme (pan) + tek parmak/mouse ---
                 let dragging = false;
                 let dragStartX = 0, dragStartY = 0, dragOffsetStartX = 0, dragOffsetStartY = 0;
+                // --- İki parmakla yakınlaştırma (pinch) durumu ---
+                const activePointers = new Map(); // pointerId -> {x, y}
+                let pinchStartDist = 0;
+                let pinchStartZoom = 1;
+                let pinchStartMidX = 0, pinchStartMidY = 0;
+
+                function pointerDistance() {
+                    const pts = Array.from(activePointers.values());
+                    if (pts.length < 2) return 0;
+                    return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+                }
+                function pointerMidpoint() {
+                    const pts = Array.from(activePointers.values());
+                    const rect = viewport.getBoundingClientRect();
+                    if (pts.length < 2) return { x: 0, y: 0 };
+                    return {
+                        x: (pts[0].x + pts[1].x) / 2 - rect.left,
+                        y: (pts[0].y + pts[1].y) / 2 - rect.top
+                    };
+                }
 
                 function onPointerDown(e) {
-                    dragging = true;
-                    viewport.classList.add("is-dragging");
-                    dragStartX = e.clientX;
-                    dragStartY = e.clientY;
-                    dragOffsetStartX = offsetX;
-                    dragOffsetStartY = offsetY;
+                    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
                     viewport.setPointerCapture && viewport.setPointerCapture(e.pointerId);
+
+                    if (activePointers.size === 2) {
+                        // İki parmak birden basılı -- pinch-zoom moduna geç,
+                        // tekli sürüklemeyi iptal et.
+                        dragging = false;
+                        viewport.classList.remove("is-dragging");
+                        pinchStartDist = pointerDistance();
+                        pinchStartZoom = zoom;
+                        const mid = pointerMidpoint();
+                        pinchStartMidX = mid.x;
+                        pinchStartMidY = mid.y;
+                    } else if (activePointers.size === 1) {
+                        dragging = true;
+                        viewport.classList.add("is-dragging");
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                        dragOffsetStartX = offsetX;
+                        dragOffsetStartY = offsetY;
+                    }
                 }
                 function onPointerMove(e) {
+                    if (!activePointers.has(e.pointerId)) return;
+                    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+                    if (activePointers.size === 2) {
+                        // Pinch-zoom: iki parmak arası mesafenin oranına göre
+                        // zoom'u güncelle, orta nokta sabit kalsın.
+                        const newDist = pointerDistance();
+                        if (pinchStartDist > 0) {
+                            const ratio = newDist / pinchStartDist;
+                            zoomAround(pinchStartMidX, pinchStartMidY, pinchStartZoom * ratio);
+                        }
+                        return;
+                    }
                     if (!dragging) return;
                     offsetX = dragOffsetStartX + (e.clientX - dragStartX);
                     offsetY = dragOffsetStartY + (e.clientY - dragStartY);
                     clampOffset();
                     applyTransform();
                 }
-                function onPointerUp() {
-                    dragging = false;
-                    viewport.classList.remove("is-dragging");
+                function onPointerUp(e) {
+                    activePointers.delete(e.pointerId);
+                    if (activePointers.size < 2) {
+                        pinchStartDist = 0;
+                    }
+                    if (activePointers.size === 1) {
+                        // Bir parmak kalktı, kalan parmakla sürüklemeye devam.
+                        const remaining = Array.from(activePointers.values())[0];
+                        dragging = true;
+                        dragStartX = remaining.x;
+                        dragStartY = remaining.y;
+                        dragOffsetStartX = offsetX;
+                        dragOffsetStartY = offsetY;
+                    } else if (activePointers.size === 0) {
+                        dragging = false;
+                        viewport.classList.remove("is-dragging");
+                    }
                 }
                 viewport.addEventListener("pointerdown", onPointerDown);
                 window.addEventListener("pointermove", onPointerMove);
                 window.addEventListener("pointerup", onPointerUp);
+                window.addEventListener("pointercancel", onPointerUp);
 
-                // --- Yakınlaştırma slider'ı ---
-                function onZoomInput() {
-                    // Slider 100-300 -> zoom çarpanı 1.0-3.0. Odak noktası
-                    // viewport'un merkezinde kalacak şekilde offset'i
-                    // yeniden ölçekliyoruz ki yakınlaştırırken görsel
-                    // "zıplamasın".
-                    const oldScale = baseScale * zoom;
-                    const newZoom = Number(zoomSlider.value) / 100;
-                    const newScale = baseScale * newZoom;
-                    const vpCenterX = viewport.clientWidth / 2;
-                    const vpCenterY = viewport.clientHeight / 2;
-                    const imgCenterX = (vpCenterX - offsetX) / oldScale;
-                    const imgCenterY = (vpCenterY - offsetY) / oldScale;
-                    zoom = newZoom;
-                    offsetX = vpCenterX - imgCenterX * newScale;
-                    offsetY = vpCenterY - imgCenterY * newScale;
-                    clampOffset();
-                    applyTransform();
+                // --- Fare tekerleği ile yakınlaştırma (masaüstü) ---
+                function onWheel(e) {
+                    e.preventDefault();
+                    const rect = viewport.getBoundingClientRect();
+                    const pointX = e.clientX - rect.left;
+                    const pointY = e.clientY - rect.top;
+                    const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+                    zoomAround(pointX, pointY, zoom * delta);
                 }
-                zoomSlider.addEventListener("input", onZoomInput);
+                viewport.addEventListener("wheel", onWheel, { passive: false });
+
+                // --- Çift tıklama/dokunma ile hızlı yakınlaştırma-uzaklaştırma ---
+                function onDoubleClick(e) {
+                    const rect = viewport.getBoundingClientRect();
+                    const pointX = e.clientX - rect.left;
+                    const pointY = e.clientY - rect.top;
+                    // Zaten yakınlaşmışsa minimuma dön, değilse 2.2x yakınlaş.
+                    const target = zoom > 1.3 ? 1 : 2.2;
+                    zoomAround(pointX, pointY, target);
+                }
+                viewport.addEventListener("dblclick", onDoubleClick);
 
                 function onSave() {
                     const scale = baseScale * zoom;
@@ -17777,7 +17942,6 @@
                 closeBtn.addEventListener("click", onCancel);
                 cancelBtn.addEventListener("click", onCancel);
                 saveBtn.addEventListener("click", onSave);
-                backdrop.addEventListener("click", onBackdropClick);
 
                 backdrop.style.display = "flex";
             });
@@ -23869,14 +24033,19 @@
                     : n.type === "dm"
                     ? `<strong>@${actorName}</strong> sana mesaj gönderdi`
                     : n.type === "group"
-                    ? `<strong>@${actorName}</strong> grupta mesaj yazdı`
+                    // 🐛 BUGFIX: burada her zaman "grupta" deniyordu, topluluk
+                    // kanallarından gelen bildirimlerde de öyle görünüyordu.
+                    // Bildirim verisinde grup/topluluk ayrımı taşınmadığı için
+                    // (ekstra bir sorgu gerektirmeden) ikisine de uyan nötr
+                    // bir ifadeye çevrildi.
+                    ? `<strong>@${actorName}</strong> sohbette mesaj yazdı`
                     : n.type === "report_resolved"
                     ? `Şikâyetin (${escapeHtml(TARGET_TYPE_LABELS_INBOX[n.targetType] || n.targetType || "içerik")}: ${escapeHtml(n.targetLabel || "")}) incelendi ve tamamlandı`
                     : `<strong>@${actorName}</strong> sana yanıt verdi`;
 
                 const ctxMap = { message: "💬 Genel Sohbet", thread: "📋 Forum Konusu", reply: "💭 Konu Yorumu" };
                 const ctxLabel = n.type === "dm" ? "✉️ Direkt Mesaj"
-                    : n.type === "group" ? "👥 Grup Sohbeti"
+                    : n.type === "group" ? "👥 Grup / Topluluk Sohbeti"
                     : n.type === "report_resolved" ? "🛡️ Yönetici Paneli"
                     : (ctxMap[n.context] || "📋 Forum");
 
@@ -24499,10 +24668,27 @@
                 _channelHasMoreOlder = true;
                 _channelLoadingOlder = false;
                 _channelLastLiveArr = [];
+                // 🐛 BUGFIX: Firebase'den yeni kanalın verisi gelene kadar
+                // (ağ isteği birkaç yüz milisaniye sürebilir) ekranda BİR
+                // ÖNCEKİ kanalın/topluluğun mesajları görünmeye devam
+                // ediyordu, çünkü DOM hiç temizlenmiyordu -- sadece yeni
+                // veri geldiğinde (ör. kullanıcı mesaj atınca yeniden
+                // tetiklendiğinde) üzerine yazılıyordu. Artık kanal
+                // değişir değişmez liste ANINDA boşaltılıp bir "yükleniyor"
+                // göstergesi konuyor, yanlış kanalın mesajları asla
+                // görünmüyor.
+                const listEl = document.getElementById("groupMessageList");
+                if (listEl) listEl.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
                 _activeMessagesRef = firebase.database()
                     .ref("group_chats/" + groupId + "/channels/" + channelId + "/messages")
                     .orderByChild("createdAt").limitToLast(150);
                 _activeMessagesRef.on("value", (snap) => {
+                    // 🐛 BUGFIX: bu callback ASENKRON gelir -- kullanıcı bu
+                    // sırada BAŞKA bir kanala/topluluğa geçmiş olabilir.
+                    // O zaman bu artık "güncel" değildir, yoksayılmalı
+                    // (aksi halde yine yanlış kanalın mesajları ekrana
+                    // yazılabilirdi).
+                    if (groupId !== _openGroupId || channelId !== getActiveChannelId(groupId)) return;
                     const all = snap.val() || {};
                     const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     _channelLastLiveArr = arr;
@@ -24792,10 +24978,16 @@
                 }).join("");
             }
 
-            // Bir üyenin sahip olduğu topluluk rütbelerinden EN YÜKSEK
-            // pozisyonlu olanı döndürür (position değeri büyük olan üstte
-            // sayılır -- rol yönetimi panelindeki sıralamayla tutarlı).
-            // İsim/etiket renklendirmesi için kullanılır. Rütbesi yoksa null.
+            // Bir üyenin sahip olduğu topluluk rütbelerinden EN ÜST
+            // (öncelikli) olanı döndürür -- İsim/etiket renklendirmesi
+            // için kullanılır. Rütbesi yoksa null.
+            // 🐛 BUGFIX: burada "en üst" = "position değeri BÜYÜK olan"
+            // sayılıyordu, ama rol yönetimi paneli, rütbe atama modalı ve
+            // @mention listesi hep "position değeri KÜÇÜK olan = üstte"
+            // kuralını kullanıyordu (bkz. listRolesForMention'daki aynı
+            // düzeltme). Bu çelişki yüzünden profildeki rozet rengi ile
+            // yönetim panelindeki sıralama birbirini tutmuyordu. Artık
+            // tüm sistemde TEK kural geçerli: KÜÇÜK position = daha üst.
             function getHighestRoleForMember(groupId, uid) {
                 const g = ensureGroupCache(groupId);
                 const roleIds = Object.keys(g.memberRoles[uid] || {});
@@ -24804,7 +24996,7 @@
                 roleIds.forEach((rid) => {
                     const role = g.roles[rid];
                     if (!role) return;
-                    if (!best || (role.position || 0) > (best.position || 0)) best = role;
+                    if (!best || (role.position || 0) < (best.position || 0)) best = role;
                 });
                 return best;
             }
@@ -24823,8 +25015,15 @@
             // dizi olarak döndürür (pozisyona göre sıralı, en üst rütbe önce).
             function listRolesForMention(groupId) {
                 const g = ensureGroupCache(groupId);
+                // 🐛 BUGFIX: burada sıralama TERS yöndeydi (b - a), diğer
+                // tüm rütbe listeleme yerlerinde (rütbe yönetimi, rütbe
+                // atama modalı, profil rozet önceliği) a - b kullanılıyordu
+                // -- yani "en üst rütbe" tanımı ekranlar arasında ÇELİŞİYORDU,
+                // bu da kullanıcıya rütbelerin yer yer "rastgele" sıralı
+                // görünmesine yol açıyordu. Artık hepsi aynı kurala uyuyor:
+                // KÜÇÜK position değeri = listenin daha üstünde.
                 return Object.keys(g.roles)
-                    .sort((a, b) => ((g.roles[b].position || 0) - (g.roles[a].position || 0)))
+                    .sort((a, b) => ((g.roles[a].position || 0) - (g.roles[b].position || 0)))
                     .map((rid) => ({ id: rid, name: g.roles[rid].role_name, color: g.roles[rid].color_hex || "#66fcf1" }));
             }
 
@@ -26339,6 +26538,13 @@
                 if (_dmMessagesRef) _dmMessagesRef.off();
                 resetPaginationState("dm");
                 _dmOldestLoadedAt = null; // canlı veri gelince ilk mesajın createdAt'i ile dolacak
+                // 🐛 BUGFIX: Firebase'den yeni sohbetin verisi gelene kadar
+                // ekranda BİR ÖNCEKİ sohbetin mesajları görünmeye devam
+                // ediyordu (aynı hata grup/topluluk kanallarında da vardı,
+                // bkz. selectChannel). Sohbet değişir değişmez liste hemen
+                // boşaltılıp bir "yükleniyor" göstergesi konuyor.
+                const dmListEl = document.getElementById("dmMessageList");
+                if (dmListEl) dmListEl.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
                 _dmMessagesRef = database.ref("dms/" + dmId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _dmMessagesRef.on("value", (snap) => {
                     // Callback ASENKRON olarak (RTDB'den) tekrar tekrar
@@ -26775,6 +26981,13 @@
                 document.getElementById("groupShell").classList.toggle("is-community", !!isCommunity);
                 if (isCommunity) {
                     if (_groupMessagesRef) { _groupMessagesRef.off(); _groupMessagesRef = null; }
+                    // 🐛 BUGFIX: bir normal gruptan/DM'den bir topluluğa
+                    // geçerken, CommunityChannels kendi kanal listenerını
+                    // kurup ilk veri gelene kadar ekranda BİR ÖNCEKİ
+                    // sohbetin mesajları görünmeye devam ediyordu. Kontrolü
+                    // devretmeden hemen önce listeyi temizliyoruz.
+                    const groupListEl = document.getElementById("groupMessageList");
+                    if (groupListEl) groupListEl.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
                     window.CommunityChannels.onOpenCommunity(groupId);
                     // Kırmızı Nokta: topluluk açıldığında görünür kanalları
                     // taramaya başla (aktif kanal ayrıca selectChannel
@@ -26789,6 +27002,12 @@
                 if (_groupMessagesRef) _groupMessagesRef.off();
                 resetPaginationState("group");
                 _groupOldestLoadedAt = null;
+                // 🐛 BUGFIX: aynı DOM-temizlenmeme sorunu normal gruplarda
+                // da vardı -- bir topluluktan/başka bir gruptan buraya
+                // geçince, yeni grubun verisi Firebase'den gelene kadar
+                // eski sohbetin mesajları ekranda kalıyordu.
+                const groupListElPlain = document.getElementById("groupMessageList");
+                if (groupListElPlain) groupListElPlain.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
                 _groupMessagesRef = database.ref("group_chats/" + groupId + "/messages").orderByChild("createdAt").limitToLast(150);
                 _groupMessagesRef.on("value", (snap) => {
                     // 🐛 BUGFIX: aynı yarış durumu koruması -- .off()'a
@@ -27151,6 +27370,7 @@
                 const meta = _groupMetaCache[gid];
                 if (!meta) return;
 
+                const isCommunity = !!(window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta));
                 const memberUids = Object.keys(meta.members || {});
                 const isOwner = groupIsOwner(meta, _myUid);
                 const otherMembers = memberUids.filter((uid) => uid !== _myUid);
@@ -27162,7 +27382,10 @@
                     return;
                 }
 
-                if (!confirm(`"${meta.name || "Bu grup"}" gruptan ayrılmak istediğine emin misin?`)) return;
+                // 🐛 BUGFIX: metin her zaman "gruptan" diyordu, topluluklarda
+                // da böyle görünüyordu.
+                const noun = isCommunity ? "topluluktan" : "gruptan";
+                if (!confirm(`"${meta.name || (isCommunity ? "Bu topluluk" : "Bu grup")}" ${noun} ayrılmak istediğine emin misin?`)) return;
                 await performLeaveGroup(gid);
             }
 
@@ -27170,24 +27393,37 @@
             // veya devre gerek olmadığında çağrılır).
             async function performLeaveGroup(gid) {
                 const meta = _groupMetaCache[gid];
+                const isCommunity = !!(meta && meta.isCommunity === true);
                 const memberUids = Object.keys((meta && meta.members) || {});
                 const remaining = memberUids.filter((uid) => uid !== _myUid);
 
                 try {
                     if (remaining.length === 0) {
-                        // Grupta kalan tek kişi bendim: grubu tamamen kaldır.
-                        await database.ref("group_chats/" + gid).remove();
-                        // MODÜL 5 EKLENTİ 1 DÜZELTME: topluluksa community_directory
-                        // kaydı da silinmeli, yoksa artık var olmayan bir topluluk
-                        // Topluluklar listesinde "hayalet" olarak görünmeye devam eder.
-                        if (meta && meta.isCommunity) {
-                            await database.ref("community_directory/" + gid).remove();
+                        // 🐛 BUGFIX (istenen davranış değişikliği): Eskiden
+                        // grupta/toplulukta kalan tek kişi ayrılınca TÜM
+                        // topluluk (group_chats/{gid} + community_directory
+                        // kaydı) TAMAMEN SİLİNİYORDU. Artık TOPLULUKLAR
+                        // silinmiyor -- topluluk sistemde/dizinde kalmaya
+                        // devam ediyor, sadece kişinin kendi üyeliği
+                        // düşüyor (sanki hiç katılmamış gibi). Böylece
+                        // topluluk daha sonra tekrar katılabilecek şekilde
+                        // korunmuş oluyor. NORMAL (topluluk olmayan) gruplar
+                        // için eski davranış (son kişi çıkınca komple silme)
+                        // korunuyor -- onlar zaten bir "dizin" kaydı taşımıyor,
+                        // sahipsiz kalan bir grubu saklamanın bir anlamı yok.
+                        if (isCommunity) {
+                            await database.ref("group_chats/" + gid + "/meta/admins/" + _myUid).remove();
+                            await database.ref("group_chats/" + gid + "/meta/members/" + _myUid).remove();
+                            await database.ref("group_chats/" + gid + "/meta/memberCount").set(0);
+                            await database.ref("community_directory/" + gid + "/memberCount").set(0).catch(() => {});
+                        } else {
+                            await database.ref("group_chats/" + gid).remove();
                         }
                     } else {
                         // Sistem mesajı, ben hâlâ üyeyken (kural gereği) gönderilmeli --
                         // bu yüzden ayrılma kayıtlarından ÖNCE atılır.
                         const me = window.CommunityMentions.getByUid(_myUid);
-                        await postGroupSystemMessage(gid, `👋 ${me ? me.username : "Bir üye"} gruptan ayrıldı.`);
+                        await postGroupSystemMessage(gid, `👋 ${me ? me.username : "Bir üye"} ${isCommunity ? "topluluktan" : "gruptan"} ayrıldı.`);
                         // ÖNEMLİ: memberCount, members/{uid} silinmeden ÖNCE
                         // güncellenmeli. Aksi halde "meta" kuralı
                         // data.child('members').child(auth.uid) artık silinmiş
@@ -27733,7 +27969,10 @@
                 if (!canKick) { alert("Bu işlem için yönetici olman ya da 'Üyeleri Topluluktan At' iznin olması gerekiyor."); return; }
                 if (meta.ownerUid === targetUid) return; // Kurucu buradan çıkarılamaz
                 const c = window.CommunityMentions.getByUid(targetUid);
-                if (!confirm(`${c ? c.username : "Bu kullanıcı"} gruptan çıkarılsın mı?`)) return;
+                // 🐛 BUGFIX: metin her zaman "gruptan" diyordu, topluluklarda
+                // da böyle görünüyordu. isCommunity'ye göre doğru kelime.
+                const nounPossessive = isCommunity ? "topluluktan" : "gruptan";
+                if (!confirm(`${c ? c.username : "Bu kullanıcı"} ${nounPossessive} çıkarılsın mı?`)) return;
 
                 try {
                     // DÜZELTME: bayat cache'ten hesaplanan remaining sayısı
@@ -27753,7 +27992,7 @@
                     await database.ref(`group_chats/${groupId}/meta/admins/${targetUid}`).remove();
                     await database.ref(`group_chats/${groupId}/meta/members/${targetUid}`).remove();
                     await database.ref(`user_groups/${targetUid}/${groupId}`).remove();
-                    await postGroupSystemMessage(groupId, `🚫 ${c ? c.username : "Bir üye"} gruptan çıkarıldı.`);
+                    await postGroupSystemMessage(groupId, `🚫 ${c ? c.username : "Bir üye"} ${nounPossessive} çıkarıldı.`);
                 } catch (err) {
                     console.error("[Grup] Üye çıkarma hatası:", err);
                     alert("Üye çıkarılırken bir hata oluştu: " + (err && err.message ? err.message : err));
@@ -31475,10 +31714,13 @@
                         _meta
                     );
                 } else if (type === "group") {
-                    showPingToast("👥", `${actor} grupta mesaj yazdı`);
+                    // 🐛 BUGFIX: her zaman "grupta" deniyordu -- topluluk
+                    // kanallarından gelen bildirimler de aynı metni
+                    // gösteriyordu. Nötr, her ikisine de uyan ifade.
+                    showPingToast("👥", `${actor} sohbette mesaj yazdı`);
                     sendBrowserNotif(
-                        `${actorUsername} (grup)`,
-                        `${meta && meta.textSnippet ? meta.textSnippet : "Grupta bir mesaj gönderdi."}`,
+                        `${actorUsername} (sohbet)`,
+                        `${meta && meta.textSnippet ? meta.textSnippet : "Bir mesaj gönderdi."}`,
                         _meta
                     );
                 } else {
