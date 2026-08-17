@@ -3692,6 +3692,30 @@
     .grp-tab-panel { display: none; flex-direction: column; min-height: 0; flex: 1; }
     .grp-tab-panel.is-active { display: flex; }
 
+    /* ── Topluluklar / Üyelikler sekmeleri ─────────────────────────── */
+    .grp-community-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 10px 14px 0;
+    }
+    .grp-community-tab {
+        flex: 1;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        color: var(--text-dim);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .grp-community-tab.is-active {
+        color: var(--text-primary);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+    }
+
     .grp-community-limit-note {
         font-size: 0.7rem;
         color: var(--text-dim);
@@ -10414,6 +10438,16 @@
                         <div class="msg-panel-header">
                             <span>🌐 Topluluklar</span>
                             <button type="button" class="msg-new-chat-btn" id="communityCreateBtn" title="Yeni topluluk oluştur">+ Yeni Topluluk</button>
+                        </div>
+                        <!-- 🔀 Topluluklar / Üyelikler sekmeleri -- "Topluluklar"
+                             sistemdeki TÜM toplulukları gösterir (eski
+                             davranış), "Üyelikler" sadece ÜYE OLDUĞUN
+                             toplulukları filtreler. Aktif sekme
+                             renderCommunityList içinde _communityListActiveTab
+                             değişkenine göre uygulanır. -->
+                        <div class="grp-community-tabs" id="communityTabs" role="tablist">
+                            <button type="button" class="grp-community-tab is-active" id="communityTabAll" data-community-tab="all" role="tab" aria-selected="true">Topluluklar</button>
+                            <button type="button" class="grp-community-tab" id="communityTabMine" data-community-tab="mine" role="tab" aria-selected="false">Üyelikler</button>
                         </div>
                         <input type="text" class="msg-search-input" id="communitySearchInput" placeholder="Topluluk ara…">
                         <div class="grp-community-limit-note" id="communityLimitNote"></div>
@@ -27000,14 +27034,29 @@
                     // .on("value") dinleyicisinin kendisi zaten tetiklenecek
                     // olsa da, burada tek seferlik bir .once ile ekstra bir
                     // zorlama render yapıyoruz -- zararsız, gecikmeyi telafi eder.
+                    // 🐛 BUGFIX: renderBubbleList'i DOĞRUDAN çağırmak yerine
+                    // rerenderGroupMessages ile birleştirilmiş (eski sayfalanan +
+                    // canlı) listeyi kullanıyoruz -- aksi halde kullanıcı yukarı
+                    // kaydırarak yüklediği eski mesajlar, kendi mesajını
+                    // gönderdiği anda ekrandan siliniyordu (bu sorgu sadece
+                    // son 150'yi getirir, eski sayfaları bilmez).
                     database.ref(basePath).orderByChild("createdAt").limitToLast(150).once("value").then((snap) => {
                         if (_activeGroupId !== groupId) return;
                         const all = snap.val() || {};
                         const arr = Object.keys(all).map((id) => ({ id, ...all[id] })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                        renderBubbleList(document.getElementById("groupMessageList"), arr, { isGroup: true });
+                        _groupLastLiveArr = arr;
+                        if (_groupOldestLoadedAt == null && arr.length > 0) _groupOldestLoadedAt = arr[0].createdAt;
+                        rerenderGroupMessages();
                     }).catch((err) => {
                         console.error("[Messaging] Grup mesajları zorla tazelenemedi:", err);
                     });
+                    // 🐛 BUGFIX (kendi mesajın kırmızı nokta tetiklemesin):
+                    // topluluk kanallarındaki aynı düzeltmenin normal grup
+                    // karşılığı -- daha önce burada YOKTU, bu yüzden kendi
+                    // attığın mesaj bile sidebar'da/nav'da kırmızı nokta
+                    // gösteriyordu. Mesajı gönderir göndermez bu grubu
+                    // "okundu" işaretleyerek kaynağında engelliyoruz.
+                    if (window.UnreadSystem) window.UnreadSystem.markGroupRead(groupId);
                 }
 
                 // İKİNCİL İŞLEM: grup meta önizlemesi — başarısız olursa mesaj
@@ -28622,6 +28671,20 @@
                 });
             }
 
+            // 🔀 Aktif sekme: "all" (Topluluklar, sistemdeki hepsi) ya da
+            // "mine" (Üyelikler, sadece üye olduğun topluluklar).
+            let _communityListActiveTab = "all";
+
+            function setCommunityListTab(tab) {
+                if (tab !== "all" && tab !== "mine") return;
+                _communityListActiveTab = tab;
+                const btnAll = document.getElementById("communityTabAll");
+                const btnMine = document.getElementById("communityTabMine");
+                if (btnAll) { btnAll.classList.toggle("is-active", tab === "all"); btnAll.setAttribute("aria-selected", String(tab === "all")); }
+                if (btnMine) { btnMine.classList.toggle("is-active", tab === "mine"); btnMine.setAttribute("aria-selected", String(tab === "mine")); }
+                renderCommunityList();
+            }
+
             function renderCommunityList() {
                 const listEl = document.getElementById("communityList");
                 if (!listEl) return;
@@ -28635,6 +28698,12 @@
                 // listede görmesin (staff moderasyon için görebilmeli).
                 if (!iAmStaff) entries = entries.filter((c) => !c.isSuspended);
 
+                // 🔀 "Üyelikler" sekmesi: sadece üye olduğun topluluklar
+                // (_userGroupsCache içinde bulunanlar).
+                if (_communityListActiveTab === "mine") {
+                    entries = entries.filter((c) => !!_userGroupsCache[c.gid]);
+                }
+
                 if (searchTerm) {
                     entries = entries.filter((c) => (c.name || "").toLocaleLowerCase("tr").includes(searchTerm));
                 }
@@ -28642,7 +28711,15 @@
                 entries.sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0));
 
                 if (entries.length === 0) {
-                    listEl.innerHTML = `<div class="hub-placeholder">${searchTerm ? "Aramanla eşleşen topluluk yok." : "Henüz hiç topluluk oluşturulmamış. İlk topluluğu sen kur!"}</div>`;
+                    let emptyMsg;
+                    if (searchTerm) {
+                        emptyMsg = "Aramanla eşleşen topluluk yok.";
+                    } else if (_communityListActiveTab === "mine") {
+                        emptyMsg = "Henüz hiçbir topluluğa üye değilsin. \"Topluluklar\" sekmesinden birine katılabilirsin.";
+                    } else {
+                        emptyMsg = "Henüz hiç topluluk oluşturulmamış. İlk topluluğu sen kur!";
+                    }
+                    listEl.innerHTML = `<div class="hub-placeholder">${emptyMsg}</div>`;
                     return;
                 }
 
@@ -30316,6 +30393,10 @@
                 // ── Topluluklar: arama, oluşturma, önizleme, şikâyet, moderasyon ──
                 document.getElementById("communitySearchInput")?.addEventListener("input", renderCommunityList);
 
+                // 🔀 Topluluklar / Üyelikler sekmeleri.
+                document.getElementById("communityTabAll")?.addEventListener("click", () => setCommunityListTab("all"));
+                document.getElementById("communityTabMine")?.addEventListener("click", () => setCommunityListTab("mine"));
+
                 document.getElementById("communityCreateBtn")?.addEventListener("click", openCreateCommunityModal);
                 document.getElementById("communityCreateCancelBtn")?.addEventListener("click", closeCreateCommunityModal);
                 document.getElementById("communityCreateModalClose")?.addEventListener("click", closeCreateCommunityModal);
@@ -30952,7 +31033,19 @@
                     // Son aktivite: grup meta'sındaki updatedAt zaten her
                     // mesajda güncelleniyor (bkz. Grup meta önizlemesi yazımı).
                     _groupState[gid] = _groupState[gid] || { lastActivityAt: 0, lastReadAt: 0 };
-                    _groupState[gid].lastActivityAt = g.updatedAt || g.createdAt || 0;
+                    // 🐛 BUGFIX: son mesajı BEN yazdıysam bu grubu asla
+                    // "okunmamış" gösterme -- attachChannelReadTracking'deki
+                    // (topluluk kanalları) aynı mantığın normal-grup
+                    // karşılığı. Eskiden burada lastSenderUid hiç kontrol
+                    // edilmiyordu, bu yüzden kendi attığın mesaj bile
+                    // (markGroupRead'in yazılması gecikirse/başarısız
+                    // olursa) kırmızı nokta tetikleyebiliyordu. Artık
+                    // kaynağında (yazar kontrolüyle) engelleniyor.
+                    if (g.lastSenderUid === _myUid) {
+                        _groupState[gid].lastActivityAt = _groupState[gid].lastReadAt;
+                    } else {
+                        _groupState[gid].lastActivityAt = g.updatedAt || g.createdAt || 0;
+                    }
 
                     // Okuma zamanını bir kez dinle (canlı -- başka bir
                     // cihazdan okunursa da senkron kalsın).
@@ -30977,6 +31070,28 @@
                 database.ref("user_reads/" + _myUid + "/groups/" + groupId)
                     .set(Date.now())
                     .catch((err) => console.error("[UnreadSystem] grup okuma zamanı yazılamadı:", err));
+            }
+
+            // ── Render: Topluluklar listesindeki kart üzerine kırmızı nokta ──
+            // renderCommunityList tüm listeyi yeniden çizmek yerine, tek bir
+            // topluluğun durumu değiştiğinde sadece o karta dokunur (performans).
+            // Kart DOM'da yoksa (ör. arama filtresiyle gizliyse) sessizce geçilir.
+            function decorateCommunityCard(groupId) {
+                const card = document.querySelector(`.grp-community-card[data-enter-gid="${CSS.escape(groupId)}"]`)
+                    || document.querySelector(`.grp-community-card[data-preview-gid="${CSS.escape(groupId)}"]`);
+                if (!card) return;
+                const avatar = card.querySelector(".grp-community-avatar");
+                if (!avatar) return;
+                const unread = groupHasUnreadChannel(groupId);
+                let dot = avatar.querySelector(".grp-community-reddot");
+                if (unread && !dot) {
+                    dot = document.createElement("span");
+                    dot.className = "grp-community-reddot";
+                    dot.title = "Okunmamış mesaj var";
+                    avatar.appendChild(dot);
+                } else if (!unread && dot) {
+                    dot.remove();
+                }
             }
 
             // ── TOPLULUK KANALLARI: kanal bazlı son mesaj + okuma zamanı ─
@@ -31008,6 +31123,15 @@
                     _channelState[key].lastActivityAt = (lastAuthorUid === _myUid) ? _channelState[key].lastReadAt : lastAt;
                     renderNavDots();
                     decorateChannelList(groupId);
+                    // 🐛 BUGFIX: Topluluklar listesindeki kartın kırmızı
+                    // noktası da burada güncellenmeliydi -- eskiden SADECE
+                    // topluluk içi kanal sidebar'ı (decorateChannelList)
+                    // güncelleniyordu; bu yüzden kullanıcı Topluluklar
+                    // sekmesine girdiğinde, henüz hiç açmadığı bir topluluğa
+                    // yeni mesaj gelmiş olsa bile kart üzerinde hiçbir
+                    // kırmızı nokta görünmüyordu (veri zaten arka planda
+                    // taranıyordu ama ekrana hiç yansıtılmıyordu).
+                    decorateCommunityCard(groupId);
                 });
 
                 if (!_channelReadListeners[key]) {
@@ -31018,6 +31142,7 @@
                         _channelState[key].lastReadAt = snap.val() || 0;
                         renderNavDots();
                         decorateChannelList(groupId);
+                        decorateCommunityCard(groupId);
                     });
                 }
             }
