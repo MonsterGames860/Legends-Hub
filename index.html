@@ -19257,33 +19257,51 @@
         }
 
         function initRouter() {
+            // 🧭 NOT: URL tabanlı yönlendirme (history.pushState / popstate,
+            // /forum/:kategori/:konu, /communities/:kod, /groups/:kod,
+            // /admin-panel ve /console yetki koruması) artık ayrı ve
+            // modüler router.js dosyasında yönetiliyor (bkz. body sonu
+            // <script src="router.js">). Bu fonksiyon sadece nav
+            // tıklamalarını dinleyip window.HubRouter.navigateToView()'a
+            // devrediyor ki tıklama URL'i de güncellesin.
             document.querySelectorAll(".hub-nav-item").forEach((item) => {
                 item.addEventListener("click", () => {
                     const view = item.getAttribute("data-view");
-                    if (view) switchView(view);
+                    if (!view) return;
+                    if (window.HubRouter && typeof window.HubRouter.navigateToView === "function") {
+                        window.HubRouter.navigateToView(view);
+                    } else {
+                        switchView(view);
+                    }
                 });
             });
 
-            // 3dstudio.html'den "index.html#studio" ile dönüldüğünde
-            // otomatik olarak studio sekmesini aç.
+            // Eski #studio gibi hash tabanlı dönüşlerle geriye dönük
+            // uyumluluk (3dstudio.html hâlâ bu şekilde link veriyor
+            // olabilir) — yeni router başlamadan önce hash varsa onu
+            // karşılık gelen path'e çevirip router'a bırakıyoruz.
             const hashView = window.location.hash.replace("#", "").trim();
             const validViews = ["forum","marketplace","studio","messages","groups","communities","inbox","profile","admin","console"];
             if (hashView && validViews.includes(hashView)) {
-                // Auth hazır olduktan sonra geçiş yapabilmek için kısa gecikme.
-                setTimeout(() => switchView(hashView), 300);
-                // Hash'i temizle ki sayfa yenilenince tekrar tetiklenmesin.
-                history.replaceState(null, "", window.location.pathname + window.location.search);
+                history.replaceState(null, "", "/" + hashView);
             }
 
             // Alt köşedeki mini profil kartı da "Profilim" e götürür
             // (nav listesindeki ayrı satır kaldırıldığı için tek erişim yolu bu).
             const miniProfile = document.getElementById("hubMiniProfile");
             if (miniProfile) {
-                miniProfile.addEventListener("click", () => switchView("profile"));
+                const goToProfile = () => {
+                    if (window.HubRouter && typeof window.HubRouter.navigateToView === "function") {
+                        window.HubRouter.navigateToView("profile");
+                    } else {
+                        switchView("profile");
+                    }
+                };
+                miniProfile.addEventListener("click", goToProfile);
                 miniProfile.addEventListener("keydown", (e) => {
                     if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        switchView("profile");
+                        goToProfile();
                     }
                 });
             }
@@ -20408,7 +20426,13 @@
 
             tabsEl.querySelectorAll(".forum-category-tab").forEach((tab) => {
                 tab.addEventListener("click", () => {
-                    switchForumCategory(tab.getAttribute("data-category-id"));
+                    const catId = tab.getAttribute("data-category-id");
+                    switchForumCategory(catId);
+                    // 🧭 URL'i de /forum/:kategori olarak güncelle.
+                    if (window.HubRouter && typeof window.HubRouter.navigateTo === "function") {
+                        const seg = (window.HubRouterBridge && window.HubRouterBridge.categoryIdToUrlSegment(catId)) || catId;
+                        window.HubRouter.navigateTo("/forum/" + seg);
+                    }
                 });
             });
         }
@@ -20489,6 +20513,12 @@
             if (listView) listView.style.display = "flex";
             if (detailView) detailView.style.display = "none";
             renderThreadListIfVisible();
+
+            // 🧭 Konu detayından listeye dönüldüğünde URL'i /forum/:kategori'ye geri al.
+            if (window.HubRouter && typeof window.HubRouter.navigateTo === "function") {
+                const seg = (window.HubRouterBridge && window.HubRouterBridge.categoryIdToUrlSegment(activeCategoryId)) || activeCategoryId;
+                window.HubRouter.navigateTo("/forum/" + seg);
+            }
         }
 
         function renderThreadListIfVisible() {
@@ -20690,7 +20720,8 @@
         // ------------------------------------------------------------
         // D) KONU DETAYI + YORUM AĞACI (NESTED REPLIES)
         // ------------------------------------------------------------
-        function openThreadDetail(threadId) {
+        function openThreadDetail(threadId, opts) {
+            const skipUrlSync = opts && opts.skipUrlSync === true;
             activeThreadId = threadId;
             const listView = document.getElementById("forumThreadListView");
             const detailView = document.getElementById("forumThreadDetailView");
@@ -20700,6 +20731,14 @@
             hideThreadReplyPreview(); // farklı bir konuya geçince eski yanıt referansı temizlensin
             renderThreadDetailHeader(threadId);
             listenToThreadReplies(threadId);
+
+            // 🧭 Konu açıldığında URL'i /forum/:kategori/:konu-slug olarak
+            // güncelle (router.js deep-link'ten açtıysa tekrar pushState
+            // yapmamak için skipUrlSync=true geçer).
+            if (!skipUrlSync && window.HubRouter && typeof window.HubRouter.navigateToThread === "function") {
+                const t = forumThreadsCache[threadId];
+                if (t) window.HubRouter.navigateToThread(t.categoryId, t.title);
+            }
         }
 
         function renderThreadDetailHeader(threadId) {
@@ -30807,7 +30846,8 @@
                 get _activeGroupDetailId() { return _activeGroupDetailId; },
                 refreshMemberList: (groupId) => renderGroupMemberList(groupId),
                 renderBubbleList,
-                openCommunityPreviewModal
+                openCommunityPreviewModal,
+                openGroupConversation
             };
         })();
         window.MessagingSystem = MessagingSystem;
@@ -33552,6 +33592,37 @@
             }
         });
 
+        // ════════════════════════════════════════════════════════════════
+        // 🧭 ROUTER BRIDGE — router.js bu IIFE'nin dışında, ayrı bir
+        // <script src="router.js"> olarak yüklendiği için, forum/topluluk/
+        // grup/yetki fonksiyonlarına ve canlı cache'lerine erişebilmesi
+        // için gereken minimum yüzeyi burada window'a açıyoruz. Sadece
+        // router.js'in ihtiyaç duyduğu fonksiyonlar/okuyucular dışa
+        // açılıyor; iç state (activeCategoryId, forumThreadsCache vb.)
+        // getter olarak sunuluyor ki router her zaman GÜNCEL değeri görsün.
+        // ════════════════════════════════════════════════════════════════
+        // Kategori id <-> dostane URL segmenti eşlemesi (router.js ile
+        // aynı sözleşme; iki yerde ayrı ayrı bakım gerektirmesin diye
+        // tek bir kaynaktan (bridge) okunuyor).
+        const HUB_CATEGORY_TO_URL_SEGMENT = { "general-chat": "live", announcements: "updates" };
+
+        window.HubRouterBridge = {
+            switchView: switchView,
+            switchForumCategory: switchForumCategory,
+            openThreadDetail: (threadId) => openThreadDetail(threadId, { skipUrlSync: true }),
+            showToastGlobal: showToastGlobal,
+            getCategoryById: getCategoryById,
+            categoryIdToUrlSegment: (categoryId) => HUB_CATEGORY_TO_URL_SEGMENT[categoryId] || categoryId,
+            get FORUM_CATEGORIES() { return FORUM_CATEGORIES; },
+            get forumThreadsCache() { return forumThreadsCache; },
+            get activeCategoryId() { return activeCategoryId; },
+            openGroupConversation: (groupId) => {
+                if (window.MessagingSystem && typeof window.MessagingSystem.openGroupConversation === "function") {
+                    window.MessagingSystem.openGroupConversation(groupId);
+                }
+            }
+        };
+
     })();
     </script>
 
@@ -33986,6 +34057,15 @@
         renderUsers();
     })();
     </script>
+
+    <!-- ================================================================
+         🧭 SPA ROUTER (dinamik URL yönlendirme)
+         window.HubRouterBridge (yukarıdaki ana IIFE içinde tanımlı) ve
+         window.CommunityAuth / window.CommunityRBAC / window.MessagingSystem
+         üzerinden çalışır. Bu script en sonda yüklenir ki yukarıdaki
+         tüm modüller ve bridge zaten tanımlanmış olsun.
+         ================================================================ -->
+    <script src="router.js"></script>
 
 </body>
 </html>
