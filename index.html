@@ -28098,10 +28098,23 @@
                         statusEl.classList.toggle("is-error", !!isError);
                     };
 
+                    // 🎯 Yeni grup/topluluk oluşturma modalında da fotoğraf
+                    // artık konumlandırma editöründen geçiyor -- diğer tüm
+                    // avatar akışlarıyla (profil, grup detay) tutarlı olsun.
+                    const dataUrlOrNull = await openImagePositionModal(file, {
+                        targetW: AVATAR_MAX_DIMENSION,
+                        targetH: AVATAR_MAX_DIMENSION,
+                        quality: AVATAR_JPEG_QUALITY,
+                        round: true,
+                        title: "Fotoğrafı Konumlandır"
+                    });
+                    if (!dataUrlOrNull) return; // kullanıcı vazgeçti
+                    const positionedBlob = dataUrlToBlob(dataUrlOrNull);
+
                     btn.disabled = true;
-                    setStatus(`"${file.name}" yükleniyor...`, false);
+                    setStatus("Yükleniyor...", false);
                     try {
-                        const link = await uploadFileToImgBB(file, (pct) => {
+                        const link = await uploadFileToImgBB(positionedBlob, (pct) => {
                             if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
                         });
                         onUploaded(link);
@@ -28123,6 +28136,22 @@
                 const fallbackEl = document.getElementById(fallbackId);
                 if (imgEl) { imgEl.src = ""; imgEl.style.display = "none"; }
                 if (fallbackEl) { fallbackEl.textContent = fallbackEmoji; fallbackEl.style.display = "flex"; }
+            }
+
+            // openImagePositionModal() bir base64 data URL döndürür (RTDB'ye
+            // doğrudan yazılabilsin diye tasarlanmıştı -- bkz. profil avatar/
+            // banner akışları). Grup/topluluk akışları ise ImgBB'ye dosya
+            // yüklüyor (uploadFileToImgBB bir File/Blob bekler) -- bu yüzden
+            // data URL'i tekrar bir Blob'a çeviren küçük bir köprü fonksiyonu
+            // gerekiyor.
+            function dataUrlToBlob(dataUrl) {
+                const [header, base64] = dataUrl.split(",");
+                const mimeMatch = header.match(/data:([^;]+);base64/);
+                const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                return new Blob([bytes], { type: mime });
             }
 
             function wireGroupAvatarFileUpload() {
@@ -28148,10 +28177,23 @@
                         statusEl.classList.toggle("is-error", !!isError);
                     };
 
+                    // 🎯 Grup/topluluk fotoğrafı da profil avatarıyla AYNI
+                    // konumlandırma editöründen geçer -- kullanıcı hangi
+                    // bölgenin görüneceğini sürükleyip yakınlaştırarak seçer.
+                    const dataUrlOrNull = await openImagePositionModal(file, {
+                        targetW: AVATAR_MAX_DIMENSION,
+                        targetH: AVATAR_MAX_DIMENSION,
+                        quality: AVATAR_JPEG_QUALITY,
+                        round: true,
+                        title: meta && meta.isCommunity ? "Topluluk Fotoğrafını Konumlandır" : "Grup Fotoğrafını Konumlandır"
+                    });
+                    if (!dataUrlOrNull) return; // kullanıcı vazgeçti
+                    const positionedBlob = dataUrlToBlob(dataUrlOrNull);
+
                     btn.disabled = true;
-                    setStatus(`"${file.name}" ImgBB'ye yükleniyor...`, false);
+                    setStatus("Yükleniyor...", false);
                     try {
-                        const link = await uploadFileToImgBB(file, (pct) => {
+                        const link = await uploadFileToImgBB(positionedBlob, (pct) => {
                             if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
                         });
                         const now = firebase.database.ServerValue.TIMESTAMP;
@@ -28172,9 +28214,14 @@
 
             // MODÜL 5 EKLENTİ 3: Topluluk kapak fotoğrafı (banner) yükleme.
             // wireGroupAvatarFileUpload ile aynı deseni izler; tek fark
-            // groupPhoto yerine bannerUrl alanına yazması. GIF desteklidir
-            // (uploadFileToImgBB dosyayı canvas'a hiç uğratmadan olduğu
-            // gibi gönderir, bu yüzden animasyon bozulmaz).
+            // groupPhoto yerine bannerUrl alanına yazması.
+            // 🎯 Artık banner da konumlandırma editöründen geçiyor (3:1 oran) --
+            // bu yüzden dosya artık canvas'a hiç uğramadan olduğu gibi
+            // gönderilmiyor; GIF ise (animasyonlu banner) konumlandırma
+            // editörü bir <canvas> anlık görüntüsü aldığı için GIF
+            // animasyonu STATİK bir kareye indirgenir. Bu bilinen bir
+            // ödünleşim -- kullanıcı konumlandırma kontrolü kazanıyor,
+            // GIF animasyonunu kaybediyor.
             function wireGroupBannerFileUpload() {
                 const btn = document.getElementById("groupDetailBannerEditBtn");
                 const removeBtn = document.getElementById("groupDetailBannerRemoveBtn");
@@ -28199,10 +28246,20 @@
                     const meta = _groupMetaCache[groupId];
                     if (!groupId || !groupCanEditInfo(meta, _myUid)) { alert("Bu toplulukta bilgileri sadece yöneticiler değiştirebilir."); return; }
 
+                    const dataUrlOrNull = await openImagePositionModal(file, {
+                        targetW: BANNER_MAX_WIDTH,
+                        targetH: BANNER_MAX_HEIGHT,
+                        quality: BANNER_JPEG_QUALITY,
+                        round: false,
+                        title: "Kapak Fotoğrafını Konumlandır"
+                    });
+                    if (!dataUrlOrNull) return; // kullanıcı vazgeçti
+                    const positionedBlob = dataUrlToBlob(dataUrlOrNull);
+
                     btn.disabled = true;
-                    setStatus(`"${file.name}" ImgBB'ye yükleniyor...`, false);
+                    setStatus("Yükleniyor...", false);
                     try {
-                        const link = await uploadFileToImgBB(file, (pct) => {
+                        const link = await uploadFileToImgBB(positionedBlob, (pct) => {
                             if (typeof pct === "number") setStatus(`Yükleniyor... %${Math.round(pct)}`, false);
                         });
                         const now = firebase.database.ServerValue.TIMESTAMP;
