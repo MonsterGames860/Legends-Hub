@@ -22439,9 +22439,18 @@
          * ekranda önceki içerik (veya en son render edilen doğru profil)
          * kalıyor, sonra doğrudan hedef kullanıcıyla render ediliyor.
          */
-        function openUserProfile(uid) {
+        function openUserProfile(uid, opts) {
             if (!uid) return;
+            const skipUrlSync = opts && opts.skipUrlSync === true;
             switchView("profile", { skipDefaultProfileRender: true });
+
+            // 🧭 URL'i /profile/Me (kendi profilimiz) veya /profile/KullaniciAdi
+            // (başkasının profili) olarak güncelle. Kullanıcı adı henüz mention
+            // cache'inde yoksa (nadiren) sessizce atlanır -- cache dolunca
+            // sonraki bir profil açılışında yine senkronlanır.
+            if (!skipUrlSync && window.HubRouter && typeof window.HubRouter.navigateToProfile === "function") {
+                window.HubRouter.navigateToProfile(uid);
+            }
 
             // 🐛 BUGFIX (yarış durumu kapatma): hedef uid'i Firebase yanıtını
             // BEKLEMEDEN, hemen şimdi "o an görüntülenen profil" olarak
@@ -26891,11 +26900,33 @@
                             // Aktif sohbet ekranındaki başlık (isim/foto/üye
                             // sayısı) ve composer kilidi (izin değişimi) de
                             // aynı şekilde canlı güncellensin.
+                            //
+                            // 🐛 BUGFIX: openGroupConversation(groupId) çağrıldığı
+                            // anda bu grubun meta'sı Firebase'den henüz gelmemişse
+                            // (_groupMetaCache[groupId] boşsa) fonksiyon en başta
+                            // "if (!meta) return;" ile sessizce çıkıyor ve mesaj
+                            // dinleyicisini (_groupMessagesRef.on / kanal sistemi)
+                            // HİÇ kurmuyordu. Meta biraz sonra buraya geldiğinde
+                            // eskiden sadece başlık/composer güncelleniyordu, asıl
+                            // mesaj listesi boş kalmaya devam ediyordu -- kullanıcı
+                            // bir şey yazıp gönderene kadar hiçbir mesaj görünmüyordu.
+                            // Artık meta ilk kez gelirken (mesaj dinleyicisi henüz
+                            // kurulmamışsa) openGroupConversation'ı BAŞTAN çağırıyoruz
+                            // ki tüm kurulum (mesaj dinleyicisi, kanal sistemi vb.)
+                            // düzgün tamamlansın.
                             if (_activeGroupId === gid) {
-                                if (!meta) closeGroupConversation();
-                                else {
-                                    updateGroupConversationHeader(meta);
-                                    updateGroupComposerLock(meta);
+                                if (!meta) {
+                                    closeGroupConversation();
+                                } else {
+                                    const isCommunityMetaNow = !!(window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta));
+                                    const shellIsCommunity = !!document.getElementById("groupShell")?.classList.contains("is-community");
+                                    const needsFullReopen = isCommunityMetaNow ? !shellIsCommunity : !_groupMessagesRef;
+                                    if (needsFullReopen) {
+                                        openGroupConversation(gid);
+                                    } else {
+                                        updateGroupConversationHeader(meta);
+                                        updateGroupComposerLock(meta);
+                                    }
                                 }
                             }
                         });
@@ -26998,10 +27029,40 @@
                 return "";
             }
 
-            function openGroupConversation(groupId) {
+            function openGroupConversation(groupId, opts) {
+                const skipUrlSync = opts && opts.skipUrlSync === true;
                 _activeGroupId = groupId;
                 const meta = _groupMetaCache[groupId];
-                if (!meta) return;
+
+                // 🧭 URL'i /communities/:kod veya /groups/:kod olarak güncelle.
+                // meta henüz gelmemiş olsa bile (aşağıdaki "yükleniyor" dalı)
+                // URL zaten doğru koda işaret etsin istiyoruz ki sayfa
+                // yenilenirse ya da paylaşılırsa link kod içersin.
+                if (!skipUrlSync && window.HubRouter && typeof window.HubRouter.navigateTo === "function") {
+                    const isCommunityMeta = !!(meta && window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta));
+                    const base = isCommunityMeta ? "/communities/" : "/groups/";
+                    window.HubRouter.navigateTo(base + encodeURIComponent(groupId));
+                }
+
+                if (!meta) {
+                    // 🐛 BUGFIX: meta henüz Firebase'den gelmemişse (özellikle
+                    // router.js üzerinden bir davet linkiyle -- /communities/:kod --
+                    // ya da /groups/:kod ile doğrudan açılışta) burada sessizce
+                    // çıkmak yerine en azından "yükleniyor" görünümünü açıyoruz.
+                    // _groupMetaRefs[groupId] üzerindeki dinleyici meta'yı
+                    // getirdiğinde (yukarıdaki attachUserGroupsListener içindeki
+                    // "if (_activeGroupId === gid)" bloğu) bu fonksiyonu otomatik
+                    // olarak tekrar çağırıp konuşmayı düzgünce açacak.
+                    const emptyEl = document.getElementById("groupConversationEmpty");
+                    const activeEl = document.getElementById("groupConversationActive");
+                    if (activeEl) activeEl.style.display = "flex";
+                    if (emptyEl) emptyEl.style.display = "none";
+                    const groupListEl = document.getElementById("groupMessageList");
+                    if (groupListEl) groupListEl.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
+                    document.getElementById("groupShell")?.classList.add("is-conversation-open");
+                    document.body.classList.add("msg-conversation-fullscreen");
+                    return;
+                }
 
                 document.getElementById("groupConversationEmpty").style.display = "none";
                 document.getElementById("groupConversationActive").style.display = "flex";
@@ -33631,8 +33692,14 @@
             get activeCategoryId() { return activeCategoryId; },
             openGroupConversation: (groupId) => {
                 if (window.MessagingSystem && typeof window.MessagingSystem.openGroupConversation === "function") {
-                    window.MessagingSystem.openGroupConversation(groupId);
+                    // router.js zaten URL'i kendi tespit ettiği koda göre
+                    // ayarlamış oluyor (deep-link akışı) — burada tekrar
+                    // navigateTo tetiklenmesin diye skipUrlSync geçiyoruz.
+                    window.MessagingSystem.openGroupConversation(groupId, { skipUrlSync: true });
                 }
+            },
+            openUserProfile: (uid, opts) => {
+                if (typeof openUserProfile === "function") openUserProfile(uid, opts);
             }
         };
 

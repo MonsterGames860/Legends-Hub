@@ -52,8 +52,7 @@
         "/marketplace": "marketplace",
         "/studio": "studio",
         "/inbox": "inbox",
-        "/players": "players",
-        "/profile": "profile"
+        "/players": "players"
     };
 
     // Yetki korumalı yollar -> hangi iç view'a karşılık geldiği.
@@ -172,7 +171,7 @@
             case "communities": return "/communities";
             case "inbox": return "/inbox";
             case "players": return "/players";
-            case "profile": return "/profile";
+            case "profile": return "/profile/Me";
             case "admin": return "/admin-panel";
             case "console": return "/console";
             default: return "/" + view;
@@ -191,6 +190,27 @@
             : (CATEGORY_TO_URL_SEGMENT[categoryId] || categoryId);
         const slug = slugify(threadTitle);
         navigateTo("/forum/" + seg + "/" + slug);
+    }
+
+    // Verilen uid kendi hesabımızsa /profile/Me, değilse mention cache'inden
+    // bulunan kullanıcı adıyla /profile/:KullaniciAdi olarak URL'i günceller.
+    // Kullanıcı adı henüz cache'te yoksa (mention cache dolmamış) sessizce
+    // hiçbir şey yapmaz -- URL eski hâlinde kalır, işlevi bozmaz.
+    function navigateToProfile(uid) {
+        const myUid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+        if (uid && myUid && uid === myUid) {
+            navigateTo("/profile/Me");
+            return;
+        }
+        if (window.CommunityMentions && typeof window.CommunityMentions.getByUid === "function") {
+            const candidate = window.CommunityMentions.getByUid(uid);
+            if (candidate && candidate.username) {
+                navigateTo("/profile/" + encodeURIComponent(candidate.username));
+                return;
+            }
+        }
+        // Kullanıcı adı bulunamadıysa en azından genel /profile'a düş.
+        navigateTo("/profile/Me");
     }
 
     // Programatik geçiş: hem tarayıcı URL'ini günceller hem de ilgili
@@ -261,6 +281,12 @@
             return;
         }
 
+        // ---- 4b) /profile, /profile/Me, /profile/:KullaniciAdi ----
+        if (root === "profile") {
+            handleProfileRoute(segs);
+            return;
+        }
+
         // ---- 5) Basit sekmeler (chat, messages, marketplace, studio, ...) ----
         if (SIMPLE_VIEW_ROUTES[fullPath]) {
             b.switchView(SIMPLE_VIEW_ROUTES[fullPath]);
@@ -327,10 +353,68 @@
     }
 
     // ------------------------------------------------------------
-    // Topluluk / Grup katılım linki mantığı
-    // (Discord davet linki mantığı: üye ise direkt kanal, değilse
-    // katılım popup'ı)
+    // Profil route mantığı: /profile, /profile/Me, /profile/:KullaniciAdi
     // ------------------------------------------------------------
+
+    function handleProfileRoute(segs, attempt) {
+        attempt = attempt || 0;
+        const b = bridge();
+        if (!b) return;
+
+        b.switchView("profile", { skipDefaultProfileRender: segs.length >= 2 });
+
+        const myUid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+
+        // Sadece /profile veya /profile/Me -> kendi profilimiz.
+        if (segs.length < 2 || segs[1].toLowerCase() === "me") {
+            if (!myUid) return; // auth henüz hazır değil, switchView zaten "profile" sekmesini açık bırakır.
+            if (typeof b.openUserProfile === "function") b.openUserProfile(myUid, { skipUrlSync: true });
+            // URL'i her zaman dostane "Me" biçiminde tut.
+            navigateTo("/profile/Me", { replace: true });
+            return;
+        }
+
+        const requestedName = decodeURIComponent(segs[1]);
+
+        // Kendi kullanıcı adımızı yazdıysa /profile/Me'ye normalize et.
+        const myCandidate = (window.CommunityMentions && myUid) ? window.CommunityMentions.getByUid(myUid) : null;
+        if (myCandidate && myCandidate.username && myCandidate.username.toLowerCase() === requestedName.toLowerCase()) {
+            if (typeof b.openUserProfile === "function") b.openUserProfile(myUid, { skipUrlSync: true });
+            navigateTo("/profile/Me", { replace: true });
+            return;
+        }
+
+        // Mention/kullanıcı cache'i henüz hazır olmayabilir (sayfa bu linkle
+        // doğrudan açıldıysa) -- window.CommunityMentions.onReady ile bekle.
+        const tryResolve = () => {
+            const candidate = window.CommunityMentions && typeof window.CommunityMentions.getByUsername === "function"
+                ? window.CommunityMentions.getByUsername(requestedName)
+                : null;
+            if (candidate && candidate.uid) {
+                if (typeof b.openUserProfile === "function") b.openUserProfile(candidate.uid, { skipUrlSync: true });
+                return true;
+            }
+            return false;
+        };
+
+        if (tryResolve()) return;
+
+        if (window.CommunityMentions && typeof window.CommunityMentions.onReady === "function") {
+            window.CommunityMentions.onReady(() => {
+                if (!tryResolve()) {
+                    toast("Kullanıcı bulunamadı: @" + requestedName);
+                }
+            });
+            return;
+        }
+
+        // onReady yoksa (beklenmedik durum) kısa polling'e düş.
+        if (attempt < MAX_DEEP_LINK_ATTEMPTS) {
+            setTimeout(() => handleProfileRoute(segs, attempt + 1), 150);
+        } else {
+            toast("Kullanıcı bulunamadı: @" + requestedName);
+        }
+    }
 
     function handleCommunityOrGroupRoute(code, sourceSegment, attempt) {
         attempt = attempt || 0;
@@ -473,6 +557,7 @@
         navigateTo: navigateTo,
         navigateToView: navigateToView,
         navigateToThread: navigateToThread,
+        navigateToProfile: navigateToProfile,
         applyRoute: applyRoute
     };
 })();
