@@ -20437,7 +20437,8 @@
             });
         }
 
-        function switchForumCategory(categoryId) {
+        function switchForumCategory(categoryId, opts) {
+            const skipUrlSync = opts && opts.skipUrlSync === true;
             activeCategoryId = categoryId;
             activeThreadId = null;
             hideForumReplyPreview();
@@ -20490,7 +20491,11 @@
                 newThreadBtn.style.display = canPost ? "inline-flex" : "none";
             }
 
-            showThreadListView();
+            // skipUrlSync:true — URL zaten ya çağıranı (kategori tab'ı / router)
+            // tarafından ayarlanmış, ya da burada henüz ayarlanacak (aşağıya
+            // bak); showThreadListView'ın kendi navigateTo çağrısı burada
+            // gereksiz VE switchForumCategory<->navigateTo döngüsüne yol açar.
+            showThreadListView({ skipUrlSync: true });
         }
 
         // ------------------------------------------------------------
@@ -20506,7 +20511,8 @@
             });
         }
 
-        function showThreadListView() {
+        function showThreadListView(opts) {
+            const skipUrlSync = opts && opts.skipUrlSync === true;
             activeThreadId = null;
             const listView = document.getElementById("forumThreadListView");
             const detailView = document.getElementById("forumThreadDetailView");
@@ -20515,7 +20521,14 @@
             renderThreadListIfVisible();
 
             // 🧭 Konu detayından listeye dönüldüğünde URL'i /forum/:kategori'ye geri al.
-            if (window.HubRouter && typeof window.HubRouter.navigateTo === "function") {
+            // 🐛 ÖNEMLİ: switchForumCategory() zaten kendi içinde bu fonksiyonu
+            // çağırıyor — eğer burada koşulsuz HubRouter.navigateTo() çağrılırsa,
+            // router.js -> applyRoute -> switchForumCategory -> showThreadListView
+            // -> navigateTo -> applyRoute ... şeklinde SONSUZ DÖNGÜYE (stack
+            // overflow) girip auth-ready handler'ının geri kalanını (Mesajlar/
+            // Gruplar/Topluluklar/Başarımlar init'lerini) tamamen durdurabiliyordu.
+            // Bu yüzden switchForumCategory kendi çağrısında skipUrlSync:true geçer.
+            if (!skipUrlSync && window.HubRouter && typeof window.HubRouter.navigateTo === "function") {
                 const seg = (window.HubRouterBridge && window.HubRouterBridge.categoryIdToUrlSegment(activeCategoryId)) || activeCategoryId;
                 window.HubRouter.navigateTo("/forum/" + seg);
             }
