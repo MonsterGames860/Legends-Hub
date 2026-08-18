@@ -455,19 +455,39 @@
             return;
         }
 
-        const communityMeta = directory[code];
+        // 🔗 Önce kodu doğrudan groupId (Firebase key) olarak dene -- eski
+        // davranışla birebir uyumlu. Eşleşmezse, bu bir ÖZEL BAĞLANTI KODU
+        // (vanity code) olabilir: community_directory içindeki gruplardan
+        // vanityCode alanı bu koda eşit olanı ara (aynı cache, ek Firebase
+        // sorgusu gerekmez). Böylece hem /communities/RealCode123 (ham
+        // groupId) hem de /communities/legends-tr (özel kod) çalışır.
+        let communityMeta = directory[code];
+        let resolvedGroupId = code;
+        if (!communityMeta) {
+            const lowerCode = code.toLowerCase();
+            for (const gid in directory) {
+                if (!Object.prototype.hasOwnProperty.call(directory, gid)) continue;
+                const entry = directory[gid];
+                if (entry && entry.vanityCode && entry.vanityCode.toLowerCase() === lowerCode) {
+                    communityMeta = entry;
+                    resolvedGroupId = gid;
+                    break;
+                }
+            }
+        }
+
         if (!communityMeta) {
             toast("Bu topluluk/grup kodu geçersiz veya bulunamadı.");
             b.switchView(sourceSegment === "groups" ? "groups" : "communities");
             return;
         }
 
-        const alreadyMember = !!userGroups[code];
+        const alreadyMember = !!userGroups[resolvedGroupId];
 
         if (alreadyMember) {
             // Zaten üye -> direkt kanala/gruba gir.
             b.switchView("groups");
-            b.openGroupConversation(code);
+            b.openGroupConversation(resolvedGroupId);
             return;
         }
 
@@ -475,7 +495,7 @@
         // modalı zaten "Katıl" butonuyla bu akışı sağlıyor).
         if (typeof window.openCommunityPreviewModal === "function") {
             b.switchView(sourceSegment === "groups" ? "groups" : "communities");
-            window.openCommunityPreviewModal(code);
+            window.openCommunityPreviewModal(resolvedGroupId);
         } else {
             toast("Topluluğa katılma penceresi açılamadı.");
             b.switchView(sourceSegment === "groups" ? "groups" : "communities");

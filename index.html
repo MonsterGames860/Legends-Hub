@@ -10208,6 +10208,26 @@
                                 <div class="forum-modal-error" id="groupDetailBadgeError" style="display:none;"></div>
                             </div>
 
+                            <!-- 🔗 Özel Topluluk Bağlantı Kodu -- sadece topluluk
+                                 KURUCUSUNA veya site geneli Admin/Owner/Developer
+                                 rütbesindeki birine görünür, ve sadece topluluk
+                                 doğrulanmışsa (mavi tikliyse) düzenlenebilir.
+                                 Kural: sadece harf/rakam/_/- karakterleri, en
+                                 fazla 20 karakter (bkz. sanitizeCommunityVanityCode). -->
+                            <div class="msg-group-detail-section" id="groupDetailVanitySection" style="display:none;">
+                                <div class="msg-group-detail-section-title">🔗 Özel Bağlantı Kodu</div>
+                                <p style="font-size:12px;color:var(--text-dim,#9aa);margin:0 0 8px;">
+                                    Topluluğunun davet linkini özelleştir. Sadece harf, rakam, alt çizgi (_) ve tire (-) kullanılabilir, en fazla 20 karakter.
+                                    Yalnızca doğrulanmış (mavi tikli) topluluklar özel bağlantı ayarlayabilir.
+                                </p>
+                                <div class="msg-group-detail-desc-row">
+                                    <input type="text" class="forum-text-input" id="groupDetailVanityInput" maxlength="20" placeholder="ozel-kod">
+                                    <button type="button" class="forum-btn forum-btn-ghost msg-group-detail-save-btn" id="groupDetailVanitySaveBtn">Kaydet</button>
+                                </div>
+                                <div class="msg-group-detail-avatar-status" id="groupDetailVanityPreview" style="display:none;"></div>
+                                <div class="forum-modal-error" id="groupDetailVanityError" style="display:none;"></div>
+                            </div>
+
                             <!-- İzinler (sadece yönetici/kurucu görür) -->
                             <div class="msg-group-detail-section" id="groupDetailPermissionsSection">
                                 <div class="msg-group-detail-section-title" id="groupDetailPermissionsHeading">Grup İzinleri</div>
@@ -26401,6 +26421,103 @@
                 return code;
             }
 
+            // ── Topluluk Özel Bağlantı Kodu (Vanity Code) ───────────────
+            // Yalnızca doğrulanmış (mavi tik) topluluklarda, kurucu veya
+            // site geneli Helper+ rütbesindeki biri tarafından ayarlanabilir.
+            // Kural: sadece a-z, 0-9, alt çizgi (_) ve tire (-); BOŞLUK
+            // KESİNLİKLE YASAK; en fazla 20 karakter; büyük harfler otomatik
+            // küçük harfe çevrilir (URL'lerde tutarlılık için).
+            //
+            // sanitizeCommunityVanityCode: ham girdiyi temizler/doğrular.
+            // Dönüş: { ok: true, code } ya da { ok: false, reason }.
+            const VANITY_CODE_MAX_LEN = 20;
+            const VANITY_CODE_PATTERN = /^[a-z0-9_-]+$/;
+            function sanitizeCommunityVanityCode(raw) {
+                const trimmed = (raw || "").trim();
+                if (!trimmed) return { ok: false, reason: "Bağlantı kodu boş olamaz." };
+                if (/\s/.test(trimmed)) return { ok: false, reason: "Bağlantı kodunda boşluk kullanılamaz." };
+                const lowered = trimmed.toLowerCase();
+                if (lowered.length > VANITY_CODE_MAX_LEN) {
+                    return { ok: false, reason: `Bağlantı kodu en fazla ${VANITY_CODE_MAX_LEN} karakter olabilir.` };
+                }
+                if (!VANITY_CODE_PATTERN.test(lowered)) {
+                    return { ok: false, reason: "Sadece harf, rakam, alt çizgi (_) ve tire (-) kullanılabilir." };
+                }
+                return { ok: true, code: lowered };
+            }
+
+            // Bu topluluğun bağlantı kodunu değiştirme yetkisi: kurucu HER
+            // ZAMAN düzenleyebilir; ayrıca site geneli Helper ve üzeri
+            // rütbedeki herkes de (moderasyon amaçlı) düzenleyebilir.
+            // Topluluk mavi tikli (isVerified===true) DEĞİLSE hiç kimse
+            // düzenleyemez (kurucu dahil) -- bölüm zaten görünmez olur.
+            function groupCanEditVanityCode(meta, uid, profile) {
+                if (!meta) return false;
+                if (meta.ownerUid === uid) return true;
+                return !!(window.CommunityRBAC && window.CommunityRBAC.hasMinimumTier(profile, "helper"));
+            }
+
+            // Verilen kodu (küçük harfe çevrilmiş, doğrulanmış hâliyle)
+            // topluluğa atar. Eşsizlik kontrolünü ATOMIK yapmak için
+            // Firebase transaction kullanıyoruz -- iki kişi aynı anda aynı
+            // kodu almaya çalışırsa (ör. "az önce biri aldı" senaryosu)
+            // sadece biri kazanır, diğeri net bir hata mesajı alır.
+            async function setCommunityVanityCode(groupId, rawCode) {
+                const parsed = sanitizeCommunityVanityCode(rawCode);
+                if (!parsed.ok) return { ok: false, reason: parsed.reason };
+                const code = parsed.code;
+
+                const meta = _groupMetaCache[groupId];
+                if (!meta) return { ok: false, reason: "Topluluk bulunamadı." };
+                if (meta.isVerified !== true) {
+                    return { ok: false, reason: "Sadece doğrulanmış (mavi tikli) topluluklar özel bağlantı kodu ayarlayabilir." };
+                }
+                if (!groupCanEditVanityCode(meta, _myUid, window.CommunityAuth.profile)) {
+                    return { ok: false, reason: "Bu işlem için yetkin yok." };
+                }
+
+                // Zaten kendi kodumuzsa (değişiklik yoksa) hiçbir şey yapma.
+                if (meta.vanityCode === code) {
+                    return { ok: true, code, unchanged: true };
+                }
+
+                const vanityRef = database.ref("community_vanity_codes/" + code);
+                try {
+                    const txResult = await vanityRef.transaction((current) => {
+                        // current: null (boş, alınabilir) ya da { groupId } (dolu).
+                        if (current === null) {
+                            return { groupId: groupId, setAt: firebase.database.ServerValue.TIMESTAMP };
+                        }
+                        // Zaten bizim kodumuzsa (teorik olarak olmamalı, ama
+                        // güvenlik için) dokunmadan bırak; başka birine
+                        // aitse transaction'ı İPTAL ET (undefined dönmek
+                        // Firebase'de "abort" anlamına gelir).
+                        if (current.groupId === groupId) return current;
+                        return undefined;
+                    });
+
+                    if (!txResult.committed) {
+                        return { ok: false, reason: "Bu bağlantı kodu zaten başka bir topluluk tarafından kullanılıyor." };
+                    }
+
+                    // Eski kod varsa (kod değiştiriliyorsa) eski index kaydını temizle.
+                    const oldCode = meta.vanityCode;
+                    if (oldCode && oldCode !== code) {
+                        try { await database.ref("community_vanity_codes/" + oldCode).remove(); } catch (e) { /* sessiz geç */ }
+                    }
+
+                    // meta + community_directory'deki senkron kopyayı güncelle
+                    // (tıpkı isVerified/memberCount gibi diğer "keşif" alanları).
+                    await database.ref("group_chats/" + groupId + "/meta/vanityCode").set(code);
+                    await database.ref("community_directory/" + groupId + "/vanityCode").set(code);
+
+                    return { ok: true, code };
+                } catch (err) {
+                    console.error("[Topluluk Bağlantı Kodu] Ayarlanamadı:", err);
+                    return { ok: false, reason: "Bir hata oluştu, tekrar dener misin?" };
+                }
+            }
+
             // ── Yardımcılar ──────────────────────────────────────────
             function makeDmId(uidA, uidB) {
                 return [uidA, uidB].sort().join("_");
@@ -27044,10 +27161,15 @@
                 // meta henüz gelmemiş olsa bile (aşağıdaki "yükleniyor" dalı)
                 // URL zaten doğru koda işaret etsin istiyoruz ki sayfa
                 // yenilenirse ya da paylaşılırsa link kod içersin.
+                //
+                // 🔗 Özel bağlantı kodu (vanityCode) varsa, URL'de ham
+                // groupId yerine bu okunaklı kod kullanılır -- kullanıcının
+                // "linkimi özelleştirdim" beklentisiyle birebir örtüşsün.
                 if (!skipUrlSync && window.HubRouter && typeof window.HubRouter.navigateTo === "function") {
                     const isCommunityMeta = !!(meta && window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta));
                     const base = isCommunityMeta ? "/communities/" : "/groups/";
-                    window.HubRouter.navigateTo(base + encodeURIComponent(groupId));
+                    const urlCode = (meta && meta.vanityCode) ? meta.vanityCode : groupId;
+                    window.HubRouter.navigateTo(base + encodeURIComponent(urlCode));
                 }
 
                 if (!meta) {
@@ -27917,6 +28039,32 @@
                     }
                 }
 
+                // 🔗 Özel Topluluk Bağlantı Kodu (Vanity Code) -- sadece
+                // TOPLULUK KURUCUSUNA veya site geneli Helper+ rütbesindeki
+                // birine görünür, ve sadece topluluk doğrulanmışsa (mavi
+                // tikliyse) düzenlenebilir/görünür.
+                const vanitySection = document.getElementById("groupDetailVanitySection");
+                if (vanitySection) {
+                    const canEditVanity = isCommunity && meta.isVerified === true &&
+                        groupCanEditVanityCode(meta, _myUid, window.CommunityAuth.profile);
+                    vanitySection.style.display = canEditVanity ? "block" : "none";
+                    if (canEditVanity) {
+                        const vanityInput = document.getElementById("groupDetailVanityInput");
+                        const vanityPreview = document.getElementById("groupDetailVanityPreview");
+                        const vanityErr = document.getElementById("groupDetailVanityError");
+                        if (vanityInput) vanityInput.value = meta.vanityCode || "";
+                        if (vanityErr) vanityErr.style.display = "none";
+                        if (vanityPreview) {
+                            if (meta.vanityCode) {
+                                vanityPreview.textContent = "Mevcut bağlantı: playlegendshub.vercel.app/communities/" + meta.vanityCode;
+                                vanityPreview.style.display = "block";
+                            } else {
+                                vanityPreview.style.display = "none";
+                            }
+                        }
+                    }
+                }
+
                 // Kimlik (resim + isim)
                 const avatarImg = document.getElementById("groupDetailAvatarImg");
                 const avatarFallback = document.getElementById("groupDetailAvatarFallback");
@@ -28333,6 +28481,46 @@
                 } catch (err) {
                     console.error("[Topluluk] Rozet kaldırılamadı:", err);
                     if (errorEl) { errorEl.textContent = "Rozet kaldırılamadı. Tekrar dene."; errorEl.style.display = "block"; }
+                }
+            }
+
+            // ── Özel Topluluk Bağlantı Kodu: "Kaydet" butonu handler'ı ──
+            // Doğrulama (sanitizeCommunityVanityCode), yetki kontrolü ve
+            // eşsizlik kontrolü (transaction) setCommunityVanityCode()
+            // içinde yapılıyor; burası sadece UI durumunu (buton disable,
+            // hata/başarı mesajı) yönetiyor.
+            async function saveCommunityVanityCode() {
+                const groupId = _activeGroupDetailId;
+                const errorEl = document.getElementById("groupDetailVanityError");
+                const input = document.getElementById("groupDetailVanityInput");
+                const saveBtn = document.getElementById("groupDetailVanitySaveBtn");
+                if (!groupId || !input) return;
+
+                if (errorEl) errorEl.style.display = "none";
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Kaydediliyor…"; }
+
+                try {
+                    const result = await setCommunityVanityCode(groupId, input.value);
+                    if (!result.ok) {
+                        if (errorEl) { errorEl.textContent = result.reason; errorEl.style.display = "block"; }
+                        return;
+                    }
+
+                    // Girdiyi kaydedilen (küçük harfe çevrilmiş) hâliyle
+                    // güncelle ki kullanıcı tam olarak ne kaydedildiğini görsün.
+                    input.value = result.code;
+
+                    const preview = document.getElementById("groupDetailVanityPreview");
+                    if (preview) {
+                        preview.textContent = "Mevcut bağlantı: playlegendshub.vercel.app/communities/" + result.code;
+                        preview.style.display = "block";
+                    }
+
+                    showToastGlobal(result.unchanged
+                        ? "Bağlantı kodu zaten bu şekilde ayarlı."
+                        : "Bağlantı kodu güncellendi: " + result.code);
+                } finally {
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Kaydet"; }
                 }
             }
 
@@ -28889,6 +29077,7 @@
                 });
                 document.getElementById("groupDetailBadgeSaveBtn")?.addEventListener("click", saveCommunityBadge);
                 document.getElementById("groupDetailBadgeRemoveBtn")?.addEventListener("click", removeCommunityBadge);
+                document.getElementById("groupDetailVanitySaveBtn")?.addEventListener("click", saveCommunityVanityCode);
                 document.getElementById("groupDetailUnpinBtn")?.addEventListener("click", unpinGroupMessage);
                 document.getElementById("groupDetailAddMemberBtn")?.addEventListener("click", toggleAddMemberPanel);
                 document.getElementById("groupDetailAddMemberSearchInput")?.addEventListener("input", (e) => {
