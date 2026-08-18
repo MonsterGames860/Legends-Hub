@@ -233,7 +233,7 @@ self.addEventListener("notificationclick", (event) => {
       }
       // Açık sekme yoksa yeni pencere aç.
       if (self.clients.openWindow) {
-        return self.clients.openWindow(notifData.url || "./");
+        return self.clients.openWindow(notifData.url || "/");
       }
     })
   );

@@ -9086,8 +9086,13 @@
 
 <!-- ================================================================
      PWA — MANIFEST + META
+     🐛 BUGFIX: href="./manifest.json" GÖRELİ bir yoldu -- router.js ile
+     AYNI hata ailesi. Kullanıcı derin bir SPA route'ta (/forum/live gibi)
+     sayfayı yenilerse veya PWA olarak açarsa, tarayıcı manifest'i o
+     path'e göre (ör. /forum/manifest.json) aramaya çalışıp bulamıyordu.
+     Mutlak yol ("/manifest.json") her path'ten doğru çözülür.
      ================================================================ -->
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0b0c10">
 
 <!-- ================================================================
@@ -9107,7 +9112,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Legends Hub">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<!-- 🐛 BUGFIX: aynı göreli-yol hatası, mutlak yola çevrildi. -->
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
 <body>
 
@@ -33803,8 +33809,23 @@
 
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", function () {
+                // 🐛 BUGFIX (KÖKTEN SEBEP -- router.js ile AYNI HATA AİLESİ):
+                // "./sw.js" GÖRELİ bir yoldu; tarayıcı bunu o anki sayfa
+                // path'ine göre çözer. Kullanıcı /profile/RealMonster gibi
+                // derin bir path'teyken (SPA route) bu "./sw.js" aslında
+                // /profile/sw.js'e karşılık geliyordu -- var olmayan bir
+                // dosya. Bu durumda service worker o path altında YANLIŞ
+                // bir scope ile kayıtlı kalabiliyor (ya da kayıt tamamen
+                // başarısız oluyor), ve daha da önemlisi router.js'in
+                // KENDİSİ de aynı göreli-yol hatasına sahipti (bkz. index.html
+                // sonu <script src="router.js"> -> artık "/router.js") --
+                // derin bir path'ten SİTEYE DOĞRUDAN GİRİLDİĞİNDE router.js
+                // hiç yüklenmiyor, window.HubRouter tanımsız kalıyordu.
+                // Kök dizine göre MUTLAK yol ("/sw.js") artık sayfanın
+                // hangi path'te olduğundan bağımsız, her zaman doğru
+                // dosyaya işaret ediyor.
                 navigator.serviceWorker
-                    .register("./sw.js")
+                    .register("/sw.js")
                     .then(function (reg) {
                         console.log("[SW] Kayıt başarılı, scope:", reg.scope);
 
@@ -34139,21 +34160,13 @@
     </script>
 
     <!-- ================================================================
-         🐞 GEÇİCİ DEBUG KONSOLU (Eruda) — sorun teşhis edilince kaldırılacak.
-         Ekranın sağ alt köşesinde küçük bir daire ile açılır; telefonda
-         gerçek JS hatalarını (konsol/network/elements) görmeyi sağlar.
-         ================================================================ -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>try { eruda.init(); } catch (e) { console.error("Eruda başlatılamadı:", e); }</script>
-
-    <!-- ================================================================
          🧭 SPA ROUTER (dinamik URL yönlendirme)
          window.HubRouterBridge (yukarıdaki ana IIFE içinde tanımlı) ve
          window.CommunityAuth / window.CommunityRBAC / window.MessagingSystem
          üzerinden çalışır. Bu script en sonda yüklenir ki yukarıdaki
          tüm modüller ve bridge zaten tanımlanmış olsun.
          ================================================================ -->
-    <script src="router.js"></script>
+    <script src="/router.js"></script>
 
 </body>
 </html>

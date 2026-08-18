@@ -113,11 +113,6 @@
     }
 
     function toast(msg) {
-        // 🐛 TEŞHİS (geçici): normal showToastGlobal'e ek olarak, atlanması
-        // imkansız bir alert() de tetikliyoruz -- eğer normal toast'lar hiç
-        // görünmüyorsa bunun sebebinin toast'un kendisinin mi (görünürlük/
-        // stil) yoksa kodun o satıra hiç ULAŞMAMASI mı olduğunu netleştirir.
-        try { window.__routerDebugLog = window.__routerDebugLog || []; window.__routerDebugLog.push(msg); } catch (e) {}
         const b = bridge();
         if (b && typeof b.showToastGlobal === "function") {
             b.showToastGlobal(msg);
@@ -305,9 +300,6 @@
             handleProfileRoute(segs);
             return;
         }
-        if (root.startsWith("profile")) {
-            toast("[DEBUG] root='" + root + "' profile ile başlıyor ama eşleşmedi, segs=" + JSON.stringify(segs));
-        }
 
         // ---- 5) Basit sekmeler (chat, messages, marketplace, studio, ...) ----
         if (SIMPLE_VIEW_ROUTES[fullPath]) {
@@ -320,7 +312,6 @@
         }
 
         // ---- 6) Bilinmeyen yol -> Forum'a yönlendir (yumuşak 404) ----
-        toast("[DEBUG] applyRoute forum fallback'e düştü, pathname=" + pathname + " root=" + root);
         b.switchView("forum");
         window.history.replaceState({ hubPath: "/forum" }, "", "/forum");
     }
@@ -382,7 +373,7 @@
     function handleProfileRoute(segs, attempt) {
         attempt = attempt || 0;
         const b = bridge();
-        if (!b) { toast("[DEBUG] bridge yok"); return; }
+        if (!b) return;
 
         b.switchView("profile", { skipDefaultProfileRender: segs.length >= 2 });
 
@@ -390,7 +381,6 @@
 
         // Sadece /profile veya /profile/Me -> kendi profilimiz.
         if (segs.length < 2 || segs[1].toLowerCase() === "me") {
-            toast("[DEBUG] Me dalı, myUid=" + myUid);
             if (!myUid) return; // auth henüz hazır değil, switchView zaten "profile" sekmesini açık bırakır.
             if (typeof b.openUserProfile === "function") b.openUserProfile(myUid, { skipUrlSync: true });
             // URL'i her zaman dostane "Me" biçiminde tut.
@@ -399,13 +389,10 @@
         }
 
         const requestedName = decodeURIComponent(segs[1]);
-        toast("[DEBUG] aranan isim: " + requestedName);
 
         // Kendi kullanıcı adımızı yazdıysa /profile/Me'ye normalize et.
         const myCandidate = (window.CommunityMentions && myUid) ? window.CommunityMentions.getByUid(myUid) : null;
-        toast("[DEBUG] myCandidate.username=" + (myCandidate ? myCandidate.username : "yok"));
         if (myCandidate && myCandidate.username && myCandidate.username.toLowerCase() === requestedName.toLowerCase()) {
-            toast("[DEBUG] kendi adım eşleşti, Me'ye çevriliyor");
             if (typeof b.openUserProfile === "function") b.openUserProfile(myUid, { skipUrlSync: true });
             navigateTo("/profile/Me", { replace: true });
             return;
@@ -417,7 +404,6 @@
             const candidate = window.CommunityMentions && typeof window.CommunityMentions.getByUsername === "function"
                 ? window.CommunityMentions.getByUsername(requestedName)
                 : null;
-            toast("[DEBUG] tryResolve candidate=" + (candidate ? candidate.uid : "bulunamadı"));
             if (candidate && candidate.uid) {
                 if (typeof b.openUserProfile === "function") b.openUserProfile(candidate.uid, { skipUrlSync: true });
                 return true;
@@ -428,9 +414,7 @@
         if (tryResolve()) return;
 
         if (window.CommunityMentions && typeof window.CommunityMentions.onReady === "function") {
-            toast("[DEBUG] onReady bekleniyor...");
             window.CommunityMentions.onReady(() => {
-                toast("[DEBUG] onReady tetiklendi");
                 if (!tryResolve()) {
                     toast("Kullanıcı bulunamadı: @" + requestedName);
                 }
@@ -554,8 +538,6 @@
             ? "/forum"
             : window.location.pathname;
 
-        toast("[DEBUG] boot() çalıştı, initialPath=" + initialPath + " isAuthReady=" + isAuthReady());
-
         if (window.location.pathname !== initialPath) {
             window.history.replaceState({ hubPath: initialPath }, "", initialPath + window.location.search);
         }
@@ -564,13 +546,10 @@
         // korumalı/veri-bağımlı route'lar (admin-panel, communities,
         // groups, forum thread) doğru çalışsın.
         if (isAuthReady()) {
-            toast("[DEBUG] auth zaten hazır, applyRoute hemen çağrılıyor");
             applyRoute(initialPath, { fromNavigate: false });
         } else {
-            toast("[DEBUG] auth bekleniyor...");
             document.addEventListener("communitystudio:auth-ready", function onReady() {
                 document.removeEventListener("communitystudio:auth-ready", onReady);
-                toast("[DEBUG] auth-ready event yakalandı");
                 // showHubShell senkron olarak forum'u varsayılan gösterir;
                 // bir sonraki mikro-görevde gerçek route'u üstüne uygularız.
                 setTimeout(() => applyRoute(initialPath, { fromNavigate: false }), 0);
