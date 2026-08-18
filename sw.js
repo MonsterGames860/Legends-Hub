@@ -1,8 +1,9 @@
 // ================================================================
 // LEGENDS HUB — SERVICE WORKER
-// Basit "cache-first, network'e düş" stratejisi.
+// Basit "cache-first, network'e düş" stratejisi (index.html, router.js
+// ve manifest.json için network-first — bkz. isShellRequest).
 // Cache adını her yayında (deploy) artırarak eski istemcilerdeki
-// önbelleği geçersiz kılabilirsin (örn. legends-hub-cache-v2).
+// önbelleği geçersiz kılabilirsin (örn. legends-hub-cache-v3).
 //
 // NOT (Push Notification hakkında önemli):
 // Bu dosyadaki "push" event dinleyicisi, sunucu tarafından GERÇEK bir
@@ -20,14 +21,26 @@
 // sekmesindeyken gösterilen bildirimlere tıklanmasını yönetir.
 // ================================================================
 
-const CACHE_NAME = "legends-hub-cache-v1";
+const CACHE_NAME = "legends-hub-cache-v2";
 
 // Uygulama kabuğu (app shell) — ilk yüklemede önbelleğe alınır.
 // Sadece aynı origin'deki, kesin var olan dosyaları listele.
+//
+// 🐛 BUGFIX (router.js hard-reset olmadan güncellenmiyordu): router.js
+// buraya eklenmemişti, bu yüzden aşağıdaki fetch handler'ında "kabuk"
+// (network-first) sayılmıyor, diğer statik dosyalarla (resimler, ikonlar)
+// aynı CACHE-FIRST stratejisine giriyordu. index.html/manifest.json bir
+// deploy sonrası doğru şekilde güncelleniyordu ama router.js önbellekte
+// TAKILI KALIYORDU -- kullanıcı sayfayı normal yenilediğinde (hatta
+// service worker "sw-updated" ile otomatik reload tetiklese bile) hâlâ
+// ESKİ router.js çalışmaya devam ediyordu; tek çözüm elle hard-reset
+// (önbelleği temizleme) idi. router.js artık index.html/manifest.json
+// ile AYNI network-first davranışını alıyor (bkz. isShellRequest).
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./manifest.json"
+  "./manifest.json",
+  "./router.js"
 ];
 
 // ---- INSTALL: app shell'i önbelleğe al ----
@@ -52,7 +65,18 @@ self.addEventListener("activate", (event) => {
           .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
-    ).then(() => self.clients.claim())
+    )
+      // 🛡️ EK GÜVENCE: CACHE_NAME her deploy'da elle artırılmayı
+      // unutulursa bile (aynı isimde cache kalırsa), en azından APP_SHELL
+      // dosyalarının (index.html, router.js, manifest.json) eski önbellek
+      // kopyalarını burada açıkça siliyoruz. fetch handler'ı zaten bunları
+      // network-first çektiği için normalde bu adım gerekmez, ama servis
+      // worker'ın "activate" anında elinde duran eski shell kopyalarını
+      // temizlemek, olası edge-case'lerde (ör. çevrimdışı geçiş anı) hâlâ
+      // en güncel sürüme öncelik verilmesini garanti eder.
+      .then(() => caches.open(CACHE_NAME))
+      .then((cache) => Promise.all(APP_SHELL.map((url) => cache.delete(url))))
+      .then(() => self.clients.claim())
       .then(() => {
         // 🔄 OTOMATİK GÜNCELLEME: yeni service worker devreye girdiğinde
         // (eski cache'ler temizlenip self.clients.claim() ile tüm açık
@@ -93,11 +117,15 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   // "Kabuk" dosyaları: sayfa navigasyonu (adres çubuğuna yazma, sayfa
-  // yenileme) İLE index.html/manifest.json isteği her zaman bu dala girer.
+  // yenileme) İLE index.html/manifest.json/router.js isteği her zaman bu
+  // dala girer. router.js de dahil edildi (bkz. yukarıdaki BUGFIX notu) --
+  // aksi halde en güncel index.html gelse bile eski/cache'teki router.js
+  // ile birlikte çalışıp tutarsız davranışlara yol açabiliyordu.
   const isShellRequest = req.mode === "navigate"
     || url.pathname.endsWith("/index.html")
     || url.pathname === "/" || url.pathname.endsWith("/")
-    || url.pathname.endsWith("/manifest.json");
+    || url.pathname.endsWith("/manifest.json")
+    || url.pathname.endsWith("/router.js");
 
   if (isShellRequest) {
     event.respondWith(

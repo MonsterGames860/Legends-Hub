@@ -220,9 +220,23 @@
     function navigateTo(path, opts) {
         opts = opts || {};
         const current = window.location.pathname;
-        if (!opts.replace && current !== path) {
+
+        // 🐛 KALICI DÖNGÜ KORUMASI: path zaten mevcut URL ile AYNIYSA,
+        // applyRoute'u tekrar çağırmıyoruz. Aksi halde "normalize edip
+        // kendi path'ine geri navigateTo çağıran" herhangi bir route
+        // handler'ı (ör. /profile/KendiKullaniciAdım -> /profile/Me,
+        // ya da forum kategori senkronu gibi) SONSUZ SENKRON DÖNGÜYE
+        // (navigateTo -> applyRoute -> handler -> navigateTo -> ...)
+        // girip sekmeyi tamamen kilitleyebiliyordu (stack overflow /
+        // tarayıcı donması). Bu koruma, "zaten oradaysak tekrar işleme"
+        // kuralını TEK bir merkezi yerden garanti eder.
+        if (current === path && !opts.force) {
+            return;
+        }
+
+        if (!opts.replace) {
             window.history.pushState({ hubPath: path }, "", path);
-        } else if (opts.replace) {
+        } else {
             window.history.replaceState({ hubPath: path }, "", path);
         }
         applyRoute(path, { fromNavigate: true });
