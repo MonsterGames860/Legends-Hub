@@ -300,6 +300,9 @@
             handleProfileRoute(segs);
             return;
         }
+        if (root.startsWith("profile")) {
+            toast("[DEBUG] root='" + root + "' profile ile başlıyor ama eşleşmedi, segs=" + JSON.stringify(segs));
+        }
 
         // ---- 5) Basit sekmeler (chat, messages, marketplace, studio, ...) ----
         if (SIMPLE_VIEW_ROUTES[fullPath]) {
@@ -312,6 +315,7 @@
         }
 
         // ---- 6) Bilinmeyen yol -> Forum'a yönlendir (yumuşak 404) ----
+        toast("[DEBUG] applyRoute forum fallback'e düştü, pathname=" + pathname + " root=" + root);
         b.switchView("forum");
         window.history.replaceState({ hubPath: "/forum" }, "", "/forum");
     }
@@ -373,7 +377,7 @@
     function handleProfileRoute(segs, attempt) {
         attempt = attempt || 0;
         const b = bridge();
-        if (!b) return;
+        if (!b) { toast("[DEBUG] bridge yok"); return; }
 
         b.switchView("profile", { skipDefaultProfileRender: segs.length >= 2 });
 
@@ -381,6 +385,7 @@
 
         // Sadece /profile veya /profile/Me -> kendi profilimiz.
         if (segs.length < 2 || segs[1].toLowerCase() === "me") {
+            toast("[DEBUG] Me dalı, myUid=" + myUid);
             if (!myUid) return; // auth henüz hazır değil, switchView zaten "profile" sekmesini açık bırakır.
             if (typeof b.openUserProfile === "function") b.openUserProfile(myUid, { skipUrlSync: true });
             // URL'i her zaman dostane "Me" biçiminde tut.
@@ -389,10 +394,13 @@
         }
 
         const requestedName = decodeURIComponent(segs[1]);
+        toast("[DEBUG] aranan isim: " + requestedName);
 
         // Kendi kullanıcı adımızı yazdıysa /profile/Me'ye normalize et.
         const myCandidate = (window.CommunityMentions && myUid) ? window.CommunityMentions.getByUid(myUid) : null;
+        toast("[DEBUG] myCandidate.username=" + (myCandidate ? myCandidate.username : "yok"));
         if (myCandidate && myCandidate.username && myCandidate.username.toLowerCase() === requestedName.toLowerCase()) {
+            toast("[DEBUG] kendi adım eşleşti, Me'ye çevriliyor");
             if (typeof b.openUserProfile === "function") b.openUserProfile(myUid, { skipUrlSync: true });
             navigateTo("/profile/Me", { replace: true });
             return;
@@ -404,6 +412,7 @@
             const candidate = window.CommunityMentions && typeof window.CommunityMentions.getByUsername === "function"
                 ? window.CommunityMentions.getByUsername(requestedName)
                 : null;
+            toast("[DEBUG] tryResolve candidate=" + (candidate ? candidate.uid : "bulunamadı"));
             if (candidate && candidate.uid) {
                 if (typeof b.openUserProfile === "function") b.openUserProfile(candidate.uid, { skipUrlSync: true });
                 return true;
@@ -414,7 +423,9 @@
         if (tryResolve()) return;
 
         if (window.CommunityMentions && typeof window.CommunityMentions.onReady === "function") {
+            toast("[DEBUG] onReady bekleniyor...");
             window.CommunityMentions.onReady(() => {
+                toast("[DEBUG] onReady tetiklendi");
                 if (!tryResolve()) {
                     toast("Kullanıcı bulunamadı: @" + requestedName);
                 }
