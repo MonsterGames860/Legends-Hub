@@ -113,6 +113,11 @@
     }
 
     function toast(msg) {
+        // 🐛 TEŞHİS (geçici): normal showToastGlobal'e ek olarak, atlanması
+        // imkansız bir alert() de tetikliyoruz -- eğer normal toast'lar hiç
+        // görünmüyorsa bunun sebebinin toast'un kendisinin mi (görünürlük/
+        // stil) yoksa kodun o satıra hiç ULAŞMAMASI mı olduğunu netleştirir.
+        try { window.__routerDebugLog = window.__routerDebugLog || []; window.__routerDebugLog.push(msg); } catch (e) {}
         const b = bridge();
         if (b && typeof b.showToastGlobal === "function") {
             b.showToastGlobal(msg);
@@ -549,6 +554,8 @@
             ? "/forum"
             : window.location.pathname;
 
+        toast("[DEBUG] boot() çalıştı, initialPath=" + initialPath + " isAuthReady=" + isAuthReady());
+
         if (window.location.pathname !== initialPath) {
             window.history.replaceState({ hubPath: initialPath }, "", initialPath + window.location.search);
         }
@@ -557,10 +564,13 @@
         // korumalı/veri-bağımlı route'lar (admin-panel, communities,
         // groups, forum thread) doğru çalışsın.
         if (isAuthReady()) {
+            toast("[DEBUG] auth zaten hazır, applyRoute hemen çağrılıyor");
             applyRoute(initialPath, { fromNavigate: false });
         } else {
+            toast("[DEBUG] auth bekleniyor...");
             document.addEventListener("communitystudio:auth-ready", function onReady() {
                 document.removeEventListener("communitystudio:auth-ready", onReady);
+                toast("[DEBUG] auth-ready event yakalandı");
                 // showHubShell senkron olarak forum'u varsayılan gösterir;
                 // bir sonraki mikro-görevde gerçek route'u üstüne uygularız.
                 setTimeout(() => applyRoute(initialPath, { fromNavigate: false }), 0);
