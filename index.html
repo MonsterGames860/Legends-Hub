@@ -34139,6 +34139,14 @@
     </script>
 
     <!-- ================================================================
+         🐞 GEÇİCİ DEBUG KONSOLU (Eruda) — sorun teşhis edilince kaldırılacak.
+         Ekranın sağ alt köşesinde küçük bir daire ile açılır; telefonda
+         gerçek JS hatalarını (konsol/network/elements) görmeyi sağlar.
+         ================================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>try { eruda.init(); } catch (e) { console.error("Eruda başlatılamadı:", e); }</script>
+
+    <!-- ================================================================
          🧭 SPA ROUTER (dinamik URL yönlendirme)
          window.HubRouterBridge (yukarıdaki ana IIFE içinde tanımlı) ve
          window.CommunityAuth / window.CommunityRBAC / window.MessagingSystem
