@@ -28158,11 +28158,31 @@
                 const iAmAdmin = groupIsAdmin(meta, _myUid);
                 const RBAC = window.CommunityRBAC;
 
-                // Kurucu en üstte, sonra yöneticiler, sonra diğerleri (isme göre).
+                // Sıralama: 1) Kurucu en üstte, 2) grup yöneticileri,
+                // 3) topluluk rütbe sistemi varsa üyenin EN ÜST rütbesinin
+                // position değerine göre (küçük = üstte -- rol yönetim
+                // paneliyle aynı kural, bkz. getHighestRoleForMember), 4)
+                // rütbesi olmayanlar en altta, 5) eşitlikte isme göre A-Z.
+                //
+                // 🐛 BUGFIX: eskiden sadece kurucu/yönetici ayrımı yapılıp
+                // geri kalan TÜM üyeler (Veteran, VIP, Member, İçerik-
+                // Üreticisi fark etmeksizin) rastgele/isme göre karışık
+                // sıralanıyordu -- topluluğun kendi rütbe hiyerarşisi hiç
+                // dikkate alınmıyordu.
+                const isCommunityForSort = window.CommunityChannels && window.CommunityChannels.isCommunityMeta(meta);
                 const sorted = memberUids.slice().sort((a, b) => {
                     const rank = (uid) => (meta.ownerUid === uid ? 0 : (meta.admins && meta.admins[uid]) ? 1 : 2);
                     const ra = rank(a), rb = rank(b);
                     if (ra !== rb) return ra - rb;
+
+                    if (isCommunityForSort) {
+                        const roleA = window.CommunityChannels.getHighestRoleForMember(groupId, a);
+                        const roleB = window.CommunityChannels.getHighestRoleForMember(groupId, b);
+                        const posA = roleA ? (roleA.position || 0) : Infinity;
+                        const posB = roleB ? (roleB.position || 0) : Infinity;
+                        if (posA !== posB) return posA - posB;
+                    }
+
                     const ca = window.CommunityMentions.getByUid(a);
                     const cb = window.CommunityMentions.getByUid(b);
                     return (ca ? ca.username : "").localeCompare(cb ? cb.username : "");
