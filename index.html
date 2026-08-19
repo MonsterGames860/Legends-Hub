@@ -1,9 +1,326 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Community Hub — Play Legends</title>
+
+<!-- ============================================================
+     🌐 I18N ÇEKİRDEĞİ (İngilizce/Türkçe Dil Desteği) — MODÜL 0
+     ============================================================
+     Bu blok, dosyadaki HER ŞEYDEN ÖNCE tanımlı olmalı (diğer inline
+     <script> blokları ve HTML içeriği window.I18N_STRINGS / t() /
+     applyTranslations() fonksiyonlarına güvenip kullanacak).
+
+     Genel yaklaşım:
+       - window.I18N_STRINGS = { en: {...}, tr: {...} } merkezi sözlük.
+         Anahtarlar gruplu ve anlamlı (ör. "forum.newThreadBtn"),
+         ham İngilizce/Türkçe metin ASLA anahtar olarak kullanılmaz.
+       - t(key, vars) -- aktif dile göre sözlükten okur, {degisken}
+         interpolasyonu destekler. Anahtar bulunamazsa konsola uyarı
+         basar ve anahtarın kendisini döndürür (sessiz sessiz
+         kaybolmasın, prod'da fark edilsin diye).
+       - applyTranslations(root) -- data-i18n / data-i18n-placeholder /
+         data-i18n-title / data-i18n-aria-label attribute'larına sahip
+         her elemanı tarar ve günceller. root verilmezse tüm document
+         taranır (dil değişince tüm arayüz anında güncellenir); modal
+         gibi yeni DOM eklenen yerlerde sadece o alt ağacı taramak için
+         root parametresi verilebilir.
+       - Aktif dil önce window.CommunityAuth.profile.language alanından
+         okunur (giriş yapmış kullanıcı, Firebase'de kalıcı). Profil
+         henüz yüklenmemişse veya misafirse localStorage fallback
+         kullanılır ("legendsHubLang" anahtarı). İkisi de yoksa
+         varsayılan "en" (İngilizce -- yeni/bilinmeyen kullanıcılar
+         için varsayılan budur).
+       - setLanguage(lang, { persist }) -- dili değiştirir, locale
+         state'i günceller, applyTranslations() çağırır, giriş yapmış
+         kullanıcı için Firebase'e (users/{uid}/language) yazar,
+         misafir için localStorage'a yazar. Sayfa YENİDEN YÜKLENMEZ.
+       - window.CommunityAuth.profile her zaman hazır olmayabileceği
+         için (auth henüz tamamlanmamış olabilir), auth-ready event'i
+         dinlenip profil geldiğinde dil tekrar senkronize edilir (bkz.
+         syncLanguageFromProfile). Bu, misafir/localStorage diliyle
+         açılıp sonra kullanıcının kayıtlı Firebase dili ile
+         "üzerine yazılması" gereken senaryoyu kapsar.
+
+     ÖNEMLİ: Bu fazda (Faz 0) window.I18N_STRINGS içindeki en/tr
+     objeleri BİLEREK BOŞ/İSKELET bırakıldı. Mevcut sayfa metinleri
+     HENÜZ data-i18n'e taşınmadı -- bu sonraki fazların (Faz 1-5) işi.
+     Şu an sayfa görsel olarak eskisiyle birebir aynı davranır.
+     ============================================================ -->
+<script>
+(function () {
+    "use strict";
+
+    var STORAGE_KEY = "legendsHubLang";
+    var SUPPORTED_LANGS = ["en", "tr"];
+    var DEFAULT_LANG = "en"; // yeni/bilinmeyen kullanıcılar için varsayılan
+
+    // ------------------------------------------------------------
+    // Merkezi çeviri sözlüğü. Faz 1-5'te doldurulacak.
+    // Şekil: I18N_STRINGS[lang][namespace][key] = "metin"
+    // Örn:   I18N_STRINGS.en.forum.newThreadBtn = "New Thread"
+    //        I18N_STRINGS.tr.forum.newThreadBtn = "Yeni Konu Aç"
+    // ------------------------------------------------------------
+    window.I18N_STRINGS = window.I18N_STRINGS || {
+        en: {
+            common: {},
+            forum: {},
+            messages: {},
+            market: {},
+            profile: {},
+            admin: {}
+        },
+        tr: {
+            common: {},
+            forum: {},
+            messages: {},
+            market: {},
+            profile: {},
+            admin: {}
+        }
+    };
+
+    // ------------------------------------------------------------
+    // Aktif dil state'i (modül-içi kapalı değişken + window üzerinden
+    // salt-okunur erişim). Diğer kod bloklarının doğrudan bu
+    // değişkeni mutate etmesi beklenmez -- setLanguage() kullanılmalı.
+    // ------------------------------------------------------------
+    var _activeLang = DEFAULT_LANG;
+
+    function isSupported(lang) {
+        return SUPPORTED_LANGS.indexOf(lang) !== -1;
+    }
+
+    function readInitialLang() {
+        try {
+            var profile = window.CommunityAuth && window.CommunityAuth.profile;
+            if (profile && isSupported(profile.language)) {
+                return profile.language;
+            }
+        } catch (e) { /* CommunityAuth henüz tanımlı değil, sorun değil */ }
+
+        try {
+            var stored = window.localStorage && window.localStorage.getItem(STORAGE_KEY);
+            if (isSupported(stored)) {
+                return stored;
+            }
+        } catch (e) { /* localStorage kapalı/erişilemez olabilir (gizli mod vb.) */ }
+
+        return DEFAULT_LANG;
+    }
+
+    // ------------------------------------------------------------
+    // t(key, vars) -- çeviri okuma fonksiyonu.
+    // key formatı: "namespace.altAnahtar" (ör. "forum.newThreadBtn")
+    // vars: { count: 3 } gibi bir obje verilirse metindeki {count}
+    //       kalıpları değerle değiştirilir.
+    // Anahtar bulunamazsa (henüz sözlüğe eklenmemiş / yazım hatası)
+    // konsola uyarı basılır ve anahtarın kendisi döndürülür -- bu
+    // sayede eksik çeviri sessizce kaybolmaz, ekranda "forum.xyz"
+    // gibi görünüp fark edilir.
+    // ------------------------------------------------------------
+    function t(key, vars) {
+        if (!key || typeof key !== "string") return "";
+
+        var dict = window.I18N_STRINGS[_activeLang] || window.I18N_STRINGS[DEFAULT_LANG];
+        var parts = key.split(".");
+        var node = dict;
+        for (var i = 0; i < parts.length; i++) {
+            if (node && typeof node === "object" && parts[i] in node) {
+                node = node[parts[i]];
+            } else {
+                node = undefined;
+                break;
+            }
+        }
+
+        if (typeof node !== "string") {
+            // Fallback: aktif dilde yoksa DEFAULT_LANG'de dene (örn. tr
+            // sözlüğüne henüz eklenmemiş yeni bir anahtar varsa en'e düş).
+            if (_activeLang !== DEFAULT_LANG) {
+                var fallbackDict = window.I18N_STRINGS[DEFAULT_LANG];
+                var fnode = fallbackDict;
+                for (var j = 0; j < parts.length; j++) {
+                    if (fnode && typeof fnode === "object" && parts[j] in fnode) {
+                        fnode = fnode[parts[j]];
+                    } else {
+                        fnode = undefined;
+                        break;
+                    }
+                }
+                if (typeof fnode === "string") {
+                    node = fnode;
+                }
+            }
+        }
+
+        if (typeof node !== "string") {
+            console.warn("[i18n] Eksik çeviri anahtarı:", key, "(dil:", _activeLang + ")");
+            return key;
+        }
+
+        var text = node;
+        if (vars && typeof vars === "object") {
+            for (var k in vars) {
+                if (Object.prototype.hasOwnProperty.call(vars, k)) {
+                    text = text.split("{" + k + "}").join(String(vars[k]));
+                }
+            }
+        }
+        return text;
+    }
+
+    // ------------------------------------------------------------
+    // applyTranslations(root) -- data-i18n* attribute'larına sahip
+    // elemanları tarar ve günceller.
+    //   data-i18n="key"             -> elemanın textContent'i
+    //   data-i18n-html="key"        -> elemanın innerHTML'i (dikkatli
+    //                                   kullanılmalı, sadece güvenli/
+    //                                   sabit HTML içeren metinler için)
+    //   data-i18n-placeholder="key" -> input/textarea placeholder
+    //   data-i18n-title="key"       -> title attribute (tooltip)
+    //   data-i18n-aria-label="key"  -> aria-label attribute
+    //   data-i18n-value="key"       -> value attribute (ör. <option>)
+    // Birden fazlası aynı elemanda birlikte kullanılabilir (ör. bir
+    // buton hem data-i18n hem data-i18n-title taşıyabilir).
+    // ------------------------------------------------------------
+    function applyTranslations(root) {
+        var scope = root || document;
+        if (!scope || typeof scope.querySelectorAll !== "function") return;
+
+        var textEls = scope.querySelectorAll("[data-i18n]");
+        for (var i = 0; i < textEls.length; i++) {
+            var el = textEls[i];
+            el.textContent = t(el.getAttribute("data-i18n"));
+        }
+
+        var htmlEls = scope.querySelectorAll("[data-i18n-html]");
+        for (var i2 = 0; i2 < htmlEls.length; i2++) {
+            var elH = htmlEls[i2];
+            elH.innerHTML = t(elH.getAttribute("data-i18n-html"));
+        }
+
+        var placeholderEls = scope.querySelectorAll("[data-i18n-placeholder]");
+        for (var i3 = 0; i3 < placeholderEls.length; i3++) {
+            var elP = placeholderEls[i3];
+            elP.setAttribute("placeholder", t(elP.getAttribute("data-i18n-placeholder")));
+        }
+
+        var titleEls = scope.querySelectorAll("[data-i18n-title]");
+        for (var i4 = 0; i4 < titleEls.length; i4++) {
+            var elT = titleEls[i4];
+            elT.setAttribute("title", t(elT.getAttribute("data-i18n-title")));
+        }
+
+        var ariaEls = scope.querySelectorAll("[data-i18n-aria-label]");
+        for (var i5 = 0; i5 < ariaEls.length; i5++) {
+            var elA = ariaEls[i5];
+            elA.setAttribute("aria-label", t(elA.getAttribute("data-i18n-aria-label")));
+        }
+
+        var valueEls = scope.querySelectorAll("[data-i18n-value]");
+        for (var i6 = 0; i6 < valueEls.length; i6++) {
+            var elV = valueEls[i6];
+            elV.setAttribute("value", t(elV.getAttribute("data-i18n-value")));
+        }
+    }
+
+    // ------------------------------------------------------------
+    // setLanguage(lang, opts) -- dili değiştirir ve tüm arayüzü
+    // sayfa yenilenmeden günceller.
+    //   opts.persist === false verilirse kalıcı kaydetme atlanır
+    //   (ör. sadece geçici önizleme için -- şu an kullanılmıyor ama
+    //   ileride gerekebilir diye destekleniyor).
+    // ------------------------------------------------------------
+    function setLanguage(lang, opts) {
+        if (!isSupported(lang)) {
+            console.warn("[i18n] Desteklenmeyen dil:", lang);
+            return false;
+        }
+        var persist = !opts || opts.persist !== false;
+        _activeLang = lang;
+
+        try {
+            document.documentElement.setAttribute("lang", lang);
+        } catch (e) { /* no-op */ }
+
+        applyTranslations();
+
+        if (persist) {
+            try {
+                var uid = window.CommunityAuth && window.CommunityAuth.user && window.CommunityAuth.user.uid;
+                if (uid && typeof database !== "undefined") {
+                    // Firebase RTDB: users/{uid}/language
+                    database.ref("users/" + uid + "/language").set(lang);
+                }
+            } catch (e) { /* Firebase henüz hazır değilse localStorage zaten fallback */ }
+
+            try {
+                if (window.CommunityAuth && window.CommunityAuth.profile) {
+                    window.CommunityAuth.profile.language = lang;
+                }
+            } catch (e) { /* no-op */ }
+
+            try {
+                window.localStorage && window.localStorage.setItem(STORAGE_KEY, lang);
+            } catch (e) { /* no-op */ }
+        }
+
+        try {
+            document.dispatchEvent(new CustomEvent("i18n:languageChanged", { detail: { lang: lang } }));
+        } catch (e) { /* eski tarayıcılarda CustomEvent constructor sorunlu olabilir, sessiz geç */ }
+
+        return true;
+    }
+
+    // ------------------------------------------------------------
+    // syncLanguageFromProfile() -- kullanıcının Firebase profili
+    // yüklendiğinde (auth-ready sonrası) çağrılmalı. Profildeki
+    // language alanı, o ana kadar kullanılan localStorage/varsayılan
+    // dilden FARKLIYSA, Firebase'deki kayıtlı tercih öncelikli sayılır
+    // ve arayüz ona göre günceller (persist=false: zaten Firebase'den
+    // geldi, tekrar Firebase'e yazmaya gerek yok).
+    // ------------------------------------------------------------
+    function syncLanguageFromProfile() {
+        try {
+            var profile = window.CommunityAuth && window.CommunityAuth.profile;
+            if (profile && isSupported(profile.language) && profile.language !== _activeLang) {
+                setLanguage(profile.language, { persist: false });
+            }
+        } catch (e) { /* no-op */ }
+    }
+
+    _activeLang = readInitialLang();
+    try {
+        document.documentElement.setAttribute("lang", _activeLang);
+    } catch (e) { /* no-op */ }
+
+    // auth-core.js kullanıcıyı doğruladığında bu event'i fırlatıyor
+    // (bkz. aşağıdaki modüllerdeki "auth-ready" dinleyicileri) --
+    // aynı event'e burada da takılıp profil gelince dili senkronize
+    // ediyoruz.
+    document.addEventListener("auth-ready", syncLanguageFromProfile);
+
+    // İlk yüklemede DOM hazır olur olmaz mevcut data-i18n* etiketli
+    // elemanları uygula (Faz 1-5'te bu attribute'lar HTML'e eklendikçe
+    // devreye girecek; şu an eleman yoksa no-op).
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function () { applyTranslations(); });
+    } else {
+        applyTranslations();
+    }
+
+    // ------------------------------------------------------------
+    // Dışa açılan API
+    // ------------------------------------------------------------
+    window.t = t;
+    window.applyTranslations = applyTranslations;
+    window.setLanguage = setLanguage;
+    window.getActiveLanguage = function () { return _activeLang; };
+    window.I18N_SUPPORTED_LANGS = SUPPORTED_LANGS;
+})();
+</script>
 
 <!-- ============================================================
      COMMUNITY STUDIO / HUB — ANA İSKELET (index.html karşılığı)
