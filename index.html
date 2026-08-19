@@ -24511,8 +24511,26 @@
                     // Aktif kanal silindiyse ya da hiç seçim yoksa ilk kanala geç.
                     const ids = Object.keys(_cache[groupId].channels).sort(byPosition(_cache[groupId].channels));
                     const active = getActiveChannelId(groupId);
-                    if (!active || !_cache[groupId].channels[active]) {
-                        if (ids.length) selectChannel(groupId, ids[0]);
+                    // 🐛 BUGFIX (kalıcı "Yükleniyor…" takılması): _activeChannelByGroup
+                    // bir önceki ziyaretten kalma kanal ID'sini modül ömrü boyunca
+                    // saklıyor. Kullanıcı bu topluluktan çıkıp (onCloseCommunity ->
+                    // _activeMessagesRef.off()) başka bir topluluğa girip GERİ
+                    // döndüğünde, "active" hâlâ eski (geçerli) kanalı gösteriyordu,
+                    // bu yüzden aşağıdaki "yeni kanal seç" dalı hiç tetiklenmiyor
+                    // ve mesaj dinleyicisi (_activeMessagesRef) BİR DAHA hiç
+                    // kurulmuyordu -- ekran sonsuza dek "Yükleniyor…" da kalıyordu.
+                    // Çözüm: sadece kanal ID'sinin geçerli olup olmadığına değil,
+                    // mesaj dinleyicisinin GERÇEKTEN aktif olup olmadığına (bu
+                    // topluluk için mi kurulu) da bakıyoruz.
+                    const listenerIsLive = _activeMessagesRef && _openGroupId === groupId && active;
+                    if (!active || !_cache[groupId].channels[active] || !listenerIsLive) {
+                        if (active && _cache[groupId].channels[active]) {
+                            // Kanal hâlâ geçerli, sadece dinleyici düşmüş --
+                            // aynı kanalı yeniden seçerek dinleyiciyi tazele.
+                            selectChannel(groupId, active);
+                        } else if (ids.length) {
+                            selectChannel(groupId, ids[0]);
+                        }
                     }
                 });
 
@@ -30369,7 +30387,20 @@
                         reactionMsgPath = isGroup
                             ? (_activeMessagesBasePath(_activeGroupId) ? _activeMessagesBasePath(_activeGroupId) + "/" + m.id : "")
                             : (_activeDmId ? "dms/" + _activeDmId + "/messages/" + m.id : "");
-                        ctxDataAttrs = ` data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}" data-can-delete="${canDeleteThis}" data-can-pin="${canPinThis}" data-is-pinned="${!!isPinned}" data-can-manage-reactions="${canManageReactionsThis}" data-reaction-path="${escapeAttr(reactionMsgPath)}"`;
+                        // 🐛 BUGFIX (mesaj silme çalışmıyordu): "Sil" butonu
+                        // global bir tekil değişkene (__ctxPanelDeleteHandler)
+                        // güveniyordu -- bu değişken en son hangi liste
+                        // (DM ya da grup) bindBubbleActions çağırdıysa ona göre
+                        // set ediliyordu, ve bindBubbleActions her listEl için
+                        // SADECE İLK SEFERİNDE çalıştığı için (actionsBound
+                        // koruması), grup ve DM'ler arasında gidip gelince
+                        // "Sil" yanlış/eski handler'a düşüp sessizce hiçbir
+                        // şey yapmıyordu. Artık her satır kendi türünü
+                        // (data-ctx-kind="dm-message" / "group-message")
+                        // taşıyor; "Sil" butonu bu değere bakıp DOĞRUDAN
+                        // doğru silme fonksiyonunu çağırıyor.
+                        const bubbleCtxKind = isGroup ? "group-message" : "dm-message";
+                        ctxDataAttrs = ` data-msg-author-uid="${escapeAttr(m.authorUid)}" data-msg-snippet="${escapeAttr(bubbleQuoteText(m))}" data-can-delete="${canDeleteThis}" data-can-pin="${canPinThis}" data-is-pinned="${!!isPinned}" data-can-manage-reactions="${canManageReactionsThis}" data-reaction-path="${escapeAttr(reactionMsgPath)}" data-ctx-kind="${bubbleCtxKind}"`;
                     }
                     const reactionBarHtml = (!isDeleted && reactionMsgPath) ? renderReactionBar(m.reactions, reactionMsgPath, _myUid) : "";
 
@@ -30690,7 +30721,17 @@
                             } else if (kind === "forum-reply") {
                                 const threadId = panelEl.getAttribute("data-thread-id");
                                 await deleteReply(threadId, msgId);
+                            } else if (kind === "group-message") {
+                                // 🐛 BUGFIX: eskiden global __ctxPanelDeleteHandler'a
+                                // güveniyordu (bkz. yukarıdaki not) -- artık kind'a
+                                // göre DOĞRUDAN doğru fonksiyon çağrılıyor.
+                                await deleteGroupMessage(msgId);
+                            } else if (kind === "dm-message") {
+                                await deleteDmMessage(msgId);
                             } else if (typeof window.__ctxPanelDeleteHandler === "function") {
+                                // Geriye dönük uyumluluk: kind bilinmiyorsa
+                                // (ör. ileride eklenecek yeni bir mesaj türü)
+                                // eski mekanizmaya düş.
                                 await window.__ctxPanelDeleteHandler(msgId);
                             }
                         } catch (err) {
