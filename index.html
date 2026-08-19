@@ -26514,7 +26514,13 @@
                     return { ok: true, code };
                 } catch (err) {
                     console.error("[Topluluk Bağlantı Kodu] Ayarlanamadı:", err);
-                    return { ok: false, reason: "Bir hata oluştu, tekrar dener misin?" };
+                    // 🐛 TEŞHİS: Firebase Rules eksik/yanlışsa genelde
+                    // "permission_denied" koduyla gelir -- bunu ayırt edip
+                    // kullanıcıya (ve konsola) daha net bir ipucu verelim.
+                    if (err && err.code === "PERMISSION_DENIED") {
+                        return { ok: false, reason: "Yetki hatası (Firebase Rules): " + (err.message || "permission_denied") };
+                    }
+                    return { ok: false, reason: "Bir hata oluştu (" + (err && err.code ? err.code : "bilinmeyen") + "), tekrar dener misin?" };
                 }
             }
 
