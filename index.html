@@ -64,16 +64,346 @@
     // ------------------------------------------------------------
     window.I18N_STRINGS = window.I18N_STRINGS || {
         en: {
-            common: {},
-            forum: {},
+            common: {
+                brandCommunity: "Community",
+                brandPlayLegendsHub: "Play Legends Hub",
+                eyebrowCommunity: "Community",
+                eyebrowManagement: "Management",
+                navForum: "Forum",
+                navForumMuteBtn: "Forum notification settings",
+                navMarketplace: "3D Model Market",
+                navStudio: "3D Studio Editor",
+                navMessages: "Messages",
+                navGroups: "Group Chats",
+                navCommunities: "Communities",
+                navInbox: "Notifications",
+                navPlayers: "Players",
+                navAdmin: "Admin Panel",
+                navConsole: "Console",
+                navMiniProfileTitle: "My Profile",
+                pageTitleInbox: "Mentions & Replies",
+                pageTitleProfile: "My Profile",
+                pageTitleAdminPanel: "Panel",
+                sidebarToggleAriaLabel: "Open/close menu",
+                logoutBtn: "Log Out",
+                gateVerifyingAriaLabel: "Verifying session",
+                gateVerifyingStatus: "Verifying session…",
+                gateDeniedTitle: "Login required",
+                gateDeniedText: "You must be logged in with your Play Legends account to access Community Hub. Guest accounts cannot access this page.",
+                gateDeniedBtn: "Go to Play Legends and log in",
+                gateLoginTitle: "Log in to your account",
+                gateLoginSub: "Community Hub uses the same login as your Play Legends account.",
+                gateEmailPlaceholder: "Email address",
+                gatePasswordPlaceholder: "Password",
+                gateLoginSubmitBtn: "Log In",
+                gateOrDivider: "or",
+                gateGoogleLoginBtn: "Sign in with Google",
+                gateNoAccountText: "Don't have an account?",
+                gateRegisterLink: "Sign up on Play Legends",
+                cancelBtn: "Cancel",
+                saveBtn: "Save",
+                imgPosModalTitle: "Position Image",
+                imgPosHint: "Drag the image, pinch or use the mouse wheel to zoom.",
+                noPermissionAlert: "You don't have permission to do this.",
+                actionFailedAlert: "The action failed. Please try again.",
+                reportModalTitle: "Report: {target}",
+                reportSubmitErrorPrefix: "An error occurred while submitting the report: ",
+                reportSubmittedAlert: "Your report has been received. Our team will review it shortly.",
+                fallbackUsername: "User",
+                fallbackMentionUser: "user",
+                fallbackCommunityName: "Community",
+                tagImage: "[Image]",
+                tagGif: "[GIF]",
+                tagGifPlain: "GIF",
+                tagVideo: "[Video]",
+                today: "Today",
+                yesterday: "Yesterday",
+                unitSeconds: "s",
+                unitMinutes: "m",
+                unitHours: "h",
+                unknownError: "unknown error",
+                hangeredCustomEmojiToast: "Your account is suspended, so you can't use custom emojis.",
+                emojiTouchHint: "Tap an emoji",
+                emojiPlainLabel: "Emoji",
+                emojiCatFaces: "Smileys & Emotion",
+                emojiCatHands: "Hands & Gestures",
+                emojiCatHearts: "Hearts",
+                emojiCatAnimals: "Animals",
+                emojiCatFood: "Food",
+                emojiCatActivities: "Activities & Objects",
+                altSharedImage: "Shared image",
+                altSharedGif: "Shared GIF",
+                openVideoBtn: "Open Video",
+                viewGifBtn: "View GIF",
+                loadingEllipsis: "Loading…",
+                userNotFoundText: "User not found.",
+                profileLoadPermissionError: "The profile could not be loaded (permission error).",
+                playerCountLabel: "{count} players",
+                playersListLoadFailed: "The list could not be loaded. Please try again.",
+                noMatchingPlayers: "No matching players found.",
+                defaultRolePlayer: "Player",
+                showMoreRemaining: "Show more ({count} remaining)"
+            },
+            forum: {
+                newThreadBtn: "+ New Thread",
+                threadEmptyState: "No threads in this category yet. Be the first to start one!",
+                backToListBtn: "← Back to Thread List",
+                cancelReplyTitle: "Cancel reply",
+                attachImageTitle: "Attach image (ImgBB)",
+                attachGifTitle: "Attach GIF (Giphy)",
+                plusBtnTitle: "Attach a photo or GIF",
+                uploadPhoto: "Upload Photo",
+                addGif: "Add GIF",
+                addEmoji: "Add Emoji",
+                replyInputPlaceholder: "Write a comment... (tag with @name, or paste a GIF/image link)",
+                sendBtn: "Send",
+                replyComposerHint: "Rich content: paste a link for an automatic preview · <code>[img]URL[/img]</code> image · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video link · use + to upload a photo or add a GIF · emoji can be pasted directly",
+                pinnedMessages: "Pinned Messages",
+                messagesEmptyState: "No messages yet. Be the first to write one!",
+                composerInputPlaceholder: "Write a message... (@name, /w Name message, or paste a GIF/image link)",
+                composerHint: "Press Send · Enter moves to a new line · <code>/w Username message</code> for a private message · paste a Giphy/image/video link for an automatic preview · use + to upload a photo or add a GIF",
+                gifSearchPlaceholder: "Search Giphy for GIFs...",
+                gifLoadingTrending: "Loading trending GIFs...",
+                categoryLabel: "Category",
+                titleLabel: "Title",
+                threadTitlePlaceholder: "Thread title...",
+                contentLabel: "Content",
+                threadBodyPlaceholder: "Thread content... you can tag with @name, add an image with [img]URL[/img], a GIF with [gif]URL[/gif], or a video link with [video]URL[/video].",
+                publishThreadBtn: "Publish Thread",
+                newThreadModalTitle: "Start a New Thread",
+                confirmDeleteMessage: "Are you sure you want to delete this message?",
+                deleteMessageFailedAlert: "The message could not be deleted.",
+                confirmDeleteThread: "Are you sure you want to delete this thread and all its replies?",
+                confirmDeleteReply: "Are you sure you want to delete this reply?",
+                threadLockedAlert: "This thread is locked, no new replies can be added.",
+                replySubmitFailedAlert: "The reply could not be sent. Please try again.",
+                replyDeleteFailedAlert: "The reply could not be deleted.",
+                threadDeleteFailedAlert: "The thread could not be deleted.",
+                threadNotFound: "This thread could not be found or has been deleted.",
+                pinBtn: "Pin",
+                unpinBtn: "Unpin",
+                lockBtn: "Lock",
+                unlockBtn: "Unlock",
+                deleteThreadBtn: "Delete Thread",
+                untitledThread: "Untitled Thread",
+                pinnedTag: "Pinned",
+                lockedTag: "Locked",
+                threadLockedStatusLine: "This thread was locked by staff. New replies are disabled.",
+                replyStatsLabel: "Replies",
+                noPinnedMessages: "There are no pinned messages right now.",
+                noRepliesEmptyState: "No replies yet. Be the first to write one!",
+                errTitleRequired: "Please enter a title.",
+                errBodyRequired: "Please enter thread content.",
+                errNoCategoryPermission: "You don't have permission to start a thread in this category.",
+                errThreadCreateFailed: "The thread could not be created. Please try again.",
+                muteStatusLine: "You've been muted for sending messages too quickly. Time remaining: {duration}.",
+                whisperUserNotFound: "No user named \"{username}\" was found.",
+                whisperSelfError: "You can't send a private message to yourself.",
+                whisperBlockedError: "You can't send a private message to this user.",
+                sendPermissionDeniedError: "The message could not be sent because you don't have permission (blocked by database rules).",
+                sendGenericError: "The message could not be sent ({code}). Please try again.",
+                replyingToMessageHtml: "<strong>{username}</strong> replying to \u201c{snippet}\u201d",
+                replyingToReplyHtml: "<strong>{username}</strong> replying to comment \u201c{snippet}\u201d",
+                catAnnouncementsName: "Announcements & Updates",
+                catAnnouncementsDesc: "Official announcements, changelog notes, and important information. Only staff can start new threads.",
+                catGeneralChatName: "General Chat (Live)",
+                catGeneralChatDesc: "Instant, flowing chat. No need to start a thread — just write your message and send.",
+                catGeneralDiscussionName: "General Discussion",
+                catGeneralDiscussionDesc: "A general forum area where you can start a thread and discuss anything.",
+                catSupportName: "Support & Help",
+                catSupportDesc: "Having an issue? Start a thread here and let the community and staff help you out.",
+                catSuggestionsName: "Suggestions",
+                catSuggestionsDesc: "Share your ideas and suggestions for Play Legends.",
+                uploadingStatus: "Uploading {filename}...",
+                uploadingProgressStatus: "Uploading {filename}... {percent}%",
+                uploadDoneStatus: "{filename} uploaded.",
+                uploadFailedStatus: "Upload failed: {message}",
+                errImgbbKeyMissing: "The ImgBB API key is not configured. Please set the IMGBB_API_KEY value.",
+                errImgbbOnlyImages: "ImgBB only supports image files (jpg, png, gif, webp, etc.).",
+                errImgbbUploadError: "ImgBB upload error: {message}",
+                errImgbbParseError: "Could not parse the ImgBB response.",
+                errImgbbNetworkError: "The ImgBB request failed (network error).",
+                errImgbbNoLinkInResponse: "No image link was found in the ImgBB upload response.",
+                errGiphyKeyMissing: "The Giphy API key is not configured. Please set the GIPHY_API_KEY value.",
+                gifSearchingFor: "Searching for \"{query}\"...",
+                gifLoadingMore: "Loading more GIFs...",
+                gifNoneTrending: "No trending GIFs found.",
+                gifNoResults: "No results found.",
+                gifLoadFailed: "The GIFs could not be loaded. Please try again."
+            },
             messages: {},
             market: {},
             profile: {},
             admin: {}
         },
         tr: {
-            common: {},
-            forum: {},
+            common: {
+                brandCommunity: "Community",
+                brandPlayLegendsHub: "Play Legends Hub",
+                eyebrowCommunity: "Community",
+                eyebrowManagement: "Yönetim",
+                navForum: "Forum",
+                navForumMuteBtn: "Forum bildirim ayarı",
+                navMarketplace: "3D Model Pazarı",
+                navStudio: "3D Studio Editör",
+                navMessages: "Mesajlar",
+                navGroups: "Grup Sohbetleri",
+                navCommunities: "Topluluklar",
+                navInbox: "Sana Gelenler",
+                navPlayers: "Oyuncular",
+                navAdmin: "Yönetim Paneli",
+                navConsole: "Konsol",
+                navMiniProfileTitle: "Profilim",
+                pageTitleInbox: "Mentions & Replies",
+                pageTitleProfile: "Profilim",
+                pageTitleAdminPanel: "Panel",
+                sidebarToggleAriaLabel: "Menüyü aç/kapat",
+                logoutBtn: "Çıkış Yap",
+                gateVerifyingAriaLabel: "Oturum doğrulanıyor",
+                gateVerifyingStatus: "Oturum doğrulanıyor…",
+                gateDeniedTitle: "Giriş gerekli",
+                gateDeniedText: "Community Hub'a erişmek için Play Legends hesabınızla giriş yapmış olmanız gerekir. Misafir hesaplarla erişim mümkün değildir.",
+                gateDeniedBtn: "Play Legends'a git ve giriş yap",
+                gateLoginTitle: "Hesabınla giriş yap",
+                gateLoginSub: "Community Hub, Play Legends hesabınla aynı girişi kullanır.",
+                gateEmailPlaceholder: "E-posta adresi",
+                gatePasswordPlaceholder: "Şifre",
+                gateLoginSubmitBtn: "Giriş Yap",
+                gateOrDivider: "veya",
+                gateGoogleLoginBtn: "Google ile Giriş Yap",
+                gateNoAccountText: "Hesabın yok mu?",
+                gateRegisterLink: "Play Legends'ta kaydol",
+                cancelBtn: "Vazgeç",
+                saveBtn: "Kaydet",
+                imgPosModalTitle: "Görseli Konumlandır",
+                imgPosHint: "Görseli sürükle, parmaklarınla sıkıştırarak veya fare tekerleğiyle yakınlaştır.",
+                noPermissionAlert: "Bu işlem için yetkiniz yok.",
+                actionFailedAlert: "İşlem başarısız oldu.",
+                reportModalTitle: "Şikâyet Et: {target}",
+                reportSubmitErrorPrefix: "Şikâyet gönderilirken bir hata oluştu: ",
+                reportSubmittedAlert: "Şikâyetin alındı. Ekibimiz en kısa sürede inceleyecek.",
+                fallbackUsername: "Kullanıcı",
+                fallbackMentionUser: "kullanıcı",
+                fallbackCommunityName: "Topluluk",
+                tagImage: "[Resim]",
+                tagGif: "[GIF]",
+                tagGifPlain: "GIF",
+                tagVideo: "[Video]",
+                today: "Bugün",
+                yesterday: "Dün",
+                unitSeconds: "sn",
+                unitMinutes: "dk",
+                unitHours: "sa",
+                unknownError: "bilinmeyen hata",
+                hangeredCustomEmojiToast: "Hesabınız askıya alındığı için özel emojileri kullanamazsınız.",
+                emojiTouchHint: "Bir emojiye dokun",
+                emojiPlainLabel: "Emoji",
+                emojiCatFaces: "Yüzler ve Duygular",
+                emojiCatHands: "El ve Vücut",
+                emojiCatHearts: "Kalpler",
+                emojiCatAnimals: "Hayvanlar",
+                emojiCatFood: "Yiyecek",
+                emojiCatActivities: "Etkinlik ve Nesneler",
+                altSharedImage: "Paylaşılan görsel",
+                altSharedGif: "Paylaşılan GIF",
+                openVideoBtn: "Videoyu Aç",
+                viewGifBtn: "GIF’i Görüntüle",
+                loadingEllipsis: "Yükleniyor…",
+                userNotFoundText: "Kullanıcı bulunamadı.",
+                profileLoadPermissionError: "Profil yüklenemedi (izin hatası).",
+                playerCountLabel: "{count} oyuncu",
+                playersListLoadFailed: "Liste yüklenemedi. Lütfen tekrar dene.",
+                noMatchingPlayers: "Eşleşen oyuncu bulunamadı.",
+                defaultRolePlayer: "Oyuncu",
+                showMoreRemaining: "Daha fazla göster ({count} kaldı)"
+            },
+            forum: {
+                newThreadBtn: "+ Yeni Konu",
+                threadEmptyState: "Bu kategoride henüz konu yok. İlk konuyu sen aç!",
+                backToListBtn: "← Konu Listesine Dön",
+                cancelReplyTitle: "Yanıtlamaktan vazgeç",
+                attachImageTitle: "Görsel ekle (ImgBB)",
+                attachGifTitle: "GIF ekle (Giphy)",
+                plusBtnTitle: "Fotoğraf veya GIF ekle",
+                uploadPhoto: "Fotoğraf Yükle",
+                addGif: "GIF Ekle",
+                addEmoji: "Emoji Ekle",
+                replyInputPlaceholder: "Bir yorum yaz... (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)",
+                sendBtn: "Gönder",
+                replyComposerHint: "Zengin içerik: link yapıştır otomatik önizlensin · <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · + ile fotoğraf yükle veya GIF ekle · emoji doğrudan yapıştırılabilir",
+                pinnedMessages: "Sabitlenmiş Mesajlar",
+                messagesEmptyState: "Henüz hiç mesaj yok. İlk mesajı sen yaz!",
+                composerInputPlaceholder: "Bir mesaj yaz... (@isim, /w isim mesaj, veya bir GIF/görsel linki yapıştır)",
+                composerHint: "Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj · Giphy/görsel/video linki yapıştır, otomatik önizlensin · + ile fotoğraf yükle veya GIF ekle",
+                gifSearchPlaceholder: "Giphy'de GIF ara...",
+                gifLoadingTrending: "Trend GIF'ler yükleniyor...",
+                categoryLabel: "Kategori",
+                titleLabel: "Başlık",
+                threadTitlePlaceholder: "Konu başlığı...",
+                contentLabel: "İçerik",
+                threadBodyPlaceholder: "Konu içeriği... @isim ile etiketleyebilir, [img]URL[/img] ile resim, [gif]URL[/gif] ile GIF, [video]URL[/video] ile video linki ekleyebilirsin.",
+                publishThreadBtn: "Konuyu Yayınla",
+                newThreadModalTitle: "Yeni Konu Aç",
+                confirmDeleteMessage: "Bu mesajı silmek istediğinize emin misiniz?",
+                deleteMessageFailedAlert: "Mesaj silinemedi.",
+                confirmDeleteThread: "Bu konuyu ve tüm yorumlarını silmek istediğinize emin misiniz?",
+                confirmDeleteReply: "Bu yorumu silmek istediğinize emin misiniz?",
+                threadLockedAlert: "Bu konu kilitli, yeni yorum yapılamaz.",
+                replySubmitFailedAlert: "Yorum gönderilemedi. Lütfen tekrar deneyin.",
+                replyDeleteFailedAlert: "Yorum silinemedi.",
+                threadDeleteFailedAlert: "Konu silinemedi.",
+                threadNotFound: "Bu konu bulunamadı veya silinmiş.",
+                pinBtn: "Sabitle",
+                unpinBtn: "Sabitlemeyi Kaldır",
+                lockBtn: "Kilitle",
+                unlockBtn: "Kilidi Aç",
+                deleteThreadBtn: "Konuyu Sil",
+                untitledThread: "İsimsiz Konu",
+                pinnedTag: "Sabit",
+                lockedTag: "Kilitli",
+                threadLockedStatusLine: "Bu konu yetkililer tarafından kilitlendi. Yeni yorum yapılamaz.",
+                replyStatsLabel: "Yanıt",
+                noPinnedMessages: "Şu anda sabitlenmiş mesaj yok.",
+                noRepliesEmptyState: "Henüz yorum yok. İlk yorumu sen yaz!",
+                errTitleRequired: "Lütfen bir başlık girin.",
+                errBodyRequired: "Lütfen konu içeriği girin.",
+                errNoCategoryPermission: "Bu kategoride konu açmak için yetkiniz yok.",
+                errThreadCreateFailed: "Konu oluşturulamadı. Lütfen tekrar deneyin.",
+                muteStatusLine: "Çok hızlı mesaj gönderdiğiniz için susturuldunuz. Kalan süre: {duration}.",
+                whisperUserNotFound: "\"{username}\" adında bir kullanıcı bulunamadı.",
+                whisperSelfError: "Kendinize gizli mesaj gönderemezsiniz.",
+                whisperBlockedError: "Bu kullanıcıya gizli mesaj gönderemezsiniz.",
+                sendPermissionDeniedError: "Yetkiniz olmadığı için mesaj gönderilemedi (veritabanı kuralları engelledi).",
+                sendGenericError: "Mesaj gönderilemedi ({code}). Lütfen tekrar deneyin.",
+                replyingToMessageHtml: "<strong>{username}</strong> kişisinin “{snippet}” mesajına yanıt veriyorsunuz",
+                replyingToReplyHtml: "<strong>{username}</strong> kişisinin “{snippet}” yorumuna yanıt veriyorsunuz",
+                catAnnouncementsName: "Duyurular & Güncellemeler",
+                catAnnouncementsDesc: "Resmi duyurular, güncelleme notları ve önemli bilgilendirmeler. Sadece yetkililer yeni konu açabilir.",
+                catGeneralChatName: "Genel Sohbet (Canlı)",
+                catGeneralChatDesc: "Anlık, akan sohbet. Konu açmaya gerek yok — mesajını yaz, gönder.",
+                catGeneralDiscussionName: "Genel Tartışma",
+                catGeneralDiscussionDesc: "Her konuda konu açıp tartışabileceğin genel forum alanı.",
+                catSupportName: "Destek & Yardım",
+                catSupportDesc: "Sorun mu yaşıyorsun? Buradan konu aç, topluluk ve yetkililer yardımcı olsun.",
+                catSuggestionsName: "Öneriler",
+                catSuggestionsDesc: "Play Legends için fikir ve önerilerini paylaş.",
+                uploadingStatus: "{filename} yükleniyor...",
+                uploadingProgressStatus: "{filename} yükleniyor... %{percent}",
+                uploadDoneStatus: "{filename} yüklendi.",
+                uploadFailedStatus: "Yükleme başarısız: {message}",
+                errImgbbKeyMissing: "ImgBB API anahtarı tanımlanmamış. Lütfen IMGBB_API_KEY değerini ayarlayın.",
+                errImgbbOnlyImages: "ImgBB sadece görsel dosyaları destekler (jpg, png, gif, webp vb.).",
+                errImgbbUploadError: "ImgBB yükleme hatası: {message}",
+                errImgbbParseError: "ImgBB yanıtı ayrıştırılamadı.",
+                errImgbbNetworkError: "ImgBB isteği başarısız oldu (ağ hatası).",
+                errImgbbNoLinkInResponse: "ImgBB yükleme yanıtında görsel bağlantısı bulunamadı.",
+                errGiphyKeyMissing: "Giphy API anahtarı tanımlanmamış. Lütfen GIPHY_API_KEY değerini ayarlayın.",
+                gifSearchingFor: "\"{query}\" için aranıyor...",
+                gifLoadingMore: "Daha fazla GIF yükleniyor...",
+                gifNoneTrending: "Trend GIF bulunamadı.",
+                gifNoResults: "Sonuç bulunamadı.",
+                gifLoadFailed: "GIF'ler yüklenemedi. Lütfen tekrar deneyin."
+            },
             messages: {},
             market: {},
             profile: {},
@@ -9443,19 +9773,19 @@
     <div id="authGate">
         <div id="gateLoading">
             <div class="gate-mark">COMMUNITY HUB</div>
-            <div class="gate-ring" role="status" aria-label="Oturum doğrulanıyor"></div>
-            <div class="gate-status">Oturum doğrulanıyor…</div>
+            <div class="gate-ring" role="status" aria-label="Oturum doğrulanıyor" data-i18n-aria-label="common.gateVerifyingAriaLabel"></div>
+            <div class="gate-status" data-i18n="common.gateVerifyingStatus">Oturum doğrulanıyor…</div>
         </div>
 
         <div id="gateDenied" style="display:none;">
             <div class="gate-mark">COMMUNITY HUB</div>
             <div class="gate-denied-icon">🔒</div>
-            <div class="gate-denied-title" id="gateDeniedTitle">Giriş gerekli</div>
-            <div class="gate-denied-text" id="gateDeniedText">
+            <div class="gate-denied-title" id="gateDeniedTitle" data-i18n="common.gateDeniedTitle">Giriş gerekli</div>
+            <div class="gate-denied-text" id="gateDeniedText" data-i18n="common.gateDeniedText">
                 Community Hub'a erişmek için Play Legends hesabınızla giriş yapmış olmanız gerekir.
                 Misafir hesaplarla erişim mümkün değildir.
             </div>
-            <a class="gate-denied-btn" id="gateDeniedBtn" href="https://playlegends.vercel.app/" target="_top">
+            <a class="gate-denied-btn" id="gateDeniedBtn" href="https://playlegends.vercel.app/" target="_top" data-i18n="common.gateDeniedBtn">
                 Play Legends'a git ve giriş yap
             </a>
         </div>
@@ -9469,38 +9799,38 @@
              ============================================================ -->
         <div id="gateLoginForm" style="display:none;">
             <div class="gate-mark">COMMUNITY HUB</div>
-            <div class="gate-login-title">Hesabınla giriş yap</div>
-            <div class="gate-login-sub">
+            <div class="gate-login-title" data-i18n="common.gateLoginTitle">Hesabınla giriş yap</div>
+            <div class="gate-login-sub" data-i18n="common.gateLoginSub">
                 Community Hub, Play Legends hesabınla aynı girişi kullanır.
             </div>
 
             <form id="gateLoginFormEl" class="gate-login-box" autocomplete="on">
                 <input type="email" id="gateLoginEmail" class="gate-login-input"
-                       placeholder="E-posta adresi" autocomplete="username" required>
+                       placeholder="E-posta adresi" autocomplete="username" required data-i18n-placeholder="common.gateEmailPlaceholder">
                 <input type="password" id="gateLoginPass" class="gate-login-input"
-                       placeholder="Şifre" autocomplete="current-password" required>
+                       placeholder="Şifre" autocomplete="current-password" required data-i18n-placeholder="common.gatePasswordPlaceholder">
 
                 <div class="gate-login-error" id="gateLoginError" style="display:none;"></div>
 
-                <button type="submit" class="gate-login-btn" id="gateLoginSubmitBtn">
+                <button type="submit" class="gate-login-btn" id="gateLoginSubmitBtn" data-i18n="common.gateLoginSubmitBtn">
                     Giriş Yap
                 </button>
             </form>
 
             <div style="display:flex; align-items:center; gap:10px; margin: 14px 0;">
                 <div style="flex:1; height:1px; background:rgba(255,255,255,0.12);"></div>
-                <span style="font-size:0.8rem; color:#8b949e;">veya</span>
+                <span style="font-size:0.8rem; color:#8b949e;" data-i18n="common.gateOrDivider">veya</span>
                 <div style="flex:1; height:1px; background:rgba(255,255,255,0.12);"></div>
             </div>
             <button type="button" class="gate-login-btn" id="gateGoogleLoginBtn"
                     style="background:#fff; color:#333; display:flex; align-items:center; justify-content:center; gap:10px;">
                 <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.71c-.18-.54-.28-1.11-.28-1.71s.1-1.17.28-1.71V4.95H.96A8.996 8.996 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
-                Google ile Giriş Yap
+                <span data-i18n="common.gateGoogleLoginBtn">Google ile Giriş Yap</span>
             </button>
 
             <p class="gate-login-register-row">
-                Hesabın yok mu?
-                <a href="https://playlegends.vercel.app/" target="_top" class="gate-login-register-link">
+                <span data-i18n="common.gateNoAccountText">Hesabın yok mu?</span>
+                <a href="https://playlegends.vercel.app/" target="_top" class="gate-login-register-link" data-i18n="common.gateRegisterLink">
                     Play Legends'ta kaydol
                 </a>
             </p>
@@ -9517,8 +9847,8 @@
             <div class="hub-brand">
                 <div class="hub-brand-mark">PL</div>
                 <div class="hub-brand-text">
-                    Community
-                    <small>Play Legends Hub</small>
+                    <span data-i18n="common.brandCommunity">Community</span>
+                    <small data-i18n="common.brandPlayLegendsHub">Play Legends Hub</small>
                 </div>
             </div>
 
@@ -9545,9 +9875,9 @@
                         <rect x="7" y="5" width="2" height="2" fill="var(--bg-panel)"/>
                         <rect x="11" y="5" width="2" height="2" fill="var(--bg-panel)"/>
                     </svg>
-                    Forum
+                    <span data-i18n="common.navForum">Forum</span>
                     <span class="hub-nav-reddot" id="forumUnreadDot"></span>
-                    <button type="button" class="hub-nav-mute-btn" id="forumMuteBtn" title="Forum bildirim ayarı"></button>
+                    <button type="button" class="hub-nav-mute-btn" id="forumMuteBtn" title="Forum bildirim ayarı" data-i18n-title="common.navForumMuteBtn"></button>
                 </div>
                 <div class="hub-nav-item" data-view="marketplace">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9559,7 +9889,7 @@
                         <rect x="10" y="7" width="4" height="7" fill="currentColor"/>
                         <rect x="7" y="7" width="2" height="7" fill="currentColor" opacity="0.55"/>
                     </svg>
-                    3D Model Pazarı
+                    <span data-i18n="common.navMarketplace">3D Model Pazarı</span>
                 </div>
                 <div class="hub-nav-item" data-view="studio">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9573,7 +9903,7 @@
                         <rect x="9" y="11" width="2" height="2" fill="currentColor"/>
                         <rect x="7" y="13" width="2" height="2" fill="currentColor"/>
                     </svg>
-                    3D Studio Editör
+                    <span data-i18n="common.navStudio">3D Studio Editör</span>
                 </div>
                 <div class="hub-nav-item" data-view="messages">
                     <svg class="hub-nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9581,7 +9911,7 @@
                         <rect x="2" y="4" width="1" height="1" fill="var(--bg-panel)"/>
                         <path d="M2 4l6 5 6-5" stroke="var(--bg-panel)" stroke-width="1.6" fill="none"/>
                     </svg>
-                    Mesajlar
+                    <span data-i18n="common.navMessages">Mesajlar</span>
                     <span class="hub-nav-reddot" id="messagesUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="groups">
@@ -9591,7 +9921,7 @@
                         <rect x="1" y="9" width="7" height="5" fill="currentColor"/>
                         <rect x="9" y="9" width="6" height="5" fill="currentColor" opacity="0.6"/>
                     </svg>
-                    Grup Sohbetleri
+                    <span data-i18n="common.navGroups">Grup Sohbetleri</span>
                     <span class="hub-nav-reddot" id="groupsUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="communities">
@@ -9599,7 +9929,7 @@
                         <circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" fill="none"/>
                         <path d="M2 8h12M8 2c1.8 1.7 2.8 3.8 2.8 6s-1 4.3-2.8 6c-1.8-1.7-2.8-3.8-2.8-6s1-4.3 2.8-6z" stroke="currentColor" stroke-width="1.2" fill="none"/>
                     </svg>
-                    Topluluklar
+                    <span data-i18n="common.navCommunities">Topluluklar</span>
                     <span class="hub-nav-reddot" id="communitiesUnreadDot"></span>
                 </div>
                 <div class="hub-nav-item" data-view="inbox">
@@ -9611,7 +9941,7 @@
                         <rect x="4" y="7" width="8" height="1.5" fill="var(--bg-panel)" rx="0.5"/>
                         <rect x="4" y="9.5" width="5" height="1.5" fill="var(--bg-panel)" rx="0.5"/>
                     </svg>
-                    Sana Gelenler
+                    <span data-i18n="common.navInbox">Sana Gelenler</span>
                     <span class="hub-nav-badge" id="inboxUnreadBadge" style="display:none;">0</span>
                 </div>
 
@@ -9622,7 +9952,7 @@
                         <path d="M1.2 13.4c0-2.4 1.9-4.1 4.3-4.1s4.3 1.7 4.3 4.1" fill="currentColor"/>
                         <path d="M9.6 9.7c1.9 0.2 3.3 1.7 3.3 3.7" stroke="currentColor" stroke-width="1.3" fill="none" opacity="0.6"/>
                     </svg>
-                    Oyuncular
+                    <span data-i18n="common.navPlayers">Oyuncular</span>
                 </div>
 
                 <div class="hub-nav-item" data-view="admin" data-restricted="true" data-min-role="helper">
@@ -9634,7 +9964,7 @@
                         <rect x="6" y="10" width="4" height="2" fill="currentColor"/>
                         <rect x="7" y="12" width="2" height="2" fill="currentColor"/>
                     </svg>
-                    Yönetim Paneli
+                    <span data-i18n="common.navAdmin">Yönetim Paneli</span>
                 </div>
 
                 <!-- 🖥️ KONSOL: sadece Owner/Developer (permission tier "owner")
@@ -9647,7 +9977,7 @@
                         <path d="M3.5 5.5l3 2.5-3 2.5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                         <rect x="8" y="9.5" width="4.5" height="1.3" fill="currentColor"/>
                     </svg>
-                    Konsol
+                    <span data-i18n="common.navConsole">Konsol</span>
                 </div>
             </nav>
 
@@ -9656,20 +9986,20 @@
             <!-- Profile erişimi ARTIK SADECE buradan: alt köşedeki mini
                  profil kartı tıklanınca "profile" view'ına geçer.
                  (Nav listesindeki ayrı "Profilim" satırı kaldırıldı.) -->
-            <div class="hub-mini-profile" id="hubMiniProfile" data-view="profile" role="button" tabindex="0" title="Profilim">
+            <div class="hub-mini-profile" id="hubMiniProfile" data-view="profile" role="button" tabindex="0" title="Profilim" data-i18n-title="common.navMiniProfileTitle">
                 <img class="hub-mini-avatar" id="hubMiniAvatar" src="" alt="">
                 <div>
                     <div class="hub-mini-name" id="hubMiniName">—</div>
                     <div class="hub-mini-role" id="hubMiniRole">—</div>
                 </div>
             </div>
-            <button class="hub-logout-btn" id="hubLogoutBtn" title="Çıkış Yap">
+            <button class="hub-logout-btn" id="hubLogoutBtn" title="Çıkış Yap" data-i18n-title="common.logoutBtn">
                 <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 2H2v12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M10 5l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M5.5 8h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-                Çıkış Yap
+                <span data-i18n="common.logoutBtn">Çıkış Yap</span>
             </button>
         </aside>
 
@@ -9679,12 +10009,12 @@
 
         <main class="hub-main">
             <div class="hub-topbar">
-                <button class="hub-sidebar-toggle" id="hubSidebarToggle" aria-label="Menüyü aç/kapat" aria-expanded="false">
+                <button class="hub-sidebar-toggle" id="hubSidebarToggle" aria-label="Menüyü aç/kapat" aria-expanded="false" data-i18n-aria-label="common.sidebarToggleAriaLabel">
                     <span></span><span></span><span></span>
                 </button>
                 <div>
-                    <div class="hub-page-eyebrow" id="hubPageEyebrow">Community</div>
-                    <div class="hub-page-title" id="hubPageTitle">Forum</div>
+                    <div class="hub-page-eyebrow" id="hubPageEyebrow" data-i18n="common.eyebrowCommunity">Community</div>
+                    <div class="hub-page-title" id="hubPageTitle" data-i18n="common.navForum">Forum</div>
                 </div>
             </div>
 
@@ -9713,11 +10043,11 @@
 
                         <div class="forum-toolbar">
                             <div class="forum-toolbar-info" id="forumCategoryDesc"></div>
-                            <button class="forum-btn forum-btn-primary" id="forumNewThreadBtn">+ Yeni Konu</button>
+                            <button class="forum-btn forum-btn-primary" id="forumNewThreadBtn" data-i18n="forum.newThreadBtn">+ Yeni Konu</button>
                         </div>
 
                         <div class="forum-thread-list" id="forumThreadList">
-                            <div class="hub-placeholder" id="forumThreadEmptyState">Bu kategoride henüz konu yok. İlk konuyu sen aç!</div>
+                            <div class="hub-placeholder" id="forumThreadEmptyState" data-i18n="forum.threadEmptyState">Bu kategoride henüz konu yok. İlk konuyu sen aç!</div>
                         </div>
                     </div>
 
@@ -9725,7 +10055,7 @@
                          ALT VIEW 2: KONU DETAYI (bir thread açıldığında)
                          ============================================================ -->
                     <div class="forum-subview" id="forumThreadDetailView" style="display:none;">
-                        <button class="forum-back-btn" id="forumBackToListBtn">← Konu Listesine Dön</button>
+                        <button class="forum-back-btn" id="forumBackToListBtn" data-i18n="forum.backToListBtn">← Konu Listesine Dön</button>
 
                         <div class="forum-thread-detail-card" id="forumThreadDetailHeader"></div>
 
@@ -9736,26 +10066,26 @@
                         <!-- DISCORD TARZI: "X kişisinin '...' mesajına yanıt veriyorsun" banner'ı -->
                         <div class="forum-reply-preview-bar" id="forumThreadReplyPreviewBar" style="display:none;">
                             <span class="forum-reply-preview-text" id="forumThreadReplyPreviewText"></span>
-                            <button type="button" class="forum-reply-preview-cancel" id="forumThreadReplyPreviewCancel" title="Yanıtlamaktan vazgeç">✕</button>
+                            <button type="button" class="forum-reply-preview-cancel" id="forumThreadReplyPreviewCancel" title="Yanıtlamaktan vazgeç" data-i18n-title="forum.cancelReplyTitle">✕</button>
                         </div>
 
                         <!-- Yeni yorum kutusu (thread kilitliyse gizlenir) -->
                         <div class="forum-composer" id="forumReplyComposerWrap">
-                            <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="forumReplyAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="forumReplyAttachBtn" title="Görsel ekle (ImgBB)" data-i18n-title="forum.attachImageTitle">📎</button>
                             <input type="file" id="forumReplyAttachInput" style="display:none;" accept="image/*">
-                            <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="forumReplyGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                            <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="forumReplyGifBtn" title="GIF ekle (Giphy)" data-i18n-title="forum.attachGifTitle">GIF</button>
 
-                            <div class="forum-plus-btn" id="forumReplyPlusBtn" title="Fotoğraf veya GIF ekle">
+                            <div class="forum-plus-btn" id="forumReplyPlusBtn" title="Fotoğraf veya GIF ekle" data-i18n-title="forum.plusBtnTitle">
                                 +
                                 <div class="forum-attach-popover" id="forumReplyPlusPopover">
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
-                                        <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                        <span class="forum-attach-popover-icon">📷</span> <span data-i18n="forum.uploadPhoto">Fotoğraf Yükle</span>
                                     </button>
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
-                                        <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        <span class="forum-attach-popover-icon">🎬</span> <span data-i18n="forum.addGif">GIF Ekle</span>
                                     </button>
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
-                                        <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
+                                        <span class="forum-attach-popover-icon">😀</span> <span data-i18n="forum.addEmoji">Emoji Ekle</span>
                                     </button>
                                 </div>
                             </div>
@@ -9765,13 +10095,14 @@
                                     id="forumReplyInput"
                                     class="forum-composer-input"
                                     placeholder="Bir yorum yaz... (@isim ile etiketle, veya bir GIF/görsel linki yapıştır)"
-                                    maxlength="2000"></textarea>
+                                    maxlength="2000"
+                                    data-i18n-placeholder="forum.replyInputPlaceholder"></textarea>
                                 <div class="mention-autocomplete-dropdown" id="forumReplyMentionDropdown"></div>
                             </div>
-                            <button class="forum-send-btn" id="forumReplySendBtn">Gönder</button>
+                            <button class="forum-send-btn" id="forumReplySendBtn" data-i18n="forum.sendBtn">Gönder</button>
                         </div>
                         <div class="forum-composer-upload-status" id="forumReplyAttachStatus" style="display:none;"></div>
-                        <div class="forum-composer-hint">
+                        <div class="forum-composer-hint" data-i18n-html="forum.replyComposerHint">
                             Zengin içerik: link yapıştır otomatik önizlensin · <code>[img]URL[/img]</code> resim · <code>[gif]URL[/gif]</code> GIF · <code>[video]URL[/video]</code> video linki · + ile fotoğraf yükle veya GIF ekle · emoji doğrudan yapıştırılabilir
                         </div>
                     </div>
@@ -9791,17 +10122,17 @@
                              yoksa buton disabled olur. -->
                         <div class="forum-pinned-toggle-row">
                             <button class="forum-pinned-toggle-btn" id="forumPinnedToggleBtn" disabled>
-                                📌 Sabitlenmiş Mesajlar <span class="forum-pinned-count" id="forumPinnedCount">0</span>
+                                📌 <span data-i18n="forum.pinnedMessages">Sabitlenmiş Mesajlar</span> <span class="forum-pinned-count" id="forumPinnedCount">0</span>
                             </button>
                         </div>
                         <div class="forum-pinned-wrap" id="forumPinnedWrap" style="display:none;">
-                            <div class="forum-pinned-header">📌 Sabitlenmiş Mesajlar</div>
+                            <div class="forum-pinned-header">📌 <span data-i18n="forum.pinnedMessages">Sabitlenmiş Mesajlar</span></div>
                             <div id="forumPinnedList"></div>
                         </div>
 
                         <!-- MESAJ LİSTESİ -->
                         <div class="forum-messages" id="forumMessagesList">
-                            <div class="hub-placeholder" id="forumEmptyState">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>
+                            <div class="hub-placeholder" id="forumEmptyState" data-i18n="forum.messagesEmptyState">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>
                         </div>
 
                         <!-- KOMUT İPUCU (mute durumu / /w bilgisi) -->
@@ -9810,7 +10141,7 @@
                         <!-- DISCORD TARZI: "X kişisinin '...' mesajına yanıt veriyorsun" banner'ı -->
                         <div class="forum-reply-preview-bar" id="forumReplyPreviewBar" style="display:none;">
                             <span class="forum-reply-preview-text" id="forumReplyPreviewText"></span>
-                            <button type="button" class="forum-reply-preview-cancel" id="forumReplyPreviewCancel" title="Yanıtlamaktan vazgeç">✕</button>
+                            <button type="button" class="forum-reply-preview-cancel" id="forumReplyPreviewCancel" title="Yanıtlamaktan vazgeç" data-i18n-title="forum.cancelReplyTitle">✕</button>
                         </div>
 
                         <!-- MESAJ YAZMA KUTUSU -->
@@ -9818,21 +10149,21 @@
                             <!-- Eski 📎/GIF butonları JS tarafından hâlâ kullanılıyor
                                  (wireAttachButton / openGifPicker) ama görsel olarak
                                  gizli — bkz. .forum-composer-legacy-btn CSS kuralı. -->
-                            <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="forumAttachBtn" title="Görsel ekle (ImgBB)">📎</button>
+                            <button type="button" class="forum-attach-btn forum-composer-legacy-btn" id="forumAttachBtn" title="Görsel ekle (ImgBB)" data-i18n-title="forum.attachImageTitle">📎</button>
                             <input type="file" id="forumAttachInput" style="display:none;" accept="image/*">
-                            <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="forumGifBtn" title="GIF ekle (Giphy)">GIF</button>
+                            <button type="button" class="forum-gif-btn forum-composer-legacy-btn" id="forumGifBtn" title="GIF ekle (Giphy)" data-i18n-title="forum.attachGifTitle">GIF</button>
 
-                            <div class="forum-plus-btn" id="forumPlusBtn" title="Fotoğraf veya GIF ekle">
+                            <div class="forum-plus-btn" id="forumPlusBtn" title="Fotoğraf veya GIF ekle" data-i18n-title="forum.plusBtnTitle">
                                 +
                                 <div class="forum-attach-popover" id="forumPlusPopover">
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="photo">
-                                        <span class="forum-attach-popover-icon">📷</span> Fotoğraf Yükle
+                                        <span class="forum-attach-popover-icon">📷</span> <span data-i18n="forum.uploadPhoto">Fotoğraf Yükle</span>
                                     </button>
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="gif">
-                                        <span class="forum-attach-popover-icon">🎬</span> GIF Ekle
+                                        <span class="forum-attach-popover-icon">🎬</span> <span data-i18n="forum.addGif">GIF Ekle</span>
                                     </button>
                                     <button type="button" class="forum-attach-popover-item" data-plus-action="emoji">
-                                        <span class="forum-attach-popover-icon">😀</span> Emoji Ekle
+                                        <span class="forum-attach-popover-icon">😀</span> <span data-i18n="forum.addEmoji">Emoji Ekle</span>
                                     </button>
                                 </div>
                             </div>
@@ -9842,13 +10173,14 @@
                                     id="forumComposerInput"
                                     class="forum-composer-input"
                                     placeholder="Bir mesaj yaz... (@isim, /w isim mesaj, veya bir GIF/görsel linki yapıştır)"
-                                    maxlength="1000"></textarea>
+                                    maxlength="1000"
+                                    data-i18n-placeholder="forum.composerInputPlaceholder"></textarea>
                                 <div class="mention-autocomplete-dropdown" id="forumMentionDropdown"></div>
                             </div>
-                            <button class="forum-send-btn" id="forumSendBtn">Gönder</button>
+                            <button class="forum-send-btn" id="forumSendBtn" data-i18n="forum.sendBtn">Gönder</button>
                         </div>
                         <div class="forum-composer-upload-status" id="forumAttachStatus" style="display:none;"></div>
-                        <div class="forum-composer-hint">
+                        <div class="forum-composer-hint" data-i18n-html="forum.composerHint">
                             Gönder butonuna bas · Enter alt satıra geçer · <code>/w KullanıcıAdı mesaj</code> ile gizli mesaj · Giphy/görsel/video linki yapıştır, otomatik önizlensin · + ile fotoğraf yükle veya GIF ekle
                         </div>
                     </div>
@@ -9870,11 +10202,12 @@
                             id="forumGifSearchInput"
                             class="forum-gif-search-input"
                             placeholder="Giphy'de GIF ara..."
-                            autocomplete="off">
+                            autocomplete="off"
+                            data-i18n-placeholder="forum.gifSearchPlaceholder">
                         <button type="button" class="forum-modal-close" id="forumGifPickerClose">✕</button>
                     </div>
                     <div class="forum-gif-picker-body" id="forumGifPickerBody">
-                        <div class="forum-gif-picker-status" id="forumGifPickerStatus">Trend GIF'ler yükleniyor...</div>
+                        <div class="forum-gif-picker-status" id="forumGifPickerStatus" data-i18n="forum.gifLoadingTrending">Trend GIF'ler yükleniyor...</div>
                         <div class="forum-gif-picker-grid" id="forumGifPickerGrid"></div>
                     </div>
                     <div class="forum-gif-picker-footer">Powered by GIPHY</div>
@@ -9905,9 +10238,9 @@
                  ════════════════════════════════════════════════════════ -->
             <div class="img-pos-fullscreen" id="imgPosModalBackdrop" style="display:none;">
                 <div class="img-pos-fs-topbar">
-                    <button type="button" class="img-pos-fs-back" id="imgPosModalClose" aria-label="Vazgeç">←</button>
-                    <span class="img-pos-fs-title" id="imgPosModalTitle">Görseli Konumlandır</span>
-                    <button type="button" class="img-pos-fs-save" id="imgPosSaveBtn">Kaydet</button>
+                    <button type="button" class="img-pos-fs-back" id="imgPosModalClose" aria-label="Vazgeç" data-i18n-aria-label="common.cancelBtn">←</button>
+                    <span class="img-pos-fs-title" id="imgPosModalTitle" data-i18n="common.imgPosModalTitle">Görseli Konumlandır</span>
+                    <button type="button" class="img-pos-fs-save" id="imgPosSaveBtn" data-i18n="common.saveBtn">Kaydet</button>
                 </div>
                 <div class="img-pos-fs-stage">
                     <div class="img-pos-viewport" id="imgPosViewport">
@@ -9915,8 +10248,8 @@
                     </div>
                 </div>
                 <div class="img-pos-fs-bottombar">
-                    <div class="img-pos-hint">Görseli sürükle, parmaklarınla sıkıştırarak veya fare tekerleğiyle yakınlaştır.</div>
-                    <button type="button" class="img-pos-fs-cancel" id="imgPosCancelBtn">Vazgeç</button>
+                    <div class="img-pos-hint" data-i18n="common.imgPosHint">Görseli sürükle, parmaklarınla sıkıştırarak veya fare tekerleğiyle yakınlaştır.</div>
+                    <button type="button" class="img-pos-fs-cancel" id="imgPosCancelBtn" data-i18n="common.cancelBtn">Vazgeç</button>
                 </div>
             </div>
 
@@ -9928,25 +10261,25 @@
             <div class="forum-modal-backdrop" id="forumNewThreadModalBackdrop" style="display:none;">
                 <div class="forum-modal">
                     <div class="forum-modal-header">
-                        <span>Yeni Konu Aç</span>
+                        <span data-i18n="forum.newThreadModalTitle">Yeni Konu Aç</span>
                         <button class="forum-modal-close" id="forumNewThreadModalClose">✕</button>
                     </div>
                     <div class="forum-modal-body">
-                        <label class="forum-field-label">Kategori</label>
+                        <label class="forum-field-label" data-i18n="forum.categoryLabel">Kategori</label>
                         <select class="forum-select" id="forumNewThreadCategory"></select>
 
-                        <label class="forum-field-label">Başlık</label>
-                        <input type="text" class="forum-text-input" id="forumNewThreadTitle" maxlength="120" placeholder="Konu başlığı...">
+                        <label class="forum-field-label" data-i18n="forum.titleLabel">Başlık</label>
+                        <input type="text" class="forum-text-input" id="forumNewThreadTitle" maxlength="120" placeholder="Konu başlığı..." data-i18n-placeholder="forum.threadTitlePlaceholder">
 
-                        <label class="forum-field-label">İçerik</label>
-                        <textarea class="forum-textarea-input" id="forumNewThreadBody" maxlength="5000" rows="6" placeholder="Konu içeriği... @isim ile etiketleyebilir, [img]URL[/img] ile resim, [gif]URL[/gif] ile GIF, [video]URL[/video] ile video linki ekleyebilirsin."></textarea>
+                        <label class="forum-field-label" data-i18n="forum.contentLabel">İçerik</label>
+                        <textarea class="forum-textarea-input" id="forumNewThreadBody" maxlength="5000" rows="6" placeholder="Konu içeriği... @isim ile etiketleyebilir, [img]URL[/img] ile resim, [gif]URL[/gif] ile GIF, [video]URL[/video] ile video linki ekleyebilirsin." data-i18n-placeholder="forum.threadBodyPlaceholder"></textarea>
                         <div class="mention-autocomplete-dropdown" id="forumNewThreadMentionDropdown"></div>
 
                         <div class="forum-modal-error" id="forumNewThreadError" style="display:none;"></div>
                     </div>
                     <div class="forum-modal-footer">
-                        <button class="forum-btn forum-btn-ghost" id="forumNewThreadCancelBtn">Vazgeç</button>
-                        <button class="forum-btn forum-btn-primary" id="forumNewThreadSubmitBtn">Konuyu Yayınla</button>
+                        <button class="forum-btn forum-btn-ghost" id="forumNewThreadCancelBtn" data-i18n="common.cancelBtn">Vazgeç</button>
+                        <button class="forum-btn forum-btn-primary" id="forumNewThreadSubmitBtn" data-i18n="forum.publishThreadBtn">Konuyu Yayınla</button>
                     </div>
                 </div>
             </div>
@@ -19782,7 +20115,7 @@
 
             if (isCurrentlyMuted()) {
                 const remainingMs = ownMuteInfo.mutedUntil - Date.now();
-                lineEl.textContent = `Çok hızlı mesaj gönderdiğiniz için susturuldunuz. Kalan süre: ${formatDuration(remainingMs)}.`;
+                lineEl.textContent = t("forum.muteStatusLine", { duration: formatDuration(remainingMs) });
                 lineEl.style.display = "block";
                 updateComposerDisabledState();
 
@@ -19805,11 +20138,11 @@
 
         function formatDuration(ms) {
             const totalSeconds = Math.ceil(ms / 1000);
-            if (totalSeconds < 60) return `${totalSeconds}sn`;
+            if (totalSeconds < 60) return `${totalSeconds}${t("common.unitSeconds")}`;
             const totalMinutes = Math.ceil(totalSeconds / 60);
-            if (totalMinutes < 60) return `${totalMinutes}dk`;
+            if (totalMinutes < 60) return `${totalMinutes}${t("common.unitMinutes")}`;
             const totalHours = Math.ceil(totalMinutes / 60);
-            return `${totalHours}sa`;
+            return `${totalHours}${t("common.unitHours")}`;
         }
 
         /**
@@ -19886,17 +20219,17 @@
                 const targetUsername = whisperMatch[1];
                 const targetCandidate = window.CommunityMentions.getByUsername(targetUsername);
                 if (!targetCandidate) {
-                    showForumComposerError(`"${targetUsername}" adında bir kullanıcı bulunamadı.`);
+                    showForumComposerError(t("forum.whisperUserNotFound", { username: targetUsername }));
                     return;
                 }
                 if (targetCandidate.uid === uid) {
-                    showForumComposerError("Kendinize gizli mesaj gönderemezsiniz.");
+                    showForumComposerError(t("forum.whisperSelfError"));
                     return;
                 }
                 // Engelleme kontrolü: ben onu engellemişsem ya da o beni
                 // engellemişse, birbirimize /w ile gizli mesaj gidemez.
                 if (window.MessagingSystem && (window.MessagingSystem.iBlocked(targetCandidate.uid) || window.MessagingSystem.blockedMe(targetCandidate.uid))) {
-                    showForumComposerError("Bu kullanıcıya gizli mesaj gönderemezsiniz.");
+                    showForumComposerError(t("forum.whisperBlockedError"));
                     return;
                 }
 
@@ -19939,7 +20272,7 @@
                 inputEl.removeAttribute("data-reply-to-author-uid");
                 inputEl.removeAttribute("data-reply-to-snippet");
                 hideForumReplyPreview();
-                inputEl.placeholder = "Bir mesaj yaz... (@isim ile etiketle, /w isim mesaj ile gizli mesaj gönder)";
+                inputEl.placeholder = t("forum.composerInputPlaceholder");
 
                 // ── Bildirimler ──────────────────────────────────────
                 const _senderName   = (window.CommunityAuth.profile && window.CommunityAuth.profile.username) || "Biri";
@@ -19959,8 +20292,8 @@
                 // "PERMISSION_DENIED" olur — bu EN SIK karşılaşılan sebeptir.
                 // Kullanıcıya teşhis edilebilir bir mesaj gösteriyoruz.
                 const reason = (err && err.code === "PERMISSION_DENIED")
-                    ? "Yetkiniz olmadığı için mesaj gönderilemedi (veritabanı kuralları engelledi)."
-                    : `Mesaj gönderilemedi (${(err && err.code) || 'bilinmeyen hata'}). Lütfen tekrar deneyin.`;
+                    ? t("forum.sendPermissionDeniedError")
+                    : t("forum.sendGenericError", { code: (err && err.code) || t("common.unknownError") });
                 showForumComposerError(reason);
             }
         }
@@ -19990,13 +20323,13 @@
             if (!inputEl || !barEl || !textEl) return;
 
             const candidate = window.CommunityMentions.getByUid(authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : t("common.fallbackUsername");
 
             inputEl.setAttribute("data-reply-to-message-id", messageId);
             inputEl.setAttribute("data-reply-to-author-uid", authorUid || "");
             inputEl.setAttribute("data-reply-to-snippet", snippetText || "");
 
-            textEl.innerHTML = `<strong>${RBAC.escapeHtml(username)}</strong> kişisinin “${RBAC.escapeHtml((snippetText || "").slice(0, 80))}” mesajına yanıt veriyorsunuz`;
+            textEl.innerHTML = t("forum.replyingToMessageHtml", { username: RBAC.escapeHtml(username), snippet: RBAC.escapeHtml((snippetText || "").slice(0, 80)) });
             barEl.style.display = "flex";
             inputEl.focus();
         }
@@ -20177,11 +20510,11 @@
             const plain = encodedText
                 .replace(/\[mention:group:[^\]]+\]/g, "@LegendsSupport")
                 .replace(/\[mention:([^\]]+)\]/g, (_, uid) => {
-                    const c = mentionUserCache[uid]; return c ? "@" + c.username : "@kullanıcı";
+                    const c = mentionUserCache[uid]; return c ? "@" + c.username : "@" + t("common.fallbackMentionUser");
                 })
-                .replace(/\[img\][^\[]*\[\/img\]/gi, "[Resim]")
-                .replace(/\[gif\][^\[]*\[\/gif\]/gi, "[GIF]")
-                .replace(/\[video\][^\[]*\[\/video\]/gi, "[Video]");
+                .replace(/\[img\][^\[]*\[\/img\]/gi, t("common.tagImage"))
+                .replace(/\[gif\][^\[]*\[\/gif\]/gi, t("common.tagGif"))
+                .replace(/\[video\][^\[]*\[\/video\]/gi, t("common.tagVideo"));
             return plain.length > L ? plain.slice(0, L) + "…" : plain;
         }
 
@@ -20238,7 +20571,7 @@
             if (!target || !target.targetType || !target.targetId) return;
             _genericReportTarget = target;
             const titleEl = document.getElementById("genericReportModalTitle");
-            if (titleEl) titleEl.textContent = `Şikâyet Et: ${target.targetLabel || target.targetId}`;
+            if (titleEl) titleEl.textContent = t("common.reportModalTitle", { target: target.targetLabel || target.targetId });
             document.getElementById("genericReportReasonSelect").value = "spam";
             document.getElementById("genericReportDetailInput").value = "";
             document.getElementById("genericReportError").style.display = "none";
@@ -20272,13 +20605,13 @@
                 });
             } catch (err) {
                 console.error("[Report] Şikâyet gönderme hatası:", err);
-                errorEl.textContent = "Şikâyet gönderilirken bir hata oluştu: " + (err && err.message ? err.message : err);
+                errorEl.textContent = t("common.reportSubmitErrorPrefix") + (err && err.message ? err.message : err);
                 errorEl.style.display = "block";
                 return;
             }
 
             closeGenericReportModal();
-            alert("Şikâyetin alındı. Ekibimiz en kısa sürede inceleyecek.");
+            alert(t("common.reportSubmittedAlert"));
         }
 
         function initGenericReportModal() {
@@ -20370,7 +20703,7 @@
             if (pinnedListEl) {
                 pinnedListEl.innerHTML = pinnedMessages.length
                     ? pinnedMessages.map(renderPinnedItem).join("")
-                    : '<div class="hub-placeholder">Şu anda sabitlenmiş mesaj yok.</div>';
+                    : `<div class="hub-placeholder">${t("forum.noPinnedMessages")}</div>`;
             }
             if (pinnedWrap) {
                 pinnedWrap.style.display = (forumPinnedPanelOpen && pinnedMessages.length > 0) ? "flex" : "none";
@@ -20385,7 +20718,7 @@
             if (normalMessages.length === 0 && visibleMessages.length === pinnedMessages.length && visibleMessages.length === 0) {
                 listEl.innerHTML = "";
                 if (emptyEl) listEl.appendChild(emptyEl);
-                else listEl.innerHTML = '<div class="hub-placeholder">Henüz hiç mesaj yok. İlk mesajı sen yaz!</div>';
+                else listEl.innerHTML = `<div class="hub-placeholder">${t("forum.messagesEmptyState")}</div>`;
             } else {
                 // Discord tarzı görünüm: aynı gönderenin art arda (5 dk
                 // içinde, aralarında yanıt/alıntı olmadan) attığı mesajlar
@@ -20432,9 +20765,10 @@
             const yesterday = new Date(now);
             yesterday.setDate(now.getDate() - 1);
             const isYesterday = d.toDateString() === yesterday.toDateString();
-            if (isToday) return "Bugün";
-            if (isYesterday) return "Dün";
-            return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+            if (isToday) return t("common.today");
+            if (isYesterday) return t("common.yesterday");
+            const localeCode = window.getActiveLanguage && window.getActiveLanguage() === "en" ? "en-US" : "tr-TR";
+            return d.toLocaleDateString(localeCode, { day: "numeric", month: "long", year: "numeric" });
         }
         const FORUM_GROUP_WINDOW_MS = 5 * 60 * 1000;
         function renderForumMessageGroup(items, renderFn) {
@@ -20464,7 +20798,7 @@
 
         function renderPinnedItem(m) {
             const candidate = window.CommunityMentions.getByUid(m.authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : t("common.fallbackUsername");
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
@@ -20487,7 +20821,7 @@
 
         function renderForumMessage(m, isGrouped) {
             const candidate = window.CommunityMentions.getByUid(m.authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : t("common.fallbackUsername");
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
@@ -20520,7 +20854,7 @@
             let quoteHtml = "";
             if (m.replyToMessageId) {
                 const replyCandidate = window.CommunityMentions.getByUid(m.replyToAuthorUid);
-                const replyUsername = replyCandidate ? replyCandidate.username : "Kullanıcı";
+                const replyUsername = replyCandidate ? replyCandidate.username : t("common.fallbackUsername");
                 quoteHtml = `<div class="forum-quote-ref" data-action="jump-to-message" data-message-id="${m.replyToMessageId}">
                     <span class="forum-quote-ref-username">↩ ${RBAC.escapeHtml(replyUsername)}</span>
                     <span class="forum-quote-ref-text">${RBAC.escapeHtml(m.replyToSnippet || "")}</span>
@@ -20625,7 +20959,7 @@
             containerEl.querySelectorAll('[data-action="delete"]').forEach((btn) => {
                 btn.addEventListener("click", async () => {
                     const messageId = btn.getAttribute("data-message-id");
-                    if (confirm("Bu mesajı silmek istediğinize emin misiniz?")) {
+                    if (confirm(t("forum.confirmDeleteMessage"))) {
                         await deleteForumMessage(messageId);
                     }
                 });
@@ -20654,7 +20988,7 @@
          */
         async function togglePinMessage(messageId, newPinnedState) {
             if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
-                alert("Bu işlem için yetkiniz yok.");
+                alert(t("common.noPermissionAlert"));
                 return;
             }
             try {
@@ -20672,7 +21006,7 @@
                 });
             } catch (err) {
                 console.error("[Forum] Sabitleme başarısız:", err);
-                alert("İşlem başarısız oldu.");
+                alert(t("common.actionFailedAlert"));
             }
         }
 
@@ -20682,7 +21016,7 @@
             const isOwn = msg && msg.authorUid === window.CommunityAuth.user.uid;
 
             if (!isOwn && !RBAC.canModerate(viewerProfile)) {
-                alert("Bu işlem için yetkiniz yok.");
+                alert(t("common.noPermissionAlert"));
                 return;
             }
 
@@ -20700,7 +21034,7 @@
                 }
             } catch (err) {
                 console.error("[Forum] Mesaj silinemedi:", err);
-                alert("Mesaj silinemedi.");
+                alert(t("forum.deleteMessageFailedAlert"));
             }
         }
 
@@ -20714,11 +21048,11 @@
         // "general-chat" özel: gerçek bir thread kategorisi DEĞİL, o
         // sekmeye basınca eskiden beri çalışan canlı sohbet view'ı açılır.
         const FORUM_CATEGORIES = [
-            { id: "announcements", name: "Duyurular & Güncellemeler", icon: "📢", description: "Resmi duyurular, güncelleme notları ve önemli bilgilendirmeler. Sadece yetkililer yeni konu açabilir.", order: 0, restrictedToStaff: true },
-            { id: "general-chat", name: "Genel Sohbet (Canlı)", icon: "💬", description: "Anlık, akan sohbet. Konu açmaya gerek yok — mesajını yaz, gönder.", order: 1, isLiveChat: true },
-            { id: "general-discussion", name: "Genel Tartışma", icon: "🗨️", description: "Her konuda konu açıp tartışabileceğin genel forum alanı.", order: 2 },
-            { id: "support", name: "Destek & Yardım", icon: "🛠️", description: "Sorun mu yaşıyorsun? Buradan konu aç, topluluk ve yetkililer yardımcı olsun.", order: 3 },
-            { id: "suggestions", name: "Suggestions / Öneriler", icon: "💡", description: "Play Legends için fikir ve önerilerini paylaş.", order: 4 }
+            { id: "announcements", get name() { return t("forum.catAnnouncementsName"); }, icon: "📢", get description() { return t("forum.catAnnouncementsDesc"); }, order: 0, restrictedToStaff: true },
+            { id: "general-chat", get name() { return t("forum.catGeneralChatName"); }, icon: "💬", get description() { return t("forum.catGeneralChatDesc"); }, order: 1, isLiveChat: true },
+            { id: "general-discussion", get name() { return t("forum.catGeneralDiscussionName"); }, icon: "🗨️", get description() { return t("forum.catGeneralDiscussionDesc"); }, order: 2 },
+            { id: "support", get name() { return t("forum.catSupportName"); }, icon: "🛠️", get description() { return t("forum.catSupportDesc"); }, order: 3 },
+            { id: "suggestions", get name() { return t("forum.catSuggestionsName"); }, icon: "💡", get description() { return t("forum.catSuggestionsDesc"); }, order: 4 }
         ];
 
         function getCategoryById(catId) {
@@ -20751,6 +21085,21 @@
             if (newThreadBtn) newThreadBtn.addEventListener("click", () => openNewThreadModal(activeCategoryId));
 
             switchForumCategory(activeCategoryId);
+
+            // 🌐 Dil değişince kategori sekmeleri/açıklaması/select'i ve
+            // aktif thread listesi/görünümü, sabit kategori isimleri
+            // getter üzerinden t()'ye bağlı olduğu için yeniden çizilmeli
+            // -- applyTranslations() sadece data-i18n attribute'larını
+            // günceller, bu innerHTML'ler onun kapsamı dışında kalır.
+            document.addEventListener("i18n:languageChanged", () => {
+                renderCategoryTabs();
+                populateNewThreadCategorySelect();
+                const descEl = document.getElementById("forumCategoryDesc");
+                const category = getCategoryById(activeCategoryId);
+                if (descEl && category) descEl.textContent = category.description || "";
+                if (document.getElementById("forumThreadList")) renderThreadList();
+                if (activeThreadId) renderThreadDetailHeader(activeThreadId);
+            });
         }
 
         // ------------------------------------------------------------
@@ -20905,7 +21254,7 @@
             if (threads.length === 0) {
                 listEl.innerHTML = "";
                 if (emptyEl) listEl.appendChild(emptyEl);
-                else listEl.innerHTML = '<div class="hub-placeholder">Bu kategoride henüz konu yok. İlk konuyu sen aç!</div>';
+                else listEl.innerHTML = `<div class="hub-placeholder">${window.t("forum.threadEmptyState")}</div>`;
                 return;
             }
 
@@ -20917,7 +21266,7 @@
 
         function renderThreadCard(t) {
             const candidate = window.CommunityMentions.getByUid(t.authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : window.t("common.fallbackUsername");
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
@@ -20927,8 +21276,8 @@
             const specialBadgeIds = RBAC.getUserSpecialBadgesOrdered(candidate);
 
             const tagsHtml = `
-                ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
-                ${t.isLocked ? '<span class="forum-thread-tag forum-thread-tag-locked">🔒 Kilitli</span>' : ''}
+                ${t.isPinned ? `<span class="forum-thread-tag forum-thread-tag-pinned">📌 ${window.t("forum.pinnedTag")}</span>` : ''}
+                ${t.isLocked ? `<span class="forum-thread-tag forum-thread-tag-locked">🔒 ${window.t("forum.lockedTag")}</span>` : ''}
             `;
 
             const previewSource = stripRichContentTokens(t.body || "");
@@ -20938,7 +21287,7 @@
                     <img class="forum-thread-avatar" ${RBAC.renderAvatarAttrs(avatarUrl)} alt="">
                     <div class="forum-thread-main">
                         <div class="forum-thread-title-row">
-                            <span class="forum-thread-title">${RBAC.escapeHtml(t.title || 'İsimsiz Konu')}</span>
+                            <span class="forum-thread-title">${RBAC.escapeHtml(t.title || window.t("forum.untitledThread"))}</span>
                             ${tagsHtml}
                         </div>
                         <div class="forum-thread-meta">
@@ -20950,7 +21299,7 @@
                     </div>
                     <div class="forum-thread-stats">
                         <span class="forum-thread-stats-count">${t.replyCount || 0}</span>
-                        <span class="forum-thread-stats-label">Yanıt</span>
+                        <span class="forum-thread-stats-label">${window.t("forum.replyStatsLabel")}</span>
                     </div>
                 </div>
             `;
@@ -21027,12 +21376,12 @@
             const title = titleEl.value.trim();
             const bodyRaw = bodyEl.value.trim();
 
-            if (!title) { showNewThreadError("Lütfen bir başlık girin."); return; }
-            if (!bodyRaw) { showNewThreadError("Lütfen konu içeriği girin."); return; }
+            if (!title) { showNewThreadError(t("forum.errTitleRequired")); return; }
+            if (!bodyRaw) { showNewThreadError(t("forum.errBodyRequired")); return; }
 
             const category = getCategoryById(categoryId);
             if (category && category.restrictedToStaff && !RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
-                showNewThreadError("Bu kategoride konu açmak için yetkiniz yok.");
+                showNewThreadError(t("forum.errNoCategoryPermission"));
                 return;
             }
 
@@ -21069,7 +21418,7 @@
                 maybeNotifySelfMention(encodedBody);
             } catch (err) {
                 console.error("[Forum] Konu oluşturulamadı:", err);
-                showNewThreadError("Konu oluşturulamadı. Lütfen tekrar deneyin.");
+                showNewThreadError(t("forum.errThreadCreateFailed"));
             }
         }
 
@@ -21106,13 +21455,13 @@
 
             const t = forumThreadsCache[threadId];
             if (!t) {
-                headerEl.innerHTML = '<div class="hub-placeholder">Bu konu bulunamadı veya silinmiş.</div>';
+                headerEl.innerHTML = `<div class="hub-placeholder">${window.t("forum.threadNotFound")}</div>`;
                 if (composerWrap) composerWrap.style.display = "none";
                 return;
             }
 
             const candidate = window.CommunityMentions.getByUid(t.authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : window.t("common.fallbackUsername");
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
             const nameColor = candidate ? candidate.nameColor : null;
@@ -21125,18 +21474,18 @@
 
             let actionsHtml = "";
             if (canModerateThread) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="toggle-pin-thread">${t.isPinned ? "Sabitlemeyi Kaldır" : "Sabitle"}</button>`;
-                actionsHtml += `<button class="forum-message-action-btn" data-action="toggle-lock-thread">${t.isLocked ? "Kilidi Aç" : "Kilitle"}</button>`;
+                actionsHtml += `<button class="forum-message-action-btn" data-action="toggle-pin-thread">${t.isPinned ? window.t("forum.unpinBtn") : window.t("forum.pinBtn")}</button>`;
+                actionsHtml += `<button class="forum-message-action-btn" data-action="toggle-lock-thread">${t.isLocked ? window.t("forum.unlockBtn") : window.t("forum.lockBtn")}</button>`;
             }
             if (canModerateThread || t.authorUid === myUid) {
-                actionsHtml += `<button class="forum-message-action-btn" data-action="delete-thread">Konuyu Sil</button>`;
+                actionsHtml += `<button class="forum-message-action-btn" data-action="delete-thread">${window.t("forum.deleteThreadBtn")}</button>`;
             }
 
             headerEl.innerHTML = `
                 <div class="forum-thread-detail-title-row">
-                    <span class="forum-thread-detail-title">${RBAC.escapeHtml(t.title || 'İsimsiz Konu')}</span>
-                    ${t.isPinned ? '<span class="forum-thread-tag forum-thread-tag-pinned">📌 Sabit</span>' : ''}
-                    ${t.isLocked ? '<span class="forum-thread-tag forum-thread-tag-locked">🔒 Kilitli</span>' : ''}
+                    <span class="forum-thread-detail-title">${RBAC.escapeHtml(t.title || window.t("forum.untitledThread"))}</span>
+                    ${t.isPinned ? `<span class="forum-thread-tag forum-thread-tag-pinned">📌 ${window.t("forum.pinnedTag")}</span>` : ''}
+                    ${t.isLocked ? `<span class="forum-thread-tag forum-thread-tag-locked">🔒 ${window.t("forum.lockedTag")}</span>` : ''}
                 </div>
                 <div class="forum-thread-detail-header">
                     <span class="forum-message-username" data-action="view-profile" data-uid="${t.authorUid}">
@@ -21157,7 +21506,7 @@
             });
             headerEl.querySelectorAll('[data-action="delete-thread"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
-                    if (confirm("Bu konuyu ve tüm yorumlarını silmek istediğinize emin misiniz?")) {
+                    if (confirm(window.t("forum.confirmDeleteThread"))) {
                         deleteThread(threadId);
                     }
                 });
@@ -21167,7 +21516,7 @@
             if (composerWrap) composerWrap.style.display = t.isLocked ? "none" : "flex";
             if (statusLine) {
                 if (t.isLocked) {
-                    statusLine.textContent = "Bu konu yetkililer tarafından kilitlendi. Yeni yorum yapılamaz.";
+                    statusLine.textContent = window.t("forum.threadLockedStatusLine");
                     statusLine.style.display = "block";
                 } else {
                     statusLine.style.display = "none";
@@ -21212,7 +21561,7 @@
             const isFirstRender = listEl.dataset.threadRepliesInited !== threadId;
 
             if (allReplies.length === 0) {
-                listEl.innerHTML = '<div class="hub-placeholder">Henüz yorum yok. İlk yorumu sen yaz!</div>';
+                listEl.innerHTML = `<div class="hub-placeholder">${t("forum.noRepliesEmptyState")}</div>`;
                 listEl.dataset.threadRepliesInited = threadId;
                 return;
             }
@@ -21242,7 +21591,7 @@
 
         function renderSingleReply(r, threadId, isGrouped) {
             const candidate = window.CommunityMentions.getByUid(r.authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : t("common.fallbackUsername");
             const avatarUrl = candidate ? candidate.avatarUrl : "";
             const isVerified = candidate ? candidate.isVerified : false;
             const role = candidate ? candidate.role : "";
@@ -21267,7 +21616,7 @@
             let quoteHtml = "";
             if (r.replyToReplyId) {
                 const replyCandidate = window.CommunityMentions.getByUid(r.replyToAuthorUid);
-                const replyUsername = replyCandidate ? replyCandidate.username : "Kullanıcı";
+                const replyUsername = replyCandidate ? replyCandidate.username : t("common.fallbackUsername");
                 quoteHtml = `<div class="forum-quote-ref" data-action="jump-to-reply" data-reply-id="${r.replyToReplyId}">
                     <span class="forum-quote-ref-username">↩ ${RBAC.escapeHtml(replyUsername)}</span>
                     <span class="forum-quote-ref-text">${RBAC.escapeHtml(r.replyToSnippet || "")}</span>
@@ -21318,7 +21667,7 @@
             containerEl.querySelectorAll('[data-action="delete-reply"]').forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const replyId = btn.getAttribute("data-reply-id");
-                    if (confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
+                    if (confirm(t("forum.confirmDeleteReply"))) {
                         deleteReply(threadId, replyId);
                     }
                 });
@@ -21355,13 +21704,13 @@
             if (!inputEl || !barEl || !textEl) return;
 
             const candidate = window.CommunityMentions.getByUid(authorUid);
-            const username = candidate ? candidate.username : "Kullanıcı";
+            const username = candidate ? candidate.username : t("common.fallbackUsername");
 
             inputEl.setAttribute("data-reply-to-reply-id", replyId);
             inputEl.setAttribute("data-reply-to-author-uid", authorUid || "");
             inputEl.setAttribute("data-reply-to-snippet", snippetText || "");
 
-            textEl.innerHTML = `<strong>${RBAC.escapeHtml(username)}</strong> kişisinin “${RBAC.escapeHtml((snippetText || "").slice(0, 80))}” yorumuna yanıt veriyorsunuz`;
+            textEl.innerHTML = t("forum.replyingToReplyHtml", { username: RBAC.escapeHtml(username), snippet: RBAC.escapeHtml((snippetText || "").slice(0, 80)) });
             barEl.style.display = "flex";
             inputEl.focus();
         }
@@ -21425,7 +21774,7 @@
         async function submitThreadReply(threadId, rawText, replyToInfo) {
             const thread = forumThreadsCache[threadId];
             if (thread && thread.isLocked) {
-                alert("Bu konu kilitli, yeni yorum yapılamaz.");
+                alert(t("forum.threadLockedAlert"));
                 return;
             }
 
@@ -21465,7 +21814,7 @@
                 maybeNotifySelfMention(encodedText);
             } catch (err) {
                 console.error("[Forum] Yorum gönderilemedi:", err);
-                alert("Yorum gönderilemedi. Lütfen tekrar deneyin.");
+                alert(t("forum.replySubmitFailedAlert"));
             }
         }
 
@@ -21477,7 +21826,7 @@
                 });
             } catch (err) {
                 console.error("[Forum] Yorum silinemedi:", err);
-                alert("Yorum silinemedi.");
+                alert(t("forum.replyDeleteFailedAlert"));
             }
         }
 
@@ -21486,7 +21835,7 @@
         // ------------------------------------------------------------
         async function toggleThreadPin(threadId, newPinnedState) {
             if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
-                alert("Bu işlem için yetkiniz yok.");
+                alert(t("common.noPermissionAlert"));
                 return;
             }
             try {
@@ -21500,13 +21849,13 @@
                 });
             } catch (err) {
                 console.error("[Forum] Konu sabitleme başarısız:", err);
-                alert("İşlem başarısız oldu.");
+                alert(t("common.actionFailedAlert"));
             }
         }
 
         async function toggleThreadLock(threadId, newLockedState) {
             if (!RBAC.hasMinimumTier(window.CommunityAuth.profile, "helper")) {
-                alert("Bu işlem için yetkiniz yok.");
+                alert(t("common.noPermissionAlert"));
                 return;
             }
             try {
@@ -21520,7 +21869,7 @@
                 });
             } catch (err) {
                 console.error("[Forum] Konu kilitleme başarısız:", err);
-                alert("İşlem başarısız oldu.");
+                alert(t("common.actionFailedAlert"));
             }
         }
 
@@ -21528,7 +21877,7 @@
             const t = forumThreadsCache[threadId];
             const isOwn = t && t.authorUid === window.CommunityAuth.user.uid;
             if (!isOwn && !RBAC.canModerate(window.CommunityAuth.profile)) {
-                alert("Bu işlem için yetkiniz yok.");
+                alert(window.t("common.noPermissionAlert"));
                 return;
             }
             try {
@@ -21546,7 +21895,7 @@
                 showThreadListView();
             } catch (err) {
                 console.error("[Forum] Konu silinemedi:", err);
-                alert("Konu silinemedi.");
+                alert(window.t("forum.threadDeleteFailedAlert"));
             }
         }
 
@@ -21582,10 +21931,10 @@
          */
         async function uploadFileToImgBB(file, onProgress) {
             if (!IMGBB_API_KEY || IMGBB_API_KEY === "IMGBB_API_KEY_MISSING") {
-                throw new Error("ImgBB API anahtarı tanımlanmamış. Lütfen IMGBB_API_KEY değerini ayarlayın.");
+                throw new Error(t("forum.errImgbbKeyMissing"));
             }
             if (!/^image\//i.test(file.type)) {
-                throw new Error("ImgBB sadece görsel dosyaları destekler (jpg, png, gif, webp vb.).");
+                throw new Error(t("forum.errImgbbOnlyImages"));
             }
 
             const formData = new FormData();
@@ -21610,18 +21959,18 @@
                             resolve(json);
                         } else {
                             const msg = (json && json.error && json.error.message) || `HTTP ${xhr.status}`;
-                            reject(new Error("ImgBB yükleme hatası: " + msg));
+                            reject(new Error(t("forum.errImgbbUploadError", { message: msg })));
                         }
                     } catch (e) {
-                        reject(new Error("ImgBB yanıtı ayrıştırılamadı."));
+                        reject(new Error(t("forum.errImgbbParseError")));
                     }
                 };
-                xhr.onerror = () => reject(new Error("ImgBB isteği başarısız oldu (ağ hatası)."));
+                xhr.onerror = () => reject(new Error(t("forum.errImgbbNetworkError")));
                 xhr.send(formData);
             });
 
             const link = responseJson.data && (responseJson.data.display_url || responseJson.data.url);
-            if (!link) throw new Error("ImgBB yükleme yanıtında görsel bağlantısı bulunamadı.");
+            if (!link) throw new Error(t("forum.errImgbbNoLinkInResponse"));
             return link;
         }
 
@@ -21822,12 +22171,12 @@
         // olarak gösterilir. Bu liste isim gerektirmez (":ad:" formatına
         // ihtiyaç yok) -- tıklanınca doğrudan unicode karakter eklenir.
         const UNICODE_EMOJI_CATALOG = [
-            { title: "Yüzler ve Duygular", emojis: ["😀","😁","😂","🤣","😊","😇","🙂","🙃","😉","😍","🥰","😘","😗","😋","😛","😜","🤪","😎","🤩","🥳","😏","😒","😞","😔","😢","😭","😤","😠","😡","🤬","🤯","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😴","🤤","😪","😵","🤢","🤮","🥵","🥶","😷","🤒","🤕","🥴","😵‍💫","🙄","😬","😑","😐","😶","🫡","🫠","🥹","😌","😅"] },
-            { title: "El ve Vücut", emojis: ["👍","👎","👌","✌️","🤞","🤟","🤘","👏","🙌","🙏","💪","👋","🤝","👊","✊","🤙","👆","👇","👈","👉","🖐️","🤲","💅","🫶","🫰"] },
-            { title: "Kalpler", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟"] },
-            { title: "Hayvanlar", emojis: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦉","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐢","🐍","🦖","🦕","🐙","🦑","🦀","🐡","🐬","🐳","🐋","🦈","🐊"] },
-            { title: "Yiyecek", emojis: ["🍏","🍎","🍊","🍋","🍌","🍉","🍇","🍓","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🌽","🥕","🌶️","🧀","🍞","🥐","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🍜","🍣","🍦","🍩","🍪","🎂","🍰","🍫","🍬","🍭","☕","🍵","🥤","🍺","🍻","🍷"] },
-            { title: "Etkinlik ve Nesneler", emojis: ["⚽","🏀","🏈","⚾","🎾","🏐","🎱","🏓","🎮","🕹️","🎲","🎯","🎳","🎸","🎧","🎤","🎬","📷","🔥","✨","⭐","🌟","💫","💥","💯","🎉","🎊","🎁","🏆","🥇","🚀","💻","📱","💡","🔔","💰","💎"] }
+            { get title() { return t("common.emojiCatFaces"); }, emojis: ["😀","😁","😂","🤣","😊","😇","🙂","🙃","😉","😍","🥰","😘","😗","😋","😛","😜","🤪","😎","🤩","🥳","😏","😒","😞","😔","😢","😭","😤","😠","😡","🤬","🤯","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😴","🤤","😪","😵","🤢","🤮","🥵","🥶","😷","🤒","🤕","🥴","😵‍💫","🙄","😬","😑","😐","😶","🫡","🫠","🥹","😌","😅"] },
+            { get title() { return t("common.emojiCatHands"); }, emojis: ["👍","👎","👌","✌️","🤞","🤟","🤘","👏","🙌","🙏","💪","👋","🤝","👊","✊","🤙","👆","👇","👈","👉","🖐️","🤲","💅","🫶","🫰"] },
+            { get title() { return t("common.emojiCatHearts"); }, emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟"] },
+            { get title() { return t("common.emojiCatAnimals"); }, emojis: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦉","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐢","🐍","🦖","🦕","🐙","🦑","🦀","🐡","🐬","🐳","🐋","🦈","🐊"] },
+            { get title() { return t("common.emojiCatFood"); }, emojis: ["🍏","🍎","🍊","🍋","🍌","🍉","🍇","🍓","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🌽","🥕","🌶️","🧀","🍞","🥐","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🍜","🍣","🍦","🍩","🍪","🎂","🍰","🍫","🍬","🍭","☕","🍵","🥤","🍺","🍻","🍷"] },
+            { get title() { return t("common.emojiCatActivities"); }, emojis: ["⚽","🏀","🏈","⚾","🎾","🏐","🎱","🏓","🎮","🕹️","🎲","🎯","🎳","🎸","🎧","🎤","🎬","📷","🔥","✨","⭐","🌟","💫","💥","💯","🎉","🎊","🎁","🏆","🥇","🚀","💻","📱","💡","🔔","💰","💎"] }
         ];
 
         function ensureEmojiPickerEl() {
@@ -21899,7 +22248,7 @@
             // ---- 2) Topluluğa özel emoji bölümleri (sadece emojisi OLANLAR) ----
             const customSections = orderedIds.map((gid) => {
                 const meta = (ms && ms._groupMetaCache && ms._groupMetaCache[gid]) || {};
-                const communityName = escEmojiAttr(meta.name || "Topluluk");
+                const communityName = escEmojiAttr(meta.name || t("common.fallbackCommunityName"));
                 // Henüz dinlenmiyorsa dinlemeye başla (canlı güncellenir).
                 if (!_emojiPickerLoadedGroupIds.has(gid) && window.CommunityEmojis) {
                     _emojiPickerLoadedGroupIds.add(gid);
@@ -21935,7 +22284,7 @@
                     ${customSectionsHtml}
                 </div>
                 <div class="community-emoji-picker-preview" id="communityEmojiPreview">
-                    <span class="cep-hint">Bir emojiye dokun</span>
+                    <span class="cep-hint">${t("common.emojiTouchHint")}</span>
                 </div>`;
         }
 
@@ -21946,7 +22295,7 @@
             const previewEl = document.getElementById("communityEmojiPreview");
             if (!previewEl) return;
             if (!btn) {
-                previewEl.innerHTML = `<span class="cep-hint">Bir emojiye dokun</span>`;
+                previewEl.innerHTML = `<span class="cep-hint">${t("common.emojiTouchHint")}</span>`;
                 return;
             }
             const kind = btn.getAttribute("data-emoji-kind");
@@ -21954,7 +22303,7 @@
                 const ch = btn.getAttribute("data-emoji-char");
                 previewEl.innerHTML = `
                     <span class="cep-glyph cep-glyph-unicode">${ch}</span>
-                    <span class="cep-meta"><span class="cep-name">Emoji</span></span>`;
+                    <span class="cep-meta"><span class="cep-name">${t("common.emojiPlainLabel")}</span></span>`;
             } else {
                 const name = btn.getAttribute("data-emoji-name");
                 const community = btn.getAttribute("data-emoji-community");
@@ -22042,7 +22391,7 @@
                 // Özel (topluluk) emojiler askı süresince kullanılamaz —
                 // standart unicode emojiler serbest kalır.
                 if (window.CommunityRBAC.isHangerActiveNow(window.CommunityAuth && window.CommunityAuth.profile)) {
-                    showToastGlobal("Hesabınız askıya alındığı için özel emojileri kullanamazsınız.");
+                    showToastGlobal(t("common.hangeredCustomEmojiToast"));
                     return;
                 }
                 insertTextAtCursor(textarea, `:${picked.name}:`);
@@ -22129,12 +22478,12 @@
                 };
 
                 btn.disabled = true;
-                setStatus(`"${file.name}" ImgBB'ye yükleniyor...`, false);
+                setStatus(t("forum.uploadingStatus", { filename: file.name }), false);
 
                 try {
                     const link = await uploadFileToImgBB(file, (pct) => {
                         if (typeof pct === "number") {
-                            setStatus(`"${file.name}" yükleniyor... %${Math.round(pct)}`, false);
+                            setStatus(t("forum.uploadingProgressStatus", { filename: file.name, percent: Math.round(pct) }), false);
                         }
                     });
 
@@ -22146,11 +22495,11 @@
                     textarea.focus();
                     textarea.dispatchEvent(new Event("input", { bubbles: true }));
 
-                    setStatus(`Görsel eklendi: ${file.name}`, false);
+                    setStatus(t("forum.uploadDoneStatus", { filename: file.name }), false);
                     setTimeout(() => setStatus(null), 2500);
                 } catch (err) {
                     console.error("[Forum] ImgBB yükleme hatası:", err);
-                    setStatus("Görsel yüklenemedi: " + (err && err.message ? err.message : "bilinmeyen hata"), true);
+                    setStatus(t("forum.uploadFailedStatus", { message: (err && err.message) || t("common.unknownError") }), true);
                 } finally {
                     btn.disabled = false;
                 }
@@ -22279,7 +22628,7 @@
 
             if (!GIPHY_API_KEY || GIPHY_API_KEY === "GIPHY_API_KEY_MISSING") {
                 gridEl.innerHTML = "";
-                statusEl.textContent = "Giphy API anahtarı tanımlanmamış. Lütfen GIPHY_API_KEY değerini ayarlayın.";
+                statusEl.textContent = t("forum.errGiphyKeyMissing");
                 statusEl.classList.add("is-error");
                 statusEl.style.display = "block";
                 return;
@@ -22292,11 +22641,11 @@
             const { q, trending } = gifPickerCurrentQuery;
 
             if (isFirstPage) {
-                statusEl.textContent = trending ? "Trend GIF'ler yükleniyor..." : `"${q}" için aranıyor...`;
+                statusEl.textContent = trending ? t("forum.gifLoadingTrending") : t("forum.gifSearchingFor", { query: q });
                 statusEl.classList.remove("is-error");
                 statusEl.style.display = "block";
             } else {
-                statusEl.textContent = "Daha fazla GIF yükleniyor...";
+                statusEl.textContent = t("forum.gifLoadingMore");
                 statusEl.classList.remove("is-error");
                 statusEl.style.display = "block";
             }
@@ -22317,7 +22666,7 @@
                     ? json.pagination.total_count : null;
 
                 if (items.length === 0 && isFirstPage) {
-                    statusEl.textContent = trending ? "Trend GIF bulunamadı." : "Sonuç bulunamadı.";
+                    statusEl.textContent = trending ? t("forum.gifNoneTrending") : t("forum.gifNoResults");
                     statusEl.style.display = "block";
                     gifPickerHasMore = false;
                     return;
@@ -22337,7 +22686,7 @@
                     if (!preview || !full || !preview.url || !full.url) return "";
                     const safePreview = RBAC.escapeHtml(preview.url);
                     const safeFull = RBAC.escapeHtml(full.url);
-                    const safeTitle = RBAC.escapeHtml(gif.title || "GIF");
+                    const safeTitle = RBAC.escapeHtml(gif.title || t("common.tagGifPlain"));
                     return `<button type="button" class="forum-gif-picker-grid-item" data-gif-url="${safeFull}" title="${safeTitle}">` +
                         `<img src="${safePreview}" alt="${safeTitle}" loading="lazy">` +
                         `</button>`;
@@ -22357,7 +22706,7 @@
                 if (thisRequestId !== gifPickerRequestSeq) return;
                 console.error("[Forum] Giphy isteği başarısız:", err);
                 if (isFirstPage) gridEl.innerHTML = "";
-                statusEl.textContent = "GIF'ler yüklenemedi. Lütfen tekrar deneyin.";
+                statusEl.textContent = t("forum.gifLoadFailed");
                 statusEl.classList.add("is-error");
                 statusEl.style.display = "block";
                 gifPickerHasMore = false;
@@ -22493,12 +22842,12 @@
             // ---- 1) Elle BBCode etiketleri (öncelikli, geriye dönük uyum) ----
             html = html.replace(/\[img\](.*?)\[\/img\]/gi, (match, url) => {
                 const safeUrl = RBAC.escapeHtml(url.trim());
-                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="${RBAC.escapeHtml(t("common.altSharedImage"))}" loading="lazy">`;
             });
 
             html = html.replace(/\[gif\](.*?)\[\/gif\]/gi, (match, url) => {
                 const safeUrl = RBAC.escapeHtml(url.trim());
-                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan GIF" loading="lazy">`;
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="${RBAC.escapeHtml(t("common.altSharedGif"))}" loading="lazy">`;
             });
 
             html = html.replace(/\[video\](.*?)\[\/video\]/gi, (match, url) => {
@@ -22538,7 +22887,7 @@
             if (/\.(mp4|webm|mov|m4v|m3u8)(\?.*)?$/i.test(safeUrl)) {
                 return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
             }
-            return `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">▶️ Videoyu Aç</a>`;
+            return `<a class="forum-embed-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">▶️ ${RBAC.escapeHtml(t("common.openVideoBtn"))}</a>`;
         }
 
         // ------------------------------------------------------------
@@ -22689,7 +23038,7 @@
 
             // Doğrudan görsel dosyası (PNG/JPG/JPEG/GIF/WEBP)
             if (/\.(png|jpe?g|gif|webp)$/i.test(path)) {
-                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="${RBAC.escapeHtml(t("common.altSharedImage"))}" loading="lazy">`;
             }
 
             // Doğrudan video dosyası (MP4/WEBM/MOV/M4V) veya HLS akışı (M3U8)
@@ -22711,7 +23060,7 @@
             // azından tıklanabilir bir "Videoyu Aç" medya kartı gösteriyoruz
             // (linksiz, boş bırakılmış gibi görünmesin diye).
             if (host === "kick.com" || host.endsWith(".kick.com")) {
-                return buildEmbedCardHtml(safeUrl, "KICK", "▶️ Videoyu Aç");
+                return buildEmbedCardHtml(safeUrl, "KICK", "▶️ " + t("common.openVideoBtn"));
             }
 
             // Tenor sayfa linki (ör. tenor.com/view/...-gifXXXXXXXXXXXXXXXXXX)
@@ -22722,18 +23071,18 @@
             // "GIF kartı" olarak, site adını gösteren tıklanabilir bir
             // önizleme linkiyle gömüyoruz (yeni sekmede tam GIF oynar).
             if (host === "tenor.com" || host.endsWith(".tenor.com")) {
-                return buildEmbedCardHtml(safeUrl, "TENOR", "🎬 GIF’i Görüntüle");
+                return buildEmbedCardHtml(safeUrl, "TENOR", "🎬 " + t("common.viewGifBtn"));
             }
 
             // Giphy sayfa linki
             if (host === "giphy.com" || host.endsWith(".giphy.com")) {
-                return buildEmbedCardHtml(safeUrl, "GIPHY", "🎬 GIF’i Görüntüle");
+                return buildEmbedCardHtml(safeUrl, "GIPHY", "🎬 " + t("common.viewGifBtn"));
             }
 
             // Giphy'nin doğrudan medya CDN'i (media.giphy.com/.../giphy.gif)
             if (host.endsWith("giphy.com") && /\.(gif|webp|mp4)$/i.test(path)) {
                 if (/\.(gif|webp)$/i.test(path)) {
-                    return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan GIF" loading="lazy">`;
+                    return `<img class="forum-embed-image" src="${safeUrl}" alt="${RBAC.escapeHtml(t("common.altSharedGif"))}" loading="lazy">`;
                 }
                 return `<video class="forum-embed-video" src="${safeUrl}" controls preload="metadata" playsinline></video>`;
             }
@@ -22744,7 +23093,7 @@
             // ImgBB'nin kendisi her zaman görsel döndürdüğü için burada da
             // doğrudan <img> olarak göm.
             if (host === "ibb.co" || host === "i.ibb.co" || host.endsWith(".ibb.co")) {
-                return `<img class="forum-embed-image" src="${safeUrl}" alt="Paylaşılan görsel" loading="lazy">`;
+                return `<img class="forum-embed-image" src="${safeUrl}" alt="${RBAC.escapeHtml(t("common.altSharedImage"))}" loading="lazy">`;
             }
 
             return null;
@@ -22763,11 +23112,11 @@
         // ayrıca uygulanır, burada sadece token temizliği yapılır).
         function stripRichContentTokens(rawStoredText) {
             return rawStoredText
-                .replace(/\[img\].*?\[\/img\]/gi, "[Resim]")
-                .replace(/\[gif\].*?\[\/gif\]/gi, "[GIF]")
-                .replace(/\[video\].*?\[\/video\]/gi, "[Video]")
+                .replace(/\[img\].*?\[\/img\]/gi, t("common.tagImage"))
+                .replace(/\[gif\].*?\[\/gif\]/gi, t("common.tagGif"))
+                .replace(/\[video\].*?\[\/video\]/gi, t("common.tagVideo"))
                 .replace(/\[mention:group:[A-Za-z0-9_-]+\]/g, "@LegendsSupport")
-                .replace(/\[mention:[A-Za-z0-9_-]+\]/g, "@kullanıcı");
+                .replace(/\[mention:[A-Za-z0-9_-]+\]/g, "@" + t("common.fallbackMentionUser"));
         }
 
         /**
@@ -22815,7 +23164,7 @@
             const headerNameElLoading = document.getElementById("profileUsernameText");
             if (headerNameElLoading) {
                 headerNameElLoading.innerHTML = "";
-                headerNameElLoading.textContent = "Yükleniyor…";
+                headerNameElLoading.textContent = t("common.loadingEllipsis");
             }
 
             database.ref('users/' + uid).once('value').then((snap) => {
@@ -22836,14 +23185,14 @@
                     console.warn("[openUserProfile] users/" + uid + " boş/erişilemez döndü. " +
                         "Firebase Rules'ta başka kullanıcıların 'users/{uid}' düğümünü okuma izni " +
                         "olmayabilir (örn. \".read\": \"auth.uid === $uid\"). Profil verisi çekilemedi.");
-                    if (headerNameElLoading) headerNameElLoading.textContent = "Kullanıcı bulunamadı.";
+                    if (headerNameElLoading) headerNameElLoading.textContent = t("common.userNotFoundText");
                 }
             }).catch((err) => {
                 if (window.__currentlyViewedProfileUid !== uid) return;
                 // Rules reddi genelde burada PERMISSION_DENIED olarak yakalanır.
                 console.error("[openUserProfile] users/" + uid + " okunamadı — muhtemelen Firebase " +
                     "Rules izin vermiyor (PERMISSION_DENIED). Detay:", err && err.code, err && err.message);
-                if (headerNameElLoading) headerNameElLoading.textContent = "Profil yüklenemedi (izin hatası).";
+                if (headerNameElLoading) headerNameElLoading.textContent = t("common.profileLoadPermissionError");
             });
         }
 
@@ -22870,7 +23219,7 @@
                 const listEl = document.getElementById("playersDirList");
                 const countEl = document.getElementById("playersDirCount");
                 if (listEl && !this._loaded) {
-                    listEl.innerHTML = `<div class="hub-placeholder">Yükleniyor…</div>`;
+                    listEl.innerHTML = `<div class="hub-placeholder">${t("common.loadingEllipsis")}</div>`;
                 }
                 try {
                     const snap = await database.ref('users').once('value');
@@ -22881,7 +23230,7 @@
                             const u = all[uid] || {};
                             return {
                                 uid,
-                                username: u.username || u.originalUsername || "Kullanıcı",
+                                username: u.username || u.originalUsername || t("common.fallbackUsername"),
                                 role: u.role || "",
                                 avatarUrl: u.avatarUrl || "",
                                 isVerified: u.isVerified === true,
@@ -22895,11 +23244,11 @@
                         })
                         .sort((a, b) => a.username.localeCompare(b.username, "tr"));
                     this._loaded = true;
-                    if (countEl) countEl.textContent = `${this._allUsers.length} oyuncu`;
+                    if (countEl) countEl.textContent = t("common.playerCountLabel", { count: this._allUsers.length });
                     this.applyFilter(document.getElementById("playersDirSearchInput")?.value || "");
                 } catch (err) {
                     console.error("[PlayersDirectory] Oyuncu listesi çekilemedi:", err);
-                    if (listEl) listEl.innerHTML = `<div class="players-dir-empty">Liste yüklenemedi. Lütfen tekrar dene.</div>`;
+                    if (listEl) listEl.innerHTML = `<div class="players-dir-empty">${t("common.playersListLoadFailed")}</div>`;
                 }
             },
 
@@ -22917,7 +23266,7 @@
                 if (!listEl) return;
 
                 if (!this._filtered.length) {
-                    listEl.innerHTML = `<div class="players-dir-empty">Eşleşen oyuncu bulunamadı.</div>`;
+                    listEl.innerHTML = `<div class="players-dir-empty">${t("common.noMatchingPlayers")}</div>`;
                     return;
                 }
 
@@ -22932,14 +23281,14 @@
                             <img class="players-dir-avatar" ${avatarAttrs} alt="">
                             <div class="players-dir-info">
                                 <span class="players-dir-name">${nameHtml}</span>
-                                <span class="players-dir-role">${RBAC.escapeHtml(u.role || "Player")}</span>
+                                <span class="players-dir-role">${RBAC.escapeHtml(u.role || t("common.defaultRolePlayer"))}</span>
                             </div>
                         </div>`;
                 }).join("");
 
                 const hasMore = this._filtered.length > this._visibleCount;
                 listEl.innerHTML = html + (hasMore
-                    ? `<button type="button" class="players-dir-loadmore" id="playersDirLoadMoreBtn">Daha fazla göster (${this._filtered.length - this._visibleCount} kaldı)</button>`
+                    ? `<button type="button" class="players-dir-loadmore" id="playersDirLoadMoreBtn">${t("common.showMoreRemaining", { count: this._filtered.length - this._visibleCount })}</button>`
                     : "");
 
                 listEl.querySelectorAll('[data-action="open-player"]').forEach((el) => {
@@ -23036,19 +23385,21 @@
                 }
             }
             const titles = {
-                forum:       ["Community",   "Forum"],
-                marketplace: ["Community",   "3D Model Pazarı"],
-                studio:      ["Community",   "3D Studio Editör"],
-                messages:    ["Community",   "Mesajlar"],
-                groups:      ["Community",   "Grup Sohbetleri"],
-                communities: ["Community",   "Topluluklar"],
-                inbox:       ["Community",   "Mentions & Replies"],
-                players:     ["Community",   "Oyuncular"],
-                profile:     ["Community",   "Profilim"],
-                admin:       ["Yönetim",     "Panel"],
-                console:     ["Yönetim",     "Konsol"]
+                forum:       ["common.eyebrowCommunity", "common.navForum"],
+                marketplace: ["common.eyebrowCommunity", "common.navMarketplace"],
+                studio:      ["common.eyebrowCommunity", "common.navStudio"],
+                messages:    ["common.eyebrowCommunity", "common.navMessages"],
+                groups:      ["common.eyebrowCommunity", "common.navGroups"],
+                communities: ["common.eyebrowCommunity", "common.navCommunities"],
+                inbox:       ["common.eyebrowCommunity", "common.pageTitleInbox"],
+                players:     ["common.eyebrowCommunity", "common.navPlayers"],
+                profile:     ["common.eyebrowCommunity", "common.pageTitleProfile"],
+                admin:       ["common.eyebrowManagement", "common.pageTitleAdminPanel"],
+                console:     ["common.eyebrowManagement", "common.navConsole"]
             };
-            const [eyebrow, title] = titles[view] || ["Community", view];
+            const titleKeys = titles[view] || null;
+            const eyebrow = titleKeys ? t(titleKeys[0]) : "Community";
+            const title = titleKeys ? t(titleKeys[1]) : view;
             const eyebrowEl = document.getElementById("hubPageEyebrow");
             const titleEl = document.getElementById("hubPageTitle");
             if (eyebrowEl) eyebrowEl.textContent = eyebrow;
